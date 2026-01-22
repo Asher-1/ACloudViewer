@@ -31,7 +31,7 @@ def _get_examples_dir():
         return examples_dir
     else:
         examples_path = os.path.join(
-            os.path.dirname(os.path.dirname(tools_path)), "examples", "python")
+            os.path.dirname(os.path.dirname(tools_path)), "examples", "Python")
         examples_dir = Path(examples_path)
         return examples_dir
 
@@ -53,7 +53,6 @@ def _get_runnable_examples_dict():
     examples_dict = _get_all_examples_dict()
     categories_to_remove = [
         "benchmark",
-        "jupyter",
         "reconstruction_system",
         "t_reconstruction_system",
     ]
@@ -65,11 +64,15 @@ def _get_runnable_examples_dict():
             "tensorboard_tensorflow",
         ],
     }
+    # Safely remove categories (ignore if they don't exist)
     for cat in categories_to_remove:
-        examples_dict.pop(cat)
+        examples_dict.pop(cat, None)
+    # Safely remove examples from categories (ignore if category or example doesn't exist)
     for cat in examples_to_remove.keys():
-        for ex in examples_to_remove[cat]:
-            examples_dict[cat].remove(ex)
+        if cat in examples_dict:
+            for ex in examples_to_remove[cat]:
+                if ex in examples_dict[cat]:
+                    examples_dict[cat].remove(ex)
     return examples_dict
 
 

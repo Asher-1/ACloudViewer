@@ -55,5 +55,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerBallQuery").Device(DEVICE_GPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerBallQuery").Device(DEVICE_GPU),
                         BallQueryOpKernelCUDA);

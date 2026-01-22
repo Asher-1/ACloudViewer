@@ -14,7 +14,7 @@
 
 #include <cstdlib>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>

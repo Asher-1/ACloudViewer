@@ -21,7 +21,7 @@
 #include <pcl/PointIndices.h>
 #include <pcl/Vertices.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>

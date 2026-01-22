@@ -10,7 +10,7 @@
 // qCC
 #include <ecvMainAppInterface.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>

@@ -52,5 +52,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerRoiPool").Device(DEVICE_GPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerRoiPool").Device(DEVICE_GPU),
                         RoiPoolOpKernelCUDA);

@@ -678,7 +678,7 @@ After building:
 1. :doc:`quickstart` - Learn basic usage
 2. :doc:`../tutorial/index` - Follow tutorials
 3. :doc:`../examples/cpp_examples` - C++ examples
-4. :doc:`../examples/python_examples` - Python examples
+4. :doc:`../python_example/geometry/index` - Python examples
 
 Additional Resources
 --------------------

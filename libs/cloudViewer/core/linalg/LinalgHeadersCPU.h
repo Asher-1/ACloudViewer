@@ -14,11 +14,11 @@
 #pragma once
 
 #ifdef USE_BLAS
-#define OPEN3D_CPU_LINALG_INT int32_t
+#define CLOUDVIEWER_CPU_LINALG_INT int32_t
 #define lapack_int int32_t
 #include <cblas.h>
 #include <lapacke.h>
 #else
 #include <mkl.h>
-#define OPEN3D_CPU_LINALG_INT MKL_INT
+#define CLOUDVIEWER_CPU_LINALG_INT MKL_INT
 #endif

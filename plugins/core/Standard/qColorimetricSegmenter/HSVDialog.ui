@@ -233,7 +233,7 @@
            <string>Pick the plane center (click again to cancel)</string>
           </property>
           <property name="icon">
-           <iconset resource="../../../../eCV/MainWindow.qrc">
+           <iconset resource="../../../../app/MainWindow.qrc">
             <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
           </property>
           <property name="checkable">
@@ -314,7 +314,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../../../eCV/MainWindow.qrc"/>
+  <include location="../../../../app/MainWindow.qrc"/>
  </resources>
  <connections>
   <connection>

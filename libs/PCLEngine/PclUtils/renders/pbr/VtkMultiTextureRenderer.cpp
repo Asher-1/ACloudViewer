@@ -323,7 +323,7 @@ bool VtkMultiTextureRenderer::ApplyPBRMaterial(
     // ========================================================================
     RenderingMode mode = DetectRenderingMode(material);
 
-    CVLog::Print(
+    CVLog::PrintVerbose(
             "[VtkMultiTextureRenderer::ApplyPBRMaterial] Detected rendering "
             "mode: %s",
             mode == RenderingMode::PBR        ? "PBR"

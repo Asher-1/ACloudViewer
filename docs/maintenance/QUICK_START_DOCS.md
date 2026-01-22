@@ -146,6 +146,7 @@ docker run \
   bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
 
 # Unpack
+mkdir -p docs-preview
 tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-preview/
 
 # Preview

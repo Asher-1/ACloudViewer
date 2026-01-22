@@ -80,4 +80,11 @@ set(GLFW_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(GLFW_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
 set(GLFW_LIBRARIES ${GLFW_LIB_NAME})
 # Export Wayland option to parent scope so it can be used for compile definitions
-set(GLFW_BUILD_WAYLAND_OPTION ${GLFW_BUILD_WAYLAND_OPTION} PARENT_SCOPE)
+# Note: On macOS, Wayland is always OFF, so this export is mainly for Linux
+# The PARENT_SCOPE will only work if we're in a function or subdirectory
+# If we're at top-level (like when included from find_dependencies.cmake),
+# CMake will warn but it's harmless - the variable just won't be exported
+# We suppress the warning on macOS since it's not needed there anyway
+if(UNIX AND NOT APPLE)
+    set(GLFW_BUILD_WAYLAND_OPTION ${GLFW_BUILD_WAYLAND_OPTION} PARENT_SCOPE)
+endif()

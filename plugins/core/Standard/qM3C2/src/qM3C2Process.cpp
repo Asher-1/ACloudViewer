@@ -15,7 +15,7 @@
 // cloudViewer
 #include <CloudSamplingTools.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericPointCloud.h>
 #include <ecvHObjectCaster.h>
 #include <ecvNormalVectors.h>

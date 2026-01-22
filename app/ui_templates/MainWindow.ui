@@ -1,0 +1,4641 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainViewerClass</class>
+ <widget class="QMainWindow" name="MainViewerClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>768</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>16777215</height>
+   </size>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::ClickFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>ACloudViewer</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../MainWindow.qrc">
+    <normaloff>:/Resources/images/icon/logo_128.png</normaloff>:/Resources/images/icon/logo_128.png</iconset>
+  </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>24</width>
+    <height>24</height>
+   </size>
+  </property>
+  <property name="animated">
+   <bool>true</bool>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>false</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1024</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+    </font>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveProject"/>
+    <addaction name="actionPrimitiveFactory"/>
+    <addaction name="actionClearAll"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="helpAction"/>
+    <addaction name="actionAbout"/>
+    <addaction name="actionAboutPlugins"/>
+    <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionEnableQtWarnings"/>
+   </widget>
+   <widget class="QMenu" name="menuOption">
+    <property name="title">
+     <string>Option</string>
+    </property>
+    <widget class="QMenu" name="themeAction">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/theme.png</normaloff>:/Resources/images/theme.png</iconset>
+     </property>
+     <addaction name="DfaultThemeAction"/>
+     <addaction name="BlueThemeAction"/>
+     <addaction name="LightBlueThemeAction"/>
+     <addaction name="DarkBlueThemeAction"/>
+     <addaction name="BlackThemeAction"/>
+     <addaction name="LightBlackThemeAction"/>
+     <addaction name="FlatBlackThemeAction"/>
+     <addaction name="DarkBlackThemeAction"/>
+     <addaction name="GrayThemeAction"/>
+     <addaction name="LightGrayThemeAction"/>
+     <addaction name="DarkGrayThemeAction"/>
+     <addaction name="FlatWhiteThemeAction"/>
+     <addaction name="separator"/>
+     <addaction name="PsBlackThemeAction"/>
+     <addaction name="SilverThemeAction"/>
+     <addaction name="BFThemeAction"/>
+     <addaction name="ParaviewThemeAction"/>
+     <addaction name="TestThemeAction"/>
+     <addaction name="separator"/>
+     <addaction name="MaterialDarkThemeAction"/>
+     <addaction name="MaterialLightThemeAction"/>
+     <addaction name="NordThemeAction"/>
+     <addaction name="DraculaThemeAction"/>
+     <addaction name="FluentThemeAction"/>
+     <addaction name="MacOSThemeAction"/>
+     <addaction name="OneDarkThemeAction"/>
+     <addaction name="CatppuccinThemeAction"/>
+     <addaction name="TokyoNightThemeAction"/>
+     <addaction name="GruvboxThemeAction"/>
+    </widget>
+    <widget class="QMenu" name="langAction">
+     <property name="title">
+      <string>Language</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/language.png</normaloff>:/Resources/images/language.png</iconset>
+     </property>
+    </widget>
+    <addaction name="themeAction"/>
+    <addaction name="langAction"/>
+    <addaction name="actionGlobalShiftSettings"/>
+    <addaction name="separator"/>
+    <addaction name="actionShortcutSettings"/>
+   </widget>
+   <widget class="QMenu" name="menuDisplay">
+    <property name="title">
+     <string>Display</string>
+    </property>
+    <widget class="QMenu" name="menuAngle_view">
+     <property name="title">
+      <string>Angle view</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/dbViewportSymbol.png</normaloff>:/Resources/images/dbViewportSymbol.png</iconset>
+     </property>
+     <addaction name="actionSetViewTop"/>
+     <addaction name="actionSetViewFront"/>
+     <addaction name="actionSetViewLeft"/>
+     <addaction name="actionSetViewBack"/>
+     <addaction name="actionSetViewRight"/>
+     <addaction name="actionSetViewBottom"/>
+     <addaction name="actionSetViewIso1"/>
+     <addaction name="actionSetViewIso2"/>
+    </widget>
+    <widget class="QMenu" name="menuToolbars">
+     <property name="title">
+      <string>Toolbars</string>
+     </property>
+     <addaction name="actionDisplayMainTools"/>
+     <addaction name="actionDisplayScalarFieldsTools"/>
+     <addaction name="actionDisplayViewTools"/>
+     <addaction name="actionDisplaySelectionTools"/>
+     <addaction name="actionDisplayFilterTools"/>
+     <addaction name="actionDisplayMeasurementsTools"/>
+     <addaction name="actionDisplayAnnotationTools"/>
+    </widget>
+    <widget class="QMenu" name="menuActiveScalarField">
+     <property name="title">
+      <string>Active scalar field</string>
+     </property>
+     <addaction name="actionToggleActiveSFColorScale"/>
+     <addaction name="actionShowActiveSFPrevious"/>
+     <addaction name="actionShowActiveSFNext"/>
+    </widget>
+    <addaction name="actionFullScreen"/>
+    <addaction name="actionExclusiveFullScreen"/>
+    <addaction name="actionDisplayOptions"/>
+    <addaction name="actionEditCamera"/>
+    <addaction name="actionPerspectiveProjection"/>
+    <addaction name="actionOrthogonalProjection"/>
+    <addaction name="actionLockRotationAxis"/>
+    <addaction name="action3DView"/>
+    <addaction name="actionAnimation"/>
+    <addaction name="menuAngle_view"/>
+    <addaction name="actionSaveViewportAsObject"/>
+    <addaction name="actionConsole"/>
+    <addaction name="actionZoomToBox"/>
+    <addaction name="actionZoomAndCenter"/>
+    <addaction name="actionGlobalZoom"/>
+    <addaction name="actionResetGUIElementsPos"/>
+    <addaction name="actionScreenShot"/>
+    <addaction name="actionToggleOrientationMarker"/>
+    <addaction name="actionAutoPickPivot"/>
+    <addaction name="actionShowPivot"/>
+    <addaction name="actionResetPivot"/>
+    <addaction name="menuActiveScalarField"/>
+    <addaction name="menuToolbars"/>
+    <widget class="QMenu" name="menuLayout">
+     <property name="title">
+      <string>Layout</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/svg/pqSplitHorizontal.svg</normaloff>:/Resources/images/svg/pqSplitHorizontal.svg</iconset>
+     </property>
+     <addaction name="actionSaveCustomLayout"/>
+     <addaction name="actionRestoreDefaultLayout"/>
+     <addaction name="actionRestoreCustomLayout"/>
+     <addaction name="separator"/>
+     <addaction name="actionRestoreWindowOnStartup"/>
+    </widget>
+    <addaction name="menuLayout"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <widget class="QMenu" name="menuFilters">
+     <property name="title">
+      <string>Filters</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/filter.png</normaloff>:/Resources/images/filter.png</iconset>
+     </property>
+     <addaction name="actionClipFilter"/>
+     <addaction name="actionSliceFilter"/>
+     <addaction name="actionProbeFilter"/>
+     <addaction name="actionSmoothFilter"/>
+     <addaction name="actionDecimateFilter"/>
+     <addaction name="actionThresholdFilter"/>
+     <addaction name="actionIsoSurfaceFilter"/>
+     <addaction name="actionStreamlineFilter"/>
+     <addaction name="actionGlyphFilter"/>
+    </widget>
+    <widget class="QMenu" name="menuMeasurements">
+     <property name="title">
+      <string>Measurements</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/svg/pqRuler.svg</normaloff>:/Resources/images/svg/pqRuler.svg</iconset>
+     </property>
+     <addaction name="actionDistanceWidget"/>
+     <addaction name="actionProtractorWidget"/>
+     <addaction name="actionContourWidget"/>
+    </widget>
+    <widget class="QMenu" name="menuSandBox">
+     <property name="title">
+      <string>Sand box (research)</string>
+     </property>
+     <addaction name="actionComputeKdTree"/>
+     <addaction name="separator"/>
+     <addaction name="actionComputeBestFitBB"/>
+     <addaction name="actionDistanceToBestFitQuadric3D"/>
+     <addaction name="actionDistanceMap"/>
+     <addaction name="separator"/>
+     <addaction name="actionAlign"/>
+     <addaction name="separator"/>
+     <addaction name="actionSNETest"/>
+     <addaction name="actionCNETest"/>
+     <addaction name="separator"/>
+     <addaction name="actionFindBiggestInnerRectangle"/>
+     <addaction name="separator"/>
+     <addaction name="actionCreateCloudFromEntCenters"/>
+     <addaction name="actionComputeBestICPRmsMatrix"/>
+     <addaction name="actionEnableVisualDebugTraces"/>
+    </widget>
+    <widget class="QMenu" name="menuAnnotations">
+     <property name="title">
+      <string>Annotations</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/annotations.png</normaloff>:/Resources/images/annotations.png</iconset>
+     </property>
+     <addaction name="actionSemanticAnnotation"/>
+     <addaction name="actionBoxAnnotation"/>
+    </widget>
+    <widget class="QMenu" name="menuDistances">
+     <property name="title">
+      <string>Distances</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/smallPointDistance.png</normaloff>:/Resources/images/smallPointDistance.png</iconset>
+     </property>
+     <addaction name="actionCloudCloudDist"/>
+     <addaction name="actionCloudMeshDist"/>
+     <addaction name="actionCloudPrimitiveDist"/>
+     <addaction name="actionCPS"/>
+    </widget>
+    <widget class="QMenu" name="menuFit">
+     <property name="title">
+      <string>Fit</string>
+     </property>
+     <addaction name="actionFitPlane"/>
+     <addaction name="actionFitSphere"/>
+     <addaction name="actionFitCircle"/>
+     <addaction name="actionFitFacet"/>
+     <addaction name="actionFitQuadric"/>
+    </widget>
+    <widget class="QMenu" name="menuBatchExport">
+     <property name="title">
+      <string>Batch export</string>
+     </property>
+     <addaction name="actionExportCloudInfo"/>
+     <addaction name="actionExportPlaneInfo"/>
+    </widget>
+    <widget class="QMenu" name="menuRegistration">
+     <property name="title">
+      <string>Registration</string>
+     </property>
+     <addaction name="actionMatchBBCenters"/>
+     <addaction name="actionMatchScales"/>
+     <addaction name="actionPointPairsAlign"/>
+     <addaction name="actionRegister"/>
+     <addaction name="actionBBCenterToOrigin"/>
+     <addaction name="actionBBMinCornerToOrigin"/>
+     <addaction name="actionBBMaxCornerToOrigin"/>
+    </widget>
+    <widget class="QMenu" name="menuRecognition">
+     <property name="title">
+      <string>Recognition</string>
+     </property>
+     <addaction name="actionSemanticSegmentation"/>
+    </widget>
+    <widget class="QMenu" name="menuSegmentation">
+     <property name="title">
+      <string>Segmentation</string>
+     </property>
+     <addaction name="actionDBScanCluster"/>
+     <addaction name="actionPlaneSegmentation"/>
+    </widget>
+    <addaction name="menuFilters"/>
+    <addaction name="menuMeasurements"/>
+    <addaction name="menuDistances"/>
+    <addaction name="menuAnnotations"/>
+    <addaction name="menuRecognition"/>
+    <addaction name="menuSegmentation"/>
+    <addaction name="menuRegistration"/>
+    <addaction name="menuFit"/>
+    <addaction name="menuBatchExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionLabelConnectedComponents"/>
+    <addaction name="actionUnroll"/>
+    <addaction name="actionComputeGeometricFeature"/>
+    <addaction name="separator"/>
+    <addaction name="actionKMeans"/>
+    <addaction name="actionFrontPropagation"/>
+    <addaction name="separator"/>
+    <addaction name="actionPointPicking"/>
+    <addaction name="actionPointListPicking"/>
+    <addaction name="actionTracePolyline"/>
+    <addaction name="menuSandBox"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <widget class="QMenu" name="menuColor">
+     <property name="toolTip">
+      <string>Color Edit Menu</string>
+     </property>
+     <property name="statusTip">
+      <string>Color Edit Menu</string>
+     </property>
+     <property name="title">
+      <string>Color</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvColorMenu.png</normaloff>:/Resources/images/ecvColorMenu.png</iconset>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
+     </property>
+     <addaction name="actionSetUniqueColor"/>
+     <addaction name="actionColorFromScalarField"/>
+     <addaction name="actionColorize"/>
+     <addaction name="actionChangeColorLevels"/>
+     <addaction name="actionSetColorGradient"/>
+     <addaction name="actionRGBToGreyScale"/>
+     <addaction name="actionRGBGaussianFilter"/>
+     <addaction name="actionRGBBilateralFilter"/>
+     <addaction name="actionRGBMeanFilter"/>
+     <addaction name="actionRGBMedianFilter"/>
+     <addaction name="actionScalarFieldFromColor"/>
+     <addaction name="actionInterpolateColors"/>
+     <addaction name="actionEnhanceRGBWithIntensities"/>
+     <addaction name="actionClearColor"/>
+    </widget>
+    <widget class="QMenu" name="menuScalarFields">
+     <property name="title">
+      <string>Scalar fields</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/typeSF.png</normaloff>:/Resources/images/typeSF.png</iconset>
+     </property>
+     <addaction name="actionShowHistogram"/>
+     <addaction name="actionComputeStatParams"/>
+     <addaction name="actionOpenColorScalesManager"/>
+     <addaction name="separator"/>
+     <addaction name="actionSFGradient"/>
+     <addaction name="actionGaussianFilter"/>
+     <addaction name="actionBilateralFilter"/>
+     <addaction name="actionFilterByLabel"/>
+     <addaction name="actionFilterByValue"/>
+     <addaction name="actionConvertToRGB"/>
+     <addaction name="actionConvertToRandomRGB"/>
+     <addaction name="actionRenameSF"/>
+     <addaction name="separator"/>
+     <addaction name="actionAddConstantSF"/>
+     <addaction name="actionImportSFFromFile"/>
+     <addaction name="actionAddIdField"/>
+     <addaction name="actionExportCoordToSF"/>
+     <addaction name="actionSetSFAsCoord"/>
+     <addaction name="actionInterpolateSFs"/>
+     <addaction name="actionScalarFieldArithmetic"/>
+     <addaction name="separator"/>
+     <addaction name="actionDeleteScalarField"/>
+     <addaction name="actionDeleteAllSF"/>
+    </widget>
+    <widget class="QMenu" name="menuOctree">
+     <property name="title">
+      <string>Octree</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/octree.png</normaloff>:/Resources/images/octree.png</iconset>
+     </property>
+     <addaction name="actionComputeOctree"/>
+     <addaction name="separator"/>
+     <addaction name="actionResampleWithOctree"/>
+    </widget>
+    <widget class="QMenu" name="menuNormals">
+     <property name="title">
+      <string>Normals</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/pcl/normal_estimation.png</normaloff>:/Resources/images/pcl/normal_estimation.png</iconset>
+     </property>
+     <widget class="QMenu" name="menuOrient_normals">
+      <property name="title">
+       <string>Orient normals</string>
+      </property>
+      <addaction name="actionOrientNormalsMST"/>
+      <addaction name="actionOrientNormalsFM"/>
+     </widget>
+     <widget class="QMenu" name="menuConvert_to">
+      <property name="title">
+       <string>Convert to</string>
+      </property>
+      <addaction name="actionConvertNormalToHSV"/>
+      <addaction name="actionConvertNormalToDipDir"/>
+     </widget>
+     <addaction name="actionComputeNormals"/>
+     <addaction name="actionInvertNormals"/>
+     <addaction name="menuOrient_normals"/>
+     <addaction name="menuConvert_to"/>
+     <addaction name="actionExportNormalToSF"/>
+     <addaction name="separator"/>
+     <addaction name="actionClearNormals"/>
+    </widget>
+    <widget class="QMenu" name="menuMesh">
+     <property name="title">
+      <string>Mesh</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/mesh4.png</normaloff>:/Resources/images/mesh4.png</iconset>
+     </property>
+     <widget class="QMenu" name="menuMeshScalarField">
+      <property name="title">
+       <string>Scalar Field</string>
+      </property>
+      <addaction name="actionSmoothMeshSF"/>
+      <addaction name="actionEnhanceMeshSF"/>
+     </widget>
+     <addaction name="actionMeshScanGrids"/>
+     <addaction name="actionMeshTwoPolylines"/>
+     <addaction name="actionComputeMeshAA"/>
+     <addaction name="actionComputeMeshLS"/>
+     <addaction name="actionConvexHull"/>
+     <addaction name="actionPoissonReconstruction"/>
+     <addaction name="separator"/>
+     <addaction name="actionFlipMeshTriangles"/>
+     <addaction name="actionSamplePointsOnMesh"/>
+     <addaction name="actionSmoothMeshLaplacian"/>
+     <addaction name="actionSubdivideMesh"/>
+     <addaction name="actionConvertTextureToColor"/>
+     <addaction name="separator"/>
+     <addaction name="actionMeasureMeshSurface"/>
+     <addaction name="actionMeasureMeshVolume"/>
+     <addaction name="actionFlagMeshVertices"/>
+     <addaction name="menuMeshScalarField"/>
+    </widget>
+    <widget class="QMenu" name="menuPolyline">
+     <property name="title">
+      <string>Polyline</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
+     </property>
+     <addaction name="actionSamplePointsOnPolyline"/>
+     <addaction name="actionSmoothPolyline"/>
+     <addaction name="actionConvertPolylinesToMesh"/>
+     <addaction name="actionBSplineFittingOnCloud"/>
+    </widget>
+    <widget class="QMenu" name="menuPlane">
+     <property name="title">
+      <string>Plane</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/Plane.png</normaloff>:/Resources/images/Plane.png</iconset>
+     </property>
+     <addaction name="actionCreatePlane"/>
+     <addaction name="actionFitPlaneProxy"/>
+     <addaction name="actionEditPlane"/>
+     <addaction name="actionFlipPlane"/>
+     <addaction name="actionComparePlanes"/>
+    </widget>
+    <widget class="QMenu" name="menuCircle">
+     <property name="title">
+      <string>Circle</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/dbCircle.png</normaloff>:/Resources/images/dbCircle.png</iconset>
+     </property>
+     <addaction name="actionPromoteCircleToCylinder"/>
+    </widget>
+    <widget class="QMenu" name="menuClean">
+     <property name="title">
+      <string>Clean</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/clean_72px_27328.png</normaloff>:/Resources/images/clean_72px_27328.png</iconset>
+     </property>
+     <addaction name="actionSORFilter"/>
+     <addaction name="actionNoiseFilter"/>
+     <addaction name="actionVoxelSampling"/>
+    </widget>
+    <widget class="QMenu" name="menuSensors">
+     <property name="title">
+      <string>Sensors</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/integrated_sensor.png</normaloff>:/Resources/images/integrated_sensor.png</iconset>
+     </property>
+     <widget class="QMenu" name="menuTLS_GBL">
+      <property name="toolTip">
+       <string>Terrestrial Laser Sensor = Ground Based Lidar</string>
+      </property>
+      <property name="title">
+       <string>TLS/GBL</string>
+      </property>
+      <property name="icon">
+       <iconset resource="../MainWindow.qrc">
+        <normaloff>:/Resources/images/dbGBLSensorSymbol.png</normaloff>:/Resources/images/dbGBLSensorSymbol.png</iconset>
+      </property>
+      <addaction name="actionCreateGBLSensor"/>
+      <addaction name="separator"/>
+      <addaction name="actionShowDepthBuffer"/>
+      <addaction name="actionExportDepthBuffer"/>
+      <addaction name="actionComputePointsVisibility"/>
+     </widget>
+     <widget class="QMenu" name="menuCamera">
+      <property name="title">
+       <string>Camera</string>
+      </property>
+      <property name="icon">
+       <iconset resource="../MainWindow.qrc">
+        <normaloff>:/Resources/images/svg/pqCamera.png</normaloff>:/Resources/images/svg/pqCamera.png</iconset>
+      </property>
+      <addaction name="actionCreateCameraSensor"/>
+      <addaction name="separator"/>
+      <addaction name="actionProjectUncertainty"/>
+      <addaction name="actionCheckPointsInsideFrustum"/>
+     </widget>
+     <addaction name="actionModifySensor"/>
+     <addaction name="separator"/>
+     <addaction name="menuTLS_GBL"/>
+     <addaction name="menuCamera"/>
+     <addaction name="actionViewFromSensor"/>
+     <addaction name="actionComputeDistancesFromSensor"/>
+     <addaction name="actionComputeScatteringAngles"/>
+    </widget>
+    <widget class="QMenu" name="menuWaveform">
+     <property name="title">
+      <string>Waveform</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/Wavefrom.png</normaloff>:/Resources/images/Wavefrom.png</iconset>
+     </property>
+     <addaction name="actionShowWaveDialog"/>
+     <addaction name="actionCompressFWFData"/>
+    </widget>
+    <widget class="QMenu" name="menuCloud">
+     <property name="title">
+      <string>Cloud</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/dbCloudSymbol.png</normaloff>:/Resources/images/dbCloudSymbol.png</iconset>
+     </property>
+     <addaction name="actionCreateSinglePointCloud"/>
+     <addaction name="actionPasteCloudFromClipboard"/>
+    </widget>
+    <addaction name="menuClean"/>
+    <addaction name="menuColor"/>
+    <addaction name="menuNormals"/>
+    <addaction name="menuOctree"/>
+    <addaction name="menuCloud"/>
+    <addaction name="menuMesh"/>
+    <addaction name="menuPolyline"/>
+    <addaction name="menuPlane"/>
+    <addaction name="menuCircle"/>
+    <addaction name="menuScalarFields"/>
+    <addaction name="menuSensors"/>
+    <addaction name="menuWaveform"/>
+    <addaction name="separator"/>
+    <addaction name="actionSegment"/>
+    <addaction name="actionClone"/>
+    <addaction name="actionMerge"/>
+    <addaction name="actionSubsample"/>
+    <addaction name="actionDelete"/>
+    <addaction name="separator"/>
+    <addaction name="actionApplyScale"/>
+    <addaction name="actionTranslateRotate"/>
+    <addaction name="actionApplyTransformation"/>
+    <addaction name="separator"/>
+    <addaction name="actionRemoveDuplicatePoints"/>
+    <addaction name="actionEditGlobalShiftAndScale"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuDisplay"/>
+   <addaction name="menuOption"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="mouseTracking">
+    <bool>true</bool>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QDockWidget" name="DockableDBTree">
+   <property name="minimumSize">
+    <size>
+     <width>146</width>
+     <height>175</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="windowTitle">
+    <string>DB Tree</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_5">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="ccCustomQTreeView" name="dbTreeView">
+       <property name="styleSheet">
+        <string notr="true">QTreeView::branch:has-siblings:!adjoins-item {
+    border-image: url(:/Resources/images/QTreeView/vline.png) 0;
+}
+
+QTreeView::branch:has-siblings:adjoins-item {
+    border-image: url(:/Resources/images/QTreeView/branch-more.png) 0;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+    border-image: url(:/Resources/images/QTreeView/branch-end.png) 0;
+}
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image: url(:/Resources/images/QTreeView/branch-closed.png);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings  {
+        border-image: none;
+        image: url(:/Resources/images/QTreeView/branch-open.png);
+}</string>
+       </property>
+       <property name="dragEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="dragDropMode">
+        <enum>QAbstractItemView::InternalMove</enum>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::ExtendedSelection</enum>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
+       </property>
+       <property name="expandsOnDoubleClick">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="propertyDock">
+   <property name="minimumSize">
+    <size>
+     <width>109</width>
+     <height>142</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="windowTitle">
+    <string>Properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6">
+    <layout class="QVBoxLayout" name="verticalLayout_4">
+     <item>
+      <widget class="QTreeView" name="propertiesTreeView">
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="showDropIndicator" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::NoSelection</enum>
+       </property>
+       <property name="rootIsDecorated">
+        <bool>false</bool>
+       </property>
+       <property name="itemsExpandable">
+        <bool>false</bool>
+       </property>
+       <property name="allColumnsShowFocus">
+        <bool>true</bool>
+       </property>
+       <property name="expandsOnDoubleClick">
+        <bool>false</bool>
+       </property>
+       <attribute name="headerDefaultSectionSize">
+        <number>200</number>
+       </attribute>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="consoleDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Ignored" vsizetype="Maximum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>95</width>
+     <height>128</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="windowTitle">
+    <string>Console</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_7">
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <widget class="ecvCustomQListWidget" name="consoleWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>80</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <property name="windowTitle">
+    <string>Main tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Main tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionSaveProject"/>
+   <addaction name="separator"/>
+   <addaction name="actionDelete"/>
+   <addaction name="actionPointPicking"/>
+   <addaction name="actionPointListPicking"/>
+   <addaction name="actionTracePolyline"/>
+   <addaction name="separator"/>
+   <addaction name="actionPrimitiveFactory"/>
+   <addaction name="actionClone"/>
+   <addaction name="actionMerge"/>
+   <addaction name="actionMatchScales"/>
+   <addaction name="actionPointPairsAlign"/>
+   <addaction name="actionRegister"/>
+   <addaction name="actionSubsample"/>
+   <addaction name="actionSamplePointsOnMesh"/>
+   <addaction name="separator"/>
+   <addaction name="actionCloudCloudDist"/>
+   <addaction name="actionCloudMeshDist"/>
+   <addaction name="actionCloudPrimitiveDist"/>
+   <addaction name="separator"/>
+   <addaction name="actionSegment"/>
+   <addaction name="actionTranslateRotate"/>
+   <addaction name="actionLabelConnectedComponents"/>
+  </widget>
+  <widget class="QToolBar" name="SFToolBar">
+   <property name="windowTitle">
+    <string>Scalar field tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Scalar field tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionShowHistogram"/>
+   <addaction name="actionComputeStatParams"/>
+   <addaction name="actionSFGradient"/>
+   <addaction name="actionDeleteScalarField"/>
+   <addaction name="actionAddConstantSF"/>
+   <addaction name="actionScalarFieldArithmetic"/>
+   <addaction name="actionOpenColorScalesManager"/>
+  </widget>
+  <widget class="QToolBar" name="FilterToolBar">
+   <property name="windowTitle">
+    <string>Filter Tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Filter Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionClipFilter"/>
+   <addaction name="actionSliceFilter"/>
+   <addaction name="actionThresholdFilter"/>
+   <addaction name="actionIsoSurfaceFilter"/>
+   <addaction name="actionDecimateFilter"/>
+   <addaction name="actionSmoothFilter"/>
+   <addaction name="actionProbeFilter"/>
+   <addaction name="actionGlyphFilter"/>
+   <addaction name="actionStreamlineFilter"/>
+  </widget>
+  <widget class="QToolBar" name="SelectionToolBar">
+   <property name="windowTitle">
+    <string>Selection Tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Selection Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionAddSelection"/>
+   <addaction name="actionSubtractSelection"/>
+   <addaction name="actionToggleSelection"/>
+   <addaction name="actionSelectSurfaceCells"/>
+   <addaction name="actionSelectSurfacePoints"/>
+   <addaction name="actionSelectFrustumCells"/>
+   <addaction name="actionSelectFrustumPoints"/>
+   <addaction name="actionSelectPolygonCells"/>
+   <addaction name="actionSelectPolygonPoints"/>
+   <addaction name="actionSelectBlocks"/>
+   <addaction name="actionSelectFrustumBlocks"/>
+   <addaction name="actionInteractiveSelectCells"/>
+   <addaction name="actionInteractiveSelectPoints"/>
+   <addaction name="actionHoverCells"/>
+   <addaction name="actionHoverPoints"/>
+   <addaction name="actionGrowSelection"/>
+   <addaction name="actionShrinkSelection"/>
+   <addaction name="actionClearSelection"/>
+  </widget>
+  <widget class="QToolBar" name="MeasurementsToolBar">
+   <property name="windowTitle">
+    <string>Measurement Tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Measurement Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDistanceWidget"/>
+   <addaction name="actionProtractorWidget"/>
+   <addaction name="actionContourWidget"/>
+  </widget>
+  <widget class="QToolBar" name="AnnotationToolBar">
+   <property name="windowTitle">
+    <string>Annotation Tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Annotation Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="actionSemanticAnnotation"/>
+   <addaction name="actionBoxAnnotation"/>
+  </widget>
+  <widget class="QToolBar" name="ViewToolBar">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="windowTitle">
+    <string>Viewing tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Viewing tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDisplayOptions"/>
+   <addaction name="actionEditCamera"/>
+   <addaction name="actionScreenShot"/>
+   <addaction name="actionLockRotationAxis"/>
+   <addaction name="action3DView"/>
+   <addaction name="actionToggleOrientationMarker"/>
+   <addaction name="actionToggleCameraOrientationWidget"/>
+   <addaction name="actionShowPivot"/>
+   <addaction name="actionResetPivot"/>
+   <addaction name="actionAutoPickPivot"/>
+   <addaction name="separator"/>
+   <addaction name="actionZoomToBox"/>
+   <addaction name="actionZoomAndCenter"/>
+   <addaction name="actionGlobalZoom"/>
+   <addaction name="separator"/>
+   <addaction name="actionSetViewTop"/>
+   <addaction name="actionSetViewFront"/>
+   <addaction name="actionSetViewLeft"/>
+   <addaction name="actionSetViewBack"/>
+   <addaction name="actionSetViewRight"/>
+   <addaction name="actionSetViewBottom"/>
+   <addaction name="actionSetViewIso1"/>
+   <addaction name="actionSetViewIso2"/>
+  </widget>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/open.png</normaloff>:/Resources/images/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Open</string>
+   </property>
+   <property name="statusTip">
+    <string>Open an exsting file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+   <property name="priority">
+    <enum>QAction::NormalPriority</enum>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="statusTip">
+    <string>Save current entity</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSaveProject">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/saveBinary.png</normaloff>:/Resources/images/saveBinary.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save project</string>
+   </property>
+   <property name="iconText">
+    <string>Save project (BIN)</string>
+   </property>
+   <property name="toolTip">
+    <string>Save all entities in a BIN file</string>
+   </property>
+   <property name="statusTip">
+    <string>Save all entities in a BIN file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionPrimitiveFactory">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/dbMiscGeomSymbol.png</normaloff>:/Resources/images/dbMiscGeomSymbol.png</iconset>
+   </property>
+   <property name="text">
+    <string>Primitive factory</string>
+   </property>
+   <property name="statusTip">
+    <string>generate a cube point cloud</string>
+   </property>
+  </action>
+  <action name="helpAction">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/help.png</normaloff>:/Resources/images/help.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Help</string>
+   </property>
+   <property name="statusTip">
+    <string>show help information</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/about.png</normaloff>:/Resources/images/about.png</iconset>
+   </property>
+   <property name="text">
+    <string>About</string>
+   </property>
+   <property name="statusTip">
+    <string>show some information of the software</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqExitApp.png</normaloff>:/Resources/images/svg/pqExitApp.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Exit</string>
+   </property>
+   <property name="statusTip">
+    <string>Exit Application</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSetBackgroundColor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvBackgroundColor.png</normaloff>:/Resources/images/ecvBackgroundColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set background color</string>
+   </property>
+   <property name="toolTip">
+    <string>Set Background color</string>
+   </property>
+   <property name="statusTip">
+    <string>Set Background color</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewFront">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewYpos.png</normaloff>:/Resources/images/ecvViewYpos.png</iconset>
+   </property>
+   <property name="text">
+    <string>Front View</string>
+   </property>
+   <property name="toolTip">
+    <string>Set front view</string>
+   </property>
+   <property name="statusTip">
+    <string>Set front view</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+5</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewLeft">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewXpos.png</normaloff>:/Resources/images/ecvViewXpos.png</iconset>
+   </property>
+   <property name="text">
+    <string>Left Side View</string>
+   </property>
+   <property name="iconText">
+    <string>Left Side View</string>
+   </property>
+   <property name="toolTip">
+    <string>Set left side view</string>
+   </property>
+   <property name="statusTip">
+    <string>Set left side view</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+4</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewTop">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewZpos.png</normaloff>:/Resources/images/ecvViewZpos.png</iconset>
+   </property>
+   <property name="text">
+    <string>Top view</string>
+   </property>
+   <property name="toolTip">
+    <string>Set top view</string>
+   </property>
+   <property name="statusTip">
+    <string>Set top view</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+8</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionClearAll">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/clear.png</normaloff>:/Resources/images/clear.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear All</string>
+   </property>
+   <property name="statusTip">
+    <string>Clear All</string>
+   </property>
+  </action>
+  <action name="actionPointPicking">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
+   </property>
+   <property name="text">
+    <string>Point picking</string>
+   </property>
+   <property name="toolTip">
+    <string>Point picking (point information, distance between 2 points, angles between 3 points, etc.)</string>
+   </property>
+   <property name="statusTip">
+    <string>Point picking (point information, distance between 2 points, angles between 3 points, etc.)</string>
+   </property>
+  </action>
+  <action name="actionPointListPicking">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvPointListPicking.png</normaloff>:/Resources/images/ecvPointListPicking.png</iconset>
+   </property>
+   <property name="text">
+    <string>Point list picking</string>
+   </property>
+   <property name="statusTip">
+    <string>Pick several points (and export them to ASCII file, a new cloud, etc.)</string>
+   </property>
+  </action>
+  <action name="BlueThemeAction">
+   <property name="text">
+    <string>Blue</string>
+   </property>
+  </action>
+  <action name="LightBlueThemeAction">
+   <property name="text">
+    <string>LightBlue</string>
+   </property>
+  </action>
+  <action name="englishAction">
+   <property name="text">
+    <string>English</string>
+   </property>
+  </action>
+  <action name="chineseAction">
+   <property name="text">
+    <string>Chinese</string>
+   </property>
+  </action>
+  <action name="actionEnableQtWarnings">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/qt.png</normaloff>:/Resources/images/qt.png</iconset>
+   </property>
+   <property name="text">
+    <string>Enable Qt warnings in Console</string>
+   </property>
+   <property name="statusTip">
+    <string>Enable Qt warnings in Console</string>
+   </property>
+  </action>
+  <action name="DarkBlueThemeAction">
+   <property name="text">
+    <string>DarkBlue</string>
+   </property>
+  </action>
+  <action name="BlackThemeAction">
+   <property name="text">
+    <string>Black</string>
+   </property>
+  </action>
+  <action name="LightBlackThemeAction">
+   <property name="text">
+    <string>LightBlack</string>
+   </property>
+  </action>
+  <action name="FlatBlackThemeAction">
+   <property name="text">
+    <string>FlatBlack</string>
+   </property>
+  </action>
+  <action name="DarkBlackThemeAction">
+   <property name="text">
+    <string>DarkBlack</string>
+   </property>
+  </action>
+  <action name="PsBlackThemeAction">
+   <property name="text">
+    <string>PsBlack</string>
+   </property>
+  </action>
+  <action name="SilverThemeAction">
+   <property name="text">
+    <string>Silver</string>
+   </property>
+  </action>
+  <action name="actionFullScreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFullscreen.png</normaloff>:/Resources/images/svg/pqFullscreen.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Full screen</string>
+   </property>
+   <property name="iconText">
+    <string>Full screen</string>
+   </property>
+   <property name="toolTip">
+    <string>Switch to full screen</string>
+   </property>
+   <property name="statusTip">
+    <string>Switch to full screen</string>
+   </property>
+   <property name="shortcut">
+    <string>F9</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionResetGUIElementsPos">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/refresh.png</normaloff>:/Resources/images/refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>reset all GUI element positions</string>
+   </property>
+   <property name="toolTip">
+    <string>reset all GUI element positions (after restart)</string>
+   </property>
+   <property name="statusTip">
+    <string>reset all GUI element positions (after restart)</string>
+   </property>
+  </action>
+  <action name="actionSaveCustomLayout">
+   <property name="text">
+    <string>Save Current Layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Save current layout as custom layout</string>
+   </property>
+   <property name="statusTip">
+    <string>Save current layout as custom layout</string>
+   </property>
+  </action>
+  <action name="actionRestoreDefaultLayout">
+   <property name="text">
+    <string>Restore Default Layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Restore Qt default layout</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore Qt default layout</string>
+   </property>
+  </action>
+  <action name="actionRestoreCustomLayout">
+   <property name="text">
+    <string>Restore Custom Layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Restore previously saved custom layout</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore previously saved custom layout</string>
+   </property>
+  </action>
+  <action name="actionRestoreWindowOnStartup">
+   <property name="text">
+    <string>Restore Default Window on Startup</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="toolTip">
+    <string>Restore window default geometry and state on startup</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore window default geometry and state on startup</string>
+   </property>
+  </action>
+  <action name="actionConsole">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvConsole.png</normaloff>:/Resources/images/ecvConsole.png</iconset>
+   </property>
+   <property name="text">
+    <string>Console</string>
+   </property>
+   <property name="shortcut">
+    <string>F8</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionExclusiveFullScreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/FullScreen.png</normaloff>:/Resources/images/FullScreen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Full screen (3D view)</string>
+   </property>
+   <property name="toolTip">
+    <string>Exclusive full screen (3D view)</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionDelete">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvdelete.png</normaloff>:/Resources/images/ecvdelete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetUniqueColor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvObjectColor.png</normaloff>:/Resources/images/ecvObjectColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set unique color</string>
+   </property>
+   <property name="toolTip">
+    <string>Set a unique color</string>
+   </property>
+   <property name="statusTip">
+    <string>Set a unique color</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionColorize">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/bgcolor.png</normaloff>:/Resources/images/bgcolor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Colorize</string>
+   </property>
+   <property name="toolTip">
+    <string>Colorize entity (lightness values are unchanged)</string>
+   </property>
+   <property name="statusTip">
+    <string>Colorize entity (lightness values are unchanged)</string>
+   </property>
+  </action>
+  <action name="actionChangeColorLevels">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Levels</string>
+   </property>
+  </action>
+  <action name="actionSetColorGradient">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/others/pqRamp24.png</normaloff>:/Resources/images/others/pqRamp24.png</iconset>
+   </property>
+   <property name="text">
+    <string>Height Ramp</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply a color ramp along X, Y or Z</string>
+   </property>
+   <property name="statusTip">
+    <string>Apply a color ramp along X, Y or Z</string>
+   </property>
+  </action>
+  <action name="actionRGBToGreyScale">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/typeGrayColor.png</normaloff>:/Resources/images/typeGrayColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Convert to grey scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Convert RGB colors to grey scale colors</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert RGB colors to grey scale colors</string>
+   </property>
+  </action>
+  <action name="actionRGBGaussianFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvGaussianFilter.png</normaloff>:/Resources/images/ecvGaussianFilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Gaussian filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute gaussian filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute gaussian filter</string>
+   </property>
+  </action>
+  <action name="actionRGBBilateralFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvBilateralFilter.png</normaloff>:/Resources/images/ecvBilateralFilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bilateral filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute bilateral filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute bilateral filter</string>
+   </property>
+  </action>
+  <action name="actionRGBMeanFilter">
+   <property name="text">
+    <string>Mean filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute mean filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute mean filter</string>
+   </property>
+  </action>
+  <action name="actionRGBMedianFilter">
+   <property name="text">
+    <string>Median filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute median filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute median filter</string>
+   </property>
+  </action>
+  <action name="actionScalarFieldFromColor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/typeSF.png</normaloff>:/Resources/images/typeSF.png</iconset>
+   </property>
+   <property name="text">
+    <string>Convert to Scalar field</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert to Scalar field</string>
+   </property>
+  </action>
+  <action name="actionInterpolateColors">
+   <property name="text">
+    <string>Interpolate from another entity</string>
+   </property>
+   <property name="toolTip">
+    <string>Interpolate colors from another entity (cloud or mesh) - color is taken from the nearest neighbor</string>
+   </property>
+   <property name="statusTip">
+    <string>Interpolate colors from another entity (cloud or mesh) - color is taken from the nearest neighbor</string>
+   </property>
+  </action>
+  <action name="actionEnhanceRGBWithIntensities">
+   <property name="text">
+    <string>Enhance with intensities</string>
+   </property>
+   <property name="statusTip">
+    <string>Enhance with intensities</string>
+   </property>
+  </action>
+  <action name="actionClearColor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvClearColor.png</normaloff>:/Resources/images/ecvClearColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear colors</string>
+   </property>
+   <property name="iconText">
+    <string>Clear colors</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear colors</string>
+   </property>
+   <property name="statusTip">
+    <string>Clear colors</string>
+   </property>
+  </action>
+  <action name="actionZoomToBox">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqZoomToBox@2x.png</normaloff>:/Resources/images/pqZoomToBox@2x.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom to Box</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom to Box - Draw a rubber band to zoom into a region (Alt+Z)</string>
+   </property>
+   <property name="statusTip">
+    <string>Zoom to Box - Draw a rubber band to zoom into a region</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Z</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionZoomAndCenter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqZoomToData.svg</normaloff>:/Resources/images/svg/pqZoomToData.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom &amp; Center</string>
+   </property>
+   <property name="iconText">
+    <string>ZoomCenter</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom and center on selected entities (Z)</string>
+   </property>
+   <property name="statusTip">
+    <string>Zoom and center on selected entities (Z)</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+   <property name="shortcut">
+    <string>Z</string>
+   </property>
+  </action>
+  <action name="actionGlobalZoom">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/zoom.png</normaloff>:/Resources/images/zoom.png</iconset>
+   </property>
+   <property name="text">
+    <string>Global Zoom</string>
+   </property>
+   <property name="statusTip">
+    <string>Global Zoom</string>
+   </property>
+  </action>
+  <action name="actionAddSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectPlus.svg</normaloff>:/Resources/images/svg/pqSelectPlus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Add Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Add selection (Ctrl) - Add new selection to existing selection</string>
+   </property>
+   <property name="statusTip">
+    <string>Add selection modifier</string>
+   </property>
+  </action>
+  <action name="actionSubtractSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectMinus.svg</normaloff>:/Resources/images/svg/pqSelectMinus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Subtract Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Subtract selection (Shift) - Remove new selection from existing selection</string>
+   </property>
+   <property name="statusTip">
+    <string>Subtract selection modifier</string>
+   </property>
+  </action>
+  <action name="actionToggleSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectToggle.svg</normaloff>:/Resources/images/svg/pqSelectToggle.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle selection (Ctrl+Shift) - Toggle selection state of new items</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle selection modifier</string>
+   </property>
+  </action>
+  <action name="actionSelectSurfaceCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionCell.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Cells On</string>
+   </property>
+   <property name="toolTip">
+    <string>Select cells on surface (Alt+C)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select cells on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectSurfacePoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionPoint.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionPoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Points On</string>
+   </property>
+   <property name="toolTip">
+    <string>Select points on surface (Alt+D)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select points on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+D</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectFrustumCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFrustumSelectionCell.svg</normaloff>:/Resources/images/svg/pqFrustumSelectionCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Cells Through</string>
+   </property>
+   <property name="toolTip">
+    <string>Select cells through (in frustum) (Alt+F)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select cells through (in frustum)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectFrustumPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFrustumSelectionPoint.svg</normaloff>:/Resources/images/svg/pqFrustumSelectionPoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Points Through</string>
+   </property>
+   <property name="toolTip">
+    <string>Select points through (in frustum) (Alt+G)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select points through (in frustum)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+G</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectPolygonCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPolygonSelectSurfaceCell.svg</normaloff>:/Resources/images/svg/pqPolygonSelectSurfaceCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Cells With Polygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Select cells with polygon (Ctrl+Alt+P)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select cells with polygon</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+P</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectPolygonPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPolygonSelectSurfacePoint.svg</normaloff>:/Resources/images/svg/pqPolygonSelectSurfacePoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Points With Polygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Select points with polygon (Alt+P)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select points with polygon</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+P</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectBlocks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSelectBlock.svg</normaloff>:/Resources/images/svg/pqSelectBlock.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Block</string>
+   </property>
+   <property name="toolTip">
+    <string>Select block on surface (Alt+B)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select block on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+B</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSelectFrustumBlocks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFrustumSelectionBlock.svg</normaloff>:/Resources/images/svg/pqFrustumSelectionBlock.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Select Blocks Through</string>
+   </property>
+   <property name="toolTip">
+    <string>Select blocks through (in frustum) (Alt+N)</string>
+   </property>
+   <property name="statusTip">
+    <string>Select blocks through (in frustum)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+N</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionInteractiveSelectCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Interactive Select Cells On</string>
+   </property>
+   <property name="toolTip">
+    <string>Interactive select cells on surface(Ctrl+Alt+I)</string>
+   </property>
+   <property name="statusTip">
+    <string>Interactive select cells on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+I</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionInteractiveSelectPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg</normaloff>:/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Interactive Select Points On</string>
+   </property>
+   <property name="toolTip">
+    <string>Interactive select points on surface(Alt+I)</string>
+   </property>
+   <property name="statusTip">
+    <string>Interactive select points on surface</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+I</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionGrowSelection">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPlus.svg</normaloff>:/Resources/images/svg/pqPlus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Grow Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Grow selection - Expand selection by one layer of neighbors (Alt++)</string>
+   </property>
+   <property name="statusTip">
+    <string>Grow selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt++</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionShrinkSelection">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqMinus.svg</normaloff>:/Resources/images/svg/pqMinus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Shrink Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Shrink selection - Contract selection by removing boundary items (Alt+-)</string>
+   </property>
+   <property name="statusTip">
+    <string>Shrink selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+-</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionClearSelection">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqClearSort.svg</normaloff>:/Resources/images/svg/pqClearSort.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Clear Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear selection - Remove all selected items (Esc)</string>
+   </property>
+   <property name="statusTip">
+    <string>Clear selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionHoverCells">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceHoveringCell.svg</normaloff>:/Resources/images/svg/pqSurfaceHoveringCell.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Hover Cells On</string>
+   </property>
+   <property name="toolTip">
+    <string>Hover Cells On - Show cell information on mouse hover. Use Ctrl-C/Cmd-C to copy content to clipboard.</string>
+   </property>
+   <property name="statusTip">
+    <string>Tooltip selection for cells</string>
+   </property>
+  </action>
+  <action name="actionHoverPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSurfaceHoveringPoint.svg</normaloff>:/Resources/images/svg/pqSurfaceHoveringPoint.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Hover Points On</string>
+   </property>
+   <property name="toolTip">
+    <string>Hover Points On - Show point information on mouse hover. Use Ctrl-C/Cmd-C to copy content to clipboard.</string>
+   </property>
+   <property name="statusTip">
+    <string>Tooltip selection for points</string>
+   </property>
+  </action>
+  <action name="actionDisplayOptions">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvDisplaySettings.png</normaloff>:/Resources/images/ecvDisplaySettings.png</iconset>
+   </property>
+   <property name="text">
+    <string>Display settings</string>
+   </property>
+   <property name="statusTip">
+    <string>Display settings</string>
+   </property>
+   <property name="shortcut">
+    <string>F12</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewBack">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewYneg.png</normaloff>:/Resources/images/ecvViewYneg.png</iconset>
+   </property>
+   <property name="text">
+    <string>Back View</string>
+   </property>
+   <property name="toolTip">
+    <string>Set back view</string>
+   </property>
+   <property name="statusTip">
+    <string>Set back view</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+0</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewRight">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewXneg.png</normaloff>:/Resources/images/ecvViewXneg.png</iconset>
+   </property>
+   <property name="text">
+    <string>Right Side View</string>
+   </property>
+   <property name="toolTip">
+    <string>Set right side view</string>
+   </property>
+   <property name="statusTip">
+    <string>Set right side view</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+6</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewBottom">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewZneg.png</normaloff>:/Resources/images/ecvViewZneg.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bottom View</string>
+   </property>
+   <property name="toolTip">
+    <string>Set bottom view</string>
+   </property>
+   <property name="statusTip">
+    <string>Set bottom view</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+2</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewIso1">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewIso1.png</normaloff>:/Resources/images/ecvViewIso1.png</iconset>
+   </property>
+   <property name="text">
+    <string>Iso 1</string>
+   </property>
+   <property name="toolTip">
+    <string>Set view to 'front' isometric</string>
+   </property>
+   <property name="statusTip">
+    <string>Set view to 'front' isometric</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+7</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSetViewIso2">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvViewIso2.png</normaloff>:/Resources/images/ecvViewIso2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Iso 2</string>
+   </property>
+   <property name="toolTip">
+    <string>Set view to 'back' isometric</string>
+   </property>
+   <property name="statusTip">
+    <string>Set view to 'back' isometric</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+9</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionClone">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvClone.png</normaloff>:/Resources/images/ecvClone.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clone</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clone the selected entities&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;(yes Claire ... these are Nyan sheep!)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clone the selected entities&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;(yes Claire ... these are Nyan sheep!)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionMerge">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvMerge.png</normaloff>:/Resources/images/ecvMerge.png</iconset>
+   </property>
+   <property name="text">
+    <string>Merge</string>
+   </property>
+   <property name="statusTip">
+    <string>Merge multiple clouds</string>
+   </property>
+   <property name="whatsThis">
+    <string>Merge multiple clouds</string>
+   </property>
+  </action>
+  <action name="actionClipFilter">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqClip.png</normaloff>:/Resources/images/svg/pqClip.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clip</string>
+   </property>
+   <property name="toolTip">
+    <string>Clip Section</string>
+   </property>
+   <property name="statusTip">
+    <string>Clip Section</string>
+   </property>
+  </action>
+  <action name="actionSegment">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvSegment.png</normaloff>:/Resources/images/ecvSegment.png</iconset>
+   </property>
+   <property name="text">
+    <string>Segment</string>
+   </property>
+   <property name="statusTip">
+    <string>Segment</string>
+   </property>
+  </action>
+  <action name="actionComputeNormals">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/typeNormal.png</normaloff>:/Resources/images/typeNormal.png</iconset>
+   </property>
+   <property name="text">
+    <string>Compute</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute unsigned normals (least squares approx.)</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute unsigned normals (least squares approx.)</string>
+   </property>
+  </action>
+  <action name="actionClearNormals">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvdelete.png</normaloff>:/Resources/images/ecvdelete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete normals</string>
+   </property>
+   <property name="statusTip">
+    <string>Delete normals</string>
+   </property>
+  </action>
+  <action name="actionInvertNormals">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+   <property name="toolTip">
+    <string>Invert normals</string>
+   </property>
+   <property name="statusTip">
+    <string>Invert normals</string>
+   </property>
+  </action>
+  <action name="actionDisplayMainTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Main</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide main toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide main toolbar</string>
+   </property>
+  </action>
+  <action name="actionDisplayScalarFieldsTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Scalar fields</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide scalar fields toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide scalar fields toolbar</string>
+   </property>
+  </action>
+  <action name="actionDisplayViewTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>View</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide view toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide view toolbar</string>
+   </property>
+  </action>
+  <action name="actionDisplaySelectionTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide selection toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide selection toolbar</string>
+   </property>
+  </action>
+  <action name="actionAboutPlugins">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/Components_72px.png</normaloff>:/Resources/images/Components_72px.png</iconset>
+   </property>
+   <property name="text">
+    <string>About Plugins...</string>
+   </property>
+   <property name="statusTip">
+    <string>About Plugins</string>
+   </property>
+  </action>
+  <action name="actionOpenColorScalesManager">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/typeSF.png</normaloff>:/Resources/images/typeSF.png</iconset>
+   </property>
+   <property name="text">
+    <string>Color Scales Manager</string>
+   </property>
+  </action>
+  <action name="actionDistanceWidget">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqRuler.svg</normaloff>:/Resources/images/svg/pqRuler.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Distance Widget</string>
+   </property>
+   <property name="toolTip">
+    <string>Distance Measurement Tool</string>
+   </property>
+   <property name="statusTip">
+    <string>Distance Measurement Tool</string>
+   </property>
+  </action>
+  <action name="actionProtractorWidget">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqProtractor.svg</normaloff>:/Resources/images/svg/pqProtractor.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Protractor Widget</string>
+   </property>
+   <property name="toolTip">
+    <string>Protractor Measurement Tool</string>
+   </property>
+   <property name="statusTip">
+    <string>Protractor Measurement Tool</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionContourWidget">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqContours.png</normaloff>:/Resources/images/pqContours.png</iconset>
+   </property>
+   <property name="text">
+    <string>Contour Widget</string>
+   </property>
+   <property name="toolTip">
+    <string>Contour Measurement Tool</string>
+   </property>
+   <property name="statusTip">
+    <string>Contour Measurement Tool</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionTracePolyline">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvTracePolyline.png</normaloff>:/Resources/images/ecvTracePolyline.png</iconset>
+   </property>
+   <property name="text">
+    <string>Trace Polyline</string>
+   </property>
+   <property name="toolTip">
+    <string>Trace a polyline by point picking</string>
+   </property>
+   <property name="statusTip">
+    <string>Trace a polyline by point picking</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+P</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionComputeOctree">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/dbOctreeSymbol.png</normaloff>:/Resources/images/dbOctreeSymbol.png</iconset>
+   </property>
+   <property name="text">
+    <string>Compute</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute octree</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute octree</string>
+   </property>
+  </action>
+  <action name="actionResampleWithOctree">
+   <property name="text">
+    <string>Resample</string>
+   </property>
+   <property name="toolTip">
+    <string>Resample entity with octree</string>
+   </property>
+   <property name="statusTip">
+    <string>Resample entity with octree</string>
+   </property>
+  </action>
+  <action name="actionOrientNormalsMST">
+   <property name="text">
+    <string>With Minimum Spanning Tree</string>
+   </property>
+   <property name="statusTip">
+    <string>With Minimum Spanning Tree</string>
+   </property>
+  </action>
+  <action name="actionOrientNormalsFM">
+   <property name="text">
+    <string>With Fast Marching</string>
+   </property>
+   <property name="statusTip">
+    <string>With Fast Marching</string>
+   </property>
+  </action>
+  <action name="actionConvertNormalToHSV">
+   <property name="text">
+    <string>HSV colors</string>
+   </property>
+   <property name="statusTip">
+    <string>HSV colors</string>
+   </property>
+  </action>
+  <action name="actionConvertNormalToDipDir">
+   <property name="text">
+    <string>Dip/Dip direction SFs</string>
+   </property>
+   <property name="statusTip">
+    <string>Dip/Dip direction SFs</string>
+   </property>
+  </action>
+  <action name="actionSurface">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/surface.png</normaloff>:/Resources/images/surface.png</iconset>
+   </property>
+   <property name="text">
+    <string>Surface</string>
+   </property>
+   <property name="toolTip">
+    <string>Surface Rendering</string>
+   </property>
+   <property name="statusTip">
+    <string>Surface Rendering</string>
+   </property>
+  </action>
+  <action name="actionComputeMeshAA">
+   <property name="text">
+    <string>Delaunay 2.5D (XY plane)</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute &quot;2D1/2&quot; mesh by projecting points on the XY plane</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute &quot;2D1/2&quot; mesh by projecting points on the XY plane</string>
+   </property>
+  </action>
+  <action name="actionComputeMeshLS">
+   <property name="text">
+    <string>Delaunay 2.5D (best fitting plane)</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute &quot;2D1/2&quot; mesh by projecting points on the (least squares) best fitting plane</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute &quot;2D1/2&quot; mesh by projecting points on the (least squares) best fitting plane</string>
+   </property>
+  </action>
+  <action name="actionMeshTwoPolylines">
+   <property name="text">
+    <string>Surface between 2 polylines</string>
+   </property>
+   <property name="statusTip">
+    <string>Surface between 2 polylines</string>
+   </property>
+  </action>
+  <action name="actionMeshScanGrids">
+   <property name="text">
+    <string>Mesh scan grids</string>
+   </property>
+   <property name="toolTip">
+    <string>Mesh scan grids (structured point clouds)</string>
+   </property>
+   <property name="statusTip">
+    <string>Mesh scan grids (structured point clouds)</string>
+   </property>
+  </action>
+  <action name="actionConvertTextureToColor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/color.png</normaloff>:/Resources/images/color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Convert texture/material to RGB</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert texture/material to RGB</string>
+   </property>
+  </action>
+  <action name="actionSamplePointsOnMesh">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvSamplePoints.png</normaloff>:/Resources/images/ecvSamplePoints.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sample Points</string>
+   </property>
+   <property name="toolTip">
+    <string>Sample points on a mesh</string>
+   </property>
+   <property name="statusTip">
+    <string>Sample points on a mesh</string>
+   </property>
+  </action>
+  <action name="actionSmoothMeshLaplacian">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/meshSmooth.png</normaloff>:/Resources/images/meshSmooth.png</iconset>
+   </property>
+   <property name="text">
+    <string>Smooth (Laplacian)</string>
+   </property>
+   <property name="statusTip">
+    <string>Smooth (Laplacian)</string>
+   </property>
+  </action>
+  <action name="actionSubdivideMesh">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/subdivide.png</normaloff>:/Resources/images/subdivide.png</iconset>
+   </property>
+   <property name="text">
+    <string>Subdivide</string>
+   </property>
+   <property name="statusTip">
+    <string>Subdivide</string>
+   </property>
+  </action>
+  <action name="actionMeasureMeshSurface">
+   <property name="text">
+    <string>Measure surface</string>
+   </property>
+   <property name="toolTip">
+    <string>Measure mesh surface</string>
+   </property>
+   <property name="statusTip">
+    <string>Measure mesh surface</string>
+   </property>
+  </action>
+  <action name="actionMeasureMeshVolume">
+   <property name="text">
+    <string>Measure volume</string>
+   </property>
+   <property name="statusTip">
+    <string>Measure volume</string>
+   </property>
+  </action>
+  <action name="actionFlagMeshVertices">
+   <property name="text">
+    <string>Flag vertices by type</string>
+   </property>
+   <property name="statusTip">
+    <string>Flag vertices by type: normal (0), border (1), non-manifold (2)</string>
+   </property>
+   <property name="whatsThis">
+    <string>Flag vertices by type: normal (0), border (1), non-manifold (2)</string>
+   </property>
+  </action>
+  <action name="actionSmoothMeshSF">
+   <property name="text">
+    <string>Smooth</string>
+   </property>
+   <property name="toolTip">
+    <string>Smooth mesh scalar field</string>
+   </property>
+   <property name="statusTip">
+    <string>Smooth mesh scalar field</string>
+   </property>
+  </action>
+  <action name="actionEnhanceMeshSF">
+   <property name="text">
+    <string>Enhance</string>
+   </property>
+   <property name="toolTip">
+    <string>Enhance Scalar Field</string>
+   </property>
+   <property name="statusTip">
+    <string>Enhance Scalar Field</string>
+   </property>
+  </action>
+  <action name="actionSamplePointsOnPolyline">
+   <property name="text">
+    <string>Sample points</string>
+   </property>
+   <property name="statusTip">
+    <string>Sample points</string>
+   </property>
+  </action>
+  <action name="actionSmoothPolyline">
+   <property name="text">
+    <string>Smooth</string>
+   </property>
+  </action>
+  <action name="actionCreatePlane">
+   <property name="text">
+    <string>Create</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a plane</string>
+   </property>
+   <property name="statusTip">
+    <string>Create a plane</string>
+   </property>
+  </action>
+  <action name="actionFitPlaneProxy">
+   <property name="text">
+    <string>Fit</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit a plane on a set of point</string>
+   </property>
+   <property name="statusTip">
+    <string>Fit a plane on a set of point</string>
+   </property>
+  </action>
+  <action name="actionEditPlane">
+   <property name="text">
+    <string>Edit</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the plane parameters</string>
+   </property>
+   <property name="statusTip">
+    <string>Edit the plane parameters</string>
+   </property>
+  </action>
+  <action name="actionComputeKdTree">
+   <property name="text">
+    <string>Compute Kd-tree</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute Kd-tree</string>
+   </property>
+  </action>
+  <action name="actionComputeBestFitBB">
+   <property name="text">
+    <string>Bounding box P.C.A. fit</string>
+   </property>
+   <property name="toolTip">
+    <string>Makes BB fit principal components (rotates entity!)</string>
+   </property>
+   <property name="statusTip">
+    <string>Makes BB fit principal components (rotates entity!)</string>
+   </property>
+  </action>
+  <action name="actionDistanceToBestFitQuadric3D">
+   <property name="text">
+    <string>Distance map to best-fit 3D quadric</string>
+   </property>
+   <property name="statusTip">
+    <string>Distance map to best-fit 3D quadric</string>
+   </property>
+  </action>
+  <action name="actionDistanceMap">
+   <property name="text">
+    <string>Distance map</string>
+   </property>
+   <property name="statusTip">
+    <string>Distance map</string>
+   </property>
+  </action>
+  <action name="actionAlign">
+   <property name="text">
+    <string>Auto align clouds</string>
+   </property>
+   <property name="toolTip">
+    <string>Tries to automatically register (roughly) two points clouds</string>
+   </property>
+   <property name="statusTip">
+    <string>Tries to automatically register (roughly) two points clouds</string>
+   </property>
+  </action>
+  <action name="actionSNETest">
+   <property name="text">
+    <string>SNE test</string>
+   </property>
+   <property name="toolTip">
+    <string>Spherical Neighbourhood Extraction test</string>
+   </property>
+   <property name="statusTip">
+    <string>Spherical Neighbourhood Extraction test</string>
+   </property>
+  </action>
+  <action name="actionCNETest">
+   <property name="text">
+    <string>CNE test</string>
+   </property>
+   <property name="iconText">
+    <string>Cylindrical Neighbourhood Extraction test</string>
+   </property>
+   <property name="toolTip">
+    <string>Cylindrical Neighbourhood Extraction test</string>
+   </property>
+   <property name="statusTip">
+    <string>Cylindrical Neighbourhood Extraction test</string>
+   </property>
+  </action>
+  <action name="actionFindBiggestInnerRectangle">
+   <property name="text">
+    <string>Find biggest inner rectangle (2D)</string>
+   </property>
+   <property name="statusTip">
+    <string>Find biggest inner rectangle (2D)</string>
+   </property>
+  </action>
+  <action name="actionCreateCloudFromEntCenters">
+   <property name="text">
+    <string>Create cloud from selected entities centers</string>
+   </property>
+   <property name="statusTip">
+    <string>Create cloud from selected entities centers</string>
+   </property>
+  </action>
+  <action name="actionComputeBestICPRmsMatrix">
+   <property name="text">
+    <string>Compute best registration RMS matrix</string>
+   </property>
+   <property name="toolTip">
+    <string>Computes the best registration between all couples among multiple entities and save the resulting RMS in a matrix (CSV) file</string>
+   </property>
+   <property name="statusTip">
+    <string>Computes the best registration between all couples among multiple entities and save the resulting RMS in a matrix (CSV) file</string>
+   </property>
+  </action>
+  <action name="actionEnableVisualDebugTraces">
+   <property name="text">
+    <string>Enable Visual Debug Traces</string>
+   </property>
+   <property name="toolTip">
+    <string>Enables visual debug traces (active 3D view)</string>
+   </property>
+   <property name="statusTip">
+    <string>Enables visual debug traces (active 3D view)</string>
+   </property>
+  </action>
+  <action name="actionShowHistogram">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvHistogram.png</normaloff>:/Resources/images/ecvHistogram.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show histogram</string>
+   </property>
+   <property name="statusTip">
+    <string>Show histogram</string>
+   </property>
+  </action>
+  <action name="actionComputeStatParams">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvComputeStat.png</normaloff>:/Resources/images/ecvComputeStat.png</iconset>
+   </property>
+   <property name="text">
+    <string>Compute stat. params</string>
+   </property>
+   <property name="toolTip">
+    <string>Fits a statistical model on the active scalar field</string>
+   </property>
+   <property name="statusTip">
+    <string>Fits a statistical model on the active scalar field</string>
+   </property>
+  </action>
+  <action name="actionConvertToRGB">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/color.png</normaloff>:/Resources/images/color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Convert to RGB</string>
+   </property>
+   <property name="toolTip">
+    <string>Convert current scalar field to RGB colors</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert current scalar field to RGB colors</string>
+   </property>
+  </action>
+  <action name="actionConvertToRandomRGB">
+   <property name="text">
+    <string>Convert to random RGB</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert to random RGB</string>
+   </property>
+  </action>
+  <action name="actionRenameSF">
+   <property name="text">
+    <string>RenameSF</string>
+   </property>
+   <property name="statusTip">
+    <string>RenameSF</string>
+   </property>
+  </action>
+  <action name="actionEditGlobalShiftAndScale">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqAdvanced.png</normaloff>:/Resources/images/svg/pqAdvanced.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edit global shift and scale</string>
+   </property>
+   <property name="statusTip">
+    <string>Edit global shift and scale</string>
+   </property>
+  </action>
+  <action name="actionSubsample">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvSampleCloud.png</normaloff>:/Resources/images/ecvSampleCloud.png</iconset>
+   </property>
+   <property name="text">
+    <string>Subsample</string>
+   </property>
+   <property name="toolTip">
+    <string>Subsample a point cloud</string>
+   </property>
+   <property name="statusTip">
+    <string>Subsample a point cloud</string>
+   </property>
+  </action>
+  <action name="actionSFGradient">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvGradient.png</normaloff>:/Resources/images/ecvGradient.png</iconset>
+   </property>
+   <property name="text">
+    <string>Gradient</string>
+   </property>
+   <property name="toolTip">
+    <string>SFGradient</string>
+   </property>
+   <property name="statusTip">
+    <string>SFGradient</string>
+   </property>
+  </action>
+  <action name="actionCompute2HalfDimVolume">
+   <property name="text">
+    <string>Compute 2.5D volume</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute 2.5D volume</string>
+   </property>
+  </action>
+  <action name="actionCloudCloudDist">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvCloudCloudDistance.png</normaloff>:/Resources/images/ecvCloudCloudDistance.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cloud/Cloud Dist.</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute cloud/cloud distance</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute cloud/cloud distance</string>
+   </property>
+  </action>
+  <action name="actionCloudMeshDist">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvCloudMeshDistance.png</normaloff>:/Resources/images/ecvCloudMeshDistance.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cloud/Mesh Dist</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute cloud/mesh distance</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute cloud/mesh distance</string>
+   </property>
+  </action>
+  <action name="actionCPS">
+   <property name="text">
+    <string>Closest Point Set</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute closest point set</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute closest point set</string>
+   </property>
+  </action>
+  <action name="actionLabelConnectedComponents">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvCCExtract.png</normaloff>:/Resources/images/ecvCCExtract.png</iconset>
+   </property>
+   <property name="text">
+    <string>Label Connected Comp.</string>
+   </property>
+   <property name="toolTip">
+    <string>Label connected components</string>
+   </property>
+   <property name="statusTip">
+    <string>Label connected components</string>
+   </property>
+  </action>
+  <action name="actionKMeans">
+   <property name="text">
+    <string>K-Means</string>
+   </property>
+   <property name="toolTip">
+    <string>classify point (K-Means applied on a scalar field)</string>
+   </property>
+   <property name="statusTip">
+    <string>classify point (K-Means applied on a scalar field)</string>
+   </property>
+  </action>
+  <action name="actionFrontPropagation">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Front propagation</string>
+   </property>
+   <property name="toolTip">
+    <string>Classify points by propagating a front on a scalar field</string>
+   </property>
+   <property name="statusTip">
+    <string>Classify points by propagating a front on a scalar field</string>
+   </property>
+  </action>
+  <action name="actionFitPlane">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/Plane.png</normaloff>:/Resources/images/Plane.png</iconset>
+   </property>
+   <property name="text">
+    <string>Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit a plane on a set of point</string>
+   </property>
+   <property name="statusTip">
+    <string>Fit a plane on a set of point</string>
+   </property>
+  </action>
+  <action name="actionFitSphere">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/sphere.png</normaloff>:/Resources/images/sphere.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sphere</string>
+   </property>
+   <property name="toolTip">
+    <string>Fits a sphere on the selected cloud</string>
+   </property>
+   <property name="statusTip">
+    <string>Fits a sphere on the selected cloud</string>
+   </property>
+  </action>
+  <action name="actionFitFacet">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/smallPolygonSelect.png</normaloff>:/Resources/images/smallPolygonSelect.png</iconset>
+   </property>
+   <property name="text">
+    <string>2D polygon (facet)</string>
+   </property>
+   <property name="statusTip">
+    <string>2D polygon (facet)</string>
+   </property>
+  </action>
+  <action name="actionFitQuadric">
+   <property name="text">
+    <string>2.5D quadric</string>
+   </property>
+   <property name="statusTip">
+    <string>2.5D quadric</string>
+   </property>
+  </action>
+  <action name="actionExportCloudInfo">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/exportCloud.png</normaloff>:/Resources/images/exportCloud.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export cloud info</string>
+   </property>
+   <property name="toolTip">
+    <string>Export cloud info to a CSV file (name, size, barycenter, scalar fields info, etc.)</string>
+   </property>
+   <property name="statusTip">
+    <string>Export cloud info to a CSV file (name, size, barycenter, scalar fields info, etc.)</string>
+   </property>
+  </action>
+  <action name="actionExportPlaneInfo">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/export.png</normaloff>:/Resources/images/export.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export plane info</string>
+   </property>
+   <property name="toolTip">
+    <string>Export plane info to a CSV file (name, width, height, center, normal, dip and dip direction, etc.)</string>
+   </property>
+   <property name="statusTip">
+    <string>Export plane info to a CSV file (name, width, height, center, normal, dip and dip direction, etc.)</string>
+   </property>
+  </action>
+  <action name="actionComputeGeometricFeature">
+   <property name="text">
+    <string>Compute geometric features</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute geometric features (density, curvature, roughness, etc.)</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute geometric features (density, curvature, roughness, etc.)</string>
+   </property>
+  </action>
+  <action name="actionRemoveDuplicatePoints">
+   <property name="text">
+    <string>Remove duplicate points</string>
+   </property>
+   <property name="statusTip">
+    <string>Remove duplicate points</string>
+   </property>
+  </action>
+  <action name="actionDeleteScalarField">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvDeleteSF.png</normaloff>:/Resources/images/ecvDeleteSF.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+   <property name="iconText">
+    <string>Delete Scalar Field</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete current scalar field</string>
+   </property>
+   <property name="statusTip">
+    <string>Delete current scalar field</string>
+   </property>
+  </action>
+  <action name="actionDeleteAllSF">
+   <property name="text">
+    <string>Delete all (!)</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete all scalar fields</string>
+   </property>
+   <property name="statusTip">
+    <string>Delete all scalar fields</string>
+   </property>
+  </action>
+  <action name="actionAddConstantSF">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvAddConstSF.png</normaloff>:/Resources/images/ecvAddConstSF.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add constant SF</string>
+   </property>
+   <property name="statusTip">
+    <string>Add constant SF</string>
+   </property>
+  </action>
+  <action name="actionAddIdField">
+   <property name="text">
+    <string>Add point indexes as SF</string>
+   </property>
+   <property name="toolTip">
+    <string>Adds a scalar field with ordered integers for each point in the cloud</string>
+   </property>
+   <property name="statusTip">
+    <string>Adds a scalar field with ordered integers for each point in the cloud</string>
+   </property>
+  </action>
+  <action name="actionExportCoordToSF">
+   <property name="text">
+    <string>Export coordinate(s) to SF(s)</string>
+   </property>
+   <property name="toolTip">
+    <string>Export X, Y and/or Z coordinates to scalar field(s)</string>
+   </property>
+   <property name="statusTip">
+    <string>Export X, Y and/or Z coordinates to scalar field(s)</string>
+   </property>
+  </action>
+  <action name="actionSetSFAsCoord">
+   <property name="text">
+    <string>Set SF as coordinate(s)</string>
+   </property>
+   <property name="toolTip">
+    <string>Set SF as coordinate(s) (X, Y or Z)</string>
+   </property>
+   <property name="statusTip">
+    <string>Set SF as coordinate(s) (X, Y or Z)</string>
+   </property>
+  </action>
+  <action name="actionInterpolateSFs">
+   <property name="text">
+    <string>Interpolate from another entity</string>
+   </property>
+   <property name="toolTip">
+    <string>Interpolate scalar-field(s) from another cloud or mesh</string>
+   </property>
+   <property name="statusTip">
+    <string>Interpolate scalar-field(s) from another cloud or mesh</string>
+   </property>
+  </action>
+  <action name="actionScalarFieldArithmetic">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqCalculator.png</normaloff>:/Resources/images/svg/pqCalculator.png</iconset>
+   </property>
+   <property name="text">
+    <string>Arithmetic</string>
+   </property>
+   <property name="iconText">
+    <string>SF arithmetic</string>
+   </property>
+   <property name="toolTip">
+    <string>Add, subtract, multiply or divide two scalar fields</string>
+   </property>
+   <property name="statusTip">
+    <string>Add, subtract, multiply or divide two scalar fields</string>
+   </property>
+  </action>
+  <action name="actionGaussianFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvGaussianFilter.png</normaloff>:/Resources/images/ecvGaussianFilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Gaussian filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute gaussian filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute gaussian filter</string>
+   </property>
+  </action>
+  <action name="actionBilateralFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvBilateralFilter.png</normaloff>:/Resources/images/ecvBilateralFilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bilateral filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute bilateral filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute bilateral filter</string>
+   </property>
+  </action>
+  <action name="actionFilterByValue">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvFilterByValue.png</normaloff>:/Resources/images/ecvFilterByValue.png</iconset>
+   </property>
+   <property name="text">
+    <string>Filter By Value</string>
+   </property>
+   <property name="toolTip">
+    <string>Filter points by value</string>
+   </property>
+   <property name="statusTip">
+    <string>Filter points by value</string>
+   </property>
+  </action>
+  <action name="actionConvertPolylinesToMesh">
+   <property name="text">
+    <string>Contour plot (polylines) to mesh</string>
+   </property>
+   <property name="toolTip">
+    <string>Contour plot (set of polylines) to a 2.5D mesh</string>
+   </property>
+   <property name="statusTip">
+    <string>Contour plot (set of polylines) to a 2.5D mesh</string>
+   </property>
+  </action>
+  <action name="actionUnroll">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/unroll.png</normaloff>:/Resources/images/unroll.png</iconset>
+   </property>
+   <property name="text">
+    <string>Unroll</string>
+   </property>
+   <property name="toolTip">
+    <string>Unroll entity on a cylinder or a cone</string>
+   </property>
+   <property name="statusTip">
+    <string>Unroll entity on a cylinder or a cone</string>
+   </property>
+  </action>
+  <action name="actionMatchBBCenters">
+   <property name="text">
+    <string>Match bounding-box centers</string>
+   </property>
+   <property name="toolTip">
+    <string>Synchronize selected entities bbox centers</string>
+   </property>
+   <property name="statusTip">
+    <string>Synchronize selected entities bbox centers</string>
+   </property>
+  </action>
+  <action name="actionMatchScales">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/scale.png</normaloff>:/Resources/images/scale.png</iconset>
+   </property>
+   <property name="text">
+    <string>Match scales</string>
+   </property>
+   <property name="statusTip">
+    <string>Match scales</string>
+   </property>
+  </action>
+  <action name="actionPointPairsAlign">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvAlign.png</normaloff>:/Resources/images/ecvAlign.png</iconset>
+   </property>
+   <property name="text">
+    <string>Align (point pairs picking)</string>
+   </property>
+   <property name="toolTip">
+    <string>Aligns two clouds by picking (at least 4) equivalent point pairs</string>
+   </property>
+   <property name="statusTip">
+    <string>Aligns two clouds by picking (at least 4) equivalent point pairs</string>
+   </property>
+  </action>
+  <action name="actionRegister">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvicp.png</normaloff>:/Resources/images/ecvicp.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fine registration (ICP)</string>
+   </property>
+   <property name="toolTip">
+    <string>Finely registers already (roughly) aligned entities (clouds or meshes)</string>
+   </property>
+   <property name="statusTip">
+    <string>Finely registers already (roughly) aligned entities (clouds or meshes)</string>
+   </property>
+  </action>
+  <action name="actionApplyTransformation">
+   <property name="text">
+    <string>Apply transformation</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply rotation and/or translation</string>
+   </property>
+   <property name="statusTip">
+    <string>Apply rotation and/or translation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionTranslateRotate">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvInteractiveTransformation.png</normaloff>:/Resources/images/ecvInteractiveTransformation.png</iconset>
+   </property>
+   <property name="text">
+    <string>Translate/Rotate</string>
+   </property>
+   <property name="statusTip">
+    <string>Translate/Rotate</string>
+   </property>
+  </action>
+  <action name="actionApplyScale">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/transformScale.png</normaloff>:/Resources/images/transformScale.png</iconset>
+   </property>
+   <property name="text">
+    <string>Multiply/Scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Multiply coordinates (separately)</string>
+   </property>
+   <property name="statusTip">
+    <string>Multiply coordinates (separately)</string>
+   </property>
+  </action>
+  <action name="actionGlobalShiftSettings">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/settings.png</normaloff>:/Resources/images/settings.png</iconset>
+   </property>
+   <property name="text">
+    <string>Global Shift settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Set Global Shift &amp; Scale mechanism parameters</string>
+   </property>
+  </action>
+  <action name="actionShortcutSettings">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSettings.svg</normaloff>:/Resources/images/svg/pqSettings.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Shortcut Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Configure keyboard shortcuts</string>
+   </property>
+   <property name="statusTip">
+    <string>Configure keyboard shortcuts</string>
+   </property>
+  </action>
+  <action name="GrayThemeAction">
+   <property name="text">
+    <string>Gray</string>
+   </property>
+  </action>
+  <action name="LightGrayThemeAction">
+   <property name="text">
+    <string>LightGray</string>
+   </property>
+  </action>
+  <action name="DarkGrayThemeAction">
+   <property name="text">
+    <string>DarkGray</string>
+   </property>
+  </action>
+  <action name="FlatWhiteThemeAction">
+   <property name="text">
+    <string>FlatWhite</string>
+   </property>
+  </action>
+  <action name="BFThemeAction">
+   <property name="text">
+    <string>BF</string>
+   </property>
+  </action>
+  <action name="TestThemeAction">
+   <property name="text">
+    <string>Test</string>
+   </property>
+  </action>
+  <action name="MaterialDarkThemeAction">
+   <property name="text">
+    <string>Material Dark</string>
+   </property>
+  </action>
+  <action name="MaterialLightThemeAction">
+   <property name="text">
+    <string>Material Light</string>
+   </property>
+  </action>
+  <action name="NordThemeAction">
+   <property name="text">
+    <string>Nord</string>
+   </property>
+  </action>
+  <action name="DraculaThemeAction">
+   <property name="text">
+    <string>Dracula</string>
+   </property>
+  </action>
+  <action name="FluentThemeAction">
+   <property name="text">
+    <string>Fluent Design</string>
+   </property>
+  </action>
+  <action name="MacOSThemeAction">
+   <property name="text">
+    <string>macOS Big Sur</string>
+   </property>
+  </action>
+  <action name="OneDarkThemeAction">
+   <property name="text">
+    <string>One Dark</string>
+   </property>
+  </action>
+  <action name="CatppuccinThemeAction">
+   <property name="text">
+    <string>Catppuccin</string>
+   </property>
+  </action>
+  <action name="TokyoNightThemeAction">
+   <property name="text">
+    <string>Tokyo Night</string>
+   </property>
+  </action>
+  <action name="GruvboxThemeAction">
+   <property name="text">
+    <string>Gruvbox</string>
+   </property>
+  </action>
+  <action name="DfaultThemeAction">
+   <property name="text">
+    <string>Default</string>
+   </property>
+  </action>
+  <action name="actionSORFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvSor.png</normaloff>:/Resources/images/ecvSor.png</iconset>
+   </property>
+   <property name="text">
+    <string>SOR filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Statistical Outlier Filter (remove the points far from their neighbors)</string>
+   </property>
+   <property name="statusTip">
+    <string>Statistical Outlier Filter (remove the points far from their neighbors)</string>
+   </property>
+  </action>
+  <action name="actionNoiseFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/filter.png</normaloff>:/Resources/images/filter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Noise filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Noise filter (remove the points far from the - approximate - local surface)</string>
+   </property>
+   <property name="statusTip">
+    <string>Noise filter (remove the points far from the - approximate - local surface)</string>
+   </property>
+  </action>
+  <action name="actionScreenShot">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqCaptureScreenshot.png</normaloff>:/Resources/images/svg/pqCaptureScreenshot.png</iconset>
+   </property>
+   <property name="text">
+    <string>Capture screenshot  to a file</string>
+   </property>
+   <property name="statusTip">
+    <string>Capture screenshot  to a file</string>
+   </property>
+  </action>
+  <action name="actionToggleOrientationMarker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqAxes.png</normaloff>:/Resources/images/svg/pqAxes.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle Orientation Marker</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle Orientation Marker</string>
+   </property>
+  </action>
+  <action name="actionToggleCameraOrientationWidget">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqShowOrientationAxes.svg</normaloff>:/Resources/images/svg/pqShowOrientationAxes.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Camera Orientation Widget</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle Camera Orientation Widget (ParaView-style interactive)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle Camera Orientation Widget</string>
+   </property>
+  </action>
+  <action name="actionSemanticAnnotation">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqFaceSetData.png</normaloff>:/Resources/images/svg/pqFaceSetData.png</iconset>
+   </property>
+   <property name="text">
+    <string>Semantic Annotation</string>
+   </property>
+  </action>
+  <action name="actionBoxAnnotation">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSideSetData.png</normaloff>:/Resources/images/svg/pqSideSetData.png</iconset>
+   </property>
+   <property name="text">
+    <string>Box Annotation</string>
+   </property>
+  </action>
+  <action name="actionPerspectiveProjection">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvPerspectiveProjection.png</normaloff>:/Resources/images/ecvPerspectiveProjection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Perspective  Projection</string>
+   </property>
+   <property name="statusTip">
+    <string>Perspective Projection</string>
+   </property>
+   <property name="shortcut">
+    <string>F3</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionOrthogonalProjection">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvOrthoProjection.png</normaloff>:/Resources/images/ecvOrthoProjection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Orthogonal  Projection</string>
+   </property>
+   <property name="statusTip">
+    <string>Orthogonal  Projection</string>
+   </property>
+   <property name="shortcut">
+    <string>F4</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSliceFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/slice.png</normaloff>:/Resources/images/svg/slice.png</iconset>
+   </property>
+   <property name="text">
+    <string>Slice</string>
+   </property>
+   <property name="toolTip">
+    <string>Slice Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Slice Filter</string>
+   </property>
+  </action>
+  <action name="actionDecimateFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/decimate.png</normaloff>:/Resources/images/decimate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Decimate</string>
+   </property>
+   <property name="toolTip">
+    <string>Decimate Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Decimate Filter</string>
+   </property>
+  </action>
+  <action name="actionIsoSurfaceFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqIsosurface.png</normaloff>:/Resources/images/svg/pqIsosurface.png</iconset>
+   </property>
+   <property name="text">
+    <string>IsoSurface</string>
+   </property>
+   <property name="toolTip">
+    <string>IsoSurface Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>IsoSurface Filter</string>
+   </property>
+  </action>
+  <action name="actionThresholdFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqThreshold.png</normaloff>:/Resources/images/svg/pqThreshold.png</iconset>
+   </property>
+   <property name="text">
+    <string>Threshold</string>
+   </property>
+   <property name="toolTip">
+    <string>Threshold Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Threshold Filter</string>
+   </property>
+  </action>
+  <action name="actionSmoothFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/vtkSmooth.png</normaloff>:/Resources/images/vtkSmooth.png</iconset>
+   </property>
+   <property name="text">
+    <string>Smooth</string>
+   </property>
+   <property name="toolTip">
+    <string>Smooth Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Smooth Filter</string>
+   </property>
+  </action>
+  <action name="actionProbeFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqProbeLocation.png</normaloff>:/Resources/images/svg/pqProbeLocation.png</iconset>
+   </property>
+   <property name="text">
+    <string>Probe</string>
+   </property>
+   <property name="toolTip">
+    <string>Probe Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Probe Filter</string>
+   </property>
+  </action>
+  <action name="ParaviewThemeAction">
+   <property name="text">
+    <string>Paraview</string>
+   </property>
+  </action>
+  <action name="actionStreamlineFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqStreamTracer.png</normaloff>:/Resources/images/svg/pqStreamTracer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Streamline</string>
+   </property>
+   <property name="toolTip">
+    <string>Streamline Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Streamline Filter</string>
+   </property>
+  </action>
+  <action name="actionGlyphFilter">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqGlyph.png</normaloff>:/Resources/images/svg/pqGlyph.png</iconset>
+   </property>
+   <property name="text">
+    <string>Glyph</string>
+   </property>
+   <property name="toolTip">
+    <string>Glyph Filter</string>
+   </property>
+   <property name="statusTip">
+    <string>Glyph Filter</string>
+   </property>
+  </action>
+  <action name="actionModifySensor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqWrench.png</normaloff>:/Resources/images/svg/pqWrench.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edit</string>
+   </property>
+  </action>
+  <action name="actionCreateGBLSensor">
+   <property name="text">
+    <string>Create</string>
+   </property>
+  </action>
+  <action name="actionShowDepthBuffer">
+   <property name="text">
+    <string>Create/show depth buffer</string>
+   </property>
+   <property name="statusTip">
+    <string>Create/show depth buffer</string>
+   </property>
+  </action>
+  <action name="actionExportDepthBuffer">
+   <property name="text">
+    <string>Export depth buffer</string>
+   </property>
+  </action>
+  <action name="actionComputePointsVisibility">
+   <property name="text">
+    <string>Compute points visibility (with depth buffer)</string>
+   </property>
+  </action>
+  <action name="actionCreateCameraSensor">
+   <property name="text">
+    <string>Create</string>
+   </property>
+  </action>
+  <action name="actionProjectUncertainty">
+   <property name="text">
+    <string>Project Uncertainty</string>
+   </property>
+  </action>
+  <action name="actionCheckPointsInsideFrustum">
+   <property name="text">
+    <string>Compute points visibility (with octree)</string>
+   </property>
+  </action>
+  <action name="actionViewFromSensor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/dbViewportSymbol.png</normaloff>:/Resources/images/dbViewportSymbol.png</iconset>
+   </property>
+   <property name="text">
+    <string>View from sensor</string>
+   </property>
+   <property name="statusTip">
+    <string>View from sensor</string>
+   </property>
+  </action>
+  <action name="actionComputeDistancesFromSensor">
+   <property name="text">
+    <string>Compute Ranges</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute ranges from sensor</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute ranges from sensor</string>
+   </property>
+  </action>
+  <action name="actionComputeScatteringAngles">
+   <property name="text">
+    <string>Compute Scattering Angles</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute laser beam scattering angle for a cloud with normals</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute laser beam scattering angle for a cloud with normals</string>
+   </property>
+  </action>
+  <action name="actionShowWaveDialog">
+   <property name="text">
+    <string>2D Waveform viewer</string>
+   </property>
+   <property name="statusTip">
+    <string>2D Waveform viewer</string>
+   </property>
+  </action>
+  <action name="actionCompressFWFData">
+   <property name="text">
+    <string>Compress FWF data</string>
+   </property>
+   <property name="toolTip">
+    <string>Compress the associated FWF data (maybe interesting after interactive segmentation for instance)</string>
+   </property>
+   <property name="statusTip">
+    <string>Compress the associated FWF data (maybe interesting after interactive segmentation for instance)</string>
+   </property>
+  </action>
+  <action name="action3DView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/3D3.png</normaloff>:/Resources/images/3D3.png</iconset>
+   </property>
+   <property name="text">
+    <string>3D View</string>
+   </property>
+   <property name="statusTip">
+    <string>3D View</string>
+   </property>
+  </action>
+  <action name="actionDisplayFilterTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>actionDisplayFilterTools</string>
+   </property>
+  </action>
+  <action name="actionDisplayAnnotationTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>actionDisplayAnnotationTools</string>
+   </property>
+  </action>
+  <action name="actionDisplayMeasurementsTools">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Measurements</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/hide measurements toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/hide measurements toolbar</string>
+   </property>
+  </action>
+  <action name="actionSemanticSegmentation">
+   <property name="text">
+    <string>Semantic Segmentation</string>
+   </property>
+  </action>
+  <action name="actionAutoPickPivot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqPickCenter@2x.png</normaloff>:/Resources/images/pqPickCenter@2x.png</iconset>
+   </property>
+   <property name="text">
+    <string>Auto-pick rotation center</string>
+   </property>
+   <property name="toolTip">
+    <string>Auto-pick rotation center (rotation is always placed at the middle of the screen if possible)</string>
+   </property>
+   <property name="statusTip">
+    <string>Auto-pick rotation center (rotation is always placed at the middle of the screen if possible)</string>
+   </property>
+  </action>
+  <action name="actionResetPivot">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqResetCenter@2x.png</normaloff>:/Resources/images/pqResetCenter@2x.png</iconset>
+   </property>
+   <property name="text">
+    <string>reset Rotation Center</string>
+   </property>
+   <property name="statusTip">
+    <string>reset Rotation Center</string>
+   </property>
+  </action>
+  <action name="actionShowPivot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pqShowCenterAxes@2x.png</normaloff>:/Resources/images/pqShowCenterAxes@2x.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Rotation Center</string>
+   </property>
+   <property name="statusTip">
+    <string>Show Rotation Center</string>
+   </property>
+  </action>
+  <action name="actionEditCamera">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqEditCamera.png</normaloff>:/Resources/images/svg/pqEditCamera.png</iconset>
+   </property>
+   <property name="text">
+    <string>Camera settings</string>
+   </property>
+   <property name="statusTip">
+    <string>Camera settings</string>
+   </property>
+  </action>
+  <action name="actionImportSFFromFile">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/add.png</normaloff>:/Resources/images/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import SF from file</string>
+   </property>
+   <property name="statusTip">
+    <string>Import SF from file</string>
+   </property>
+  </action>
+  <action name="actionBSplineFittingOnCloud">
+   <property name="text">
+    <string>BSpline Fitting On Cloud</string>
+   </property>
+   <property name="statusTip">
+    <string>BSpline Fitting On Cloud</string>
+   </property>
+  </action>
+  <action name="actionPoissonReconstruction">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/poisson.png</normaloff>:/Resources/images/poisson.png</iconset>
+   </property>
+   <property name="text">
+    <string>Poisson Reconstruction</string>
+   </property>
+   <property name="statusTip">
+    <string>Poisson Reconstruction</string>
+   </property>
+  </action>
+  <action name="actionVoxelSampling">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/voxelSampling.jpg</normaloff>:/Resources/images/voxelSampling.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>Voxel Sampling</string>
+   </property>
+   <property name="toolTip">
+    <string>Voxel Down Sampling</string>
+   </property>
+   <property name="statusTip">
+    <string>Voxel Down Sampling</string>
+   </property>
+  </action>
+  <action name="actionConvexHull">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/convex_concave_hull.png</normaloff>:/Resources/images/convex_concave_hull.png</iconset>
+   </property>
+   <property name="text">
+    <string>Convex Hull</string>
+   </property>
+   <property name="statusTip">
+    <string>Convex Hull</string>
+   </property>
+  </action>
+  <action name="actionDBScanCluster">
+   <property name="text">
+    <string>DBScan Cluster</string>
+   </property>
+   <property name="toolTip">
+    <string> a density-based algorithm for discovering clusters in large spatial databases with noise</string>
+   </property>
+   <property name="statusTip">
+    <string> a density-based algorithm for discovering clusters in large spatial databases with noise</string>
+   </property>
+  </action>
+  <action name="actionPlaneSegmentation">
+   <property name="text">
+    <string>Plane Segmentation</string>
+   </property>
+   <property name="statusTip">
+    <string>Plane Segmentation</string>
+   </property>
+  </action>
+  <action name="actionBBCenterToOrigin">
+   <property name="text">
+    <string>Move bounding-box center to origin</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the bounding-box center to the origin</string>
+   </property>
+   <property name="statusTip">
+    <string>Move the bounding-box center to the origin</string>
+   </property>
+  </action>
+  <action name="actionBBMinCornerToOrigin">
+   <property name="text">
+    <string>Move bounding-box min corner to origin</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the bounding-box min corner to the origin</string>
+   </property>
+   <property name="statusTip">
+    <string>Move the bounding-box min corner to the origin</string>
+   </property>
+  </action>
+  <action name="actionBBMaxCornerToOrigin">
+   <property name="text">
+    <string>Move bounding-box max corner to origin</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the bounding-box max corner to the origin</string>
+   </property>
+   <property name="statusTip">
+    <string>Move the bounding-box max corner to the origin</string>
+   </property>
+  </action>
+  <action name="actionFlipPlane">
+   <property name="text">
+    <string>Flip</string>
+   </property>
+   <property name="toolTip">
+    <string>Flip the selected plane</string>
+   </property>
+   <property name="statusTip">
+    <string>Flip the selected plane</string>
+   </property>
+  </action>
+  <action name="actionComparePlanes">
+   <property name="text">
+    <string>Compare</string>
+   </property>
+   <property name="toolTip">
+    <string>Compare two planes (angle + distance)</string>
+   </property>
+   <property name="statusTip">
+    <string>Compare two planes (angle + distance)</string>
+   </property>
+  </action>
+  <action name="actionPromoteCircleToCylinder">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/primCylinder.gif</normaloff>:/Resources/images/primCylinder.gif</iconset>
+   </property>
+   <property name="text">
+    <string>Promote to cylinder</string>
+   </property>
+   <property name="toolTip">
+    <string>Promote the selected circle to a cylinder</string>
+   </property>
+   <property name="statusTip">
+    <string>Promote the selected circle to a cylinder</string>
+   </property>
+  </action>
+  <action name="actionFlipMeshTriangles">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqInvert.png</normaloff>:/Resources/images/svg/pqInvert.png</iconset>
+   </property>
+   <property name="text">
+    <string>Flip triangles</string>
+   </property>
+   <property name="toolTip">
+    <string>Flip triangles (if vertices are ordered in the non-direct order)</string>
+   </property>
+   <property name="statusTip">
+    <string>Flip triangles (if vertices are ordered in the non-direct order)</string>
+   </property>
+  </action>
+  <action name="actionCloudPrimitiveDist">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvCloudPrimitiveDistance.png</normaloff>:/Resources/images/ecvCloudPrimitiveDistance.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cloud/Primitive Dist</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute cloud/Primitive distance</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute cloud/Primitive distance</string>
+   </property>
+  </action>
+  <action name="actionExportNormalToSF">
+   <property name="text">
+    <string>Export normals to SF(s)</string>
+   </property>
+   <property name="toolTip">
+    <string>Export normals to one or several scalar fields</string>
+   </property>
+   <property name="statusTip">
+    <string>Export normals to one or several scalar fields</string>
+   </property>
+  </action>
+  <action name="actionFilterByLabel">
+   <property name="text">
+    <string>Filter By Label</string>
+   </property>
+   <property name="toolTip">
+    <string>Filter points by label</string>
+   </property>
+   <property name="statusTip">
+    <string>Filter points by label</string>
+   </property>
+  </action>
+  <action name="actionColorFromScalarField">
+   <property name="text">
+    <string>From Scalar fields</string>
+   </property>
+  </action>
+  <action name="actionSaveViewportAsObject">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqEyeball.png</normaloff>:/Resources/images/svg/pqEyeball.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save viewport as object</string>
+   </property>
+   <property name="statusTip">
+    <string>Save viewport as object</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionCreateSinglePointCloud">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSolidColor.png</normaloff>:/Resources/images/svg/pqSolidColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Create single point cloud</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a cloud with a single point</string>
+   </property>
+   <property name="statusTip">
+    <string>Create a cloud with a single point</string>
+   </property>
+  </action>
+  <action name="actionPasteCloudFromClipboard">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPaste.png</normaloff>:/Resources/images/svg/pqPaste.png</iconset>
+   </property>
+   <property name="text">
+    <string>Paste from clipboard</string>
+   </property>
+   <property name="toolTip">
+    <string>Paste from ASCII/text data stored in the clipboard</string>
+   </property>
+   <property name="statusTip">
+    <string>Paste from ASCII/text data stored in the clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+P</string>
+   </property>
+  </action>
+  <action name="actionCheckForUpdates">
+   <property name="icon">
+    <iconset resource="../QSimpleUpdater/etc/resources/qsimpleupdater.qrc">
+     <normaloff>:/icons/update.png</normaloff>:/icons/update.png</iconset>
+   </property>
+   <property name="text">
+    <string>Check for Updates</string>
+   </property>
+  </action>
+  <action name="actionLockRotationAxis">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/lockedAxis.png</normaloff>:/Resources/images/lockedAxis.png</iconset>
+   </property>
+   <property name="text">
+    <string>Lock rotation about an axis</string>
+   </property>
+   <property name="toolTip">
+    <string>Lock 3D camera rotation about an axis (turntable mode)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+L</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionToggleActiveSFColorScale">
+   <property name="text">
+    <string>Toggle color scale</string>
+   </property>
+   <property name="iconText">
+    <string>Toggle active scalar field color scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle active scalar field color scale</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle active scalar field color scale</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionShowActiveSFPrevious">
+   <property name="text">
+    <string>Show previous SF</string>
+   </property>
+   <property name="iconText">
+    <string>Show previous scalar field for active entity</string>
+   </property>
+   <property name="toolTip">
+    <string>Show previous scalar field for active entity</string>
+   </property>
+   <property name="statusTip">
+    <string>Show previous scalar field for active entity</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+Up</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionFitCircle">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/dbCircle.png</normaloff>:/Resources/images/dbCircle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Circle</string>
+   </property>
+   <property name="toolTip">
+    <string>Fits a circle on the selected cloud</string>
+   </property>
+  </action>
+  <action name="actionShowActiveSFNext">
+   <property name="text">
+    <string>Show next SF</string>
+   </property>
+   <property name="iconText">
+    <string>Show next scalar field for active entity</string>
+   </property>
+   <property name="toolTip">
+    <string>Show next scalar field for active entity</string>
+   </property>
+   <property name="statusTip">
+    <string>Show next scalar field for active entity</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+Down</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionAnimation">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pcl/insert_from_file.png</normaloff>:/Resources/images/pcl/insert_from_file.png</iconset>
+   </property>
+   <property name="text">
+    <string>Animation</string>
+   </property>
+   <property name="iconText">
+    <string>Automatic rotation animation</string>
+   </property>
+   <property name="toolTip">
+    <string>Automatic rotation animation</string>
+   </property>
+   <property name="statusTip">
+    <string>Automatic rotation animation</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+A</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ccCustomQTreeView</class>
+   <extends>QTreeView</extends>
+   <header location="global">ecvDBRoot.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ecvCustomQListWidget</class>
+   <extends>QListWidget</extends>
+   <header>ecvConsole.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../QSimpleUpdater/etc/resources/qsimpleupdater.qrc"/>
+  <include location="../MainWindow.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>actionConsole</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>consoleDock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>622</x>
+     <y>613</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayViewTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ViewToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>14</x>
+     <y>397</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplaySelectionTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>SelectionToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>33</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayScalarFieldsTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>SFToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>768</x>
+     <y>33</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayMainTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mainToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>256</x>
+     <y>33</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>consoleDock</sender>
+   <signal>visibilityChanged(bool)</signal>
+   <receiver>actionConsole</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>691</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionFitPlaneProxy</sender>
+   <signal>triggered()</signal>
+   <receiver>actionFitPlane</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayAnnotationTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>AnnotationToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>650</x>
+     <y>61</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayFilterTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>FilterToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>138</x>
+     <y>61</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDisplayMeasurementsTools</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MeasurementsToolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>61</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

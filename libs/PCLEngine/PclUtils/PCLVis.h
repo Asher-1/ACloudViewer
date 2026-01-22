@@ -28,7 +28,7 @@ class TextureRenderManager;
 }
 }  // namespace PclUtils
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 #include <ecvDisplayTools.h>  // For AxesGridProperties
 #include <ecvDrawContext.h>

@@ -10,7 +10,7 @@
 #include "FileIOFilter.h"
 
 //! Calibrated images and cloud meta-file I/O filter
-class /*ECV_IO_LIB_API*/ IcmFilter : public FileIOFilter {
+class /*CV_IO_LIB_API*/ IcmFilter : public FileIOFilter {
 public:
     IcmFilter();
 

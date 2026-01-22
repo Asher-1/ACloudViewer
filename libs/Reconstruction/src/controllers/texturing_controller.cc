@@ -19,10 +19,10 @@
 #include <CVTools.h>
 #include <FileSystem.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include "camera/PinholeCameraTrajectory.h"
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <AutoIO.h>
 #include <ImageIO.h>
 #include <ecvHObjectCaster.h>

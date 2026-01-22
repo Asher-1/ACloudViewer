@@ -29,9 +29,8 @@ Meanwhile, you can explore:
 - :doc:`../../python_api/cloudViewer.geometry` - Geometry API
 - :doc:`../../python_api/cloudViewer.utility` - Utility functions
 
-See Also
---------
+.. seealso::
 
-- `PyTorch Geometric <https://pytorch-geometric.readthedocs.io/>`_ - Deep learning on graphs and point clouds
-- `TensorFlow Graphics <https://www.tensorflow.org/graphics>`_ - TensorFlow library for graphics
-- `Open3D-ML <http://www.open3d.org/docs/latest/tutorial/ml_integration.html>`_ - Machine learning pipelines
+   - `PyTorch Geometric <https://pytorch-geometric.readthedocs.io/>`_ - Deep learning on graphs and point clouds
+   - `TensorFlow Graphics <https://www.tensorflow.org/graphics>`_ - TensorFlow library for graphics
+   - `Open3D-ML <http://www.open3d.org/docs/latest/tutorial/ml_integration.html>`_ - Machine learning pipelines

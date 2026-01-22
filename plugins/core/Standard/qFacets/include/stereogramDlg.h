@@ -10,7 +10,7 @@
 #include "ui_stereogramDlg.h"
 #include "ui_stereogramParamsDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScale.h>
 #include <ecvPlane.h>
 

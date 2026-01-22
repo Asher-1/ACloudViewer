@@ -125,6 +125,7 @@ Documentation Build Image
        bash -c "cp /root/ACloudViewer/acloudviewer-*-docs.tar.gz /opt/mount/"
    
    # Unpack and preview
+   mkdir -p docs-preview
    tar -xzf acloudviewer-*-docs.tar.gz -C ./docs-preview/
    cd docs-preview && python3 -m http.server 8080
    # Open http://localhost:8080
@@ -341,7 +342,7 @@ Run the complete test suite in Docker:
        -v $(pwd):/workspace \
        -w /workspace \
        acloudviewer-ci:cpu-static \
-       bash -c "source util/ci_utils.sh && run_python_tests"
+       bash -c "source util/ci_utils.sh && run_python_tests path/to/wheel.whl"
 
 **GPU Tests**:
 

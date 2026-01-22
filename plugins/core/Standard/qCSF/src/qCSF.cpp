@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericPointCloud.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>

@@ -13,7 +13,7 @@
 #include "ecvOverlayDialog.h"
 #include "ecvPickingListener.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGLMatrix.h>
 
 // system

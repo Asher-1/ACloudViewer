@@ -163,6 +163,82 @@ if(NOT Pytorch_FOUND)
         # if successful everything works :)
         # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
 
+        # Workaround for missing c10/cuda/impl/cuda_cmake_macros.h in pip-installed PyTorch
+        # This issue is more common with Python 3.13 + Ubuntu 24.04 due to incomplete wheel packaging.
+        # The file is typically generated from cuda_cmake_macros.h.in during PyTorch's build.
+        # NOTE: This issue has been observed specifically on Ubuntu 24.04, other platforms may not be affected.
+        set(CUDA_CMAKE_MACROS_H_PATH "${Pytorch_ROOT}/include/c10/cuda/impl/cuda_cmake_macros.h")
+        if(NOT EXISTS "${CUDA_CMAKE_MACROS_H_PATH}")
+            message(WARNING "PyTorch cuda_cmake_macros.h not found at: ${CUDA_CMAKE_MACROS_H_PATH}")
+            message(WARNING "This is a known issue with Python 3.13 + PyTorch pip packages.")
+            
+            # Check if we're on Ubuntu 24.04 (where this issue is specifically observed)
+            if(UNIX AND NOT APPLE)
+                # Try to detect Ubuntu version if UBUNTU_VERSION is not already set
+                if(NOT DEFINED UBUNTU_VERSION)
+                    execute_process(
+                        COMMAND lsb_release -rs
+                        OUTPUT_VARIABLE UBUNTU_VERSION
+                        OUTPUT_STRIP_TRAILING_WHITESPACE
+                        ERROR_QUIET
+                    )
+                endif()
+                if(UBUNTU_VERSION VERSION_EQUAL "24.04")
+                    message(WARNING "Detected Ubuntu 24.04 - this issue is specifically observed on this platform")
+                    message(WARNING "Other platforms (Ubuntu 22.04, 20.04, etc.) may not be affected")
+                endif()
+            endif()
+            
+            message(WARNING "PyTorch version: ${Pytorch_VERSION}, Python version: ${Python3_VERSION}")
+            
+            # Check if PyTorch version supports Python 3.13 (>= 2.6.0 recommended)
+            if(Pytorch_VERSION VERSION_LESS "2.6.0")
+                message(WARNING "Consider upgrading PyTorch to >= 2.6.0 for better Python 3.13 support")
+                message(WARNING "Or consider using Python 3.12 or earlier for better compatibility")
+            endif()
+            
+            # Create the stub header in the build directory
+            set(PYTORCH_STUB_INCLUDE_DIR "${CMAKE_BINARY_DIR}/pytorch_stub_include")
+            set(PYTORCH_STUB_CUDA_IMPL_DIR "${PYTORCH_STUB_INCLUDE_DIR}/c10/cuda/impl")
+            file(MAKE_DIRECTORY "${PYTORCH_STUB_CUDA_IMPL_DIR}")
+            
+            # Create a minimal stub header file
+            # NOTE: This is a workaround. The actual file may contain CUDA architecture
+            # definitions and other build-time configuration. If compilation succeeds but
+            # runtime fails, consider upgrading PyTorch or using Python 3.12.
+            file(WRITE "${PYTORCH_STUB_CUDA_IMPL_DIR}/cuda_cmake_macros.h"
+                "// Auto-generated workaround header for PyTorch CUDA macros\n"
+                "// This file is created as a workaround for missing cuda_cmake_macros.h\n"
+                "// in pip-installed PyTorch packages, especially with Python 3.13 + Ubuntu 24.04\n"
+                "//\n"
+                "// NOTE: This issue has been observed specifically on Ubuntu 24.04.\n"
+                "// Other platforms (Ubuntu 22.04, 20.04, Windows, macOS) may not be affected.\n"
+                "//\n"
+                "// Original file is generated from c10/cuda/impl/cuda_cmake_macros.h.in\n"
+                "// during PyTorch's build process via CMake configure_file()\n"
+                "//\n"
+                "// WARNING: This is a minimal stub. For production use, consider:\n"
+                "// 1. Upgrading to PyTorch >= 2.6.0 which has better Python 3.13 support\n"
+                "// 2. Building PyTorch from source to get the complete header\n"
+                "// 3. Using Python 3.12 or earlier for better compatibility\n"
+                "// 4. Using Ubuntu 22.04 or earlier if platform flexibility allows\n"
+                "\n"
+                "#ifndef C10_CUDA_IMPL_CUDA_CMAKE_MACROS_H_\n"
+                "#define C10_CUDA_IMPL_CUDA_CMAKE_MACROS_H_\n"
+                "\n"
+                "// Minimal macro definitions that may be referenced by CUDAMacros.h\n"
+                "// These are typically defined during PyTorch's CMake configuration\n"
+                "\n"
+                "#endif // C10_CUDA_IMPL_CUDA_CMAKE_MACROS_H_\n"
+            )
+            # Add the stub include directory to TORCH_INCLUDE_DIRS with higher priority
+            list(INSERT TORCH_INCLUDE_DIRS 0 "${PYTORCH_STUB_INCLUDE_DIR}")
+            message(STATUS "Created workaround header at: ${PYTORCH_STUB_CUDA_IMPL_DIR}/cuda_cmake_macros.h")
+            message(STATUS "Added workaround include directory (prepended): ${PYTORCH_STUB_INCLUDE_DIR}")
+        else()
+            message(STATUS "Found PyTorch cuda_cmake_macros.h at: ${CUDA_CMAKE_MACROS_H_PATH}")
+        endif()
+
         # remove flags that nvcc does not understand
         get_target_property( iface_compile_options torch INTERFACE_COMPILE_OPTIONS )
         set_target_properties( torch PROPERTIES INTERFACE_COMPILE_OPTIONS "" )

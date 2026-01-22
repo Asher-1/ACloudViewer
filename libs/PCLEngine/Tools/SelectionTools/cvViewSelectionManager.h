@@ -18,7 +18,7 @@
 #include "cvSelectionData.h"  // Contains SelectionMode, SelectionModifier enums  // For SelectionMode and SelectionModifier enums
 #include "qPCL.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObject.h>
 
 // Forward declarations

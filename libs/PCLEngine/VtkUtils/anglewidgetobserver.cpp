@@ -12,7 +12,7 @@
 #include <vtkAngleWidget.h>
 #include <vtkMath.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <CVLog.h>
 
 namespace VtkUtils {

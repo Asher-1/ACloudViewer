@@ -55,9 +55,8 @@ For detailed, interactive examples, see:
 
 These tutorials are available as Jupyter notebooks in the repository.
 
-See Also
---------
+.. seealso::
 
-- :doc:`../geometry/pointcloud` - Point Cloud Basics
-- :doc:`../../python_api/cloudViewer.pipelines` - Pipelines API
+   - :doc:`../geometry/pointcloud` - Point Cloud Basics
+   - :doc:`../../python_api/cloudViewer.pipelines` - Pipelines API
 

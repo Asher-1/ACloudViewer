@@ -13,7 +13,7 @@
 // CORE_LIB
 #include <CVTools.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecv2DViewportObject.h>
 #include <ecvDisplayTools.h>
 #include <ecvMaterialSet.h>

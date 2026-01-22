@@ -17,7 +17,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerBallQuery")
+REGISTER_OP("CloudViewerBallQuery")
         .Input("xyz: float32")
         .Input("center: float32")
         .Attr("radius: float")
@@ -32,6 +32,6 @@ REGISTER_OP("CloudviewerBallQuery")
             ::tensorflow::shape_inference::ShapeHandle output =
                     c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1), nsample});
             c->set_output(0, output);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc( TODO )doc");

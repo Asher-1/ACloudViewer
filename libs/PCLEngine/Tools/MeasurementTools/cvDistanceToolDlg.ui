@@ -157,7 +157,7 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../eCV/MainWindow.qrc">
+             <iconset resource="../../../app/MainWindow.qrc">
               <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
             </property>
             <property name="iconSize">
@@ -248,7 +248,7 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../eCV/MainWindow.qrc">
+             <iconset resource="../../../app/MainWindow.qrc">
               <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
             </property>
             <property name="iconSize">
@@ -570,7 +570,7 @@ Examples:
   </layout>
  </widget>
  <resources>
-  <include location="../../../eCV/MainWindow.qrc"/>
+  <include location="../../../app/MainWindow.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -8,7 +8,6 @@
 import cloudViewer as cv3d
 
 from pathlib import Path
-from examples.Python.geometry.geometry_facets import facets
 import pytest
 
 

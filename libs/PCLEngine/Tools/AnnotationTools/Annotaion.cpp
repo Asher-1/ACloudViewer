@@ -24,7 +24,7 @@
 #include <CVLog.h>
 #include <CVTools.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 
 #ifdef USE_TBB

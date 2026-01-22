@@ -108,5 +108,5 @@ public:
 };
 
 REGISTER_KERNEL_BUILDER(
-        Name("CloudviewerFurthestPointSampling").Device(DEVICE_GPU),
+        Name("CloudViewerFurthestPointSampling").Device(DEVICE_GPU),
         FurthestPointSamplingOpKernelCUDA);

@@ -234,7 +234,7 @@
  </widget>
  <resources>
   <include location="../../../qPCL.qrc"/>
-  <include location="../../../../../../eCV/MainWindow.qrc"/>
+  <include location="../../../../../../app/MainWindow.qrc"/>
  </resources>
  <connections>
   <connection>

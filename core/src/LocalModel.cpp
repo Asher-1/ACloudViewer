@@ -37,7 +37,8 @@ public:
                 DistanceComputationTools::computePoint2PlaneDistance(P, m_eq);
 
         if (nearestPoint) {
-            *nearestPoint = *P - dist * CCVector3(m_eq);
+            *nearestPoint = *P - static_cast<PointCoordinateType>(dist) *
+                                         CCVector3(m_eq);
         }
 
         return std::abs(dist);

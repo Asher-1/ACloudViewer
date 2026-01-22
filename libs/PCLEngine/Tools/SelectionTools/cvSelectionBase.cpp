@@ -59,10 +59,10 @@ vtkDataSet* cvSelectionBase::getDataFromActor(vtkActor* actor) {
     vtkDataSet* data = mapper->GetInput();
 
     if (data) {
-        CVLog::PrintDebug(QString("[cvSelectionBase::getDataFromActor] Got "
-                                  "data: %1 points, %2 cells")
-                                  .arg(data->GetNumberOfPoints())
-                                  .arg(data->GetNumberOfCells()));
+        CVLog::PrintVerbose(QString("[cvSelectionBase::getDataFromActor] Got "
+                                    "data: %1 points, %2 cells")
+                                    .arg(data->GetNumberOfPoints())
+                                    .arg(data->GetNumberOfCells()));
     }
 
     return data;
@@ -77,7 +77,7 @@ vtkPolyData* cvSelectionBase::getPolyDataForSelection(
     if (selectionData && selectionData->hasActorInfo()) {
         polyData = selectionData->primaryPolyData();
         if (polyData) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvSelectionBase] Using polyData from provided selection "
                     "actor info");
             return polyData;
@@ -90,7 +90,7 @@ vtkPolyData* cvSelectionBase::getPolyDataForSelection(
     if (manager && dynamic_cast<cvViewSelectionManager*>(this) != manager) {
         polyData = manager->getPolyData();
         if (polyData) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvSelectionBase] Using polyData from selection manager "
                     "singleton");
             return polyData;
@@ -104,7 +104,7 @@ vtkPolyData* cvSelectionBase::getPolyDataForSelection(
             vtkDataSet* data = getDataFromActor(actors.first());
             polyData = vtkPolyData::SafeDownCast(data);
             if (polyData) {
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         "[cvSelectionBase] Fallback to first data actor");
             }
         }
@@ -143,7 +143,7 @@ QList<vtkActor*> cvSelectionBase::getDataActors() const {
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionBase::getDataActors] Found %1 data actors")
                     .arg(actors.size()));
 
@@ -208,22 +208,24 @@ std::vector<vtkPolyData*> cvSelectionBase::getAllPolyDataFromVisualizer() {
             if (polyData && polyData->GetNumberOfCells() > 0) {
                 polyDataList.push_back(polyData);
                 polyDataCount++;
-                CVLog::PrintDebug(QString("[cvSelectionBase::"
-                                          "getAllPolyDataFromVisualizer] Found "
-                                          "PolyData #%1: "
-                                          "%2 cells, %3 points")
-                                          .arg(polyDataCount)
-                                          .arg(polyData->GetNumberOfCells())
-                                          .arg(polyData->GetNumberOfPoints()));
+                CVLog::PrintVerbose(
+                        QString("[cvSelectionBase::"
+                                "getAllPolyDataFromVisualizer] Found "
+                                "PolyData #%1: "
+                                "%2 cells, %3 points")
+                                .arg(polyDataCount)
+                                .arg(polyData->GetNumberOfCells())
+                                .arg(polyData->GetNumberOfPoints()));
             }
         }
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionBase::getAllPolyDataFromVisualizer] "
-                              "Found %1 polyData(s) "
-                              "from %2 actor(s)")
-                              .arg(polyDataCount)
-                              .arg(actorCount));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionBase::getAllPolyDataFromVisualizer] "
+                    "Found %1 polyData(s) "
+                    "from %2 actor(s)")
+                    .arg(polyDataCount)
+                    .arg(actorCount));
 
     return polyDataList;
 }

@@ -18,7 +18,7 @@ add_subdirectory(plugins)
 if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES AND BUILD_PYTHON_MODULE)
 
   pybind11_add_module(pycc ${pycc_sources})
-  target_link_libraries(pycc PRIVATE ECV_DB_LIB ECV_IO_LIB)
+  target_link_libraries(pycc PRIVATE CV_DB_LIB CV_IO_LIB)
   
   # Qt5/Qt6 compatibility - QOpenGLWidget requires OpenGLWidgets in Qt6
   target_link_libraries(pycc PRIVATE Qt::OpenGL)

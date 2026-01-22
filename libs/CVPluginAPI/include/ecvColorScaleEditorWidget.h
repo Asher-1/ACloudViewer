@@ -16,7 +16,7 @@
 // Qt
 #include <QWidget>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScale.h>
 
 //! Color scale element as a widget

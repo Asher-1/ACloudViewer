@@ -13,7 +13,7 @@
 #include "Tools/ColorTools/PclPointCloudColorHandlerLUT.h"
 #include "qPCL.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericAnnotationTool.h>
 
 // QT

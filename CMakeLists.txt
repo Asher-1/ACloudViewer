@@ -123,22 +123,6 @@ option(BUILD_JUPYTER_EXTENSION "Build Jupyter, requires BUILD_WEBRTC=ON"        
 option(USE_SIMD "Use Single Instruction Multiple Data speed optimization"       OFF)
 option(USE_SYSTEM_CUTLASS         "Use system pre-installed cutlass"            OFF)
 option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"             OFF)
-if (WIN32)
-    option(USE_SYSTEM_CURL            "Use system pre-installed curl"           OFF)
-    option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"        OFF)
-elseif(APPLE)
-    option(USE_SYSTEM_CURL            "Use system pre-installed curl"           ON )
-    option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"        ON )
-else()
-    # linux
-    if (BUILD_WITH_CONDA)
-        option(USE_SYSTEM_CURL            "Use system pre-installed curl"           ON )
-        option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"        ON )
-    else()
-        option(USE_SYSTEM_CURL            "Use system pre-installed curl"           OFF)
-        option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"        OFF)
-    endif()
-endif()
 option(USE_SYSTEM_OPENCV "Use system pre-installed opencv"                      OFF)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3"                      OFF)
 option(USE_SYSTEM_EMBREE "Use system pre-installed Embree"                      OFF)
@@ -157,12 +141,6 @@ option(USE_SYSTEM_PNG "Use system pre-installed png"                            
 option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11"                  OFF)
 option(USE_SYSTEM_QHULLCPP "Use system pre-installed qhullcpp"                  OFF)
 option(USE_SYSTEM_STDGPU   "Use system pre-installed stdgpu"                    OFF)
-option(USE_SYSTEM_TBB "Use system pre-installed TBB"                            OFF)
-# Auto-enable USE_SYSTEM_TBB for conda with Qt6 to avoid conflicts
-if(BUILD_WITH_CONDA AND USE_QT6 AND NOT USE_SYSTEM_TBB)
-    message(STATUS "Auto-enabling USE_SYSTEM_TBB for conda environment on Linux")
-    set(USE_SYSTEM_TBB ON)
-endif()
 option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf"                  OFF)
 option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader"        OFF)
 option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg"                      OFF)
@@ -280,6 +258,27 @@ if (BUILD_WITH_CONDA)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${CONDA_PREFIX}/lib -L${CONDA_PREFIX}/lib")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,${CONDA_PREFIX}/lib -L${CONDA_PREFIX}/lib")
         message(STATUS "Added conda lib directory to rpath and library search path: ${CONDA_PREFIX}/lib")
+    endif()
+endif()
+option(USE_SYSTEM_TBB "Use system pre-installed TBB"                            OFF)
+# Auto-enable USE_SYSTEM_TBB for conda with Qt6 to avoid conflicts
+if(BUILD_WITH_CONDA AND USE_QT6 AND NOT USE_SYSTEM_TBB)
+    message(STATUS "Auto-enabling USE_SYSTEM_TBB for conda environment on Linux")
+    set(USE_SYSTEM_TBB ON)
+endif()
+option(USE_SYSTEM_CURL            "Use system pre-installed curl"           OFF)
+option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"        OFF)
+if(APPLE)
+    set(USE_SYSTEM_CURL ON)
+    set(USE_SYSTEM_OPENSSL ON)
+elseif(UNIX AND NOT APPLE)
+    # with conda
+    if (BUILD_WITH_CONDA)
+        set(USE_SYSTEM_CURL ON)
+        set(USE_SYSTEM_OPENSSL ON)
+    else()
+        set(USE_SYSTEM_CURL OFF)
+        set(USE_SYSTEM_OPENSSL OFF)
     endif()
 endif()
 
@@ -771,7 +770,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 add_subdirectory(examples)
 
-# load plugins (potentially used by eCV)
+# load plugins (potentially used by ACloudViewer app)
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug/plugins)
@@ -784,7 +783,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 add_subdirectory(plugins)
 
-# eCV
+# ACloudViewer app
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
@@ -797,7 +796,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 
 # ACloudViewer app
-add_subdirectory(eCV)
+add_subdirectory(app)
 
 # Documentation (optional)
 if(BUILD_DOCUMENTATION)
@@ -845,12 +844,35 @@ add_custom_target(apply-cpp-style
 include(CloudViewerPrintConfigurationSummary)
 cloudViewer_print_configuration_summary()
 
+### Generate CHANGELOG.txt from CHANGELOG.md
+# Generate at CMake configure time (not at build/install time)
+get_filename_component(CHANGELOG_MD "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" ABSOLUTE)
+get_filename_component(CHANGELOG_TXT "${CMAKE_BINARY_DIR}/CHANGELOG.txt" ABSOLUTE)
+
+# Check if input file exists before attempting to generate
+if(NOT EXISTS "${CHANGELOG_MD}")
+    message(WARNING "CHANGELOG.md not found at ${CHANGELOG_MD}, will use as fallback")
+    set(CHANGELOG_TXT "${CHANGELOG_MD}")
+else()
+    # Generate CHANGELOG.txt during CMake configuration
+    # Ensure build directory exists first
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}")
+    
+    # Simply copy CHANGELOG.md content to CHANGELOG.txt without any conversion
+    file(READ "${CHANGELOG_MD}" CHANGELOG_CONTENT)
+    file(WRITE "${CHANGELOG_TXT}" "${CHANGELOG_CONTENT}")
+    message(STATUS "CHANGELOG.txt generated from CHANGELOG.md at configure time")
+endif()
+
+# Make CHANGELOG_TXT available to subdirectories
+set(CHANGELOG_TXT "${CHANGELOG_TXT}" CACHE INTERNAL "Path to generated CHANGELOG.txt")
+
 ### Install files and library
 set(SCRIPTS_BASE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 file(GLOB main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/*.md" )
-list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.txt" )
-list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/license.txt" 
-                                "${CMAKE_CURRENT_SOURCE_DIR}/eCV/bin_other/global_shift_list_template.txt")
+list(APPEND main_documents_list "${CHANGELOG_TXT}" )
+list(APPEND main_documents_list "${CMAKE_CURRENT_SOURCE_DIR}/app/bin_other/license.txt" 
+                                "${CMAKE_CURRENT_SOURCE_DIR}/app/bin_other/global_shift_list_template.txt")
 
 SET(DEPLOY_ROOT_PATH "${CMAKE_INSTALL_PREFIX}/deploy")
 install(DIRECTORY "${SCRIPTS_BASE_PATH}/QtInstallerFramework/deploy"

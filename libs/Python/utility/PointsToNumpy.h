@@ -9,7 +9,7 @@
 
 #include <CVConst.h>
 
-#include "eCV_python.h"
+#include "CV_python.h"
 #include "utility/Matrix.h"
 
 class ccHObject;
@@ -20,7 +20,7 @@ namespace utility {
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
-class ECV_PYTHON_LIB_API Points2Numpy {
+class CV_PYTHON_LIB_API Points2Numpy {
 public:
     explicit Points2Numpy();
 

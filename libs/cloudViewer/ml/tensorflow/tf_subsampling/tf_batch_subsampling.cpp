@@ -13,7 +13,7 @@
 using namespace tensorflow;
 using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("CloudviewerBatchGridSubsampling")
+REGISTER_OP("CloudViewerBatchGridSubsampling")
         .Input("points: float")
         .Input("batches: int32")
         .Input("dl: float")
@@ -24,7 +24,7 @@ REGISTER_OP("CloudviewerBatchGridSubsampling")
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input0_shape));
             c->set_output(0, input0_shape);
             c->set_output(1, c->input(1));
-            return Status::OK();
+            return Status();
         });
 
 class BatchGridSubsamplingOp : public OpKernel {
@@ -123,5 +123,5 @@ public:
 };
 
 REGISTER_KERNEL_BUILDER(
-        Name("CloudviewerBatchGridSubsampling").Device(DEVICE_CPU),
+        Name("CloudViewerBatchGridSubsampling").Device(DEVICE_CPU),
         BatchGridSubsamplingOp);

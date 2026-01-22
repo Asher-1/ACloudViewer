@@ -14,7 +14,7 @@
 #include <CVGeom.h>
 #include <CVLog.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 
 // VTK

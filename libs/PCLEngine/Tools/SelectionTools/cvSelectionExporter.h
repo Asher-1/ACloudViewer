@@ -32,7 +32,7 @@ class QWidget;
  * Provides functionality to convert VTK selections to:
  * - ccMesh (from selected cells)
  * - ccPointCloud (from selected points)
- * - Various file formats (OBJ, PLY, STL, BIN, etc.) - uses eCV_io module
+ * - Various file formats (OBJ, PLY, STL, BIN, etc.) - uses CV_io module
  * - Direct import to scene/rendering window
  *
  * Based on ParaView's selection extraction filters:
@@ -127,7 +127,7 @@ public:
             const ExportOptions& options = ExportOptions());
 
     /**
-     * @brief Export selection to file (uses eCV_io module)
+     * @brief Export selection to file (uses CV_io module)
      * @param polyData Source mesh data
      * @param selectionData Selection data
      * @param filename Output filename (extension determines format)
@@ -239,7 +239,7 @@ private:
                                                    const QString& name);
 
     /**
-     * @brief Save ccHObject to file using eCV_io module
+     * @brief Save ccHObject to file using CV_io module
      * @param object Object to save
      * @param filename Output filename
      * @param writeAscii Use ASCII format if supported

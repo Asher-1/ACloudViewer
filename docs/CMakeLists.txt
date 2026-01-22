@@ -1,6 +1,6 @@
 # CMake configuration for ACloudViewer documentation
 #
-# Build Strategy (following Open3D):
+# Build Strategy:
 #   CMake delegates to make_docs.py for all documentation generation.
 #   This ensures consistency between CMake builds and direct make_docs.py calls.
 #
@@ -77,7 +77,7 @@ add_custom_target(documentation
     COMMAND ${CMAKE_COMMAND} -E echo ""
     COMMAND ${CMAKE_COMMAND} -E env 
         "PYTHONPATH=${DOC_PYTHONPATH_STR}:$ENV{PYTHONPATH}"
-        ${Python3_EXECUTABLE} ${DOCS_SOURCE_DIR}/make_docs.py --sphinx --doxygen --output-dir ${DOCS_OUTPUT_DIR} --doxygen-dir ${DOCS_DOXYGEN_DIR}
+        ${Python3_EXECUTABLE} ${DOCS_SOURCE_DIR}/make_docs.py --is_release --parallel --sphinx --doxygen --output-dir ${DOCS_OUTPUT_DIR} --doxygen-dir ${DOCS_DOXYGEN_DIR}
     COMMAND ${CMAKE_COMMAND} -E echo ""
     COMMAND ${CMAKE_COMMAND} -E echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     COMMAND ${CMAKE_COMMAND} -E echo "✅ Documentation Build Complete"

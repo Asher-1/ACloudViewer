@@ -7,7 +7,7 @@
 
 #include "MinimumCutSegmentationDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvDisplayTools.h>
 #include <ecvGLMatrix.h>

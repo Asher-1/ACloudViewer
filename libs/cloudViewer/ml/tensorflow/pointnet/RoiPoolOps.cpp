@@ -17,7 +17,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerRoiPool")
+REGISTER_OP("CloudViewerRoiPool")
         .Input("xyz: float32")
         .Input("boxes3d: float32")
         .Input("pts_feature: float32")
@@ -42,6 +42,6 @@ REGISTER_OP("CloudviewerRoiPool")
             ::tensorflow::shape_inference::ShapeHandle output2 =
                     c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1)});
             c->set_output(1, output2);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc( TODO )doc");

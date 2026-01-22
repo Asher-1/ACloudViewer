@@ -14,7 +14,7 @@
 #include <PCV.h>
 #include <ScalarField.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScalesManager.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>

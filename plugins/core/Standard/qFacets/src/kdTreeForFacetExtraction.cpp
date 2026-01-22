@@ -11,7 +11,7 @@
 #include <GenericProgressCallback.h>
 #include <ParallelSort.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
 // Qt

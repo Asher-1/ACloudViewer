@@ -10,7 +10,7 @@
 #include "FileIOFilter.h"
 
 //! Point+Scalar value binary point cloud file I/O filter
-class /*ECV_IO_LIB_API*/ PVFilter : public FileIOFilter {
+class /*CV_IO_LIB_API*/ PVFilter : public FileIOFilter {
 public:
     PVFilter();
 

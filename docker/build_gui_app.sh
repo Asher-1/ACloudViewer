@@ -75,17 +75,35 @@ set -x # Echo commands on
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
+# Build options - separate common options for clarity
+BUILD_OPTIONS="with_pcl_nurbs package_installer plugin_treeiso"
+
+# Add with_rdb option based on WITH_RDB environment variable
+# Default: OFF (for Dockerfile_build), ON (for Dockerfile.ci and Dockerfile.ci.qt6)
+if [ -z "${WITH_RDB:-}" ]; then
+    # If not set, default to OFF (for backward compatibility with Dockerfile_build)
+    WITH_RDB=OFF
+fi
+
+if [ "${WITH_RDB}" = "ON" ]; then
+    BUILD_OPTIONS="${BUILD_OPTIONS} with_rdb"
+    echo "PLUGIN_IO_QRDB will be enabled"
+else
+    BUILD_OPTIONS="${BUILD_OPTIONS} without_rdb"
+    echo "PLUGIN_IO_QRDB will be disabled"
+fi
+
 if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_pcl_nurbs package_installer plugin_treeiso
+    build_gui_app ${BUILD_OPTIONS}
     echo
 else
     echo "Start to build GUI package with only CPU..."
     echo
     export BUILD_CUDA_MODULE=OFF
-    build_gui_app with_pcl_nurbs package_installer plugin_treeiso
+    build_gui_app ${BUILD_OPTIONS}
     echo
 
     # Building with cuda if cuda available
@@ -93,7 +111,7 @@ else
         echo "Start to build GUI package with CUDA..."
         echo
         export BUILD_CUDA_MODULE=ON
-        build_gui_app with_pcl_nurbs package_installer plugin_treeiso
+        build_gui_app ${BUILD_OPTIONS}
         echo
     fi
 fi

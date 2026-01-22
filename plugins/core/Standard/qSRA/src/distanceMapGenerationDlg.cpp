@@ -29,7 +29,7 @@
 // Qt5/Qt6 Compatibility
 #include <QtCompat.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>
 #include <ecvPlane.h>

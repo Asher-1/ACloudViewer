@@ -35,9 +35,9 @@ QToolBar * {
 
 /* QWidget ----------------------------------------------------------------
 
+Note: No default background-color for QWidget to avoid covering OpenGL content like HotZone
 --------------------------------------------------------------------------- */
 QWidget {
-    background-color: $COLOR_BACKGROUND_1;
     border: 0px solid $COLOR_BACKGROUND_4;
     padding: 0px;
     color: $COLOR_TEXT_1;

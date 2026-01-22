@@ -3,29 +3,75 @@ Tutorial
 
 .. toctree::
    :maxdepth: 1
-   :caption: Basic Tutorials
+   :caption: Core
+
+   core/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Geometry
 
    geometry/index
-   visualization/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Geometry (Tensor)
+
+   t_geometry/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data
+
+   data/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Pipelines
+
    pipelines/index
-   reconstruction/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Pipelines (Tensor)
+
+   t_pipelines/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reconstruction System
+
+   reconstruction_system/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reconstruction System (Tensor)
+
+   t_reconstruction_system/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Sensor
+
+   sensor/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Visualization
+
+   visualization/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Machine Learning
+
    ml/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Advanced Topics
+
    advanced/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Core (Tensor) Tutorials
-
-   core/tensor
-   core/hashmap
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Tensor Geometry & Pipelines
-
-   t_geometry/pointcloud
-   t_pipelines/t_icp_registration
-   t_pipelines/t_robust_kernel
 
 Overview
 --------
@@ -47,8 +93,12 @@ Tutorial Structure
      - Interactive 3D visualization
    * - :doc:`pipelines/index`
      - Processing pipelines (registration, integration)
-   * - :doc:`reconstruction/index`
-     - 3D reconstruction from images
+   * - :doc:`reconstruction_system/index`
+     - Complete pipeline to reconstruct a 3D scene from RGBD sequence
+   * - :doc:`t_reconstruction_system/index`
+     - Volumetric RGB-D reconstruction and dense RGB-D SLAM with tensor interface
+   * - :doc:`sensor/index`
+     - Sensor integration and data capture (Azure Kinect, RealSense)
    * - :doc:`ml/index`
      - Machine learning with 3D data
    * - :doc:`advanced/index`
@@ -95,9 +145,8 @@ All tutorials include complete, runnable code examples.
        return 0;
    }
 
-See Also
---------
+.. seealso::
 
-* :doc:`../cpp_api/index` - C++ API Reference
-* :doc:`../getting_started/introduction` - Introduction
+   - :doc:`../cpp_api` - C++ API Reference
+   - :doc:`../getting_started/introduction` - Introduction
 

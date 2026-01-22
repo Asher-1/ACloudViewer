@@ -31,7 +31,7 @@
 #include "ui_cvGenericFilterDlg.h"
 #include "ui_cvStreamlineFilterDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBBox.h>
 
 cvStreamlineFilter::cvStreamlineFilter(QWidget* parent)

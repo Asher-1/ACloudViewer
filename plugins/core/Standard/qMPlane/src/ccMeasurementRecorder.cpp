@@ -9,7 +9,7 @@
 
 #include "ccItemTree.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include "ecvScalarField.h"
 
 constexpr char const* ROOT_FOLDER_NAME = "MPlane";

@@ -24,6 +24,7 @@
 
 // SYSTEM
 #include <cmath>
+#include <functional>
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -31,7 +32,7 @@
 #include <Helper.h>
 #include <ecvGLMatrix.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <LineSet.h>
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
@@ -1498,8 +1499,8 @@ bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
 bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
                             const std::string& id,
                             int viewport) {
-    CVLog::Print("[PCLVis::addTextureMesh] ENTRY: id=%s, materials=%zu",
-                 id.c_str(), mesh.tex_materials.size());
+    CVLog::PrintVerbose("[PCLVis::addTextureMesh] ENTRY: id=%s, materials=%zu",
+                        id.c_str(), mesh.tex_materials.size());
 
     pcl::visualization::CloudActorMap::iterator am_it =
             getCloudActorMap()->find(id);
@@ -1850,7 +1851,7 @@ bool PCLVis::addTextureMeshFromCCMesh(ccGenericMesh* mesh,
     transformation_map_[id] = transformation;
     (*getCloudActorMap())[id].viewpoint_transformation_ = transformation.Get();
 
-    CVLog::Print(
+    CVLog::PrintVerbose(
             "[PCLVis::addTextureMeshFromCCMesh] Successfully added mesh "
             "with %zu materials",
             materials->size());
@@ -2520,8 +2521,8 @@ void PCLVis::setMeshOpacity(double opacity,
     // Mark the actor as modified to trigger re-render
     actor->Modified();
 
-    CVLog::PrintDebug("[PCLVis::setMeshOpacity] Set opacity to %.3f for <%s>",
-                      opacity, viewID.c_str());
+    CVLog::PrintVerbose("[PCLVis::setMeshOpacity] Set opacity to %.3f for <%s>",
+                        opacity, viewID.c_str());
 }
 
 void PCLVis::setShapeShadingMode(SHADING_MODE mode,
@@ -2778,13 +2779,13 @@ void PCLVis::exitCallbackProcess() {
 void PCLVis::showPclMarkerAxes(vtkRenderWindowInteractor* interactor) {
     if (!interactor) return;
     showOrientationMarkerWidgetAxes(interactor);
-    CVLog::Print("Show Orientation Marker Widget Axes!");
+    CVLog::PrintVerbose("Show Orientation Marker Widget Axes!");
 }
 
 void PCLVis::hidePclMarkerAxes() {
     // removeOrientationMarkerWidgetAxes();
     hideOrientationMarkerWidgetAxes();
-    CVLog::Print("Hide Orientation Marker Widget Axes!");
+    CVLog::PrintVerbose("Hide Orientation Marker Widget Axes!");
 }
 
 bool PCLVis::pclMarkerAxesShown() {
@@ -2820,7 +2821,7 @@ void PCLVis::showOrientationMarkerWidgetAxes(
         m_axes_widget->InteractiveOff();
     } else {
         m_axes_widget->SetEnabled(true);
-        CVLog::Print("Show Orientation Marker Widget Axes!");
+        CVLog::PrintVerbose("Show Orientation Marker Widget Axes!");
     }
 }
 
@@ -3095,21 +3096,23 @@ void PCLVis::setupInteractor(vtkRenderWindowInteractor* iren,
 void PCLVis::registerKeyboard() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
     registerKeyboardCallback(&PCLVis::keyboardEventProcess, *this);
-    CVLog::Print("[keyboard Event] press Delete to remove annotations");
+    CVLog::Print(
+            "[annotation keyboard Event] press Delete to remove annotations");
     m_cloud_mutex.unlock();
 }
 
 void PCLVis::registerMouse() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
     registerMouseCallback(&PCLVis::mouseEventProcess, *this);
-    CVLog::Print("[mouse Event] click left button to pick annotation");
+    CVLog::Print(
+            "[annotation mouse Event] click left button to pick annotation");
     m_cloud_mutex.unlock();
 }
 
 void PCLVis::registerPointPicking() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
     registerPointPickingCallback(&PCLVis::pointPickingProcess, *this);
-    CVLog::Print("[pointPicking] SHIFT + left click to select a point!");
+    CVLog::Print("[global pointPicking] SHIFT + left click to select a point!");
     m_cloud_mutex.unlock();
 }
 
@@ -3182,7 +3185,7 @@ void PCLVis::registerInteractorStyle(bool useDefault) {
 void PCLVis::registerAreaPicking() {
     m_cloud_mutex.lock();  // for not overwriting the point m_baseCloud
     registerAreaPickingCallback(&PCLVis::areaPickingEventProcess, *this);
-    CVLog::Print("[areaPicking] press A to start or ending picking!");
+    CVLog::Print("[global areaPicking] press A to start or ending picking!");
     m_cloud_mutex.unlock();
 }
 
@@ -3389,6 +3392,7 @@ void PCLVis::setLightIntensity(double intensity) {
     renderer->LightFollowCameraOn();  // Ensure light follows camera
 
     // Update all actors to use lighting (important for proper light response)
+    // This includes both mesh actors and point cloud actors
     vtkActorCollection* actors = renderer->GetActors();
     if (actors) {
         actors->InitTraversal();
@@ -3398,10 +3402,57 @@ void PCLVis::setLightIntensity(double intensity) {
             if (prop) {
                 // Enable lighting for this actor
                 prop->SetLighting(true);
-                // Set material properties for better light response
-                prop->SetAmbient(0.3);   // Some ambient light
-                prop->SetDiffuse(0.7);   // Main diffuse reflection
-                prop->SetSpecular(0.2);  // Some specular highlights
+
+                // Distinguish between point clouds and meshes
+                // Point clouds typically have only vertices (no cells or only
+                // vertex cells) Meshes have polygons/triangles (cells)
+                bool isPointCloud = false;
+                vtkMapper* mapper = actor->GetMapper();
+                if (mapper) {
+                    vtkPolyData* polydata =
+                            vtkPolyData::SafeDownCast(mapper->GetInput());
+                    if (polydata) {
+                        // Check if it's a point cloud: has points but no
+                        // meaningful cells (or only vertex cells, which are
+                        // used for point rendering)
+                        vtkIdType numPoints = polydata->GetNumberOfPoints();
+                        vtkIdType numCells = polydata->GetNumberOfCells();
+                        // Point clouds typically have cells only for vertex
+                        // rendering (one cell per point) Meshes have far fewer
+                        // cells (triangles/polygons) than points
+                        isPointCloud = (numCells == 0) ||
+                                       (numCells >= numPoints * 0.9);
+                    }
+                }
+
+                if (isPointCloud) {
+                    // Point clouds with vertex colors: adjust ambient/diffuse
+                    // to match light intensity VTK rendering: final_color =
+                    // vertex_color * (ambient + diffuse * light_intensity +
+                    // specular) To make point clouds darker when light is low
+                    // and brighter when light is high:
+                    // - Low intensity: low ambient + low diffuse = darker
+                    // - High intensity: higher ambient + higher diffuse =
+                    // brighter We scale both ambient and diffuse proportionally
+                    // to light intensity
+                    double baseAmbient =
+                            0.1;  // Minimum ambient (for very low light)
+                    double baseDiffuse = 0.3;  // Minimum diffuse
+                    double ambient = baseAmbient +
+                                     m_lightIntensity * 0.5;  // Range: 0.1-0.6
+                    double diffuse = baseDiffuse +
+                                     m_lightIntensity * 0.5;  // Range: 0.3-0.8
+                    prop->SetAmbient(ambient);
+                    prop->SetDiffuse(diffuse);
+                    prop->SetSpecular(0.1);  // Low specular for point clouds
+                } else {
+                    // Meshes use standard lighting properties
+                    // These values work well for meshes with materials/textures
+                    prop->SetAmbient(0.3);  // Standard ambient for meshes
+                    prop->SetDiffuse(0.7);  // Standard diffuse for meshes
+                    prop->SetSpecular(
+                            0.2);  // Some specular for mesh highlights
+                }
             }
             actor = actors->GetNextActor();
         }
@@ -3577,7 +3628,7 @@ void PCLVis::SetDataAxesGridProperties(const std::string& viewID,
         dataAxesGrid->SetAxisLabels(2, nullptr);
     }
 
-    // 9. Bounds (custom or from actor)
+    // 9. Bounds (custom or from actor or from ccHObject)
     if (props.useCustomBounds) {
         dataAxesGrid->SetBounds(props.xMin, props.xMax, props.yMin, props.yMax,
                                 props.zMin, props.zMax);
@@ -3596,9 +3647,78 @@ void PCLVis::SetDataAxesGridProperties(const std::string& viewID,
                         "not display correctly");
             }
         } else {
-            CVLog::Warning(QString("[PCLVis] No actor found for viewID: %1, "
-                                   "axes grid bounds not set")
-                                   .arg(QString::fromStdString(viewID)));
+            // If no actor found, try to get bounds from ccHObject
+            // This is especially useful for parent nodes/folders that contain
+            // multiple children
+            ccHObject* obj = getSourceObject(viewID);
+
+            // If not in source object map, try to find it in the scene DB
+            // This handles parent nodes/folders that aren't registered in
+            // m_sourceObjectMap
+            if (!obj) {
+                ccHObject* sceneRoot = ecvDisplayTools::GetSceneDB();
+                if (sceneRoot) {
+                    QString viewIDStr = QString::fromStdString(viewID);
+                    // Recursively search for object with matching viewID
+                    std::function<ccHObject*(ccHObject*)> findByViewID =
+                            [&findByViewID,
+                             &viewIDStr](ccHObject* node) -> ccHObject* {
+                        if (!node) return nullptr;
+                        if (node->getViewId() == viewIDStr) {
+                            return node;
+                        }
+                        for (unsigned i = 0; i < node->getChildrenNumber();
+                             ++i) {
+                            ccHObject* found = findByViewID(node->getChild(i));
+                            if (found) return found;
+                        }
+                        return nullptr;
+                    };
+                    obj = findByViewID(sceneRoot);
+                }
+            }
+
+            if (obj) {
+                // Calculate overall bbox including all children recursively
+                ccBBox overallBBox = obj->getDisplayBB_recursive(false);
+                if (overallBBox.isValid()) {
+                    CCVector3 minCorner = overallBBox.minCorner();
+                    CCVector3 maxCorner = overallBBox.maxCorner();
+                    double bounds[6] = {minCorner.x, maxCorner.x, minCorner.y,
+                                        maxCorner.y, minCorner.z, maxCorner.z};
+                    if (bounds[1] > bounds[0] && bounds[3] > bounds[2] &&
+                        bounds[5] > bounds[4]) {
+                        dataAxesGrid->SetBounds(bounds);
+                        CVLog::PrintVerbose(
+                                QString("[PCLVis] Set axes grid bounds from "
+                                        "ccHObject '%1' (viewID: %2): "
+                                        "[%.2f, %.2f] x [%.2f, %.2f] x [%.2f, "
+                                        "%.2f]")
+                                        .arg(obj->getName())
+                                        .arg(QString::fromStdString(viewID))
+                                        .arg(bounds[0])
+                                        .arg(bounds[1])
+                                        .arg(bounds[2])
+                                        .arg(bounds[3])
+                                        .arg(bounds[4])
+                                        .arg(bounds[5]));
+                    } else {
+                        CVLog::Warning(
+                                "[PCLVis] Invalid bounds calculated from "
+                                "ccHObject for Data Axes Grid");
+                    }
+                } else {
+                    CVLog::Warning(
+                            QString("[PCLVis] Invalid bbox for viewID: %1, "
+                                    "axes grid bounds not set")
+                                    .arg(QString::fromStdString(viewID)));
+                }
+            } else {
+                CVLog::Warning(QString("[PCLVis] No actor or source object "
+                                       "found for viewID: %1, axes grid bounds "
+                                       "not set")
+                                       .arg(QString::fromStdString(viewID)));
+            }
         }
     }
 
@@ -3726,9 +3846,7 @@ void PCLVis::ToggleCameraOrientationWidget(bool show) {
             m_cameraOrientationWidget->SquareResize();
         }
 
-        CVLog::Print(
-                "[PCLVis] Camera Orientation Widget created "
-                "(ParaView-compatible)");
+        CVLog::PrintVerbose("[PCLVis] Camera Orientation Widget created");
     }
 
     // Update visibility and enabled state (ParaView behavior)

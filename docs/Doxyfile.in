@@ -5,6 +5,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 
+HTML_HEADER            = source/_static/google_analytics_header.html
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "ACloudViewer"
 PROJECT_NUMBER         = @PROJECT_VERSION@
@@ -75,8 +76,8 @@ INPUT                  = @DOCS_SOURCE_DIR@/mainpage.dox \
                          @PROJECT_SOURCE_DIR@/core/include \
                          @PROJECT_SOURCE_DIR@/core/src \
                          @PROJECT_SOURCE_DIR@/libs/cloudViewer \
-                         @PROJECT_SOURCE_DIR@/libs/eCV_db/include \
-                         @PROJECT_SOURCE_DIR@/libs/eCV_io/include \
+                         @PROJECT_SOURCE_DIR@/libs/CV_db/include \
+                         @PROJECT_SOURCE_DIR@/libs/CV_io/include \
                          @PROJECT_SOURCE_DIR@/libs/PCLEngine/include \
                          @PROJECT_SOURCE_DIR@/libs/Reconstruction/lib \
                          @PROJECT_SOURCE_DIR@/libs/CVAppCommon/include \
@@ -84,7 +85,7 @@ INPUT                  = @DOCS_SOURCE_DIR@/mainpage.dox \
                          @PROJECT_SOURCE_DIR@/libs/CVPluginStub \
                          @PROJECT_SOURCE_DIR@/libs/CVViewer \
                          @PROJECT_SOURCE_DIR@/libs/Python/pybind \
-                         @PROJECT_SOURCE_DIR@/eCV \
+                         @PROJECT_SOURCE_DIR@/app \
                          @PROJECT_SOURCE_DIR@/plugins/core
 
 INPUT_ENCODING         = UTF-8
@@ -110,9 +111,9 @@ EXCLUDE                = @PROJECT_SOURCE_DIR@/libs/cloudViewer/visualization/sha
                          @PROJECT_SOURCE_DIR@/libs/cloudViewer/ml/pytorch \
                          @PROJECT_SOURCE_DIR@/3rdparty \
                          @PROJECT_SOURCE_DIR@/build_app \
-                         @PROJECT_SOURCE_DIR@/eCV/ui_templates \
-                         @PROJECT_SOURCE_DIR@/eCV/translations \
-                         @PROJECT_SOURCE_DIR@/eCV/extern
+                         @PROJECT_SOURCE_DIR@/app/ui_templates \
+                         @PROJECT_SOURCE_DIR@/app/translations \
+                         @PROJECT_SOURCE_DIR@/app/extern
 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = */test/* \
@@ -197,11 +198,11 @@ EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           = @PROJECT_SOURCE_DIR@/libs/cloudViewer \
                          @PROJECT_SOURCE_DIR@/core/include \
-                         @PROJECT_SOURCE_DIR@/libs/eCV_db/include
+                         @PROJECT_SOURCE_DIR@/libs/CV_db/include
 PREDEFINED             = DOXYGEN_RUNNING \
-                         ECV_DB_LIB_API= \
+                         CV_DB_LIB_API= \
                          CV_CORE_LIB_API= \
-                         ECV_IO_LIB_API= \
+                         CV_IO_LIB_API= \
                          CLOUDVIEWER_API= \
                          __attribute__(x)=
 

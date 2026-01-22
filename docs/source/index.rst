@@ -15,6 +15,63 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
 .. note::
    **Latest Release:** |version| | `Download <https://github.com/Asher-1/ACloudViewer/releases>`_ | `GitHub <https://github.com/Asher-1/ACloudViewer>`_
 
+.. raw:: html
+
+   <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #2196F3;">
+       <p style="margin: 0 0 10px 0; font-weight: 600; color: #333;">
+           📚 <strong>Documentation Version:</strong>
+       </p>
+       <select id="docs-version-select-main" 
+               style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: white; cursor: pointer;"
+               onchange="if(window.ACloudViewerVersionSwitcher) { window.ACloudViewerVersionSwitcher.switchVersion(this.value); }">
+           <option value="latest">Latest (main)</option>
+       </select>
+       <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+           Switch between different documentation versions. Use the version selector in the sidebar for quick access.
+       </p>
+   </div>
+   <script>
+   // Initialize main page version selector
+   (function() {
+       function updateMainSelector() {
+           const select = document.getElementById('docs-version-select-main');
+           if (!select) {
+               setTimeout(updateMainSelector, 200);
+               return;
+           }
+           
+           if (!window.ACloudViewerVersionSwitcher) {
+               setTimeout(updateMainSelector, 200);
+               return;
+           }
+           
+           const versions = window.ACloudViewerVersionSwitcher.getVersions();
+           const currentVersion = window.ACloudViewerVersionSwitcher.getCurrentVersion();
+           
+           if (versions.length > 0) {
+               select.innerHTML = '';
+               versions.forEach(v => {
+                   const option = document.createElement('option');
+                   option.value = v.value;
+                   option.textContent = v.display;
+                   if (v.value === currentVersion || (currentVersion === 'latest' && v.value === 'latest')) {
+                       option.selected = true;
+                   }
+                   select.appendChild(option);
+               });
+           }
+       }
+       
+       if (document.readyState === 'loading') {
+           document.addEventListener('DOMContentLoaded', updateMainSelector);
+       } else {
+           updateMainSelector();
+       }
+       
+       document.addEventListener('versionsLoaded', updateMainSelector);
+   })();
+   </script>
+
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
@@ -29,22 +86,6 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :caption: Tutorial
 
    tutorial/index
-   tutorial/geometry/index
-   tutorial/visualization/index
-   tutorial/pipelines/index
-   tutorial/reconstruction/index
-   tutorial/ml/index
-   tutorial/advanced/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Additional Tutorials
-
-   tutorials/basic_usage
-   tutorials/point_cloud_processing
-   tutorials/registration
-   tutorials/reconstruction
-   tutorials/visualization
 
 .. toctree::
    :maxdepth: 1
@@ -55,10 +96,10 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    python_api/cloudViewer.data
    python_api/cloudViewer.geometry
    python_api/cloudViewer.io
+   python_api/cloudViewer.t
    python_api/cloudViewer.ml
    python_api/cloudViewer.pipelines
    python_api/cloudViewer.reconstruction
-   python_api/cloudViewer.t
    python_api/cloudViewer.utility
    python_api/cloudViewer.visualization
 
@@ -66,9 +107,16 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :maxdepth: 2
    :caption: Python Examples
 
+   python_example/benchmark/index
+   python_example/camera/index
+   python_example/core/index
    python_example/geometry/index
    python_example/io/index
    python_example/pipelines/index
+   python_example/reconstruction/index
+   python_example/reconstruction_system/index
+   python_example/t_reconstruction_system/index
+   python_example/utility/index
    python_example/visualization/index
 
 .. toctree::

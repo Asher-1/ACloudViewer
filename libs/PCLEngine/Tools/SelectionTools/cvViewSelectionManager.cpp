@@ -18,7 +18,7 @@
 // LOCAL
 #include "PclUtils/PCLVis.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
@@ -64,7 +64,7 @@ cvViewSelectionManager::cvViewSelectionManager(QObject* parent)
     m_highlighter =
             new cvSelectionHighlighter();  // Shared highlighter for all tools
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvViewSelectionManager] Initialized with utility modules");
 }
 
@@ -262,7 +262,7 @@ void cvViewSelectionManager::expandSelection(int layers,
         // Update number of layers
         m_numberOfLayers = newNumberOfLayers;
 
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvViewSelectionManager] Updated NumberOfLayers: %1")
                         .arg(m_numberOfLayers));
 
@@ -305,9 +305,9 @@ void cvViewSelectionManager::setGrowSelectionRemoveSeed(bool remove) {
 void cvViewSelectionManager::setGrowSelectionRemoveIntermediateLayers(
         bool remove) {
     m_growRemoveIntermediateLayers = remove;
-    CVLog::PrintDebug(QString("[cvViewSelectionManager] "
-                              "GrowSelectionRemoveIntermediateLayers = %1")
-                              .arg(remove));
+    CVLog::PrintVerbose(QString("[cvViewSelectionManager] "
+                                "GrowSelectionRemoveIntermediateLayers = %1")
+                                .arg(remove));
 }
 
 //-----------------------------------------------------------------------------
@@ -380,10 +380,10 @@ void cvViewSelectionManager::setCurrentSelection(
     if (resetLayers) {
         m_originalSelection = selectionData;
         m_numberOfLayers = 0;
-        CVLog::PrintDebug(QString("[cvViewSelectionManager] Stored original "
-                                  "selection: %1 %2")
-                                  .arg(selectionData.count())
-                                  .arg(selectionData.fieldTypeString()));
+        CVLog::PrintVerbose(QString("[cvViewSelectionManager] Stored original "
+                                    "selection: %1 %2")
+                                    .arg(selectionData.count())
+                                    .arg(selectionData.fieldTypeString()));
     }
 }
 
@@ -425,7 +425,7 @@ void cvViewSelectionManager::setCurrentSelection(
     bool hasChanged = false;
     if (!m_currentSelection && newCount == 0) {
         // Both empty - no change
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 "[cvViewSelectionManager] Selection unchanged (both empty)");
         return;
     } else if (!m_currentSelection && newCount > 0) {
@@ -454,7 +454,7 @@ void cvViewSelectionManager::setCurrentSelection(
     }
 
     if (!hasChanged) {
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 "[cvViewSelectionManager] Selection unchanged, skipping "
                 "update");
         return;
@@ -472,7 +472,7 @@ void cvViewSelectionManager::setCurrentSelection(
             m_currentSelection->DeepCopy(selection);
             m_currentSelectionFieldAssociation = fieldAssociation;
 
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvViewSelectionManager] Selection updated: %1 "
                             "%2 selected")
                             .arg(newCount)
@@ -544,7 +544,7 @@ vtkPolyData* cvViewSelectionManager::getPolyData() const {
         if (data) {
             vtkPolyData* polyData = vtkPolyData::SafeDownCast(data);
             if (polyData) {
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         "[cvViewSelectionManager::getPolyData] Got polyData "
                         "from last selection");
                 return polyData;
@@ -562,7 +562,7 @@ vtkPolyData* cvViewSelectionManager::getPolyData() const {
         if (data) {
             vtkPolyData* polyData = vtkPolyData::SafeDownCast(data);
             if (polyData) {
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         "[cvViewSelectionManager::getPolyData] Got polyData "
                         "from first data actor");
                 return polyData;
@@ -655,7 +655,7 @@ ccPointCloud* cvViewSelectionManager::getSourcePointCloud() const {
     // Check if it's a point cloud
     if (obj->isA(CV_TYPES::POINT_CLOUD)) {
         ccPointCloud* cloud = static_cast<ccPointCloud*>(obj);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvViewSelectionManager::getSourcePointCloud] "
                         "Returning point cloud '%1' with %2 points")
                         .arg(cloud->getName())
@@ -663,7 +663,7 @@ ccPointCloud* cvViewSelectionManager::getSourcePointCloud() const {
         return cloud;
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvViewSelectionManager::getSourcePointCloud] "
                     "Source object '%1' is not a point cloud (type=%2)")
                     .arg(obj->getName())
@@ -688,10 +688,10 @@ ccMesh* cvViewSelectionManager::getSourceMesh() const {
     // Check if it's a mesh
     if (obj->isKindOf(CV_TYPES::MESH)) {
         ccMesh* mesh = static_cast<ccMesh*>(obj);
-        CVLog::PrintDebug(QString("[cvViewSelectionManager::getSourceMesh] "
-                                  "Returning mesh '%1' with %2 triangles")
-                                  .arg(mesh->getName())
-                                  .arg(mesh->size()));
+        CVLog::PrintVerbose(QString("[cvViewSelectionManager::getSourceMesh] "
+                                    "Returning mesh '%1' with %2 triangles")
+                                    .arg(mesh->getName())
+                                    .arg(mesh->size()));
         return mesh;
     }
 

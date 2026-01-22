@@ -39,7 +39,7 @@
 #include <Eigen.h>
 #include <Optional.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <cloudViewer/pipelines/registration/PoseGraph.h>
 #include <ecvGLMatrix.h>
 #include <ecvMesh.h>

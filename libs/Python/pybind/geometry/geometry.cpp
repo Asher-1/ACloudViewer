@@ -8,7 +8,7 @@
 // CV_CORE_LIB
 #include <BoundingBox.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <Image.h>
 #include <LineSet.h>
 #include <Octree.h>

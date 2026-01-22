@@ -7,7 +7,7 @@
 
 #include "ccCSFDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvOctree.h>
 
 static int MaxIteration = 500;

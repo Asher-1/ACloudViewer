@@ -18,12 +18,12 @@
 #include <Logging.h>
 #include <ProgressReporters.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObjectCaster.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <ImageIO.h>
 #include <rply.h>
 #include <tiny_gltf.h>

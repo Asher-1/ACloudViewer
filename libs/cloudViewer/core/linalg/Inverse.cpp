@@ -72,12 +72,12 @@ void Inverse(const Tensor &A, Tensor &output) {
 #endif
     } else {
         Dtype ipiv_dtype;
-        if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
+        if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 4) {
             ipiv_dtype = core::Int32;
-        } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
+        } else if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 8) {
             ipiv_dtype = core::Int64;
         } else {
-            utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
+            utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
         }
         Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();
