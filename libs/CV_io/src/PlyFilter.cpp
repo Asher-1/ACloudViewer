@@ -116,7 +116,9 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity,
     }
 
 #ifdef _WIN32
-    p_ply ply = ply_create(filename.toStdWString().c_str(), storageType,
+    // Convert QString to UTF-8 encoded std::string for Windows
+    // ply_create expects const char*, not const wchar_t*
+    p_ply ply = ply_create(filename.toUtf8().constData(), storageType,
                            errorCallback, 0, nullptr);
 #else
     p_ply ply = ply_create(qPrintable(filename), storageType, errorCallback, 0,
@@ -914,7 +916,9 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 
     // open a PLY file for reading
 #ifdef _WIN32
-    p_ply ply = ply_open(filename.toStdWString().c_str(), errorCallback, 0,
+    // Convert QString to UTF-8 encoded std::string for Windows
+    // ply_open expects const char*, not const wchar_t*
+    p_ply ply = ply_open(filename.toUtf8().constData(), errorCallback, 0,
                          nullptr);
 #else
     p_ply ply = ply_open(qPrintable(filename), errorCallback, 0, nullptr);
