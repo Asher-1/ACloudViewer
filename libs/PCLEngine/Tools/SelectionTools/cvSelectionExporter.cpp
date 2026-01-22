@@ -11,7 +11,7 @@
 #include <CVLog.h>
 #include <ReferenceCloud.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvMaterialSet.h>
 #include <ecvMesh.h>
@@ -20,7 +20,7 @@
 #include <ecvScalarField.h>
 #include <ecvSerializableObject.h>
 
-// ECV_IO_LIB - Use existing I/O infrastructure
+// CV_IO_LIB - Use existing I/O infrastructure
 #include <AutoIO.h>
 #include <FileIO.h>
 #include <FileIOFilter.h>
@@ -156,10 +156,11 @@ ccPointCloud* cvSelectionExporter::exportToPointCloud(
         return nullptr;
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionExporter] Created point cloud '%1' "
-                              "with %2 points")
-                              .arg(cloudName)
-                              .arg(cloud->size()));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionExporter] Created point cloud '%1' "
+                    "with %2 points")
+                    .arg(cloudName)
+                    .arg(cloud->size()));
 
     // Save to file if requested
     if (options.saveToFile && !options.filename.isEmpty()) {
@@ -274,7 +275,7 @@ ccPointCloud* cvSelectionExporter::exportFromSourceCloud(
                                 : options.name;
     result->setName(cloudName);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionExporter] SUCCESS: Created point cloud "
                     "'%1' with %2 points, %3 scalar fields, "
                     "hasColors=%4, hasNormals=%5")
@@ -376,7 +377,7 @@ ccMesh* cvSelectionExporter::exportFromSourceMesh(
     result->showSF(sourceMesh->sfShown());
     result->showMaterials(sourceMesh->materialsShown());
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionExporter] SUCCESS: Created mesh '%1' "
                     "with %2 triangles, %3 vertices")
                     .arg(meshName)
@@ -434,7 +435,7 @@ bool cvSelectionExporter::exportToFile(vtkPolyData* polyData,
         return false;
     }
 
-    // Save using eCV_io module
+    // Save using CV_io module
     bool success = saveObjectToFile(object, filename, writeAscii, compressed);
     delete object;
 
@@ -523,7 +524,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
 
         // Log source point data info
         if (srcPointData) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionExporter] Source has %1 arrays, "
                             "normals=%2, scalars=%3, tcoords=%4")
                             .arg(srcPointData->GetNumberOfArrays())
@@ -535,7 +536,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
             for (int a = 0; a < srcPointData->GetNumberOfArrays(); ++a) {
                 vtkDataArray* arr = srcPointData->GetArray(a);
                 if (arr) {
-                    CVLog::PrintDebug(
+                    CVLog::PrintVerbose(
                             QString("[cvSelectionExporter]   Array[%1]: "
                                     "name='%2', components=%3, tuples=%4, "
                                     "type=%5")
@@ -576,9 +577,10 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 // Skip arrays without names (coordinate arrays)
                 const char* arrName = srcArray->GetName();
                 if (!arrName || strlen(arrName) == 0) {
-                    CVLog::PrintDebug(QString("[cvSelectionExporter] Skipping "
-                                              "unnamed array[%1]")
-                                              .arg(a));
+                    CVLog::PrintVerbose(
+                            QString("[cvSelectionExporter] Skipping "
+                                    "unnamed array[%1]")
+                                    .arg(a));
                     continue;
                 }
 
@@ -595,11 +597,11 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 if (numSelectedPoints > 0 && numComp == 1) {
                     vtkIdType firstSrcId = validArray->GetValue(0);
                     double firstVal = srcArray->GetTuple1(firstSrcId);
-                    CVLog::PrintDebug(QString("[cvSelectionExporter] Array "
-                                              "'%1': srcId[0]=%2 -> value=%3")
-                                              .arg(arrName)
-                                              .arg(firstSrcId)
-                                              .arg(firstVal));
+                    CVLog::PrintVerbose(QString("[cvSelectionExporter] Array "
+                                                "'%1': srcId[0]=%2 -> value=%3")
+                                                .arg(arrName)
+                                                .arg(firstSrcId)
+                                                .arg(firstVal));
                 }
 
                 // Copy data for each selected point using appropriate method
@@ -625,10 +627,10 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 // Debug: Verify copied values
                 if (numSelectedPoints > 0 && numComp == 1) {
                     double copiedVal = dstArray->GetTuple1(0);
-                    CVLog::PrintDebug(QString("[cvSelectionExporter] Array "
-                                              "'%1': copied[0] = %2")
-                                              .arg(arrName)
-                                              .arg(copiedVal));
+                    CVLog::PrintVerbose(QString("[cvSelectionExporter] Array "
+                                                "'%1': copied[0] = %2")
+                                                .arg(arrName)
+                                                .arg(copiedVal));
                 }
 
                 dstPointData->AddArray(dstArray);
@@ -694,10 +696,11 @@ vtkPolyData* cvSelectionExporter::extractSelection(
             return nullptr;
         }
 
-        CVLog::PrintDebug(QString("[cvSelectionExporter] Extracted %1 points, "
-                                  "%2 cells (cell selection)")
-                                  .arg(extracted->GetNumberOfPoints())
-                                  .arg(extracted->GetNumberOfCells()));
+        CVLog::PrintVerbose(
+                QString("[cvSelectionExporter] Extracted %1 points, "
+                        "%2 cells (cell selection)")
+                        .arg(extracted->GetNumberOfPoints())
+                        .arg(extracted->GetNumberOfCells()));
 
         // Convert to polydata
         vtkSmartPointer<vtkGeometryFilter> geometryFilter =
@@ -730,7 +733,7 @@ vtkPolyData* cvSelectionExporter::extractSelection(
                 dstFieldData->AddArray(arr);
             }
         }
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionExporter] Copied %1 field data arrays")
                         .arg(srcFieldData->GetNumberOfArrays()));
     }
@@ -781,7 +784,7 @@ bool cvSelectionExporter::saveObjectToFile(ccHObject* object,
         return false;
     }
 
-    // Use eCV_io module for saving
+    // Use CV_io module for saving
     // This supports all formats: BIN, OBJ, PLY, STL, PCD, etc.
     std::string filenameStr = filename.toStdString();
 

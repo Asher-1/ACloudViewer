@@ -9,7 +9,7 @@
 #include <Logging.h>
 #include <ReferenceCloud.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvCircle.h>
 #include <ecvFacet.h>
 #include <ecvMesh.h>

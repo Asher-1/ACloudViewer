@@ -11,8 +11,8 @@ target_sources(ManuallyAlignPointCloud PRIVATE
         )
 
 target_link_libraries(ManuallyAlignPointCloud 3rdparty_jsoncpp 3rdparty_tinyfiledialogs)
-target_link_libraries(ManuallyAlignPointCloud ECV_DB_LIB)
-target_link_libraries(ManuallyAlignPointCloud ECV_IO_LIB)
+target_link_libraries(ManuallyAlignPointCloud CV_DB_LIB)
+target_link_libraries(ManuallyAlignPointCloud CV_IO_LIB)
 target_link_libraries(ManuallyAlignPointCloud CloudViewer)
 
 # fix that You must build your code with position independent code if Qt was built with -reduce-relocations

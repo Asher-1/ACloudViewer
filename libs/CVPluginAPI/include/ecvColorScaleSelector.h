@@ -10,7 +10,7 @@
 // Qt
 #include <QFrame>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorScale.h>
 
 class QComboBox;

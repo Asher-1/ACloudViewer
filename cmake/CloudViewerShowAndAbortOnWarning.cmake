@@ -29,6 +29,8 @@ function(cloudViewer_show_and_abort_on_warning target)
             /wd4005        # Macro redefinition
             /wd4703        # potentially uninitialized local pointer variable used
             /wd4996        # torch_ops with CUDA. Deprecated type will be removed in future versions
+            /wd4251        # class 'std::XXX' needs to have dll-interface to be used by clients of YYY
+            /wd4275        # non dll-interface class 'std::exception' used as base for dll-interface class 'cv::Exception'
             )
     # Warnings to disable for both C and C++
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS
@@ -56,29 +58,14 @@ function(cloudViewer_show_and_abort_on_warning target)
         string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
 
         set(CUDA_FLAGS "--Werror cross-execution-space-call")
+        # string(APPEND CUDA_FLAGS " --Werror all-warnings")
+        string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
         string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
         string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
-
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
-            string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
-        endif ()
-
-        string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.2")
-            string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
-        else ()
-            string(APPEND CUDA_FLAGS " -Xcudafe --diag_suppress=[${DISABLE_NVCC_WARNINGS}]")
-        endif ()
 
         # Host compiler flags
         if (MSVC)
             set(CUDA_DISABLE_MSVC_WARNINGS ${DISABLE_MSVC_WARNINGS})
-            if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.2")
-                list(APPEND CUDA_DISABLE_MSVC_WARNINGS $<$<CONFIG:Debug>:/wd4700>) # uninitialized local variable used (thrust)
-            endif ()
-            if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.1")
-                list(APPEND CUDA_DISABLE_MSVC_WARNINGS /wd4515) # namespace uses itself (thrust)
-            endif ()
             string(REPLACE ";" "," CUDA_DISABLE_MSVC_WARNINGS "${CUDA_DISABLE_MSVC_WARNINGS}")
 
             string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX-,${CUDA_DISABLE_MSVC_WARNINGS}")

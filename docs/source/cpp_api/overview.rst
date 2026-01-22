@@ -43,7 +43,7 @@ Core point cloud and mesh data structures:
 - Hierarchical scene graph
 - Bounding box and spatial queries
 
-eCV_db
+CV_db
 ^^^^^^
 
 Database and entity management for complex 3D scenes:
@@ -59,7 +59,7 @@ Database and entity management for complex 3D scenes:
 - Saving and loading project files
 - Undo/redo functionality
 
-eCV_io
+CV_io
 ^^^^^^
 
 I/O operations for various file formats:
@@ -154,7 +154,7 @@ Standalone 3D viewer application:
 - Command-line interface
 - Batch processing support
 
-eCV
+ACloudViewer
 ^^^
 
 Main ACloudViewer application with full GUI:

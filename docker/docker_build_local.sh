@@ -71,17 +71,10 @@ export CLOUDVIEWER_IMAGE_TAG=${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${
 export DEPENDENCY_IMAGE_TAG=${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 
 if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; then
-		if [[ "${UBUNTU_VERSION}" = "22.04" || "${UBUNTU_VERSION}" = "24.04" ]]; then
-        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
-    else 
-        QT_BASE_DIR="/opt/qt515"
-    fi
+    QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
 
 		docker build \
 			--network host \
-			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
-			--build-arg HTTP_PROXY=http://127.0.0.1:7890 \
-			--build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
 			--build-arg CUDA_VERSION="${CUDA_VERSION}" \
 			--build-arg UBUNTU_VERSION="${UBUNTU_VERSION}" \
 			--build-arg VTK_VERSION="${VTK_VERSION}" \
@@ -153,9 +146,6 @@ release_build() {
     LOG_FILE="docker_build-py${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}-${POST_SUFFIX}.log"
     docker build \
 			--network host \
-			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
-			--build-arg HTTP_PROXY=http://127.0.0.1:7890 \
-			--build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
 			--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
 			--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
 			--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \

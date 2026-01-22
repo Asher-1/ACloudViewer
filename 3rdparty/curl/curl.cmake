@@ -42,9 +42,6 @@ ExternalProject_Add(
         -DCURL_USE_OPENSSL=ON
         -DCURL_USE_LIBPSL=OFF
         -DOPENSSL_ROOT_DIR=${BORINGSSL_ROOT_DIR}
-        -DOPENSSL_INCLUDE_DIR=${BORINGSSL_ROOT_DIR}/include
-        -DOPENSSL_SSL_LIBRARY=${BORINGSSL_ROOT_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}ssl${CMAKE_STATIC_LIBRARY_SUFFIX}
-        -DOPENSSL_CRYPTO_LIBRARY=${BORINGSSL_ROOT_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SUFFIX}
         -DZLIB_ROOT=${CMAKE_BINARY_DIR}/zlib
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
@@ -61,3 +58,5 @@ if(MSVC)
 else()
     set(CURL_LIBRARIES ${curl_lib_name})
 endif()
+
+add_dependencies(ext_curl ext_boringssl)

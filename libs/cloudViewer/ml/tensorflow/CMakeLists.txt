@@ -125,6 +125,7 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 cloudViewer_show_and_abort_on_warning(cloudViewer_tf_ops)
+cloudViewer_enable_strip(cloudViewer_tf_ops)
 # do not use cloudViewer_set_global_properties(cloudViewer_tf_ops) here because some
 # options are not compatible for tf op libraries
 
@@ -169,14 +170,11 @@ target_include_directories(cloudViewer_tf_ops SYSTEM PRIVATE
 
 target_link_libraries(cloudViewer_tf_ops PRIVATE
         ${Tensorflow_FRAMEWORK_LIB}
+        CloudViewer::CloudViewer
         3rdparty_fmt
         3rdparty_nanoflann
         3rdparty_parallelstl
         3rdparty_tbb
-        )
-
-target_link_libraries(cloudViewer_tf_ops PRIVATE
-        CloudViewer::CloudViewer
         )
 
 if (BUILD_CUDA_MODULE)
@@ -188,6 +186,6 @@ if (BUILD_CUDA_MODULE)
     if (TARGET 3rdparty_cub)
         target_link_libraries(cloudViewer_tf_ops PRIVATE
                 3rdparty_cub
-                )
+        )
     endif ()
 endif ()

@@ -49,10 +49,6 @@ def list_devices_with_torch():
         if (cv3d.core.cuda.device_count() > 0 and
                 torch.cuda.device_count() > 0):
             devices += [cv3d.core.Device("CUDA:0")]
-        # Last SYCL device is CPU, so there must be 2+ devices in CloudViewer here.
-        if (hasattr(cv3d.core, 'sycl') and cv3d.core.sycl.device_count() > 1 and
-                hasattr(torch, 'xpu') and torch.xpu.device_count() > 0):
-            devices += [cv3d.core.Device("SYCL:0")]
         return devices
     else:
         return []

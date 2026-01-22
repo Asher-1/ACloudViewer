@@ -22,7 +22,7 @@
 #include <CloudSamplingTools.h>
 #include <ReferenceCloud.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvOctree.h>
 #include <ecvOctreeProxy.h>

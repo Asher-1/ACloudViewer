@@ -10,11 +10,11 @@
 // local
 #include "JsonRPCPlugin.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvGenericPointCloud.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <FileIOFilter.h>
 
 // ECV plugins

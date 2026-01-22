@@ -151,7 +151,8 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         core::Tensor num_neighbors =
                 neighbors_row_splits.Slice(0, 1, current_num_query_points + 1)
                         .Sub(neighbors_row_splits.Slice(
-                                0, 0, current_num_query_points));
+                                0, 0, current_num_query_points))
+                        .To(core::Int64);
         batched_num_neighbors[batch_idx] = num_neighbors;
     }
 

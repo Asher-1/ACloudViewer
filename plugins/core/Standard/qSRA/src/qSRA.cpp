@@ -20,7 +20,7 @@
 #include <QSettings>
 #include <QtGui>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvCone.h>
 #include <ecvDisplayTools.h>
 #include <ecvFileUtils.h>

@@ -26,28 +26,14 @@ Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
 # setting env
+$env:IGNORE_TEST = if (-not [string]::IsNullOrEmpty($env:IGNORE_TEST)) { $env:IGNORE_TEST } else { "OFF" }
+# ONLY_BUILD_CUDA: if set to "ON", only build CUDA version (skip CPU build)
+$env:ONLY_BUILD_CUDA = if (-not [string]::IsNullOrEmpty($env:ONLY_BUILD_CUDA)) { $env:ONLY_BUILD_CUDA } else { "OFF" }
 $env:STATIC_RUNTIME = if (-not [string]::IsNullOrEmpty($env:STATIC_RUNTIME)) { $env:STATIC_RUNTIME } else { "OFF" }
 $env:DEVELOPER_BUILD = if (-not [string]::IsNullOrEmpty($env:DEVELOPER_BUILD)) { $env:DEVELOPER_BUILD } else { "OFF" }
 $env:BUILD_SHARED_LIBS = if (-not [string]::IsNullOrEmpty($env:BUILD_SHARED_LIBS)) { $env:BUILD_SHARED_LIBS } else { "OFF" }
-if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
-    $env:BUILD_CUDA_MODULE = $env:BUILD_CUDA_MODULE
-} else {
-    $cudaPath = [System.Environment]::GetEnvironmentVariable("CUDA_PATH")
-    if (-not [string]::IsNullOrEmpty($cudaPath)) {
-        Write-Output "CUDA toolkits path: $cudaPath"
-        try {
-            $nvccVersion = & nvcc --version
-            Write-Output "nvcc version: $nvccVersion"
-            $env:BUILD_CUDA_MODULE = "ON"
-        } catch {
-            Write-Output "Cannot find nvcc."
-            $env:BUILD_CUDA_MODULE = "OFF"
-        }
-    } else {
-        Write-Output "CUDA toolkits not found."
-        $env:BUILD_CUDA_MODULE = "OFF"
-    }
-}
+$env:BUILD_CUDA_MODULE = if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) { $env:BUILD_CUDA_MODULE } else { "ON" }
+$env:BUILD_CUDA_MODULE_FLAG = if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) { $env:BUILD_CUDA_MODULE } else { "ON" }
 
 $env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
@@ -97,16 +83,58 @@ if (-not $env:CONDA_PREFIX) {
 }
 
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
-$env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:PATH"
+$env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR\include\eigen3"
+$env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:EIGEN_ROOT_DIR;$env:PATH"
 
 Write-Host "echo Start to build GUI package on Windows..."
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 
-Write-Host "Start to Build cpu only GUI On Windows..."
-Build-GuiApp -options "with_conda","with_pcl_nurbs","package_installer"
-if ($env:BUILD_CUDA_MODULE -eq "ON") {
-    Write-Host "Start to Build cuda version GUI On Windows..."
-    Build-GuiApp -options "with_cuda","with_conda","with_pcl_nurbs","package_installer"
+# Build options - consistent with build_gui_app.sh
+$buildOptions = @("with_conda", "with_pcl_nurbs", "package_installer")
+
+if ($env:ONLY_BUILD_CUDA -eq "ON") {
+    Write-Host "Start to build GUI package with CUDA only..."
+    Write-Host ""
+    $env:BUILD_CUDA_MODULE = "ON"
+    $cudaBuildOptions = $buildOptions + @("with_cuda")
+    Build-GuiApp -options $cudaBuildOptions
+    Write-Host ""
+} else {
+    Write-Host "Start to build GUI package with CPU only..."
+    Write-Host ""
+    $env:BUILD_CUDA_MODULE = "OFF"
+    Build-GuiApp -options $buildOptions
+    Write-Host ""
+    
+    # Building with CUDA if CUDA is available
+    if ($env:BUILD_CUDA_MODULE_FLAG -eq "ON") {
+        Write-Host "Start to build GUI package with CUDA..."
+        Write-Host ""
+        $env:BUILD_CUDA_MODULE = "ON"
+        $cudaBuildOptions = $buildOptions + @("with_cuda")
+        Build-GuiApp -options $cudaBuildOptions
+        Write-Host ""
+    }
+}
+
+# Run C++ unit tests if not ignored
+if ($env:IGNORE_TEST -ne "ON") {
+    Write-Host "======================================================================"
+    Write-Host "Running C++ Unit Tests"
+    Write-Host "======================================================================"
+    Run-CppUnitTests
+    $cppTestResult = $LASTEXITCODE
+    
+    if ($cppTestResult -ne 0) {
+        Write-Host "======================================================================"
+        Write-Host "C++ Unit Tests failed with exit code: $cppTestResult"
+        Write-Host "======================================================================"
+        if ($LASTEXITCODE -eq $null) {
+            exit 1
+        } else {
+            exit $LASTEXITCODE
+        }
+    }
 }
 
 Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"

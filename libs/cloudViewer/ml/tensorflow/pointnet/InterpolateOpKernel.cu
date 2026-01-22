@@ -55,7 +55,7 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerThreeNN").Device(DEVICE_GPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerThreeNN").Device(DEVICE_GPU),
                         ThreeNNOpKernelCUDA);
 
 class ThreeInterpolateOpKernelCUDA : public ThreeInterpolateOpKernel {
@@ -96,7 +96,7 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudviewerThreeInterpolate").Device(DEVICE_GPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerThreeInterpolate").Device(DEVICE_GPU),
                         ThreeInterpolateOpKernelCUDA);
 
 class ThreeInterpolateGradOpKernelCUDA : public ThreeInterpolateGradOpKernel {
@@ -139,5 +139,5 @@ public:
 };
 
 REGISTER_KERNEL_BUILDER(
-        Name("CloudviewerThreeInterpolateGrad").Device(DEVICE_GPU),
+        Name("CloudViewerThreeInterpolateGrad").Device(DEVICE_GPU),
         ThreeInterpolateGradOpKernelCUDA);

@@ -17,7 +17,7 @@
 #include <CloudSamplingTools.h>
 #include <ReferenceCloud.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvOctree.h>
 #include <ecvOctreeProxy.h>
 #include <ecvPointCloud.h>

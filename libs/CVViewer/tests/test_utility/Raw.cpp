@@ -7,6 +7,7 @@
 
 #include "tests/test_utility/Raw.h"
 
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <sstream>

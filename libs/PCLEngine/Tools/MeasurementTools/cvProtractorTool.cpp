@@ -34,7 +34,7 @@
 #include "VTKExtensions/ConstrainedWidgets/cvConstrainedPolyLineWidget.h"
 #include "cvMeasurementToolsCommon.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvBBox.h>
 #include <ecvGenericMesh.h>

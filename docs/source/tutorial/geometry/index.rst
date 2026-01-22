@@ -1,55 +1,32 @@
 Geometry
 ========
 
-This section covers geometric data structures and operations.
+.. toctree::
+    :caption: Basics
 
-Point Clouds
-------------
+    pointcloud
+    mesh
+    rgbd_image
+    kdtree
+    half_edge_mesh
 
 .. toctree::
-   :maxdepth: 1
+    :caption: Processing
 
-   pointcloud
-   pointcloud_outlier_removal
-   working_with_numpy
-
-Meshes
-------
-
-.. toctree::
-   :maxdepth: 1
-
-   mesh
-   mesh_deformation
-   surface_reconstruction
-
-Spatial Data Structures
-------------------------
+    file_io
+    pointcloud_outlier_removal
+    voxelization
+    octree
+    surface_reconstruction
+    transformation
+    mesh_deformation
+    iss_keypoint_detector
+    ray_casting
+    distance_queries
+    uvmaps
 
 .. toctree::
-   :maxdepth: 1
+    :caption: Interface
 
-   kdtree
-   octree
-   voxelization
-
-Other Geometry
---------------
-
-.. toctree::
-   :maxdepth: 1
-
-   file_io
-   transformation
-   rgbd_image
-   ray_casting
-   distance_queries
-   iss_keypoint_detector
-   half_edge_mesh
-   python_interface
-
-See Also
---------
-
-- :doc:`../pipelines/index` - Processing Pipelines
-- :doc:`../../python_api/cloudViewer.geometry` - Geometry API
+    python_interface
+    working_with_numpy

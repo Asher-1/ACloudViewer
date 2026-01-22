@@ -47,7 +47,7 @@ cvSelectionToolController::cvSelectionToolController(QObject* parent)
             QOverload<>::of(&cvViewSelectionManager::selectionChanged), this,
             &cvSelectionToolController::selectionHistoryChanged);
 
-    CVLog::PrintDebug("[cvSelectionToolController] Initialized");
+    CVLog::PrintVerbose("[cvSelectionToolController] Initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -60,14 +60,14 @@ cvSelectionToolController::~cvSelectionToolController() {
     }
     m_reactions.clear();
 
-    CVLog::PrintDebug("[cvSelectionToolController] Destroyed");
+    CVLog::PrintVerbose("[cvSelectionToolController] Destroyed");
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::initialize(QWidget* parent) {
     m_parentWidget = parent;
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionToolController] Initialized with parent widget");
 }
 
@@ -86,7 +86,7 @@ void cvSelectionToolController::setVisualizer(ecvGenericVisualizer3D* viewer) {
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionToolController] Visualizer set, updated %1 "
                     "reactions")
                     .arg(m_reactions.size()));
@@ -124,7 +124,7 @@ cvRenderViewSelectionReaction* cvSelectionToolController::registerAction(
     // Monitor action state changes to track when selection tools are active
     if (action->isCheckable()) {
         connect(action, &QAction::toggled, this, [this, mode](bool checked) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionToolController] Action (new) for mode "
                             "%1 %2")
                             .arg(static_cast<int>(mode))
@@ -160,7 +160,7 @@ cvRenderViewSelectionReaction* cvSelectionToolController::registerAction(
     // Store the reaction
     m_reactions[mode] = reaction;
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionToolController] Registered action for "
                     "mode %1")
                     .arg(static_cast<int>(mode)));
@@ -207,7 +207,7 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
     connect(m_modifierGroup, &QActionGroup::triggered, this,
             &cvSelectionToolController::onModifierChanged);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionToolController] Registered modifier actions");
 }
 
@@ -231,7 +231,7 @@ void cvSelectionToolController::registerManipulationActions(
         registerAction(clearAction, SelectionMode::CLEAR_SELECTION);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionToolController] Registered manipulation actions "
             "(using new architecture)");
 }
@@ -308,7 +308,7 @@ bool cvSelectionToolController::handleEscapeKey() {
     uncheckAction(m_actions.hoverPoints);
     uncheckAction(m_actions.zoomToBox);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionToolController] ESC key handled - disabled all "
             "selection tools");
     return true;
@@ -367,7 +367,7 @@ void cvSelectionToolController::onSelectionFinished(
     // Emit signal
     emit selectionFinished(selectionData);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionToolController] Selection finished: %1 %2")
                     .arg(selectionData.count())
                     .arg(selectionData.fieldTypeString()));
@@ -429,7 +429,7 @@ void cvSelectionToolController::onModifierChanged(QAction* action) {
                         modeName = "DEFAULT";
                         break;
                 }
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         QString("[cvSelectionToolController] Selection "
                                 "modifier: %1")
                                 .arg(modeName));
@@ -440,7 +440,7 @@ void cvSelectionToolController::onModifierChanged(QAction* action) {
         if (m_manager) {
             m_manager->setSelectionModifier(
                     SelectionModifier::SELECTION_DEFAULT);
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvSelectionToolController] Selection modifier: DEFAULT");
         }
     }
@@ -541,7 +541,7 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
     registerManipulationActions(actions.growSelection, actions.shrinkSelection,
                                 actions.clearSelection);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionToolController] All selection actions registered "
             "(using new ParaView-aligned architecture)");
 }
@@ -550,7 +550,7 @@ void cvSelectionToolController::setupActions(const SelectionActions& actions) {
 void cvSelectionToolController::connectHighlighter() {
     // Highlighter is now managed by cvViewSelectionManager
     // This method is kept for compatibility but does nothing
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionToolController] Highlighter connection established "
             "via manager");
 }
@@ -562,7 +562,7 @@ void cvSelectionToolController::invalidateCache() {
         cvSelectionPipeline* pipeline = m_manager->getPipeline();
         if (pipeline) {
             pipeline->invalidateCachedSelection();
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvSelectionToolController] Selection cache invalidated "
                     "(scene content changed)");
         }

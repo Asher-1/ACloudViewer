@@ -11,7 +11,7 @@
 #include <QActionGroup>
 #include <QWidget>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvHObject.h>
 
 // LOCAL

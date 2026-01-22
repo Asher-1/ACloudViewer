@@ -6,7 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
-import cloudViewer.core as o3c
+import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 import pickle
@@ -34,12 +34,12 @@ def test_slice_plane():
     assert slices.line.indices.shape == (9, 2)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_box(device):
     # Test with default parameters.
     box_default = cv3d.t.geometry.TriangleMesh.create_box(device=device)
 
-    vertex_positions_default = o3c.Tensor(
+    vertex_positions_default = cv3c.Tensor(
         [
             [0.0, 0.0, 0.0],
             [1.0, 0.0, 0.0],
@@ -50,11 +50,11 @@ def test_create_box(device):
             [0.0, 1.0, 1.0],
             [1.0, 1.0, 1.0],
         ],
-        o3c.float32,
+        cv3c.float32,
         device,
     )
 
-    triangle_indices_default = o3c.Tensor(
+    triangle_indices_default = cv3c.Tensor(
         [
             [4, 7, 5],
             [4, 6, 7],
@@ -69,7 +69,7 @@ def test_create_box(device):
             [0, 4, 1],
             [1, 4, 5],
         ],
-        o3c.int64,
+        cv3c.int64,
         device,
     )
 
@@ -78,9 +78,9 @@ def test_create_box(device):
 
     # Test with custom parameters.
     box_custom = cv3d.t.geometry.TriangleMesh.create_box(
-        2, 3, 4, o3c.float64, o3c.int32, device)
+        2, 3, 4, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [0.0, 0.0, 0.0],
             [2.0, 0.0, 0.0],
@@ -91,11 +91,11 @@ def test_create_box(device):
             [0.0, 3.0, 4.0],
             [2.0, 3.0, 4.0],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [4, 7, 5],
             [4, 6, 7],
@@ -110,7 +110,7 @@ def test_create_box(device):
             [0, 4, 1],
             [1, 4, 5],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -118,13 +118,13 @@ def test_create_box(device):
     assert box_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_sphere(device):
     # Test with custom parameters.
     sphere_custom = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int32, device)
+        1, 3, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [0.0, 0.0, 1.0],
             [0.0, 0.0, -1.0],
@@ -141,11 +141,11 @@ def test_create_sphere(device):
             [-0.433013, -0.75, -0.5],
             [0.433013, -0.75, -0.5],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 2, 3],
             [1, 9, 8],
@@ -172,7 +172,7 @@ def test_create_sphere(device):
             [13, 2, 7],
             [13, 8, 2],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -180,37 +180,37 @@ def test_create_sphere(device):
     assert sphere_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_tetrahedron(device):
     # Test with custom parameters.
     tetrahedron_custom = cv3d.t.geometry.TriangleMesh.create_tetrahedron(
-        2, o3c.float64, o3c.int32, device)
+        2, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [1.88562, 0.0, -0.666667],
             [-0.942809, 1.63299, -0.666667],
             [-0.942809, -1.63299, -0.666667],
             [0.0, 0.0, 2],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
-        [[0, 2, 1], [0, 3, 2], [0, 1, 3], [1, 2, 3]], o3c.int32, device)
+    triangle_indices_custom = cv3c.Tensor(
+        [[0, 2, 1], [0, 3, 2], [0, 1, 3], [1, 2, 3]], cv3c.int32, device)
 
     assert tetrahedron_custom.vertex.positions.allclose(vertex_positions_custom)
     assert tetrahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_octahedron(device):
     # Test with custom parameters.
     octahedron_custom = cv3d.t.geometry.TriangleMesh.create_octahedron(
-        2, o3c.float64, o3c.int32, device)
+        2, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [2.0, 0.0, 0.0],
             [0.0, 2.0, 0.0],
@@ -219,11 +219,11 @@ def test_create_octahedron(device):
             [0.0, -2.0, 0.0],
             [0.0, 0.0, -2.0],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 1, 2],
             [1, 3, 2],
@@ -234,7 +234,7 @@ def test_create_octahedron(device):
             [3, 5, 4],
             [4, 5, 0],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -242,13 +242,13 @@ def test_create_octahedron(device):
     assert octahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_icosahedron(device):
     # Test with custom parameters.
     icosahedron_custom = cv3d.t.geometry.TriangleMesh.create_icosahedron(
-        2, o3c.float64, o3c.int32, device)
+        2, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [-2.0, 0.0, 3.23607],
             [2.0, 0.0, 3.23607],
@@ -263,11 +263,11 @@ def test_create_icosahedron(device):
             [3.23607, 2.0, 0.0],
             [-3.23607, 2.0, 0.0],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 4, 1],
             [0, 1, 5],
@@ -290,7 +290,7 @@ def test_create_icosahedron(device):
             [3, 8, 11],
             [3, 7, 8],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -298,13 +298,13 @@ def test_create_icosahedron(device):
     assert icosahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_cylinder(device):
     # Test with custom parameters.
     cylinder_custom = cv3d.t.geometry.TriangleMesh.create_cylinder(
-        1, 2, 3, 3, o3c.float64, o3c.int32, device)
+        1, 2, 3, 3, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [0.0, 0.0, 1.0],
             [0.0, 0.0, -1.0],
@@ -321,11 +321,11 @@ def test_create_cylinder(device):
             [-0.5, 0.866025, -1.0],
             [-0.5, -0.866025, -1.0],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 2, 3],
             [1, 12, 11],
@@ -352,7 +352,7 @@ def test_create_cylinder(device):
             [13, 8, 10],
             [13, 11, 8],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -360,13 +360,13 @@ def test_create_cylinder(device):
     assert cylinder_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_cone(device):
     # Test with custom parameters.
     cone_custom = cv3d.t.geometry.TriangleMesh.create_cone(
-        2, 4, 3, 2, o3c.float64, o3c.int32, device)
+        2, 4, 3, 2, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [0.0, 0.0, 0.0],
             [0.0, 0.0, 4.0],
@@ -377,11 +377,11 @@ def test_create_cone(device):
             [-0.5, 0.866025, 2],
             [-0.5, -0.866025, 2],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 3, 2],
             [1, 5, 6],
@@ -396,7 +396,7 @@ def test_create_cone(device):
             [5, 4, 2],
             [5, 7, 4],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -404,13 +404,13 @@ def test_create_cone(device):
     assert cone_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_torus(device):
     # Test with custom parameters.
     torus_custom = cv3d.t.geometry.TriangleMesh.create_torus(
-        2, 1, 6, 3, o3c.float64, o3c.int32, device)
+        2, 1, 6, 3, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [3.0, 0.0, 0.0],
             [1.5, 0.0, 0.866025],
@@ -431,11 +431,11 @@ def test_create_torus(device):
             [0.75, -1.29904, 0.866025],
             [0.75, -1.29904, -0.866025],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [3, 4, 0],
             [0, 4, 1],
@@ -474,7 +474,7 @@ def test_create_torus(device):
             [2, 0, 17],
             [17, 0, 15],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -482,13 +482,13 @@ def test_create_torus(device):
     assert torus_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_arrow(device):
     # Test with custom parameters.
     arrow_custom = cv3d.t.geometry.TriangleMesh.create_arrow(
-        1, 2, 4, 2, 4, 1, 1, o3c.float64, o3c.int32, device)
+        1, 2, 4, 2, 4, 1, 1, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [0.0, 0.0, 4.0],
             [0.0, 0.0, 0.0],
@@ -507,11 +507,11 @@ def test_create_arrow(device):
             [-2.0, 0.0, 4.0],
             [0.0, -2.0, 4.0],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 2, 3],
             [1, 7, 6],
@@ -538,7 +538,7 @@ def test_create_arrow(device):
             [10, 12, 15],
             [11, 15, 12],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -546,13 +546,13 @@ def test_create_arrow(device):
     assert arrow_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_create_mobius(device):
     # Test with custom parameters.
     mobius_custom = cv3d.t.geometry.TriangleMesh.create_mobius(
-        10, 2, 1, 1, 1, 1, 1, o3c.float64, o3c.int32, device)
+        10, 2, 1, 1, 1, 1, 1, cv3c.float64, cv3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(
+    vertex_positions_custom = cv3c.Tensor(
         [
             [0.5, 0.0, 0.0],
             [1.5, 0.0, 0.0],
@@ -575,11 +575,11 @@ def test_create_mobius(device):
             [1.19373, -0.867294, -0.154508],
             [0.424307, -0.308277, 0.154508],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    triangle_indices_custom = o3c.Tensor(
+    triangle_indices_custom = cv3c.Tensor(
         [
             [0, 3, 1],
             [0, 2, 3],
@@ -602,7 +602,7 @@ def test_create_mobius(device):
             [18, 19, 1],
             [1, 19, 0],
         ],
-        o3c.int32,
+        cv3c.int32,
         device,
     )
 
@@ -611,7 +611,7 @@ def test_create_mobius(device):
 
 
 def test_create_text():
-    mesh = cv3d.t.geometry.TriangleMesh.create_text("CloudViewer", depth=1)
+    mesh = cv3d.t.geometry.TriangleMesh.create_text("Open3D", depth=1)
     assert mesh.vertex.positions.shape == (624, 3)
     assert mesh.triangle.indices.shape == (936, 3)
 
@@ -818,7 +818,7 @@ def test_extrude_linear():
     assert ans.triangle.indices.shape == (8, 3)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     mesh = cv3d.t.geometry.TriangleMesh.create_box().to(device)
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -826,8 +826,8 @@ def test_pickle(device):
         pickle.dump(mesh, open(file_name, "wb"))
         mesh_load = pickle.load(open(file_name, "rb"))
         assert mesh_load.device == device
-        assert mesh_load.vertex.positions.dtype == o3c.float32
-        assert mesh_load.triangle.indices.dtype == o3c.int64
+        assert mesh_load.vertex.positions.dtype == cv3c.float32
+        assert mesh_load.triangle.indices.dtype == cv3c.int64
         np.testing.assert_equal(
             mesh_load.vertex.positions.cpu().numpy(),
             mesh.vertex.positions.cpu().numpy(),
@@ -841,8 +841,8 @@ def test_pickle(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_get_surface_area(device):
     # Test with custom parameters.
-    cube = cv3d.t.geometry.TriangleMesh.create_box(float_dtype=o3c.float64,
-                                                   int_dtype=o3c.int32,
+    cube = cv3d.t.geometry.TriangleMesh.create_box(float_dtype=cv3c.float64,
+                                                   int_dtype=cv3c.int32,
                                                    device=device)
     np.testing.assert_equal(cube.get_surface_area(), 6)
 
@@ -862,9 +862,9 @@ def test_get_surface_area(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_select_faces_by_mask_32(device):
     sphere_custom = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int32, device)
+        1, 3, cv3c.float64, cv3c.int32, device)
 
-    expected_verts = o3c.Tensor(
+    expected_verts = cv3c.Tensor(
         [
             [0.0, 0.0, 1.0],
             [0.866025, 0, 0.5],
@@ -873,33 +873,33 @@ def test_select_faces_by_mask_32(device):
             [-0.433013, -0.75, 0.5],
             [0.433013, -0.75, 0.5],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
-                               o3c.int32, device)
+    expected_tris = cv3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                                cv3c.int32, device)
 
     # check indices shape mismatch
-    mask_2d = o3c.Tensor([[False, False], [False, False], [False, False]],
-                         o3c.bool, device)
+    mask_2d = cv3c.Tensor([[False, False], [False, False], [False, False]],
+                          cv3c.bool, device)
     with pytest.raises(RuntimeError):
         selected = sphere_custom.select_faces_by_mask(mask_2d)
 
     # check indices type mismatch
-    mask_float = o3c.Tensor(
+    mask_float = cv3c.Tensor(
         [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0
         ],
-        o3c.float32,
+        cv3c.float32,
         device,
     )
     with pytest.raises(RuntimeError):
         selected = sphere_custom.select_faces_by_mask(mask_float)
 
     # check the basic case
-    mask = o3c.Tensor(
+    mask = cv3c.Tensor(
         [
             True,
             False,
@@ -926,7 +926,7 @@ def test_select_faces_by_mask_32(device):
             False,
             False,
         ],
-        o3c.bool,
+        cv3c.bool,
         device,
     )
     selected = sphere_custom.select_faces_by_mask(mask)
@@ -935,7 +935,7 @@ def test_select_faces_by_mask_32(device):
 
     # check that the original mesh is unmodified
     untouched_sphere = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int32, device)
+        1, 3, cv3c.float64, cv3c.int32, device)
     assert sphere_custom.vertex.positions.allclose(
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
@@ -945,27 +945,27 @@ def test_select_faces_by_mask_32(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_select_faces_by_mask_64(device):
     sphere_custom = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int64, device)
+        1, 3, cv3c.float64, cv3c.int64, device)
 
     # check indices shape mismatch
-    mask_2d = o3c.Tensor([[False, False], [False, False], [False, False]],
-                         o3c.bool, device)
+    mask_2d = cv3c.Tensor([[False, False], [False, False], [False, False]],
+                          cv3c.bool, device)
     with pytest.raises(RuntimeError):
         selected = sphere_custom.select_faces_by_mask(mask_2d)
 
     # check indices type mismatch
-    mask_float = o3c.Tensor(
+    mask_float = cv3c.Tensor(
         [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0
         ],
-        o3c.float32,
+        cv3c.float32,
         device,
     )
     with pytest.raises(RuntimeError):
         selected = sphere_custom.select_faces_by_mask(mask_float)
 
-    expected_verts = o3c.Tensor(
+    expected_verts = cv3c.Tensor(
         [
             [0.0, 0.0, 1.0],
             [0.866025, 0, 0.5],
@@ -974,14 +974,14 @@ def test_select_faces_by_mask_64(device):
             [-0.433013, -0.75, 0.5],
             [0.433013, -0.75, 0.5],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
-                               o3c.int64, device)
+    expected_tris = cv3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                                cv3c.int64, device)
     # check the basic case
-    mask = o3c.Tensor(
+    mask = cv3c.Tensor(
         [
             True,
             False,
@@ -1008,7 +1008,7 @@ def test_select_faces_by_mask_64(device):
             False,
             False,
         ],
-        o3c.bool,
+        cv3c.bool,
         device,
     )
 
@@ -1018,7 +1018,7 @@ def test_select_faces_by_mask_64(device):
 
     # check that the original mesh is unmodified
     untouched_sphere = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int64, device)
+        1, 3, cv3c.float64, cv3c.int64, device)
     assert sphere_custom.vertex.positions.allclose(
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
@@ -1028,9 +1028,9 @@ def test_select_faces_by_mask_64(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_select_by_index_32(device):
     sphere_custom = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int32, device)
+        1, 3, cv3c.float64, cv3c.int32, device)
 
-    expected_verts = o3c.Tensor(
+    expected_verts = cv3c.Tensor(
         [
             [0.0, 0.0, 1.0],
             [0.866025, 0, 0.5],
@@ -1039,43 +1039,43 @@ def test_select_by_index_32(device):
             [-0.433013, -0.75, 0.5],
             [0.433013, -0.75, 0.5],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
-                               o3c.int32, device)
+    expected_tris = cv3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                                cv3c.int32, device)
 
     # check indices shape mismatch
-    indices_2d = o3c.Tensor([[0, 2], [3, 5], [6, 7]], o3c.int32, device)
+    indices_2d = cv3c.Tensor([[0, 2], [3, 5], [6, 7]], cv3c.int32, device)
     with pytest.raises(RuntimeError):
         selected = sphere_custom.select_by_index(indices_2d)
 
     # check indices type mismatch
-    indices_float = o3c.Tensor([2.0, 4.0], o3c.float32, device)
+    indices_float = cv3c.Tensor([2.0, 4.0], cv3c.float32, device)
     with pytest.raises(RuntimeError):
         selected = sphere_custom.select_by_index(indices_float)
 
     # check the expected mesh with int8 input
-    indices_8 = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int8, device)
+    indices_8 = cv3c.Tensor([0, 2, 3, 5, 6, 7], cv3c.int8, device)
     selected = sphere_custom.select_by_index(indices_8)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
 
     # check the expected mesh with int16 input
-    indices_16 = o3c.Tensor([2, 0, 5, 3, 7, 6], o3c.int16, device)
+    indices_16 = cv3c.Tensor([2, 0, 5, 3, 7, 6], cv3c.int16, device)
     selected = sphere_custom.select_by_index(indices_16)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
 
     # check the expected mesh with uint32 input
-    indices_u32 = o3c.Tensor([7, 6, 5, 3, 2, 0], o3c.uint32, device)
+    indices_u32 = cv3c.Tensor([7, 6, 5, 3, 2, 0], cv3c.uint32, device)
     selected = sphere_custom.select_by_index(indices_u32)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
 
     # check the expected mesh with uint64 input and unsorted indices
-    indices_u64 = o3c.Tensor([7, 6, 3, 5, 0, 2], o3c.uint64, device)
+    indices_u64 = cv3c.Tensor([7, 6, 3, 5, 0, 2], cv3c.uint64, device)
     selected = sphere_custom.select_by_index(indices_u64)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
@@ -1092,7 +1092,7 @@ def test_select_by_index_32(device):
 
     # check that the original mesh is unmodified
     untouched_sphere = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int32, device)
+        1, 3, cv3c.float64, cv3c.int32, device)
     assert sphere_custom.vertex.positions.allclose(
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
@@ -1102,19 +1102,19 @@ def test_select_by_index_32(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_select_by_index_64(device):
     sphere_custom = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int64, device)
+        1, 3, cv3c.float64, cv3c.int64, device)
 
     # check indices shape mismatch
     with pytest.raises(RuntimeError):
-        indices_2d = o3c.Tensor([[0, 2], [3, 5], [6, 7]], o3c.int64, device)
+        indices_2d = cv3c.Tensor([[0, 2], [3, 5], [6, 7]], cv3c.int64, device)
         selected = sphere_custom.select_by_index(indices_2d)
 
     # check indices type mismatch
     with pytest.raises(RuntimeError):
-        indices_float = o3c.Tensor([2.0, 4.0], o3c.float64, device)
+        indices_float = cv3c.Tensor([2.0, 4.0], cv3c.float64, device)
         selected = sphere_custom.select_by_index(indices_float)
 
-    expected_verts = o3c.Tensor(
+    expected_verts = cv3c.Tensor(
         [
             [0.0, 0.0, 1.0],
             [0.866025, 0, 0.5],
@@ -1123,33 +1123,33 @@ def test_select_by_index_64(device):
             [-0.433013, -0.75, 0.5],
             [0.433013, -0.75, 0.5],
         ],
-        o3c.float64,
+        cv3c.float64,
         device,
     )
 
-    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
-                               o3c.int64, device)
+    expected_tris = cv3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                                cv3c.int64, device)
 
     # check the expected mesh with int8 input
-    indices_u8 = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.uint8, device)
+    indices_u8 = cv3c.Tensor([0, 2, 3, 5, 6, 7], cv3c.uint8, device)
     selected = sphere_custom.select_by_index(indices_u8)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
 
     # check the expected mesh with int16 input
-    indices_u16 = o3c.Tensor([2, 0, 5, 3, 7, 6], o3c.uint16, device)
+    indices_u16 = cv3c.Tensor([2, 0, 5, 3, 7, 6], cv3c.uint16, device)
     selected = sphere_custom.select_by_index(indices_u16)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
 
     # check the expected mesh with int32 input
-    indices_32 = o3c.Tensor([7, 6, 5, 3, 2, 0], o3c.int32, device)
+    indices_32 = cv3c.Tensor([7, 6, 5, 3, 2, 0], cv3c.int32, device)
     selected = sphere_custom.select_by_index(indices_32)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
 
     # check the expected mesh with int64 input and unsorted indices
-    indices_64 = o3c.Tensor([7, 6, 3, 5, 0, 2], o3c.int64, device)
+    indices_64 = cv3c.Tensor([7, 6, 3, 5, 0, 2], cv3c.int64, device)
     selected = sphere_custom.select_by_index(indices_64)
     assert selected.vertex.positions.allclose(expected_verts)
     assert selected.triangle.indices.allclose(expected_tris)
@@ -1166,7 +1166,7 @@ def test_select_by_index_64(device):
 
     # check that the original mesh is unmodified
     untouched_sphere = cv3d.t.geometry.TriangleMesh.create_sphere(
-        1, 3, o3c.float64, o3c.int64, device)
+        1, 3, cv3c.float64, cv3c.int64, device)
     assert sphere_custom.vertex.positions.allclose(
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
@@ -1190,7 +1190,7 @@ def check_remove_unreferenced_vertices(device, int_t, float_t):
     expected_mobius = cv3d.t.geometry.TriangleMesh.create_mobius(
         10, 2, 1, 1, 1, 1, 1, float_t, int_t, device)
 
-    verts = o3c.Tensor(
+    verts = cv3c.Tensor(
         [
             [0.5, 0.0, 0.0],
             [1.5, 0.0, 0.0],
@@ -1219,7 +1219,7 @@ def check_remove_unreferenced_vertices(device, int_t, float_t):
         device,
     )
 
-    tris = o3c.Tensor(
+    tris = cv3c.Tensor(
         [
             [0, 3, 1],
             [0, 2, 3],
@@ -1253,21 +1253,21 @@ def check_remove_unreferenced_vertices(device, int_t, float_t):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("int_t", (o3c.int32, o3c.int64))
-@pytest.mark.parametrize("float_t", (o3c.float32, o3c.float64))
+@pytest.mark.parametrize("int_t", (cv3c.int32, cv3c.int64))
+@pytest.mark.parametrize("float_t", (cv3c.float32, cv3c.float64))
 def test_remove_unreferenced_vertices(device, int_t, float_t):
     check_no_unreferenced_vertices(device, int_t, float_t)
     check_remove_unreferenced_vertices(device, int_t, float_t)
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("int_t", (o3c.int32, o3c.int64))
-@pytest.mark.parametrize("float_t", (o3c.float32, o3c.float64))
+@pytest.mark.parametrize("int_t", (cv3c.int32, cv3c.int64))
+@pytest.mark.parametrize("float_t", (cv3c.float32, cv3c.float64))
 def test_compute_triangle_areas(device, int_t, float_t):
     torus = cv3d.t.geometry.TriangleMesh.create_torus(2, 1, 6, 3, float_t,
                                                       int_t, device)
 
-    expected_areas = o3c.Tensor(
+    expected_areas = cv3c.Tensor(
         [
             2.341874249399399,
             1.1709371246996996,
@@ -1314,10 +1314,10 @@ def test_compute_triangle_areas(device, int_t, float_t):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("int_t", (o3c.int32, o3c.int64))
-@pytest.mark.parametrize("float_t", (o3c.float32, o3c.float64))
+@pytest.mark.parametrize("int_t", (cv3c.int32, cv3c.int64))
+@pytest.mark.parametrize("float_t", (cv3c.float32, cv3c.float64))
 def test_remove_non_manifold_edges(device, int_t, float_t):
-    verts = o3c.Tensor(
+    verts = cv3c.Tensor(
         [
             [0.0, 0.0, 0.0],
             [1.0, 0.0, 0.0],
@@ -1333,7 +1333,7 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
         device,
     )
 
-    tris = o3c.Tensor(
+    tris = cv3c.Tensor(
         [
             [4, 7, 5],
             [8, 0, 1],

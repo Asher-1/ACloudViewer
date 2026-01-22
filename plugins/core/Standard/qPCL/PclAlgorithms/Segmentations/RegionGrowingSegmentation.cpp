@@ -16,7 +16,7 @@
 #include <Utils/copy.h>
 #endif
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
 // ECV_PLUGINS

@@ -38,9 +38,8 @@ env:
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
   CUDA_VERSION: "12.6.0" # CUDA_VERSION: "11.8.0"
   SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
-  BUILD_DIR: "C:\\ACloudViewer\\build"
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
-  NPROC: 6
+  NPROC: 8
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
@@ -53,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.11']
+        python_version: ['3.12']
         BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
         BUILD_CUDA_MODULE: [ON, OFF]
@@ -143,104 +142,93 @@ jobs:
           }
           $ErrorActionPreference = 'Stop'
 
-      - name: Config
-        # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
-        run: |
-          echo "CONDA_PREFIX: $env:CONDA_PREFIX"
-          $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
-          $env:PATH = "$env:CONDA_LIB_DIR;$env:CONDA_LIB_DIR\cmake;$env:PATH"
-          echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $env:PKG_CONFIG_PATH = "$env:CONDA_LIB_DIR\lib\pkgconfig;$env:PKG_CONFIG_PATH"
-          echo "PKG_CONFIG_PATH=$env:PKG_CONFIG_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR/include/eigen3"
-          echo "EIGEN_ROOT_DIR=$env:EIGEN_ROOT_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-          $ErrorActionPreference = 'Stop'
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
-          cd ${{ env.BUILD_DIR }}
-          if (${env:DEVELOPER_BUILD} -ne "OFF") {
-            ${env:DEVELOPER_BUILD}="ON"
-          }
-          echo "DEVELOPER_BUILD is ${env:DEVELOPER_BUILD}"
-          cmake -G "Visual Studio 17 2022" -A x64 `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
-            -DBUILD_EXAMPLES=OFF `
-            -DCMAKE_INSTALL_PREFIX="${{ env.INSTALL_DIR }}" `
-            -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
-            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
-            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
-            -DWITH_OPENMP=ON `
-            -DWITH_SIMD=ON `
-            -DUSE_SIMD=ON `
-            -DPACKAGE=ON `
-            -DBUILD_BENCHMARKS=OFF `
-            -DBUILD_OPENCV=ON `
-            -DBUILD_RECONSTRUCTION=ON `
-            -DUSE_PCL_BACKEND=ON `
-            -DWITH_PCL_NURBS=ON `
-            -DCVCORELIB_USE_CGAL=ON `
-            -DCVCORELIB_SHARED=ON `
-            -DCVCORELIB_USE_QT_CONCURRENT=ON `
-            -DOPTION_USE_GDAL=OFF `
-            -DOPTION_USE_DXF_LIB=ON `
-            -DPLUGIN_IO_QDRACO=ON `
-            -DPLUGIN_IO_QLAS=ON `
-            -DPLUGIN_IO_QADDITIONAL=ON `
-            -DPLUGIN_IO_QCORE=ON `
-            -DPLUGIN_IO_QCSV_MATRIX=ON `
-            -DPLUGIN_IO_QE57=ON `
-            -DPLUGIN_IO_QMESH=ON `
-            -DPLUGIN_IO_QPDAL=OFF `
-            -DPLUGIN_IO_QPHOTOSCAN=ON `
-            -DPLUGIN_IO_QRDB=ON `
-            -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON `
-            -DPLUGIN_IO_QFBX=ON `
-            -DPLUGIN_IO_QSTEP=OFF `
-            -DPLUGIN_STANDARD_QCORK=ON `
-            -DPLUGIN_STANDARD_QJSONRPC=ON `
-            -DPLUGIN_STANDARD_QCLOUDLAYERS=ON `
-            -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON `
-            -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON `
-            -DPLUGIN_STANDARD_QANIMATION=ON `
-            -DQANIMATION_WITH_FFMPEG_SUPPORT=ON `
-            -DPLUGIN_STANDARD_QCANUPO=ON `
-            -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON `
-            -DPLUGIN_STANDARD_QCOMPASS=ON `
-            -DPLUGIN_STANDARD_QCSF=ON `
-            -DPLUGIN_STANDARD_QFACETS=ON `
-            -DPLUGIN_STANDARD_G3POINT=ON `
-            -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON `
-            -DPLUGIN_STANDARD_QM3C2=ON `
-            -DPLUGIN_STANDARD_QMPLANE=ON `
-            -DPLUGIN_STANDARD_QPCL=ON `
-            -DPLUGIN_STANDARD_QPOISSON_RECON=ON `
-            -DPOISSON_RECON_WITH_OPEN_MP=ON `
-            -DPLUGIN_STANDARD_QSRA=ON `
-            -DPLUGIN_STANDARD_3DMASC=ON `
-            -DPLUGIN_STANDARD_QTREEISO=ON `
-            -DPLUGIN_STANDARD_QVOXFALL=ON `
-            -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
-            -DCONDA_PREFIX=$env:CONDA_PREFIX `
-            -DEIGEN_ROOT_DIR="$env:EIGEN_ROOT_DIR" `
-            -DPLUGIN_PYTHON=ON `
-            -DBUILD_PYTHON_MODULE=ON `
-            -DBUILD_WITH_CONDA=ON `
-            -DBUILD_UNIT_TESTS=OFF `
-            ${{ env.SRC_DIR }}
-
-      - name: ACloudViewer App
-        working-directory: ${{ env.BUILD_DIR }}
+      - name: Build ACloudViewer App
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
+        working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target ALL_BUILD
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target INSTALL
           
-          $PACKAGE_INSTALLER_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe")).Name
-          echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          # Set environment variables for build script
+          # These will be used by build_win_app.ps1
+          $env:STATIC_RUNTIME = "${{ matrix.STATIC_RUNTIME }}"
+          $env:DEVELOPER_BUILD = "${{ env.DEVELOPER_BUILD }}"
+          $env:BUILD_SHARED_LIBS = "${{ matrix.BUILD_SHARED_LIBS }}"
+          $env:BUILD_CUDA_MODULE = "${{ matrix.BUILD_CUDA_MODULE }}"
+          # IGNORE_TEST: Set to ON to skip tests in build script (tests run separately in workflow)
+          $env:IGNORE_TEST = "ON"
+          echo "IGNORE_TEST=$env:IGNORE_TEST"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:ONLY_BUILD_CUDA = "${{ matrix.BUILD_CUDA_MODULE }}"
+          echo "ONLY_BUILD_CUDA=$env:ONLY_BUILD_CUDA"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          
+          # Call build script with named parameters
+          & "${{ env.SRC_DIR }}\scripts\build_win_app.ps1" `
+            -PythonVersion "${{ matrix.python_version }}" `
+            -ACloudViewerInstall "${{ env.INSTALL_DIR }}"
+          
+          # Extract package installer name for subsequent steps
+          $PACKAGE_INSTALLER_NAME = (Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe")).Name
+          echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Run C++ unit tests
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
+        working-directory: ${{ env.SRC_DIR }}\build
+        run: |
+          $ErrorActionPreference = 'Continue'
+          
+          # Check if build directory exists
+          $buildDir = "${{ env.SRC_DIR }}\build"
+          if (-not (Test-Path $buildDir)) {
+            Write-Error "Build directory not found: $buildDir"
+            exit 1
+          }
+          
+          # Check if test executable exists
+          $testExe = Join-Path $buildDir "bin\${{ matrix.CONFIG }}\tests.exe"
+          if (-not (Test-Path $testExe)) {
+            Write-Error "Test executable not found: $testExe"
+            Write-Host "Current directory: $(Get-Location)"
+            Write-Host "Listing bin directory:"
+            if (Test-Path (Join-Path $buildDir "bin")) {
+              Get-ChildItem (Join-Path $buildDir "bin") -Recurse -Filter "*.exe" | Select-Object FullName
+            }
+            exit 1
+          }
+          
+          # For CUDA builds, ensure CUDA DLL path is in PATH
+          if ("${{ matrix.BUILD_CUDA_MODULE }}" -eq "ON" -and $env:CUDA_PATH) {
+            $cudaBinPath = Join-Path $env:CUDA_PATH "bin"
+            if (Test-Path $cudaBinPath) {
+              Write-Host "Adding CUDA bin directory to PATH: $cudaBinPath"
+              $env:PATH = "$cudaBinPath;$env:PATH"
+            } else {
+              Write-Warning "CUDA bin directory not found: $cudaBinPath"
+            }
+          }
+          
+          Write-Host "Running C++ unit tests from: $(Get-Location)"
+          Write-Host "Test executable: $testExe"
+          Write-Host "BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA_MODULE }}"
+          if ($env:CUDA_PATH) {
+            Write-Host "CUDA_PATH: $env:CUDA_PATH"
+          }
+          Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
+          
+          # Run the tests
+          & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+          $testResult = $LASTEXITCODE
+          
+          if ($testResult -ne 0) {
+            Write-Error "C++ unit tests failed with exit code: $testResult"
+            # On Windows, if the test executable fails to start, it might be a DLL issue
+            if ($testResult -eq -1073741515 -or $testResult -eq 0xC0000135) {
+              Write-Error "Possible DLL loading error. Check if CUDA DLLs are accessible."
+              Write-Host "CUDA_PATH: $env:CUDA_PATH"
+              Write-Host "PATH contains CUDA: $($env:PATH -like '*CUDA*')"
+            }
+            exit $testResult
+          }
+          
+          Write-Host "C++ unit tests passed successfully."
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -248,7 +236,6 @@ jobs:
           name: ${{ env.PACKAGE_INSTALLER_NAME }}
           path: ${{ env.INSTALL_DIR }}\${{ env.PACKAGE_INSTALLER_NAME }}
           if-no-files-found: error
-
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
@@ -256,7 +243,6 @@ jobs:
         run: |
           gh release upload main-devel ${{ env.INSTALL_DIR }}\${{ env.PACKAGE_INSTALLER_NAME }} --clobber
           gh release view main-devel
-
       - name: Public App Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -267,7 +253,6 @@ jobs:
           # body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
             ${{ env.INSTALL_DIR }}\${{ env.PACKAGE_INSTALLER_NAME }}
-
       - name: Disk space used
         run: Get-PSDrive
 
@@ -344,7 +329,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: torch271
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       # DGM: without caching, using conda on Windows takes a long time...
@@ -371,11 +356,19 @@ jobs:
           $ErrorActionPreference = 'Stop'
 
       - name: Config and Building
+        working-directory: ${{ env.SRC_DIR }}
         run: |
+          $ErrorActionPreference = 'Stop'
+          
           # no need to test due to to next step is test-wheel
           $env:IGNORE_TEST = "ON"
-          echo "IGNORE_TEST=$env:IGNORE_TEST"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          scripts/build_win_wheel.ps1 -PythonVersion "${{ matrix.python_version }}" -ACloudViewerInstall "${{ env.INSTALL_DIR }}" -CloudViewerMLRoot "${{ env.CLOUDVIEWER_ML_ROOT }}"
+          echo "IGNORE_TEST=$env:IGNORE_TEST" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          
+          # Call build script with named parameters
+          & "${{ env.SRC_DIR }}\scripts\build_win_wheel.ps1" `
+            -PythonVersion "${{ matrix.python_version }}" `
+            -ACloudViewerInstall "${{ env.INSTALL_DIR }}" `
+            -CloudViewerMLRoot "${{ env.CLOUDVIEWER_ML_ROOT }}"
 
           $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer-*.whl")).Name
           $PIP_CPU_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer_cpu*.whl")).Name
@@ -442,7 +435,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: torch271
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Download wheels
@@ -472,7 +465,18 @@ jobs:
           }
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
-
+      - name: Run Python unit tests (CPU)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cloudViewer_test.venv\Scripts\Activate.ps1
+          python -V
+          echo "Installing test dependencies..."
+          python -m pip install -r python/requirements_test.txt
+          echo "Running CloudViewer python tests (CPU)..."
+          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
+          echo "Testing ML and ML Ops disabled"
+          python -m pytest python/test/ --ignore python/test/ml_ops/
+          deactivate
       - name: Test Python package (CUDA)
         env:
           BUILD_CUDA_MODULE: ON
@@ -489,13 +493,15 @@ jobs:
           }
           echo "Testing wheel: $PIP_PKG_NAME"
           Test-Wheel -wheel_path $PIP_PKG_NAME
-
-      # - name: Run Python unit tests
-      #   run: |
-      #     $ErrorActionPreference = 'Stop'
-      #     cloudViewer_test_venv\Scripts\Activate.ps1
-      #     echo "Running ACloudViewer python tests..."
-      #     echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-      #     echo "Testing ML and ML Ops disabled"
-      #     python -m pytest python/test/ --ignore python/test/ml_ops/
-      #     deactivate
+      - name: Run Python unit tests (CUDA)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cloudViewer_test.venv\Scripts\Activate.ps1
+          echo "Installing test dependencies..."
+          python -V
+          python -m pip install -r python/requirements_test.txt
+          echo "Running CloudViewer python tests (CUDA)..."
+          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
+          echo "Testing ML and ML Ops disabled"
+          python -m pytest python/test/ --ignore python/test/ml_ops/
+          deactivate

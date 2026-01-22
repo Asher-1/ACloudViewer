@@ -11,7 +11,7 @@
 #include <FileIOFilter.h>
 
 //! CSV matrix I/O filter
-class /*ECV_IO_LIB_API*/ CSVMatrixFilter : public FileIOFilter {
+class /*CV_IO_LIB_API*/ CSVMatrixFilter : public FileIOFilter {
 public:
     CSVMatrixFilter();
 

@@ -320,10 +320,10 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
-# Checkout CloudViewer-ML torch271 branch
+# Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b torch271 ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git -b main ${CLOUDVIEWER_ML_ROOT}
 
 # ACloudViewer repo
 # Always keep /root/ACloudViewer as the WORKDIR
@@ -340,16 +340,11 @@ RUN ./util/install_deps_ubuntu.sh assume-yes \
 && rm -rf /var/lib/apt/lists/*
 
 # ACloudViewer Jupyter dependencies
-RUN mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
- | tee /etc/apt/sources.list.d/nodesource.list \
- && apt-get update \
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
- && node --version \
- && npm install -g yarn \
+ && node --version
+RUN npm install -g yarn \
  && yarn --version
 
 RUN mkdir -p ${ACloudViewer_INSTALL}

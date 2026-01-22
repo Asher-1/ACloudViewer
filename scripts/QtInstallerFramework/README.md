@@ -44,7 +44,7 @@ codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/deploy
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/bin/colmap/colmap.app
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/bin/CloudViewer/CloudViewer.app
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app
-codesign --deep --force -s - --timestamp --entitlements /Users/asher/develop/code/github/ACloudViewer/eCV/Mac/ACloudViewer.entitlements /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
+codesign --deep --force -s - --timestamp --entitlements /Users/asher/develop/code/github/ACloudViewer/app/Mac/ACloudViewer.entitlements /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
 
 # for libtiff.*dylib
 /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/reset_libs_rpath.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib

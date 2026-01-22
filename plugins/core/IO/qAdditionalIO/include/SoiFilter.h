@@ -10,7 +10,7 @@
 #include "FileIOFilter.h"
 
 //! Mensi Soisic point cloud file I/O filter
-class /*ECV_IO_LIB_API*/ SoiFilter : public FileIOFilter {
+class /*CV_IO_LIB_API*/ SoiFilter : public FileIOFilter {
 public:
     SoiFilter();
 

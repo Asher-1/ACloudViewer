@@ -7,7 +7,7 @@
 
 #include "ccCompassDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <CVLog.h>
 
 // Qt

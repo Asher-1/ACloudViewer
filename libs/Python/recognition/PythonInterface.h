@@ -15,6 +15,6 @@
 #include "utility/PythonModules.h"
 
 namespace PythonInterface {
-bool ECV_PYTHON_LIB_API SetPythonHome(const wchar_t* pyHome);
-bool ECV_PYTHON_LIB_API SetPythonHome(const char* pyHome);
+bool CV_PYTHON_LIB_API SetPythonHome(const wchar_t* pyHome);
+bool CV_PYTHON_LIB_API SetPythonHome(const char* pyHome);
 }  // namespace PythonInterface

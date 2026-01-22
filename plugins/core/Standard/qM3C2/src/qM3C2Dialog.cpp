@@ -7,7 +7,7 @@
 
 #include "qM3C2Dialog.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvFileUtils.h>
 #include <ecvPointCloud.h>
 

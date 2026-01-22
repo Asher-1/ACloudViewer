@@ -28,7 +28,7 @@
 #include <QtGui>
 #include <unordered_set>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <GenericIndexedCloudPersist.h>
 #include <ecvCone.h>
 #include <ecvFileUtils.h>
@@ -39,7 +39,7 @@
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <PlyFilter.h>
 
 // CWT

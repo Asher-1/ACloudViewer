@@ -14,7 +14,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerSparseConvBackpropFilter")
+REGISTER_OP("CloudViewerSparseConvBackpropFilter")
         .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
                                                    // weights
         .Attr("output_type: {float, double, bfloat16} = DT_FLOAT")  // Type for
@@ -66,7 +66,7 @@ REGISTER_OP("CloudviewerSparseConvBackpropFilter")
             CHECK_SHAPE_HANDLE(c, out_features_gradient, num_out, out_channels);
 
             c->set_output(0, filters);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Computes the backprop for the filter of the SparseConv

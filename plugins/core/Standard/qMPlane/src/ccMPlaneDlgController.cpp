@@ -7,7 +7,7 @@
 
 #include "ccMPlaneDlgController.h"
 
-// eCV
+// app
 #include <ecvPickingHub.h>
 
 // Qt

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # From build/bin directory:
-# ./scripts/platforms/mac/sign_macos_app.sh ~/cloudViewer_install/ACloudViewer/ACloudViewer.app ./eCV/Mac/ACloudViewer.entitlements <apple-id> <cert-name> <team-id> <app-password>
+# ./scripts/platforms/mac/sign_macos_app.sh ~/cloudViewer_install/ACloudViewer/ACloudViewer.app ./app/Mac/ACloudViewer.entitlements <apple-id> <cert-name> <team-id> <app-password>
 
 # bundle app libs
 # python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/lib_bundle_app.py ACloudViewer ~/cloudViewer_install/ACloudViewer

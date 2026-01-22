@@ -32,9 +32,20 @@ import multiprocessing
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
+
+import certifi
+import nbconvert
+import nbformat
+try:
+    from nbclient.exceptions import DeadKernelError
+except ImportError:
+    # Fallback for older versions of nbclient
+    DeadKernelError = Exception
 
 
 def _create_or_clear_dir(dir_path):
@@ -184,6 +195,129 @@ class DoxygenDocsBuilder:
         # It will be cleaned on next build by _create_or_clear_dir()
 
 
+class PyExampleDocsBuilder:
+    """
+    Generate Python examples *.rst files.
+    """
+
+    def __init__(self, input_dir, pwd, output_dir="source/python_example"):
+        self.output_dir = Path(str(output_dir))
+        self.input_dir = Path(str(input_dir))
+        self.prefixes = [
+            ("geometry", "Geometry"),
+            ("image", "Image"),
+            ("kd_tree", "KD Tree"),
+            ("octree", "Octree"),
+            ("point_cloud", "Point Cloud"),
+            ("ray_casting", "Ray Casting"),
+            ("rgbd", "RGBD Image"),
+            ("triangle_mesh", "Triangle Mesh"),
+            ("voxel_grid", "Voxel Grid"),
+        ]
+
+        # Try to import from cli, but fall back to direct implementation
+        # to avoid dependency on cloudViewer module (which may fail to import)
+        # Note: cli.py imports cloudViewer at module level, which can fail
+        # with OSError due to libcurl symbol issues, so we catch all exceptions
+        try:
+            sys.path.append(os.path.join(pwd, "..", "python", "tools"))
+            from cli import _get_all_examples_dict
+            self.get_all_examples_dict = _get_all_examples_dict
+        except Exception:
+            # Fallback: implement _get_all_examples_dict directly
+            # This avoids needing to import cloudViewer module
+            # The function just scans the filesystem, so no cloudViewer dependency needed
+            def _get_all_examples_dict():
+                ex_dir = Path(input_dir)
+                if not ex_dir.exists():
+                    return {}
+                categories = [cat for cat in ex_dir.iterdir() if cat.is_dir()]
+                examples_dict = {}
+                for cat_path in categories:
+                    examples = sorted(Path(cat_path).glob("*.py"))
+                    if len(examples) > 0:
+                        examples_dict[cat_path.stem] = [
+                            ex.stem for ex in examples if ex.stem != "__init__"
+                        ]
+                return examples_dict
+            self.get_all_examples_dict = _get_all_examples_dict
+
+    def _get_examples_dict(self):
+        examples_dict = self.get_all_examples_dict()
+        categories_to_remove = [
+            "benchmark", "reconstruction_system", "t_reconstruction_system"
+        ]
+        for cat in categories_to_remove:
+            examples_dict.pop(cat, None)  # Use pop with None to avoid KeyError
+        return examples_dict
+
+    def _get_prefix(self, example_name):
+        for prefix, sub_category in self.prefixes:
+            if example_name.startswith(prefix):
+                return prefix
+        raise Exception("No prefix found for geometry examples")
+
+    @staticmethod
+    def _generate_index(title, output_path):
+        os.makedirs(output_path, exist_ok=True)
+        out_string = (f"{title}\n"
+                      f"{'-' * len(title)}\n\n")
+        with open(output_path / "index.rst", "w") as f:
+            f.write(out_string)
+
+    @staticmethod
+    def _add_example_to_docs(example: Path, output_path):
+        shutil.copy(example, output_path)
+        out_string = (f"{example.name}"
+                      f"\n{'`' * (len(example.name))}\n"
+                      f"\n.. literalinclude:: {example.name}"
+                      f"\n   :language: python"
+                      f"\n   :linenos:"
+                      f"\n\n\n")
+
+        with open(output_path / "index.rst", "a") as f:
+            f.write(out_string)
+
+    def generate_rst(self):
+        print(f"Generating *.rst Python example docs in directory: "
+              f"{self.output_dir}")
+        _create_or_clear_dir(self.output_dir)
+        examples_dict = self._get_examples_dict()
+
+        categories = [cat for cat in self.input_dir.iterdir() if cat.is_dir()]
+
+        for cat in categories:
+            if cat.stem in examples_dict.keys():
+                out_dir = self.output_dir / cat.stem
+                if (cat.stem == "geometry"):
+                    self._generate_index(cat.stem.capitalize(), out_dir)
+                    with open(out_dir / "index.rst", "a") as f:
+                        f.write(f".. toctree::\n"
+                                f"    :maxdepth: 2\n\n")
+                        for prefix, sub_cat in self.prefixes:
+                            f.write(f"    {prefix}/index\n")
+
+                    for prefix, sub_category in self.prefixes:
+                        self._generate_index(sub_category, out_dir / prefix)
+                    examples = sorted(Path(cat).glob("*.py"))
+                    for ex in examples:
+                        if ex.stem in examples_dict[cat.stem]:
+                            prefix = self._get_prefix(ex.stem)
+                            sub_category_path = out_dir / prefix
+                            self._add_example_to_docs(ex, sub_category_path)
+                else:
+                    if (cat.stem == "io"):
+                        self._generate_index("IO", out_dir)
+                    else:
+                        self._generate_index(cat.stem.capitalize(), out_dir)
+
+                    examples = sorted(Path(cat).glob("*.py"))
+                    for ex in examples:
+                        if ex.stem in examples_dict[cat.stem]:
+                            shutil.copy(ex, out_dir)
+                            self._add_example_to_docs(ex, out_dir)
+
+
 class PyAPIDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
@@ -220,11 +354,15 @@ class PyAPIDocsBuilder:
     def _get_documented_module_names():
         """Reads the modules of the python api from documented_modules.txt"""
         module_names = []
-        with open("documented_modules.txt", "r") as f:
+        # Resolve path relative to script directory for robustness
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        documented_modules_path = os.path.join(script_dir, "documented_modules.txt")
+        with open(documented_modules_path, "r") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith('#'):
                     continue
+                print(line, end="")
                 m = re.match(r"^(cloudViewer\..*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
@@ -235,34 +373,35 @@ class PyAPIDocsBuilder:
 
     def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
-        # Add multiple potential Python module paths (matches CMakeLists.txt)
-        potential_paths = [
-            os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "Release", "Python", "cuda"),
-            os.path.join(os.path.dirname(__file__), "..", "build_app", "lib", "python_package"),
-            os.path.join(os.path.dirname(__file__), "..", "build", "lib", "Release", "Python", "cuda"),
-            os.path.join(os.path.dirname(__file__), "..", "build", "lib", "python_package"),
-        ]
-        for path in potential_paths:
-            if os.path.exists(path):
-                sys.path.insert(0, path)
-        
-        # Try to import cloudViewer (pybind variant first, then standard)
         try:
-            import pybind as cloudViewer
-            sys.modules['cloudViewer'] = cloudViewer
-        except ImportError:
             import cloudViewer
-
+            if hasattr(cloudViewer, '_build_config'):
+                if cloudViewer._build_config.get('BUILD_TENSORFLOW_OPS', False):
+                    import cloudViewer.ml.tf
+                if cloudViewer._build_config.get('BUILD_PYTORCH_OPS', False):
+                    import cloudViewer.ml.torch
+        except (ImportError, AttributeError, KeyError) as e:
+            # Optional modules, ignore if not available
+            print(f"⚠️  {e}")
+            pass
+        
+        # Try to import the specific module
         try:
-            # Try to import directly
+            # Try to import directly. This will work for pure python submodules
             module = importlib.import_module(full_module_name)
             return module
         except ImportError:
-            # Traverse the module hierarchy
-            current_module = cloudViewer
-            for sub_module_name in full_module_name.split(".")[1:]:
-                current_module = getattr(current_module, sub_module_name)
-            return current_module
+            # Traverse the module hierarchy of the root module.
+            # This code path is necessary for modules for which we manually
+            # define a specific module path (e.g. the modules defined with
+            # pybind).
+            try:
+                current_module = cloudViewer
+                for sub_module_name in full_module_name.split(".")[1:]:
+                    current_module = getattr(current_module, sub_module_name)
+                return current_module
+            except AttributeError as e:
+                raise ImportError(f"Could not find module {full_module_name}: {e}")
 
     def _generate_function_doc(self, full_module_name, function_name, output_path):
         out_string = ""
@@ -283,7 +422,9 @@ class PyAPIDocsBuilder:
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
-        out_string += "\n    :inherited-members:"
+        if not (full_module_name.startswith("cloudViewer.ml.tf") or
+                full_module_name.startswith("cloudViewer.ml.torch")):
+            out_string += "\n    :inherited-members:"
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -402,48 +543,113 @@ class JupyterDocsBuilder:
     def __init__(self, current_file_dir):
         self.current_file_dir = current_file_dir
 
+    def overwrite_tutorial_file(self, url, output_file, output_file_path):
+        with urllib.request.urlopen(
+                url,
+                context=ssl.create_default_context(cafile=certifi.where()),
+        ) as response:
+            with open(output_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        shutil.move(output_file, output_file_path)
+        
     def run(self):
         """Copy Jupyter notebooks to tutorial directories."""
         print("📓 Copying Jupyter notebooks to tutorial directories...")
         
+        # Setting os.environ["CI"] will disable interactive (blocking) mode in
+        # Jupyter notebooks
+        os.environ["CI"] = "true"
+
+        # Copy from jupyter to the tutorial folder.
+        nb_paths = []
         nb_parent_src = Path(self.current_file_dir) / "jupyter"
         nb_parent_dst = Path(self.current_file_dir) / "source" / "tutorial"
-        
         if not nb_parent_src.exists():
             print(f"⚠️  Jupyter directory not found: {nb_parent_src}")
             return
         
-        # Get all subdirectories in jupyter/
         example_dirs = [
             name for name in os.listdir(nb_parent_src)
             if os.path.isdir(nb_parent_src / name)
         ]
-        
-        copied_count = 0
+
+        print(f"Copying {nb_parent_src / 'cloudViewer_tutorial.py'} "
+              f"to {nb_parent_dst / 'cloudViewer_tutorial.py'}")
+        shutil.copy(
+            nb_parent_src / "cloudViewer_tutorial.py",
+            nb_parent_dst / "cloudViewer_tutorial.py",
+        )
+
         for example_dir in example_dirs:
             in_dir = nb_parent_src / example_dir
             out_dir = nb_parent_dst / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Copy all notebooks
+
+            for nb_out_path in out_dir.glob("*.ipynb"):
+                print("Delete: {}".format(nb_out_path))
+                nb_out_path.unlink()
+
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
                 _update_file(nb_in_path, nb_out_path)
-                copied_count += 1
-            
-            # Copy images directory if it exists
-            if (in_dir / "images").exists():
+                nb_paths.append(nb_out_path)
+
+            # Copy the 'images' dir present in some example dirs.
+            if (in_dir / "images").is_dir():
                 if (out_dir / "images").exists():
                     shutil.rmtree(out_dir / "images")
-                print(f"Copy: {in_dir / 'images'}\n   -> {out_dir / 'images'}")
+                print("Copy: {}\n   -> {}".format(in_dir / "images",
+                                                  out_dir / "images"))
                 shutil.copytree(in_dir / "images", out_dir / "images")
-        
-        # Copy helper Python files
-        for py_file in ["cloudViewer_tutorial.py", "jupyter_run_all.py", "jupyter_strip_output.py"]:
-            src_file = nb_parent_src / py_file
-            if src_file.exists():
-                dst_file = nb_parent_dst / py_file
-                _update_file(src_file, dst_file)
+
+        # Execute Jupyter notebooks
+        # Files that should not be executed.
+        nb_direct_copy = [
+            'draw_plotly.ipynb',
+            'hashmap.ipynb',
+            'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb',
+            'tensor.ipynb',
+        ]
+
+        for nb_path in nb_paths:
+            if nb_path.name in nb_direct_copy:
+                print("[Processing notebook {}, directly copied]".format(
+                    nb_path.name))
+                continue
+
+            print("[Processing notebook {}]".format(nb_path.name))
+            with open(nb_path, encoding="utf-8") as f:
+                nb = nbformat.read(f, as_version=4)
+
+            # https://github.com/spatialaudio/nbsphinx/blob/master/src/nbsphinx.py
+            has_code = any(c.source for c in nb.cells if c.cell_type == "code")
+            has_output = any(
+                c.get("outputs") or c.get("execution_count")
+                for c in nb.cells
+                if c.cell_type == "code")
+            execute = (has_code and not has_output)
+            print("has_code: {}, has_output: {}, execute: {}".format(
+                has_code, has_output, execute))
+
+            if execute:
+                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
+                try:
+                    ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
+                except (nbconvert.preprocessors.execute.CellExecutionError, DeadKernelError) as e:
+                    print("Execution of {} failed: {} (this will cause CI to fail).".
+                          format(nb_path.name, type(e).__name__))
+                    if "GITHUB_ACTIONS" in os.environ:
+                        raise
+
+                with open(nb_path, "w", encoding="utf-8") as f:
+                    nbformat.write(nb, f)
+
+        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
+        output_file = "t_icp_registration.ipynb"
+        output_file_path = nb_parent_dst / "t_pipelines" / output_file
+        output_file_path.parent.mkdir(parents=True, exist_ok=True)
+        self.overwrite_tutorial_file(url, output_file, str(output_file_path))
         
         # Copy static images (like donation.png) to _static directory
         print("📸 Copying static images to _static directory...")
@@ -458,7 +664,6 @@ class JupyterDocsBuilder:
                 _update_file(donation_img, static_dst / "donation.png")
                 print(f"  ✓ donation.png ({donation_img.stat().st_size // 1024} KB)")
         
-        print(f"✅ Copied {copied_count} notebooks to tutorial directories")
 
 
 class SphinxDocsBuilder:
@@ -484,49 +689,75 @@ class SphinxDocsBuilder:
         except (ImportError, OSError):
             print("⚠️  pypandoc not found, nbsphinx may fail without pandoc")
         
+        # Copy docs files from Open3D-ML repo
+        cloudviewer_root = os.environ.get(
+            "CLOUDVIEWER_ML_ROOT",
+            os.path.join(self.current_file_dir, "../../CloudViewer-ML"))
+        cloudviewer_docs = [
+            os.path.join(cloudviewer_root, "docs", "tensorboard.md")
+        ]
+        for cloudviewer_doc in cloudviewer_docs:
+            if os.path.isfile(cloudviewer_doc):
+                shutil.copy(cloudviewer_doc, self.current_file_dir)
+        
         build_dir = os.path.join(self.html_output_dir, "html")
+        source_dir = os.path.join(self.current_file_dir, "source")
         nproc = multiprocessing.cpu_count() if self.parallel else 1
         print(f"Building docs with {nproc} processes")
 
-        # Get version from project if available
-        version = "3.9"
-        release = "3.9.3"
-        
+        # Find sphinx-build command
+        sphinx_build = shutil.which("sphinx-build")
+        if sphinx_build is None:
+            # Try using python -m sphinx as fallback
+            try:
+                import sphinx
+                sphinx_build = [sys.executable, "-m", "sphinx"]
+                print("📦 Using 'python -m sphinx' (sphinx-build not in PATH)")
+            except ImportError:
+                raise RuntimeError(
+                    "❌ sphinx-build not found and sphinx module not available.\n"
+                    "Please install sphinx: pip install sphinx"
+                )
+        else:
+            sphinx_build = [sphinx_build]
+
+        today = os.environ.get("SPHINX_TODAY", None)
+        if today:
+            cmd_args_today = ["-D", "today=" + today]
+        else:
+            cmd_args_today = []
+
         if self.is_release:
-            print(f"Building docs for release: {release}")
-            cmd = [
-                "sphinx-build",
-                "-j", str(nproc),
-                "-b", "html",
-                "-D", f"version={version}",
-                "-D", f"release={release}",
-                "source",  # Source directory
-                build_dir,  # Output directory
+            version_list = [
+                line.rstrip("\n").split(" ")[1]
+                for line in open("../libs/cloudViewer/version.txt")
+            ]
+            release_version = ".".join(version_list[:3])
+            print("Building docs for release:", release_version)
+
+            cmd = sphinx_build + [
+                "-j",
+                str(nproc), "-b", "html", "-D", "version=" + release_version,
+                "-D", "release=" + release_version
+            ] + cmd_args_today + [
+                source_dir,
+                build_dir,
             ]
         else:
-            print("Building development documentation")
-            cmd = [
-                "sphinx-build",
-                "-j", str(nproc),
-                "-b", "html",
-                "source",
+            cmd = sphinx_build + [
+                "-j",
+                str(nproc),
+                "-b",
+                "html",
+            ] + cmd_args_today + [
+                source_dir,
                 build_dir,
             ]
 
-        print(f'Running: "{" ".join(cmd)}"')
+        print('Calling: "%s"' % " ".join(cmd))
+        
         try:
             subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
-            
-            # Create symlink for convenience
-            html_link = os.path.join(self.current_file_dir, "html")
-            if not os.path.exists(html_link):
-                os.symlink(build_dir, html_link)
-                
-            index_html = Path(build_dir) / "index.html"
-            if index_html.exists():
-                print(f"✅ Sphinx docs generated at {index_html.as_uri()}")
-            else:
-                print(f"✅ Sphinx docs generated at {build_dir}")
         except subprocess.CalledProcessError as e:
             print(f"❌ Sphinx build failed: {e}")
             raise
@@ -628,6 +859,16 @@ def main():
     if args.sphinx:
         pyapi = PyAPIDocsBuilder()
         pyapi.generate_rst()
+
+    # Generate Python example docs BEFORE Sphinx build
+    if args.sphinx:
+        py_example_input_dir = os.path.join(pwd, "..", "examples", "Python")
+        if os.path.exists(py_example_input_dir):
+            print("Building Python example reST")
+            pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
+            pe.generate_rst()
+        else:
+            print(f"⚠️  Python examples directory not found: {py_example_input_dir}")
 
     # Copy Jupyter notebooks BEFORE Sphinx build
     if args.sphinx:

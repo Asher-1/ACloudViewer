@@ -196,7 +196,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Asher-1/CloudViewer-ML
-          ref: torch271
+          ref: main
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
       - name: Download wheels
         uses: actions/download-artifact@v4
@@ -207,6 +207,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
+      - name: Test Python package (CUDA)
+        env:
+          BUILD_CUDA_MODULE: ON
+        run: |
+          python -V
+          source util/ci_utils.sh
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          test_wheel cloudviewer-[0-9]*-"$pi_tag"-*.whl
+      - name: Run Python unit tests (CUDA)
+        run: |
+          source util/ci_utils.sh
+          echo "Running CloudViewer python tests..."
+          run_python_tests
       - name: Test Python package (CPU)
         env:
           BUILD_CUDA_MODULE: OFF
@@ -215,37 +228,8 @@ jobs:
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           test_wheel cloudviewer_cpu*-"$pi_tag"-*.whl
-      - name: Test Python package (CUDA)
-        env:
-          BUILD_CUDA_MODULE: ON
+      - name: Run Python unit tests (CPU)
         run: |
-          python -V
-          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          wheel_file=$(ls cloudviewer-[0-9]*-"$pi_tag"-*.whl 2>/dev/null | head -n 1)
-          if [ -z "$wheel_file" ]; then
-            echo "Warning: CUDA wheel file not found, skipping CUDA test"
-            exit 0
-          fi
-          echo "Testing CUDA wheel: $wheel_file"
-          echo "Wheel directory: $(pwd)"
-          # Use Docker container with GPU support to test CUDA wheel
-          # Note: This requires nvidia-docker runtime. If GPU is not available,
-          # the test will still run but may show warnings about missing GPU.
-          # Install basic dependencies first, then let the test script handle the rest.
-          docker run --gpus all \
-            -v "${{ github.workspace }}:/root/ACloudViewer" \
-            -v "${{ github.workspace }}:/opt/wheels" \
-            --rm \
-            nvidia/cuda:12.6.3-devel-ubuntu22.04 \
-            bash -c "
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update -qq > /dev/null 2>&1
-              apt-get install -y -qq curl git ca-certificates > /dev/null 2>&1 || true
-              bash /root/ACloudViewer/docker/test_wheel_runtime.sh /opt/wheels ON ${{ matrix.python_version }}
-            " || {
-            echo "Warning: CUDA wheel test failed or GPU not available"
-            echo "This is expected if running on GitHub Actions without GPU support"
-            echo "The wheel was built successfully and can be tested manually with GPU access"
-            # Don't fail the build if GPU is not available
-            exit 0
-          }
+          source util/ci_utils.sh
+          echo "Running CloudViewer python tests (CPU wheel)..."
+          run_python_tests

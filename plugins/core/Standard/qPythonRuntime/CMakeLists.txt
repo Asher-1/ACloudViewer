@@ -39,6 +39,12 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
     endif ()
     embed_cvcorelib_in(${PROJECT_NAME})
     embed_pycc_in(${PROJECT_NAME})
+    # When embedding pycc, we need to link Qt OpenGL libraries
+    # because pycc uses QOpenGLWidget
+    target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
+    if(USE_QT6)
+      target_link_libraries(${PROJECT_NAME} Qt::OpenGLWidgets)
+    endif()
   endif()
 
   target_link_libraries(${PROJECT_NAME} pybind11::embed)

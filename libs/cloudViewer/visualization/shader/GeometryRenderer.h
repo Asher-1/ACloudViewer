@@ -152,7 +152,7 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr);
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:

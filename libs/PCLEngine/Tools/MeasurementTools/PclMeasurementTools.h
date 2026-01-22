@@ -12,7 +12,7 @@
 
 #include "qPCL.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericMeasurementTools.h>
 #include <ecvGenericVisualizer3D.h>
 

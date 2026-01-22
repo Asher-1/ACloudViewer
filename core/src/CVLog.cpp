@@ -11,6 +11,7 @@
 #include <CVPlatform.h>
 
 // System
+#include <algorithm>
 #include <cassert>
 #include <vector>
 
@@ -39,6 +40,13 @@ static bool s_backupEnabled;
 // backuped messages
 static std::vector<Message> s_backupMessages;
 
+// message verbosity level
+#ifdef QT_DEBUG
+static int s_verbosityLevel = CVLog::LOG_VERBOSE;
+#else
+static int s_verbosityLevel = CVLog::LOG_STANDARD;
+#endif
+
 // unique console instance
 static CVLog* s_instance = nullptr;
 
@@ -46,13 +54,18 @@ CVLog* CVLog::TheInstance() { return s_instance; }
 
 void CVLog::EnableMessageBackup(bool state) { s_backupEnabled = state; }
 
+int CVLog::VerbosityLevel() { return s_verbosityLevel; }
+
+void CVLog::SetVerbosityLevel(int level) {
+    s_verbosityLevel = std::min(
+            level, static_cast<int>(LOG_ERROR));  // can't ignore error messages
+}
+
 void CVLog::LogMessage(const QString& message, int level) {
-#ifndef QT_DEBUG
-    // skip debug messages in release mode as soon as possible
-    if (level & DEBUG_FLAG) {
+    // skip messages below the current 'verbosity' level
+    if ((level & 7) < s_verbosityLevel) {
         return;
     }
-#endif
 
     if (s_instance) {
         s_instance->logMessage(message, level);
@@ -102,6 +115,11 @@ bool CVLog::Print(const char* format, ...) {
     return true;
 }
 
+bool CVLog::Print(const QString& message) {
+    LogMessage(message, LOG_STANDARD);
+    return true;
+}
+
 bool CVLog::PrintHigh(const char* format, ...) {
     LOG_ARGS(LOG_IMPORTANT)
     return true;
@@ -117,8 +135,18 @@ bool CVLog::Warning(const char* format, ...) {
     return false;
 }
 
+bool CVLog::Warning(const QString& message) {
+    LogMessage(message, LOG_WARNING);
+    return false;
+}
+
 bool CVLog::Error(const char* format, ...) {
     LOG_ARGS(LOG_ERROR)
+    return false;
+}
+
+bool CVLog::Error(const QString& message) {
+    LogMessage(message, LOG_ERROR);
     return false;
 }
 
@@ -129,6 +157,13 @@ bool CVLog::PrintDebug(const char* format, ...) {
     return true;
 }
 
+bool CVLog::PrintDebug(const QString& message) {
+#ifdef QT_DEBUG
+    LogMessage(message, LOG_STANDARD | DEBUG_FLAG);
+#endif
+    return false;
+}
+
 bool CVLog::WarningDebug(const char* format, ...) {
 #ifdef QT_DEBUG
     LOG_ARGS(LOG_WARNING | DEBUG_FLAG)
@@ -136,9 +171,23 @@ bool CVLog::WarningDebug(const char* format, ...) {
     return false;
 }
 
+bool CVLog::WarningDebug(const QString& message) {
+#ifdef QT_DEBUG
+    LogMessage(message, LOG_WARNING | DEBUG_FLAG);
+#endif
+    return false;
+}
+
 bool CVLog::ErrorDebug(const char* format, ...) {
 #ifdef QT_DEBUG
     LOG_ARGS(LOG_ERROR | DEBUG_FLAG)
+#endif
+    return false;
+}
+
+bool CVLog::ErrorDebug(const QString& message) {
+#ifdef QT_DEBUG
+    LogMessage(message, LOG_ERROR | DEBUG_FLAG);
 #endif
     return false;
 }

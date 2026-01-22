@@ -216,7 +216,7 @@ endmacro(COLMAP_ADD_STATIC_CUDA_LIBRARY)
 macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     # ${ARGN} will store the list of source files passed to this function.
     if (MSVC)
-        set(rc_list ${COLOUDVIEWER_PROJECT_PATH}/eCV/reconstruction/media/reconstruction_icon.rc)
+        set(rc_list ${COLOUDVIEWER_PROJECT_PATH}/app/reconstruction/media/reconstruction_icon.rc)
         add_executable(${TARGET_NAME} ${ARGN} ${rc_list})
     else ()
         add_executable(${TARGET_NAME} ${ARGN})

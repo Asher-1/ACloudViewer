@@ -15,7 +15,7 @@
 #include <Neighbourhood.h>
 #include <ParallelSort.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGenericPointCloud.h>
 #include <ecvMainAppInterface.h>
 #include <ecvOctree.h>

@@ -14,7 +14,7 @@
 // CV_CORE_LIB
 #include <CVPlatform.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGuiParameters.h>
 
 // Qt
@@ -62,12 +62,16 @@ protected slots:
     void changeNumberPrecision(int);
     void changeLabelOpacity(int);
     void changeLabelMarkerSize(int);
+    void changeBBOpacity(double);
+    void changeBBLineWidth(int);
 
     void changeZoomSpeed(double);
 
     void changeAutoComputeOctreeOption(int);
 
     void changeAppStyle(int);
+
+    void changeLogVerbosityLevel(int);
 
     void doAccept();
     void doReject();

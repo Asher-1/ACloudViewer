@@ -17,7 +17,7 @@
 #include <CVTools.h>
 #include <ecvGLMatrix.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvGenericMesh.h>
@@ -342,10 +342,11 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                             actor->GetMapper()->GetInput());
                     if (polyData) {
                         QString meshName = mesh->getName();
-                        CVLog::Print(QString("[PCLDisplayTools::drawMesh] "
-                                             "Adding DatasetName to "
-                                             "non-textured mesh: '%1'")
-                                             .arg(meshName));
+                        CVLog::PrintVerbose(
+                                QString("[PCLDisplayTools::drawMesh] "
+                                        "Adding DatasetName to "
+                                        "non-textured mesh: '%1'")
+                                        .arg(meshName));
 
                         vtkSmartPointer<vtkStringArray> datasetNameArray =
                                 vtkSmartPointer<vtkStringArray>::New();
@@ -589,10 +590,8 @@ bool PCLDisplayTools::updateEntityColor(const CC_DRAW_CONTEXT& context,
 #endif
     }
 
-#ifdef _DEBUG
-    CVLog::Print(QString("updateEntityColor: finish cost %1 s")
-                         .arg(CVTools::TimeOff()));
-#endif  // _DEBUG
+    CVLog::PrintDebug(QString("updateEntityColor: finish cost %1 s")
+                              .arg(CVTools::TimeOff()));
 
     return (true);
 }
@@ -723,6 +722,20 @@ void PCLDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
             m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID,
                                          viewport);
             m_visualizer3D->setLightMode(bboxID, viewport);
+        }
+
+        // Always update properties (color, opacity, line width) even if
+        // BoundingBox already exists
+        m_visualizer3D->setShapeUniqueColor(colf.r, colf.g, colf.b, bboxID,
+                                            viewport);
+        m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID,
+                                     viewport);
+
+        // Apply opacity if specified in context
+        if (context.opacity >= 0.0 && context.opacity <= 1.0) {
+            m_visualizer3D->setShapeRenderingProperties(
+                    pcl::visualization::PCL_VISUALIZER_OPACITY, context.opacity,
+                    bboxID, viewport);
         }
     }
 }

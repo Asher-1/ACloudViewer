@@ -15,5 +15,5 @@ add_subdirectory( src )
 
 target_link_libraries( ${PROJECT_NAME}
 	PRIVATE
-		ECV_DB_LIB
+		CV_DB_LIB
 )

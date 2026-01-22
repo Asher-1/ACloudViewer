@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <QList>
+#include <QVector>
+
 #include "point3f.h"
 #include "signalledrunable.h"
 #include "tablemodel.h"

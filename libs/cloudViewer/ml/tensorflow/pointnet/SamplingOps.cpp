@@ -17,7 +17,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerFurthestPointSampling")
+REGISTER_OP("CloudViewerFurthestPointSampling")
         .Input("points: float32")
         .Attr("sample_size: int")
         .Output("out: int32")
@@ -30,6 +30,6 @@ REGISTER_OP("CloudviewerFurthestPointSampling")
             ::tensorflow::shape_inference::ShapeHandle output =
                     c->MakeShape({c->Dim(dims1, 0), npoint});
             c->set_output(0, output);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc( TODO )doc");

@@ -22,7 +22,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 // CV_CORE_LIB
 #include <CVGeom.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvColorTypes.h>
 
 // VTK

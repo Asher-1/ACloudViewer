@@ -20,7 +20,7 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvBBox.h>
 #include <ecvDisplayTools.h>
 #include <ecvHObject.h>

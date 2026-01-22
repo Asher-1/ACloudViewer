@@ -17,7 +17,7 @@
 #include <FileSystem.h>
 #include <ecvGLMatrix.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <LineSet.h>
 #include <camera/PinholeCameraParameters.h>
 #include <camera/PinholeCameraTrajectory.h>

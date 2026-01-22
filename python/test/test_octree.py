@@ -7,10 +7,7 @@
 
 import cloudViewer as cv3d
 import numpy as np
-import time
-import pytest
 import os
-from cloudViewer_test import test_data_dir
 
 _eight_cubes_colors = np.array([
     [0.0, 0.0, 0.0],
@@ -102,8 +99,8 @@ def test_octree_node_access():
 
 
 def test_octree_visualize():
-    pcd_path = os.path.join(test_data_dir, "fragment.ply")
-    pcd = cv3d.io.read_point_cloud(pcd_path)
+    pcd_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(pcd_data.path)
     octree = cv3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
     # Enable the following line to test visualization
@@ -111,8 +108,8 @@ def test_octree_visualize():
 
 
 def test_octree_voxel_grid_convert():
-    pcd_path = os.path.join(test_data_dir, "fragment.ply")
-    pcd = cv3d.io.read_point_cloud(pcd_path)
+    pcd_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(pcd_data.path)
     octree = cv3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
 
@@ -126,19 +123,23 @@ def test_octree_voxel_grid_convert():
 
 
 def test_locate_leaf_node():
-    pcd_path = os.path.join(test_data_dir, "fragment.ply")
-    pcd = cv3d.io.read_point_cloud(pcd_path)
+    pcd_data = cv3d.data.PLYPointCloud()
+    pcd = cv3d.io.read_point_cloud(pcd_data.path)
 
     max_depth = 5
     octree = cv3d.geometry.Octree(max_depth)
     octree.convert_from_point_cloud(pcd, 0.01)
 
     # Try locating a few points
-    for idx in range(0, len(pcd.get_points()), 200):
-        point = pcd.get_points()[idx]
-        node, node_info = octree.locate_leaf_node(np.array(point))
+    points = pcd.get_points()
+    num_points = pcd.size()
+    for idx in range(0, num_points, 200):
+        point = points[idx]
+        point_array = np.array([point[0], point[1], point[2]])
+        node, node_info = octree.locate_leaf_node(point_array)
         # The located node must be in bound
-        assert octree.is_point_in_bound(point, node_info.origin, node_info.size)
+        assert octree.is_point_in_bound(point_array, node_info.origin,
+                                        node_info.size)
         # Leaf node must be located
         assert node_info.depth == max_depth
         # Leaf node's size must match

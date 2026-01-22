@@ -13,7 +13,7 @@
 #include "PclUtils/PCLModules.h"
 #include "dialogs/MinimumCutSegmentationDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvPointCloud.h>
 
 // ECV_PLUGINS

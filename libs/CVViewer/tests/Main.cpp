@@ -5,20 +5,18 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <CPUInfo.h>
+#include <Logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <cstring>
 #include <string>
 
-// #include "cloudViewer/utility/CPUInfo.h"  // TODO: Fix missing headers
-// #include "cloudViewer/utility/CompilerInfo.h"  // TODO: Fix missing headers
-// #include "cloudViewer/utility/ISAInfo.h"  // TODO: Fix missing headers
-#include <Logging.h>
+#include "cloudViewer/utility/CompilerInfo.h"
 
 #ifdef BUILD_CUDA_MODULE
 #include "cloudViewer/core/CUDAUtils.h"
-// #include "cloudViewer/core/CUDAState.h"  // TODO: Fix missing header
 #endif
 
 #include "tests/Tests.h"
@@ -41,21 +39,20 @@ int main(int argc, char** argv) {
     using namespace cloudViewer;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    // utility::CompilerInfo::GetInstance().Print();  // TODO: Fix missing
-    // headers utility::CPUInfo::GetInstance().Print();  // TODO: Fix missing
-    // headers
-
-    // Print ISA info if available
-    // if (utility::ISAInfo::GetInstance().IsSupported()) {  // TODO: Fix
-    // missing headers
-    //     utility::ISAInfo::GetInstance().Print();
-    // }
+    utility::CompilerInfo::GetInstance().Print();
+    utility::CPUInfo::GetInstance().Print();
 
 #ifdef BUILD_CUDA_MODULE
-    // if (ShallDisableP2P(argc, argv)) {  // TODO: Fix CUDAState API
-    //     core::CUDAState::GetInstance().ForceDisableP2PForTesting();
-    //     utility::LogInfo("P2P device transfer has been disabled.");
-    // }
+    if (ShallDisableP2P(argc, argv)) {
+        // Only disable P2P if CUDA is actually available
+        if (core::cuda::IsAvailable() && core::cuda::DeviceCount() > 0) {
+            core::CUDAState::GetInstance().ForceDisableP2PForTesting();
+            utility::LogInfo("P2P device transfer has been disabled.");
+        } else {
+            utility::LogInfo(
+                    "P2P device transfer disable skipped: CUDA not available.");
+        }
+    }
 #endif
 
     testing::InitGoogleMock(&argc, argv);

@@ -7,7 +7,7 @@
 
 #pragma once
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include "ecv2DLabel.h"
 
 class ccMPlanePoint {

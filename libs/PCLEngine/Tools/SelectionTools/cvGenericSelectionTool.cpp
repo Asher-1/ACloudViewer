@@ -14,6 +14,9 @@
 // SelectionModifier enums
 #include "cvViewSelectionManager.h"
 
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
+
 // VTK
 #include <vtkActor.h>
 #include <vtkCellPicker.h>
@@ -64,7 +67,7 @@ vtkPolyData* cvGenericSelectionTool::getPolyDataForSelection(
     if (selectionData && selectionData->hasActorInfo()) {
         vtkPolyData* polyData = selectionData->primaryPolyData();
         if (polyData) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvGenericSelectionTool] Using polyData from provided "
                     "selection actor info");
             return polyData;
@@ -75,7 +78,7 @@ vtkPolyData* cvGenericSelectionTool::getPolyDataForSelection(
     if (m_currentSelection.hasActorInfo()) {
         vtkPolyData* polyData = m_currentSelection.primaryPolyData();
         if (polyData) {
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     "[cvGenericSelectionTool] Using polyData from current "
                     "selection actor info");
             return polyData;
@@ -108,7 +111,8 @@ cvSelectionData cvGenericSelectionTool::hardwareSelectInRegion(
     // Try to use pipeline if available (Phase 1: Pipeline Integration)
     cvSelectionPipeline* pipeline = getSelectionPipeline();
     if (pipeline) {
-        CVLog::PrintDebug("[hardwareSelectInRegion] Using cvSelectionPipeline");
+        CVLog::PrintVerbose(
+                "[hardwareSelectInRegion] Using cvSelectionPipeline");
 
         // Map SelectionMode to Pipeline SelectionType
         cvSelectionPipeline::SelectionType pipelineType;
@@ -268,7 +272,7 @@ QVector<cvActorSelectionInfo> cvGenericSelectionTool::getActorsAtPoint(int x,
 vtkHardwareSelector* cvGenericSelectionTool::getHardwareSelector() {
     if (!m_hardwareSelector) {
         m_hardwareSelector = vtkSmartPointer<vtkHardwareSelector>::New();
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 "[getHardwareSelector] Created new hardware selector instance");
     }
     return m_hardwareSelector;
@@ -299,15 +303,15 @@ vtkHardwareSelector* cvGenericSelectionTool::configureHardwareSelector(
     // Capture Z-buffer values for depth sorting
     selector->SetCaptureZValues(m_captureZValues);
 
-    CVLog::PrintDebug(QString("[configureHardwareSelector] Configured: "
-                              "region=[%1,%2,%3,%4], "
-                              "fieldAssoc=%5, captureZ=%6")
-                              .arg(region[0])
-                              .arg(region[1])
-                              .arg(region[2])
-                              .arg(region[3])
-                              .arg(fieldAssociation)
-                              .arg(m_captureZValues));
+    CVLog::PrintVerbose(QString("[configureHardwareSelector] Configured: "
+                                "region=[%1,%2,%3,%4], "
+                                "fieldAssoc=%5, captureZ=%6")
+                                .arg(region[0])
+                                .arg(region[1])
+                                .arg(region[2])
+                                .arg(region[3])
+                                .arg(fieldAssociation)
+                                .arg(m_captureZValues));
 
     return selector;
 }
@@ -412,8 +416,8 @@ QVector<cvActorSelectionInfo> cvGenericSelectionTool::extractActorInfo(
                   return a.zValue < b.zValue;
               });
 
-    CVLog::PrintDebug(QString("[extractActorInfo] Found %1 actor(s)")
-                              .arg(actorInfos.size()));
+    CVLog::PrintVerbose(QString("[extractActorInfo] Found %1 actor(s)")
+                                .arg(actorInfos.size()));
 
     return actorInfos;
 }
@@ -452,7 +456,7 @@ cvSelectionData cvGenericSelectionTool::convertSelection(
         selection.addActorInfo(info);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[convertSelection] Selection: %1 items, %2 actors")
                     .arg(selection.count())
                     .arg(selection.actorCount()));
@@ -477,7 +481,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     // Get ID sets
     QVector<qint64> newIds = newSelection.ids();
     QVector<qint64> currentIds = currentSelection.ids();
-    QSet<qint64> resultSet(currentIds.begin(), currentIds.end());
+    QSet<qint64> resultSet = qSetFromVector(currentIds);
 
     switch (modifier) {
         case SelectionModifier::SELECTION_ADDITION: {
@@ -513,7 +517,7 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
     }
 
     // Convert back to vector
-    QVector<qint64> resultIds(resultSet.begin(), resultSet.end());
+    QVector<qint64> resultIds = qVectorFromSet(resultSet);
 
     // Create result selection
     cvSelectionData result(resultIds, newSelection.fieldAssociation());
@@ -557,7 +561,7 @@ void cvGenericSelectionTool::initializePickers() {
         m_pointPicker->SetTolerance(0.01);  // Default tolerance for points
     }
 
-    CVLog::PrintDebug("[initializePickers] Pickers initialized");
+    CVLog::PrintVerbose("[initializePickers] Pickers initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -588,7 +592,7 @@ vtkIdType cvGenericSelectionTool::pickAtPosition(int x,
             // Get the picked actor for multi-actor support
             vtkActor* pickedActor = m_cellPicker->GetActor();
 
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[pickAtPosition] Picked cell ID: %1 from actor %2")
                             .arg(pickedId)
                             .arg((quintptr)pickedActor, 0, 16));
@@ -601,10 +605,10 @@ vtkIdType cvGenericSelectionTool::pickAtPosition(int x,
             // Get the picked actor for multi-actor support
             vtkActor* pickedActor = m_pointPicker->GetActor();
 
-            CVLog::PrintDebug(QString("[pickAtPosition] Picked point ID: %1 "
-                                      "from actor %2")
-                                      .arg(pickedId)
-                                      .arg((quintptr)pickedActor, 0, 16));
+            CVLog::PrintVerbose(QString("[pickAtPosition] Picked point ID: %1 "
+                                        "from actor %2")
+                                        .arg(pickedId)
+                                        .arg((quintptr)pickedActor, 0, 16));
         }
     }
 
@@ -636,9 +640,9 @@ void cvGenericSelectionTool::setPickerTolerance(double cellTolerance,
         m_pointPicker->SetTolerance(pointTolerance);
     }
 
-    CVLog::PrintDebug(QString("[setPickerTolerance] Cell: %1, Point: %2")
-                              .arg(cellTolerance)
-                              .arg(pointTolerance));
+    CVLog::PrintVerbose(QString("[setPickerTolerance] Cell: %1, Point: %2")
+                                .arg(cellTolerance)
+                                .arg(pointTolerance));
 }
 
 //-----------------------------------------------------------------------------
@@ -729,10 +733,10 @@ cvSelectionData cvGenericSelectionTool::createSelectionFromPick(
 
         selection.addActorInfo(info);
 
-        CVLog::PrintDebug(QString("[createSelectionFromPick] Created "
-                                  "selection: ID=%1, actor=%2")
-                                  .arg(pickedId)
-                                  .arg((quintptr)actor, 0, 16));
+        CVLog::PrintVerbose(QString("[createSelectionFromPick] Created "
+                                    "selection: ID=%1, actor=%2")
+                                    .arg(pickedId)
+                                    .arg((quintptr)actor, 0, 16));
     }
 
     return selection;
@@ -747,9 +751,9 @@ cvSelectionData cvGenericSelectionTool::applySelectionModifierUnified(
     // ParaView-aligned: Use cvSelectionPipeline::combineSelections()
     // This eliminates code duplication between tools
 
-    CVLog::PrintDebug(QString("[cvGenericSelectionTool] "
-                              "applySelectionModifierUnified: modifier=%1")
-                              .arg(modifier));
+    CVLog::PrintVerbose(QString("[cvGenericSelectionTool] "
+                                "applySelectionModifierUnified: modifier=%1")
+                                .arg(modifier));
 
     // Map view manager modifier to pipeline operation
     cvSelectionPipeline::CombineOperation operation;

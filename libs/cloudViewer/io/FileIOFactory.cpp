@@ -20,7 +20,7 @@
 #include "io/FileFormatIO.h"
 #include "io/PointCloudIO.h"
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>

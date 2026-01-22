@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvGLMatrix.h>
 
 BundlerImportDlg::BundlerImportDlg(QWidget* parent) : QDialog(parent) {

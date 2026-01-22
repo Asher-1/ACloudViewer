@@ -90,7 +90,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
           <string>...</string>
          </property>
          <property name="icon">
-          <iconset resource="../../../eCV/MainWindow.qrc">
+          <iconset resource="../../../app/MainWindow.qrc">
            <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
          </property>
          <property name="iconSize">
@@ -181,7 +181,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
           <string>...</string>
          </property>
          <property name="icon">
-          <iconset resource="../../../eCV/MainWindow.qrc">
+          <iconset resource="../../../app/MainWindow.qrc">
            <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
          </property>
          <property name="iconSize">
@@ -272,7 +272,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
           <string>...</string>
          </property>
          <property name="icon">
-          <iconset resource="../../../eCV/MainWindow.qrc">
+          <iconset resource="../../../app/MainWindow.qrc">
            <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
          </property>
          <property name="iconSize">
@@ -437,7 +437,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
   </layout>
  </widget>
  <resources>
-  <include location="../../../eCV/MainWindow.qrc"/>
+  <include location="../../../app/MainWindow.qrc"/>
  </resources>
  <connections/>
 </ui>

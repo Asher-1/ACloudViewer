@@ -59,6 +59,10 @@ void ApplyPermutation(T* vec, const std::vector<size_t> p) {
 }
 
 TEST(FixedRadiusIndex, SearchRadius) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
@@ -119,6 +123,10 @@ TEST(FixedRadiusIndex, SearchRadius) {
 }
 
 TEST(FixedRadiusIndex, SearchRadiusBatch) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>(
@@ -301,6 +309,10 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
 }
 
 TEST(FixedRadiusIndex, SearchHybrid) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
@@ -363,6 +375,10 @@ TEST(FixedRadiusIndex, SearchHybrid) {
 }
 
 TEST(FixedRadiusIndex, SearchHybridBatch) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>(

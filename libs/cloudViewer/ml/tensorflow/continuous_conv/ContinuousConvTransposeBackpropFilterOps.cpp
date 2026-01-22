@@ -12,7 +12,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerContinuousConvTransposeBackpropFilter")
+REGISTER_OP("CloudViewerContinuousConvTransposeBackpropFilter")
         .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
                                                    // weights
         .Attr("output_type: {float, double} = DT_FLOAT")  // Type for the output
@@ -139,8 +139,8 @@ REGISTER_OP("CloudviewerContinuousConvTransposeBackpropFilter")
                 if (c->ValueKnown(c->Dim(filters_shape, i))) {
                     int64_t n = c->Value(c->Dim(filters_shape, i));
                     if (n < 1)
-                        return Status(error::INVALID_ARGUMENT,
-                                      "Each filter dimension must be >= 1");
+                        return absl::InvalidArgumentError(
+                                "Each filter dimension must be >= 1");
                 }
             }
 
@@ -166,7 +166,7 @@ REGISTER_OP("CloudviewerContinuousConvTransposeBackpropFilter")
             }
 
             c->set_output(0, filters_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Computes the backrop for the filter of the ContinuousConvTranspose

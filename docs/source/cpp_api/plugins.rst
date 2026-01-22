@@ -23,8 +23,8 @@ Plugin Architecture
    ACloudViewer Application
    ├── Core Libraries
    │   ├── cloudViewer (3D processing)
-   │   ├── eCV_db (database)
-   │   ├── eCV_io (I/O operations)
+   │   ├── CV_db (database)
+   │   ├── CV_io (I/O operations)
    │   └── PCLEngine (PCL integration)
    │
    └── Plugin System

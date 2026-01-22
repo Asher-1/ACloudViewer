@@ -14,7 +14,7 @@
 #include "Tools/Common/ecvTools.h"  // must below above three
 #include "dialogs/NurbsSurfaceDlg.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>

@@ -26,6 +26,10 @@ namespace cloudViewer {
 namespace tests {
 
 TEST(KnnIndex, KnnSearch) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
@@ -151,6 +155,10 @@ TEST(KnnIndex, KnnSearch) {
 }
 
 TEST(KnnIndex, KnnSearchHighdim) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
@@ -233,6 +241,10 @@ TEST(KnnIndex, KnnSearchHighdim) {
 }
 
 TEST(KnnIndex, KnnSearchBatch) {
+    if (!IsCUDAAvailable()) {
+        GTEST_SKIP() << "CUDA not available. Set BUILD_CUDA_MODULE=ON to "
+                        "compile for CUDA support.";
+    }
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>(

@@ -29,7 +29,7 @@ JUPYTER_FORMAT_DIRS = [
 CPP_FORMAT_DIRS = [
     "core",
     "libs",
-    "eCV",
+    "app",
     "plugins",
     "examples",
 ]
@@ -735,7 +735,7 @@ def main():
         'plugins/core/Standard/qAnimation/extern/',
         'plugins/core/Standard/qCork/extern/',
         # Other external libraries
-        'libs/eCV_io/extern/',
+        'libs/CV_io/extern/',
     ]
     cpp_files = _glob_files(CPP_FORMAT_DIRS,
                             ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])

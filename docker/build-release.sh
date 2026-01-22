@@ -7,6 +7,5 @@ test -d docker || (
 	exit 1
 )
 
-# build ubuntu 20.04 wheel
-# due to some crash issues with Reconstruction module on ubuntu 22.04
-CUDA_VERSION=12.6.3-cudnn UBUNTU_VERSION=20.04 docker/docker_build_local.sh
+# build ubuntu 22.04 wheel
+CUDA_VERSION=12.6.3-cudnn UBUNTU_VERSION=22.04 docker/docker_build_local.sh

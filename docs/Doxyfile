@@ -73,8 +73,8 @@ WARN_LOGFILE           =
 INPUT                  = mainpage.dox \
                          ../libs/cloudViewer \
                          ../core/include \
-                         ../libs/eCV_db/include \
-                         ../libs/eCV_io/include \
+                         ../libs/CV_db/include \
+                         ../libs/CV_io/include \
                          ../libs/PCLEngine/include \
                          ../libs/Reconstruction/lib \
                          ../plugins/core
@@ -246,12 +246,12 @@ EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           = ../libs/cloudViewer \
                          ../core/include \
-                         ../libs/eCV_db/include
+                         ../libs/CV_db/include
 INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_RUNNING \
-                         ECV_DB_LIB_API= \
+                         CV_DB_LIB_API= \
                          CV_CORE_LIB_API= \
-                         ECV_IO_LIB_API= \
+                         CV_IO_LIB_API= \
                          CLOUDVIEWER_API= \
                          __attribute__(x)=
 EXPAND_AS_DEFINED      =

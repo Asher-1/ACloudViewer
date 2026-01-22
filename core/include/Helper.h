@@ -30,18 +30,17 @@ namespace utility {
 /// See Mike Seymour in magic-numbers-in-boosthash-combine:
 ///   http://stackoverflow.com/questions/4948780
 
-namespace hash_tuple {
-
 template <typename TT>
-struct hash {
+struct hash_tuple {
     size_t operator()(TT const& tt) const { return std::hash<TT>()(tt); }
 };
 
 namespace {
 
 template <class T>
-inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+inline void hash_combine(std::size_t& hash_seed, T const& v) {
+    hash_seed ^= std::hash<T>()(v) + 0x9e3779b9 + (hash_seed << 6) +
+                 (hash_seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
@@ -62,15 +61,13 @@ struct HashValueImpl<Tuple, 0> {
 }  // unnamed namespace
 
 template <typename... TT>
-struct hash<std::tuple<TT...>> {
+struct hash_tuple<std::tuple<TT...>> {
     size_t operator()(std::tuple<TT...> const& tt) const {
-        size_t seed = 0;
-        HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
-        return seed;
+        size_t hash_seed = 0;
+        HashValueImpl<std::tuple<TT...>>::apply(hash_seed, tt);
+        return hash_seed;
     }
 };
-
-}  // namespace hash_tuple
 
 template <typename T>
 struct hash_eigen {
@@ -91,8 +88,8 @@ struct CV_CORE_LIB_API hash_enum_class {
     template <typename T>
     std::size_t operator()(T t) const {
         return static_cast<std::size_t>(t);
-    }  // namespace utility
-};  // namespace cloudViewer
+    }
+};
 
 // Format string by replacing embedded format specifiers with their respective
 // values, see `printf` for more details. This is a modified implementation

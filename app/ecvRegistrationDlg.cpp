@@ -1,0 +1,279 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "ecvRegistrationDlg.h"
+
+// Local
+#include "MainWindow.h"
+
+// common
+#include <ecvQtHelpers.h>
+
+// cloudViewer
+#include <CloudSamplingTools.h>
+#include <DgmOctree.h>
+#include <GeometricalAnalysisTools.h>
+#include <ReferenceCloud.h>
+
+// CV_DB_LIB
+#include <ecvDisplayTools.h>
+#include <ecvHObject.h>
+
+// Qt
+#include <QThread>
+
+// system
+#include <assert.h>
+
+static bool s_adjustScale = false;
+static unsigned s_randomSamplingLimit = 50000;
+static double s_rmsDifference = 1.0e-5;
+static int s_maxIterationCount = 20;
+static bool s_useErrorDifferenceCriterion = true;
+static int s_finalOverlap = 100;
+static int s_rotComboIndex = 0;
+static bool s_transCheckboxes[3] = {true, true, true};
+static int s_maxThreadCount = 0;
+static bool s_pointsRemoval = false;
+static bool s_useDataSFAsWeights = false;
+static bool s_useModelSFAsWeights = false;
+static bool s_useC2MSignedDistances = false;
+static int s_normalsMatchingOption =
+        cloudViewer::ICPRegistrationTools::NO_NORMAL;
+
+ccRegistrationDlg::ccRegistrationDlg(ccHObject *data,
+                                     ccHObject *model,
+                                     QWidget *parent /*=nullptr*/)
+    : QDialog(parent, Qt::Tool), Ui::RegistrationDialog() {
+    assert(data && model);
+    dataEntity = data;
+    modelEntity = model;
+
+    setupUi(this);
+
+    QDoubleValidator *rmsValidator =
+            new QDoubleValidator(rmsDifferenceLineEdit);
+    rmsValidator->setNotation(QDoubleValidator::ScientificNotation);
+    rmsValidator->setRange(GetAbsoluteMinRMSDecrease(), 1.0, 1);
+    rmsDifferenceLineEdit->setValidator(rmsValidator);
+
+    updateGUI();
+
+    ccQtHelpers::SetButtonColor(dataColorButton, Qt::red);
+    ccQtHelpers::SetButtonColor(modelColorButton, Qt::yellow);
+
+    int idealThreadCount = QThread::idealThreadCount();
+    maxThreadCountSpinBox->setRange(1, idealThreadCount);
+    maxThreadCountSpinBox->setSuffix(QString(" / %1").arg(idealThreadCount));
+
+    // restore semi-persistent settings
+    {
+        // semi-persistent options
+        if (s_maxThreadCount == 0) {
+            s_maxThreadCount = idealThreadCount;
+        }
+        maxThreadCountSpinBox->setValue(s_maxThreadCount);
+        adjustScaleCheckBox->setChecked(s_adjustScale);
+        randomSamplingLimitSpinBox->setValue(s_randomSamplingLimit);
+        setMinRMSDecrease(s_rmsDifference);
+        maxIterationCount->setValue(s_maxIterationCount);
+        if (s_useErrorDifferenceCriterion)
+            errorCriterion->setChecked(true);
+        else
+            iterationsCriterion->setChecked(true);
+        overlapSpinBox->setValue(s_finalOverlap);
+        rotComboBox->setCurrentIndex(s_rotComboIndex);
+        TxCheckBox->setChecked(s_transCheckboxes[0]);
+        TyCheckBox->setChecked(s_transCheckboxes[1]);
+        TzCheckBox->setChecked(s_transCheckboxes[2]);
+        pointsRemoval->setChecked(s_pointsRemoval);
+        checkBoxUseDataSFAsWeights->setChecked(s_useDataSFAsWeights);
+        checkBoxUseModelSFAsWeights->setChecked(s_useModelSFAsWeights);
+        useC2MSignedDistancesCheckBox->setChecked(s_useC2MSignedDistances);
+        normalsComboBox->setCurrentIndex(s_normalsMatchingOption);
+    }
+
+    connect(swapButton, &QAbstractButton::clicked, this,
+            &ccRegistrationDlg::swapModelAndData);
+}
+
+ccRegistrationDlg::~ccRegistrationDlg() {
+    if (modelEntity) {
+        modelEntity->enableTempColor(false);
+    }
+    if (dataEntity) {
+        dataEntity->enableTempColor(false);
+    }
+
+    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvDisplayTools::RedrawDisplay();
+}
+
+void ccRegistrationDlg::saveParameters() const {
+    s_maxThreadCount = getMaxThreadCount();
+    s_adjustScale = adjustScale();
+    s_randomSamplingLimit = randomSamplingLimit();
+    s_rmsDifference = getMinRMSDecrease();
+    s_maxIterationCount = getMaxIterationCount();
+    s_useErrorDifferenceCriterion = errorCriterion->isChecked();
+    s_finalOverlap = overlapSpinBox->value();
+    s_rotComboIndex = rotComboBox->currentIndex();
+    s_transCheckboxes[0] = TxCheckBox->isChecked();
+    s_transCheckboxes[1] = TyCheckBox->isChecked();
+    s_transCheckboxes[2] = TzCheckBox->isChecked();
+    s_pointsRemoval = removeFarthestPoints();
+    s_useDataSFAsWeights = checkBoxUseDataSFAsWeights->isChecked();
+    s_useModelSFAsWeights = checkBoxUseModelSFAsWeights->isChecked();
+    s_useC2MSignedDistances = useC2MSignedDistancesCheckBox->isChecked();
+    s_normalsMatchingOption = normalsComboBox->currentIndex();
+}
+
+ccHObject *ccRegistrationDlg::getDataEntity() { return dataEntity; }
+
+ccHObject *ccRegistrationDlg::getModelEntity() { return modelEntity; }
+
+bool ccRegistrationDlg::useDataSFAsWeights() const {
+    return checkBoxUseDataSFAsWeights->isEnabled() &&
+           checkBoxUseDataSFAsWeights->isChecked();
+}
+
+bool ccRegistrationDlg::useModelSFAsWeights() const {
+    return checkBoxUseModelSFAsWeights->isEnabled() &&
+           checkBoxUseModelSFAsWeights->isChecked();
+}
+
+bool ccRegistrationDlg::useC2MSignedDistances() const {
+    return useC2MSignedDistancesCheckBox->isEnabled() &&
+           useC2MSignedDistancesCheckBox->isChecked();
+}
+
+cloudViewer::ICPRegistrationTools::NORMALS_MATCHING
+ccRegistrationDlg::normalsMatchingOption() const {
+    if (normalsComboBox->isEnabled()) {
+        return static_cast<cloudViewer::ICPRegistrationTools::NORMALS_MATCHING>(
+                normalsComboBox->currentIndex());
+    } else {
+        return cloudViewer::ICPRegistrationTools::NO_NORMAL;
+    }
+}
+
+bool ccRegistrationDlg::adjustScale() const {
+    return adjustScaleCheckBox->isChecked();
+}
+
+bool ccRegistrationDlg::removeFarthestPoints() const {
+    return pointsRemoval->isChecked();
+}
+
+unsigned ccRegistrationDlg::randomSamplingLimit() const {
+    return randomSamplingLimitSpinBox->value();
+}
+
+unsigned ccRegistrationDlg::getMaxIterationCount() const {
+    return static_cast<unsigned>(std::max(1, maxIterationCount->value()));
+}
+
+unsigned ccRegistrationDlg::getFinalOverlap() const {
+    return static_cast<unsigned>(std::max(10, overlapSpinBox->value()));
+}
+
+int ccRegistrationDlg::getMaxThreadCount() const {
+    return maxThreadCountSpinBox->value();
+}
+
+double ccRegistrationDlg::GetAbsoluteMinRMSDecrease() { return 1.0e-7; }
+
+double ccRegistrationDlg::getMinRMSDecrease() const {
+    bool ok = true;
+    double val = rmsDifferenceLineEdit->text().toDouble(&ok);
+
+    if (!ok) {
+        assert(false);
+        val = std::numeric_limits<double>::quiet_NaN();
+    }
+
+    return val;
+}
+
+void ccRegistrationDlg::setMinRMSDecrease(double value) {
+    if (std::isnan(value)) {
+        // last input value was invalid, restoring default
+        value = 1.0e-5;
+    }
+    rmsDifferenceLineEdit->setText(QString::number(value, 'E', 1));
+}
+
+ccRegistrationDlg::ConvergenceMethod ccRegistrationDlg::getConvergenceMethod()
+        const {
+    if (errorCriterion->isChecked())
+        return cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE;
+    else
+        return cloudViewer::ICPRegistrationTools::MAX_ITER_CONVERGENCE;
+}
+
+int ccRegistrationDlg::getTransformationFilters() const {
+    int filters = 0;
+    switch (rotComboBox->currentIndex()) {
+        case 1:
+            filters |= cloudViewer::RegistrationTools::SKIP_RYZ;
+            break;
+        case 2:
+            filters |= cloudViewer::RegistrationTools::SKIP_RXZ;
+            break;
+        case 3:
+            filters |= cloudViewer::RegistrationTools::SKIP_RXY;
+            break;
+        default:
+            // nothing to do
+            break;
+    }
+
+    if (!TxCheckBox->isChecked())
+        filters |= cloudViewer::RegistrationTools::SKIP_TX;
+    if (!TyCheckBox->isChecked())
+        filters |= cloudViewer::RegistrationTools::SKIP_TY;
+    if (!TzCheckBox->isChecked())
+        filters |= cloudViewer::RegistrationTools::SKIP_TZ;
+
+    return filters;
+}
+
+void ccRegistrationDlg::updateGUI() {
+    if (!modelEntity || !dataEntity) return;
+
+    modelLineEdit->setText(modelEntity->getName());
+    modelEntity->setVisible(true);
+    modelEntity->setTempColor(ecvColor::yellow);
+
+    dataLineEdit->setText(dataEntity->getName());
+    dataEntity->setVisible(true);
+    dataEntity->setTempColor(ecvColor::red);
+
+    checkBoxUseDataSFAsWeights->setEnabled(
+            dataEntity->hasDisplayedScalarField());
+    checkBoxUseModelSFAsWeights->setEnabled(
+            modelEntity->isKindOf(CV_TYPES::POINT_CLOUD) &&
+            modelEntity
+                    ->hasDisplayedScalarField());  // only supported for clouds
+
+    useC2MSignedDistancesCheckBox->setEnabled(
+            modelEntity->isKindOf(CV_TYPES::MESH));  // only supported if a mesh
+                                                     // is the reference cloud
+    normalsComboBox->setEnabled(
+            dataEntity->hasNormals() &&
+            modelEntity
+                    ->hasNormals());  // only supported if both the aligned and
+                                      // the reference entities have normals
+
+    ecvDisplayTools::SetRedrawRecursive(false);
+    ecvDisplayTools::RedrawDisplay();
+}
+
+void ccRegistrationDlg::swapModelAndData() {
+    std::swap(dataEntity, modelEntity);
+    updateGUI();
+}

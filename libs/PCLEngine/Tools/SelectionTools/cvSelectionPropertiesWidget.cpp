@@ -18,7 +18,7 @@
 #include "cvSelectionLabelPropertiesDialog.h"
 #include "cvViewSelectionManager.h"
 
-// ECV_DB_LIB
+// CV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvGenericVisualizer3D.h>
 #include <ecvMesh.h>
@@ -27,20 +27,25 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
-// ECV_IO_LIB
+// CV_IO_LIB
 #include <FileIOFilter.h>
 
 // Qt
 #include <QApplication>
 #include <QDateTime>
 #include <QDialog>
+#include <QEvent>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QRegularExpression>
+#include <QResizeEvent>
 #include <QTabWidget>
 #include <QTimer>
+
+// Qt5/Qt6 Compatibility
+#include <QtCompat.h>
 
 // STL
 #include <cmath>
@@ -70,23 +75,30 @@
 #include <vtkVariant.h>
 
 // Qt
+#include <QAbstractButton>
 #include <QApplication>
+#include <QBrush>
 #include <QCheckBox>
 #include <QClipboard>
 #include <QColorDialog>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QEvent>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QTabWidget>
@@ -191,13 +203,74 @@ cvSelectionPropertiesWidget::cvSelectionPropertiesWidget(QWidget* parent)
     // object selected)
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionPropertiesWidget] Initialized with ParaView-style UI");
 }
 
 //-----------------------------------------------------------------------------
 cvSelectionPropertiesWidget::~cvSelectionPropertiesWidget() {
     delete m_tooltipFormatter;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::updateScrollContentWidth() {
+    // Helper function to update scroll content width
+    // Called from multiple places to ensure consistency
+    if (m_scrollContent && m_scrollArea && m_scrollArea->viewport()) {
+        int viewportWidth = m_scrollArea->viewport()->width();
+        if (viewportWidth > 0) {
+            // CRITICAL: Set width BEFORE adjustSize to prevent it from being
+            // reset Use setFixedWidth to ensure width constraint is maintained
+            m_scrollContent->setFixedWidth(viewportWidth);
+            // Force immediate layout update
+            m_scrollContent->updateGeometry();
+            // Update content size to recalculate layout (height only, width is
+            // fixed)
+            m_scrollContent->adjustSize();
+            // Ensure width is still correct after adjustSize (defensive check)
+            if (m_scrollContent->width() != viewportWidth) {
+                m_scrollContent->setFixedWidth(viewportWidth);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool cvSelectionPropertiesWidget::eventFilter(QObject* obj, QEvent* event) {
+    // Handle scroll area resize events to update content width
+    if (obj == m_scrollArea && event->type() == QEvent::Resize) {
+        updateScrollContentWidth();
+    }
+    // Handle viewport resize events (more reliable for drag resize)
+    else if (obj == m_scrollArea->viewport() &&
+             event->type() == QEvent::Resize) {
+        updateScrollContentWidth();
+    }
+    // Handle resize events for color buttons (like ParaView's
+    // pqColorChooserButton::resizeEvent)
+    else if (event->type() == QEvent::Resize) {
+        if (obj == m_selectionColorButton && m_highlighter) {
+            QColor color = m_highlighter->getHighlightQColor(
+                    cvSelectionHighlighter::SELECTED);
+            updateColorButtonIcon(m_selectionColorButton, color);
+        } else if (obj == m_interactiveSelectionColorButton && m_highlighter) {
+            QColor color = m_highlighter->getHighlightQColor(
+                    cvSelectionHighlighter::HOVER);
+            updateColorButtonIcon(m_interactiveSelectionColorButton, color);
+        }
+    }
+    // Call base class event filter
+    return QWidget::eventFilter(obj, event);
+}
+
+//-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    // Update scroll content width immediately when widget is resized (e.g., by
+    // dragging) This ensures real-time responsiveness during drag resize
+    // operations
+    updateScrollContentWidth();
 }
 
 // setVisualizer is inherited from cvGenericSelectionTool
@@ -291,37 +364,34 @@ void cvSelectionPropertiesWidget::syncInternalColorArray(double r,
     // DEPRECATED: Colors are now stored in cvSelectionHighlighter
     // This method now only updates UI buttons to reflect color changes
     // Called when colors change via highlightColorChanged signal
+    // Use ParaView-style icon-based color buttons
     QColor color = QColor::fromRgbF(r, g, b);
-    QString buttonStyle = QString("background-color: %1;").arg(color.name());
-    QString pvButtonStyle =
-            QString("QPushButton { background-color: %1; color: white; }")
-                    .arg(color.name());
 
     switch (mode) {
         case cvSelectionHighlighter::HOVER:
             if (m_interactiveSelectionColorButton) {
-                m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_interactiveSelectionColorButton, color);
             }
             if (m_hoverColorButton) {
-                m_hoverColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_hoverColorButton, color);
             }
             break;
         case cvSelectionHighlighter::PRESELECTED:
             if (m_preselectedColorButton) {
-                m_preselectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_preselectedColorButton, color);
             }
             break;
         case cvSelectionHighlighter::SELECTED:
             if (m_selectionColorButton) {
-                m_selectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_selectionColorButton, color);
             }
             if (m_selectedColorButton) {
-                m_selectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_selectedColorButton, color);
             }
             break;
         case cvSelectionHighlighter::BOUNDARY:
             if (m_boundaryColorButton) {
-                m_boundaryColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_boundaryColorButton, color);
             }
             break;
         default:
@@ -330,49 +400,100 @@ void cvSelectionPropertiesWidget::syncInternalColorArray(double r,
 }
 
 //-----------------------------------------------------------------------------
+void cvSelectionPropertiesWidget::updateColorButtonIcon(QAbstractButton* button,
+                                                        const QColor& color) {
+    if (!button) return;
+
+    // ParaView style: use button height * 0.75 for icon radius (same as
+    // pqColorChooserButton) Reference: pqColorChooserButton::renderColorSwatch
+    int buttonHeight = button->height();
+    if (buttonHeight <= 0) {
+        button->adjustSize();
+        buttonHeight = button->height();
+    }
+    if (buttonHeight <= 0) {
+        buttonHeight = button->sizeHint().height();
+    }
+    if (buttonHeight <= 0) {
+        buttonHeight = 25;  // Fallback default
+    }
+
+    // Calculate radius based on height (ParaView style: IconRadiusHeightRatio =
+    // 0.75)
+    int radius = qRound(buttonHeight * 0.75);
+    radius = std::max(radius, 10);  // Minimum 10px (ParaView default)
+
+    // Create circular color swatch icon (ParaView-style)
+    // Use exact same approach as pqColorChooserButton::renderColorSwatch
+    QPixmap pix(radius, radius);
+    pix.fill(QColor(0, 0, 0, 0));  // Transparent background
+
+    QPainter painter(&pix);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setBrush(QBrush(color));
+    painter.drawEllipse(1, 1, radius - 2, radius - 2);
+    painter.end();
+
+    QIcon icon(pix);
+
+    // Add high-dpi version for retina displays (ParaView exact style)
+    QPixmap pix2x(radius * 2, radius * 2);
+    pix2x.setDevicePixelRatio(2.0);
+    pix2x.fill(QColor(0, 0, 0, 0));
+
+    QPainter painter2x(&pix2x);
+    painter2x.setRenderHint(QPainter::Antialiasing, true);
+    painter2x.setBrush(QBrush(color));
+    // ParaView uses: drawEllipse(2, 2, radius - 4, radius - 4) for 2x version
+    painter2x.drawEllipse(2, 2, radius - 4, radius - 4);
+    painter2x.end();
+
+    icon.addPixmap(pix2x);
+
+    button->setIcon(icon);
+
+    // Set icon size (QToolButton will use this)
+    if (QToolButton* toolButton = qobject_cast<QToolButton*>(button)) {
+        toolButton->setIconSize(QSize(radius, radius));
+    }
+}
+
+//-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onHighlighterColorChanged(int mode) {
     // Called when highlighter color changes externally
-    // Update UI buttons to reflect the new color
+    // Update UI buttons to reflect the new color using ParaView-style icons
     if (!m_highlighter) return;
 
     cvSelectionHighlighter::HighlightMode hlMode =
             static_cast<cvSelectionHighlighter::HighlightMode>(mode);
     QColor color = m_highlighter->getHighlightQColor(hlMode);
 
-    QString buttonStyle = QString("background-color: rgb(%1, %2, %3);")
-                                  .arg(color.red())
-                                  .arg(color.green())
-                                  .arg(color.blue());
-    QString pvButtonStyle =
-            QString("QPushButton { background-color: %1; color: white; }")
-                    .arg(color.name());
-
     switch (mode) {
         case cvSelectionHighlighter::HOVER:
             if (m_hoverColorButton)
-                m_hoverColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_hoverColorButton, color);
             if (m_interactiveSelectionColorButton)
-                m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_interactiveSelectionColorButton, color);
             break;
         case cvSelectionHighlighter::PRESELECTED:
             if (m_preselectedColorButton)
-                m_preselectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_preselectedColorButton, color);
             break;
         case cvSelectionHighlighter::SELECTED:
             if (m_selectedColorButton)
-                m_selectedColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_selectedColorButton, color);
             if (m_selectionColorButton)
-                m_selectionColorButton->setStyleSheet(pvButtonStyle);
+                updateColorButtonIcon(m_selectionColorButton, color);
             break;
         case cvSelectionHighlighter::BOUNDARY:
             if (m_boundaryColorButton)
-                m_boundaryColorButton->setStyleSheet(buttonStyle);
+                updateColorButtonIcon(m_boundaryColorButton, color);
             break;
     }
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] UI updated for "
-                              "external color change (mode=%1)")
-                              .arg(mode));
+    CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] UI updated for "
+                                "external color change (mode=%1)")
+                                .arg(mode));
 }
 
 //-----------------------------------------------------------------------------
@@ -413,9 +534,10 @@ void cvSelectionPropertiesWidget::onHighlighterLabelPropertiesChanged(
         bool interactive) {
     // Called when highlighter label properties change externally
     // This could trigger a full UI sync if needed
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Label properties "
-                              "changed externally (interactive=%1)")
-                              .arg(interactive));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPropertiesWidget] Label properties "
+                    "changed externally (interactive=%1)")
+                    .arg(interactive));
     // For now, just log - UI will be updated on next syncUIWithHighlighter()
     // call
 }
@@ -463,27 +585,18 @@ void cvSelectionPropertiesWidget::syncUIWithHighlighter() {
             cvSelectionHighlighter::BOUNDARY);
 
     // Update UI controls - colors are read directly from highlighter
-    // No more internal color arrays to update
-    QString buttonStyle;
-
+    // Use ParaView-style icon-based color buttons
     if (m_hoverColorButton) {
-        buttonStyle = QString("background-color: %1;").arg(hoverColor.name());
-        m_hoverColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_hoverColorButton, hoverColor);
     }
     if (m_preselectedColorButton) {
-        buttonStyle =
-                QString("background-color: %1;").arg(preselectedColor.name());
-        m_preselectedColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_preselectedColorButton, preselectedColor);
     }
     if (m_selectedColorButton) {
-        buttonStyle =
-                QString("background-color: %1;").arg(selectedColor.name());
-        m_selectedColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_selectedColorButton, selectedColor);
     }
     if (m_boundaryColorButton) {
-        buttonStyle =
-                QString("background-color: %1;").arg(boundaryColor.name());
-        m_boundaryColorButton->setStyleSheet(buttonStyle);
+        updateColorButtonIcon(m_boundaryColorButton, boundaryColor);
     }
 
     // Update opacity spinboxes
@@ -511,22 +624,15 @@ void cvSelectionPropertiesWidget::syncUIWithHighlighter() {
     // Label properties are now stored in highlighter (single source of truth)
     // No local copy needed - dialog will read directly from highlighter
 
-    // Update ParaView-style selection color buttons
-    QString pvButtonStyle;
+    // Update ParaView-style selection color buttons using icons
     if (m_selectionColorButton) {
-        pvButtonStyle =
-                QString("QPushButton { background-color: %1; color: white; }")
-                        .arg(selectedColor.name());
-        m_selectionColorButton->setStyleSheet(pvButtonStyle);
+        updateColorButtonIcon(m_selectionColorButton, selectedColor);
     }
     if (m_interactiveSelectionColorButton) {
-        pvButtonStyle =
-                QString("QPushButton { background-color: %1; color: white; }")
-                        .arg(hoverColor.name());
-        m_interactiveSelectionColorButton->setStyleSheet(pvButtonStyle);
+        updateColorButtonIcon(m_interactiveSelectionColorButton, hoverColor);
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             "[cvSelectionPropertiesWidget] UI synchronized with highlighter "
             "settings");
 }
@@ -539,15 +645,24 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     // Create scroll area for ParaView-style layout
     m_scrollArea = new QScrollArea(this);
-    m_scrollArea->setWidgetResizable(true);
+    // Set widgetResizable to false so content maintains its natural size
+    // This allows scrollbars to appear when content exceeds available space
+    m_scrollArea->setWidgetResizable(false);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     m_scrollContent = new QWidget();
+    // Set size policy to allow content to expand naturally based on its
+    // contents
+    m_scrollContent->setSizePolicy(QSizePolicy::Preferred,
+                                   QSizePolicy::Minimum);
     QVBoxLayout* scrollLayout = new QVBoxLayout(m_scrollContent);
     scrollLayout->setContentsMargins(5, 5, 5, 5);
     scrollLayout->setSpacing(
             0);  // ParaView-style: no spacing between expanders
+    // Set size constraint to ensure layout calculates minimum size correctly
+    scrollLayout->setSizeConstraint(QLayout::SetMinimumSize);
 
     // === ParaView-style sections with cvExpanderButton ===
 
@@ -570,6 +685,12 @@ void cvSelectionPropertiesWidget::setupUi() {
                 if (m_findDataButton) m_findDataButton->setVisible(checked);
                 if (m_resetButton) m_resetButton->setVisible(checked);
                 if (m_clearButton) m_clearButton->setVisible(checked);
+                // Update scroll content size when section is toggled
+                // Ensure width is maintained and content size is updated
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
             });
 
     // 2. Selected Data section (with Freeze/Extract/Plot Over Time buttons)
@@ -585,6 +706,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_selectedDataSpreadsheetExpander, &cvExpanderButton::toggled,
             m_selectedDataSpreadsheetContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_selectedDataSpreadsheetExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // Action buttons row (Freeze, Extract, Plot Over Time)
     setupSelectedDataHeader();
@@ -612,6 +741,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_selectionDisplayExpander, &cvExpanderButton::toggled,
             m_selectionDisplayContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_selectionDisplayExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // 4. Selection Editor section (for combining and managing selections)
     m_selectionEditorExpander = new cvExpanderButton(m_scrollContent);
@@ -627,6 +764,14 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_selectionEditorExpander, &cvExpanderButton::toggled,
             m_selectionEditorContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_selectionEditorExpander, &cvExpanderButton::toggled,
+            [this](bool) {
+                QTimer::singleShot(0, this, [this]() {
+                    // First ensure width is set, then adjust size
+                    updateScrollContentWidth();
+                });
+            });
 
     // 5. Compact Statistics Section (ParaView-style: no tabs)
     m_compactStatsExpander = new cvExpanderButton(m_scrollContent);
@@ -642,6 +787,13 @@ void cvSelectionPropertiesWidget::setupUi() {
 
     connect(m_compactStatsExpander, &cvExpanderButton::toggled,
             m_compactStatsContainer, &QWidget::setVisible);
+    // Update scroll content size when section is toggled
+    connect(m_compactStatsExpander, &cvExpanderButton::toggled, [this](bool) {
+        QTimer::singleShot(0, this, [this]() {
+            // First ensure width is set, then adjust size
+            updateScrollContentWidth();
+        });
+    });
 
     // Note: Tab widget removed to align with ParaView's simpler UI design
     // Export/Advanced features are now accessible via action buttons or menus
@@ -650,8 +802,24 @@ void cvSelectionPropertiesWidget::setupUi() {
     scrollLayout->addStretch();
 
     m_scrollContent->setLayout(scrollLayout);
+
     m_scrollArea->setWidget(m_scrollContent);
+    // Set the scroll area to expand and fill available space
+    m_scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     mainLayout->addWidget(m_scrollArea);
+
+    // Install event filter on scroll area and viewport to detect resize events
+    // This ensures content width matches scroll area width (prevents horizontal
+    // scrolling) while allowing vertical scrolling when content height exceeds
+    // available space
+    m_scrollArea->installEventFilter(this);
+    if (m_scrollArea->viewport()) {
+        m_scrollArea->viewport()->installEventFilter(this);
+    }
+
+    // Update scroll content size after everything is set up
+    // Use QTimer to ensure this happens after the widget is shown
+    QTimer::singleShot(0, this, [this]() { updateScrollContentWidth(); });
 
     setLayout(mainLayout);
 }
@@ -923,17 +1091,25 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     displayLayout->addLayout(appearanceHeaderLayout);
 
     // Selection Color button (ParaView: pqColorChooserButton style)
-    m_selectionColorButton = new QPushButton(tr("Selection Color"));
+    // Use QToolButton like ParaView's pqColorChooserButton (which extends
+    // QToolButton)
+    m_selectionColorButton = new QToolButton();
+    m_selectionColorButton->setText(tr("Selection Color"));
     m_selectionColorButton->setToolTip(
             tr("Set the color to use to show selected elements"));
     m_selectionColorButton->setSizePolicy(QSizePolicy::Minimum,
                                           QSizePolicy::Fixed);
-    // Default color (magenta) - will be updated when highlighter is set
-    m_selectionColorButton->setStyleSheet(
-            QString("QPushButton { background-color: %1; color: white; border: "
-                    "1px solid gray; padding: 4px; }")
-                    .arg(QColor(255, 0, 255).name()));  // Magenta default
-    connect(m_selectionColorButton, &QPushButton::clicked, this,
+    // ParaView style: TextBesideIcon - text and icon side by side
+    m_selectionColorButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    // Install event filter to handle resize events (like ParaView's
+    // pqColorChooserButton)
+    m_selectionColorButton->installEventFilter(this);
+    // ParaView style: use icon to display color (will be updated when
+    // highlighter is set) Default color (magenta) - will be updated when
+    // highlighter is set
+    updateColorButtonIcon(m_selectionColorButton,
+                          QColor(255, 0, 255));  // Magenta default
+    connect(m_selectionColorButton, &QToolButton::clicked, this,
             &cvSelectionPropertiesWidget::onSelectionColorClicked);
     displayLayout->addWidget(m_selectionColorButton);
 
@@ -951,19 +1127,28 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     displayLayout->addLayout(interactiveHeaderLayout);
 
     // Interactive Selection Color button (ParaView: pqColorChooserButton style)
-    m_interactiveSelectionColorButton =
-            new QPushButton(tr("Interactive Selection Color"));
+    // Use QToolButton like ParaView's pqColorChooserButton (which extends
+    // QToolButton)
+    m_interactiveSelectionColorButton = new QToolButton();
+    m_interactiveSelectionColorButton->setText(
+            tr("Interactive Selection Color"));
     m_interactiveSelectionColorButton->setToolTip(
             tr("Set the color to use to show selected elements during "
                "interaction"));
     m_interactiveSelectionColorButton->setSizePolicy(QSizePolicy::Minimum,
                                                      QSizePolicy::Fixed);
-    // Default color (cyan) - will be updated when highlighter is set
-    m_interactiveSelectionColorButton->setStyleSheet(
-            QString("QPushButton { background-color: %1; color: white; border: "
-                    "1px solid gray; padding: 4px; }")
-                    .arg(QColor(0, 255, 255).name()));  // Cyan default
-    connect(m_interactiveSelectionColorButton, &QPushButton::clicked, this,
+    // ParaView style: TextBesideIcon - text and icon side by side
+    m_interactiveSelectionColorButton->setToolButtonStyle(
+            Qt::ToolButtonTextBesideIcon);
+    // Install event filter to handle resize events (like ParaView's
+    // pqColorChooserButton)
+    m_interactiveSelectionColorButton->installEventFilter(this);
+    // ParaView style: use icon to display color (will be updated when
+    // highlighter is set) Default color (cyan) - will be updated when
+    // highlighter is set
+    updateColorButtonIcon(m_interactiveSelectionColorButton,
+                          QColor(0, 255, 255));  // Cyan default
+    connect(m_interactiveSelectionColorButton, &QToolButton::clicked, this,
             &cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked);
     displayLayout->addWidget(m_interactiveSelectionColorButton);
 
@@ -1397,7 +1582,7 @@ bool cvSelectionPropertiesWidget::updateSelection(
             m_elementTypeCombo->blockSignals(true);
             m_elementTypeCombo->setCurrentIndex(expectedIndex);
             m_elementTypeCombo->blockSignals(false);
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionPropertiesWidget] Auto-switched "
                             "element type to %1")
                             .arg(expectedIndex == 0 ? "Point" : "Cell"));
@@ -1435,9 +1620,9 @@ bool cvSelectionPropertiesWidget::updateSelection(
                 }
             }
 
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Updated "
-                                      "Data Producer to '%1'")
-                                      .arg(sourceName));
+            CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Updated "
+                                        "Data Producer to '%1'")
+                                        .arg(sourceName));
         }
     }
 
@@ -2180,7 +2365,7 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
 
     // First, try to use direct extraction from source ccPointCloud if available
     // This bypasses VTK→ccPointCloud conversion and preserves all attributes
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Extract point cloud check: "
                     "manager=%1, sourceValid=%2")
                     .arg(m_selectionManager != nullptr ? "yes" : "no")
@@ -2192,11 +2377,11 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
 
     if (m_selectionManager && m_selectionManager->isSourceObjectValid()) {
         ccPointCloud* sourceCloud = m_selectionManager->getSourcePointCloud();
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] "
-                                  "getSourcePointCloud returned: %1")
-                                  .arg(sourceCloud != nullptr
-                                               ? sourceCloud->getName()
-                                               : "nullptr"));
+        CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] "
+                                    "getSourcePointCloud returned: %1")
+                                    .arg(sourceCloud != nullptr
+                                                 ? sourceCloud->getName()
+                                                 : "nullptr"));
         if (sourceCloud) {
             // For cell selection on point cloud, convert to point selection
             cvSelectionData exportSelection = m_selectionData;
@@ -2534,7 +2719,7 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
     if (isPointData) {
         double pt[3];
         polyData->GetPoint(id, pt);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionPropertiesWidget] RED highlight: %1 "
                         "ID=%2 at (%3, %4, %5)")
                         .arg(dataType)
@@ -2551,7 +2736,7 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
             int subId = 0;
             cell->EvaluateLocation(subId, pcoords, center, weights);
             delete[] weights;
-            CVLog::PrintDebug(
+            CVLog::PrintVerbose(
                     QString("[cvSelectionPropertiesWidget] RED highlight: "
                             "%1 ID=%2 "
                             "(Type:%3, Points:%4) center=(%5, %6, %7)")
@@ -2872,8 +3057,7 @@ void cvSelectionPropertiesWidget::onEditLabelPropertiesClicked() {
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onSelectionColorClicked() {
     QColor currentColor = getSelectionColor();
-    QColor color = QColorDialog::getColor(currentColor, this,
-                                          tr("Select Selection Color"));
+    QColor color = QColorDialog::getColor(currentColor, this, tr("Set Color"));
     if (color.isValid() && m_highlighter) {
         // Set color directly on highlighter (single source of truth)
         // This will trigger colorChanged signal which updates UI
@@ -2886,17 +3070,16 @@ void cvSelectionPropertiesWidget::onSelectionColorClicked() {
             pclVis->UpdateScreen();
         }
 
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Selection "
-                                  "color changed to %1")
-                                  .arg(color.name()));
+        CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Selection "
+                                    "color changed to %1")
+                                    .arg(color.name()));
     }
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked() {
     QColor currentColor = getInteractiveSelectionColor();
-    QColor color = QColorDialog::getColor(
-            currentColor, this, tr("Select Interactive Selection Color"));
+    QColor color = QColorDialog::getColor(currentColor, this, tr("Set Color"));
     if (color.isValid() && m_highlighter) {
         // Set color directly on highlighter (single source of truth)
         // This will trigger colorChanged signal which updates UI
@@ -2908,9 +3091,9 @@ void cvSelectionPropertiesWidget::onInteractiveSelectionColorClicked() {
             pclVis->UpdateScreen();
         }
 
-        CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Interactive "
-                                  "selection color changed to %1")
-                                  .arg(color.name()));
+        CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Interactive "
+                                    "selection color changed to %1")
+                                    .arg(color.name()));
     }
 }
 
@@ -3006,7 +3189,7 @@ void cvSelectionPropertiesWidget::onLabelPropertiesApplied(
         }
     }
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Label properties applied: "
                     "opacity=%1, pointSize=%2, lineWidth=%3")
                     .arg(props.opacity)
@@ -3142,7 +3325,7 @@ void cvSelectionPropertiesWidget::onAddActiveSelectionClicked() {
 
     emit selectionAdded(saved.data);
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Added selection: %1 "
                     "(+ button disabled until new selection)")
                     .arg(saved.name));
@@ -3171,9 +3354,9 @@ void cvSelectionPropertiesWidget::onRemoveSelectedSelectionClicked() {
             QString name = m_savedSelections[row].name;
             m_savedSelections.removeAt(row);
             emit selectionRemoved(row);
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed "
-                                      "selection: %1")
-                                      .arg(name));
+            CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Removed "
+                                        "selection: %1")
+                                        .arg(name));
         }
     }
 
@@ -3584,7 +3767,7 @@ void cvSelectionPropertiesWidget::onInvertSelectionToggled(bool checked) {
     // Only modify display (highlight + spreadsheet), not the underlying
     // selection state
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Invert selection: %1")
                     .arg(checked ? "ON" : "OFF"));
 
@@ -3618,8 +3801,7 @@ void cvSelectionPropertiesWidget::onInvertSelectionToggled(bool checked) {
 
     if (checked) {
         // Invert: show all IDs NOT in original selection
-        QSet<qint64> originalIdSet(m_originalSelectionIds.begin(),
-                                   m_originalSelectionIds.end());
+        QSet<qint64> originalIdSet = qSetFromVector(m_originalSelectionIds);
 
         displayIds.reserve(static_cast<int>(totalCount) -
                            m_originalSelectionIds.size());
@@ -3732,7 +3914,7 @@ void cvSelectionPropertiesWidget::onExtractClicked() {
         // A mesh has polygons (triangles/quads), a point cloud only has
         // vertices
         isSourceMesh = (polyData->GetNumberOfPolys() > 0);
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 QString("[cvSelectionPropertiesWidget::onExtractClicked] "
                         "Source: %1 points, %2 cells, %3 polys -> %4")
                         .arg(polyData->GetNumberOfPoints())
@@ -4332,7 +4514,7 @@ void cvSelectionPropertiesWidget::addQueryRow(int index,
     // Update button states (disable minus if only one row)
     updateQueryRowButtons();
 
-    CVLog::PrintDebug(
+    CVLog::PrintVerbose(
             QString("[cvSelectionPropertiesWidget] Added query row at index %1")
                     .arg(index));
 }
@@ -4367,9 +4549,10 @@ void cvSelectionPropertiesWidget::removeQueryRow(int index) {
     // Update button states
     updateQueryRowButtons();
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Removed query row "
-                              "at index %1")
-                              .arg(index));
+    CVLog::PrintVerbose(
+            QString("[cvSelectionPropertiesWidget] Removed query row "
+                    "at index %1")
+                    .arg(index));
 }
 
 //-----------------------------------------------------------------------------
@@ -4464,9 +4647,10 @@ void cvSelectionPropertiesWidget::updateDataProducerCombo() {
                 }
             }
 
-            CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Found %1 "
-                                      "data producers")
-                                      .arg(addedNames.size()));
+            CVLog::PrintVerbose(
+                    QString("[cvSelectionPropertiesWidget] Found %1 "
+                            "data producers")
+                            .arg(addedNames.size()));
         }
     }
 
@@ -4551,9 +4735,9 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
         // If explicit producer selected but not found, don't fallback to other
         // objects
         if (!polyData) {
-            CVLog::PrintDebug(QString("[updateAttributeCombo] Data Producer "
-                                      "'%1' not found")
-                                      .arg(producerName));
+            CVLog::PrintVerbose(QString("[updateAttributeCombo] Data Producer "
+                                        "'%1' not found")
+                                        .arg(producerName));
             // Just add ID field, no other attributes
             m_attributeCombo->addItem(tr("ID"));
             return;
@@ -4683,7 +4867,7 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
                 addedArrays.insert("normal_x");
                 addedArrays.insert("normal_y");
                 addedArrays.insert("normal_z");
-                CVLog::PrintDebug(
+                CVLog::PrintVerbose(
                         "[updateAttributeCombo] Found PCL-style separate "
                         "normals");
             }
@@ -5538,9 +5722,9 @@ void cvSelectionPropertiesWidget::updateSpreadsheetData(
 
     m_spreadsheetTable->resizeColumnsToContents();
 
-    CVLog::PrintDebug(QString("[cvSelectionPropertiesWidget] Updated "
-                              "spreadsheet with %1 rows")
-                              .arg(rowCount));
+    CVLog::PrintVerbose(QString("[cvSelectionPropertiesWidget] Updated "
+                                "spreadsheet with %1 rows")
+                                .arg(rowCount));
 }
 
 //-----------------------------------------------------------------------------
