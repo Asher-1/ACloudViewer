@@ -92,9 +92,54 @@ SIFTExtractionWidget::SIFTExtractionWidget(QWidget* parent,
 void SIFTExtractionWidget::Run() {
     WriteOptions();
 
+    // Validate paths before extraction
+    if (options_->database_path->empty()) {
+        QMessageBox::critical(this, "",
+                              tr("Database path is not set. Please set it in "
+                                 "Project settings."));
+        return;
+    }
+
+    if (options_->image_path->empty()) {
+        QMessageBox::critical(this, "",
+                              tr("Image path is not set. Please set it in "
+                                 "Project settings."));
+        return;
+    }
+
+    if (!ExistsDir(*options_->image_path)) {
+        QMessageBox::critical(
+                this, "",
+                tr("Image path does not exist: %1")
+                        .arg(QString::fromStdString(*options_->image_path)));
+        return;
+    }
+
+    // Ensure database directory exists
+    const std::string database_dir = GetParentDir(*options_->database_path);
+    if (!ExistsDir(database_dir)) {
+        QMessageBox::critical(
+                this, "",
+                tr("Database directory does not exist: %1")
+                        .arg(QString::fromStdString(database_dir)));
+        return;
+    }
+
     ImageReaderOptions reader_options = *options_->image_reader;
     reader_options.database_path = *options_->database_path;
     reader_options.image_path = *options_->image_path;
+
+    // Validate reader options
+    if (!reader_options.Check()) {
+        QMessageBox::critical(this, "", tr("Invalid image reader options."));
+        return;
+    }
+
+    // Validate SIFT extraction options
+    if (!options_->sift_extraction->Check()) {
+        QMessageBox::critical(this, "", tr("Invalid SIFT extraction options."));
+        return;
+    }
 
     Thread* extractor = new SiftFeatureExtractor(reader_options,
                                                  *options_->sift_extraction);
