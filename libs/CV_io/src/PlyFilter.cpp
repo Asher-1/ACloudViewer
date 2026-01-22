@@ -918,8 +918,8 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 #ifdef _WIN32
     // Convert QString to UTF-8 encoded std::string for Windows
     // ply_open expects const char*, not const wchar_t*
-    p_ply ply = ply_open(filename.toUtf8().constData(), errorCallback, 0,
-                         nullptr);
+    p_ply ply =
+            ply_open(filename.toUtf8().constData(), errorCallback, 0, nullptr);
 #else
     p_ply ply = ply_open(qPrintable(filename), errorCallback, 0, nullptr);
 #endif
