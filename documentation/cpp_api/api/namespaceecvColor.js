@@ -24,7 +24,7 @@ var namespaceecvColor =
     [ "darker", "namespaceecvColor.html#aadd4058d0dfa01fb46ac764637465caf", null ],
     [ "darkest", "namespaceecvColor.html#a646e42c2f18e1471ed8ea284225f3980", null ],
     [ "darkGrey", "namespaceecvColor.html#a64164ead18a6936024dfb26322a147d9", null ],
-    [ "defaultBkgColor", "namespaceecvColor.html#abf5402aeb9a427836ebde5a143966648", null ],
+    [ "defaultBkgColor", "namespaceecvColor.html#aeccd4f7e9e99740c217fbd165719d815", null ],
     [ "defaultColor", "namespaceecvColor.html#a03818140cf906d39872f4095dfa3ee4a", null ],
     [ "defaultLabelBkgColor", "namespaceecvColor.html#af05de796281578489797609f9f0bacf9", null ],
     [ "defaultLabelMarkerColor", "namespaceecvColor.html#a0768252b9c88db7f988fc7f449496d9e", null ],

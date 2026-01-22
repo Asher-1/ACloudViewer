@@ -1,0 +1,6 @@
+cloudViewer.visualization.webrtc_server.enable_webrtc
+-----------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.webrtc_server
+
+.. autofunction:: enable_webrtc

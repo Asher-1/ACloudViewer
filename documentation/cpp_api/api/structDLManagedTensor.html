@@ -100,6 +100,17 @@ $(document).ready(function(){initNavTree('structDLManagedTensor.html',''); initR
 Collaboration diagram for DLManagedTensor:</div>
 <div class="dyncontent">
 <div class="center"><img src="structDLManagedTensor__coll__graph.png" border="0" usemap="#aDLManagedTensor_coll__map" alt="Collaboration graph"/></div>
+<map name="aDLManagedTensor_coll__map" id="aDLManagedTensor_coll__map">
+<area shape="rect" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi..." alt="" coords="173,303,315,329"/>
+<area shape="rect" href="structDLTensor.html" title="Plain C Tensor object, does not manage memory." alt="" coords="204,213,284,240"/>
+<area shape="rect" title=" " alt="" coords="5,109,80,136"/>
+<area shape="rect" href="structDLDevice.html" title="A Device for Tensor and operator." alt="" coords="202,109,286,136"/>
+<area shape="rect" title=" " alt="" coords="144,5,211,32"/>
+<area shape="rect" href="structDLDataType.html" title="The data type the tensor can hold. The data type is assumed to follow the native endian&#45;ness...." alt="" coords="310,109,410,136"/>
+<area shape="rect" title=" " alt="" coords="297,5,372,32"/>
+<area shape="rect" title=" " alt="" coords="396,5,463,32"/>
+<area shape="rect" title=" " alt="" coords="435,109,501,136"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -111,13 +122,15 @@ Public Attributes</h2></td></tr>
 <tr class="memdesc:af9bfa572555bd0b7855c5ae74ff96929"><td class="mdescLeft">&#160;</td><td class="mdescRight">the context of the original host framework of <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a> in which <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a> is used in the framework. It can also be NULL.  <a href="structDLManagedTensor.html#af9bfa572555bd0b7855c5ae74ff96929">More...</a><br /></td></tr>
 <tr class="separator:af9bfa572555bd0b7855c5ae74ff96929"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b5ac9adc40f2dbaf072531eb957d7ea"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLManagedTensor.html#a3b5ac9adc40f2dbaf072531eb957d7ea">deleter</a> )(struct <a class="el" href="structDLManagedTensor.html">DLManagedTensor</a> *self)</td></tr>
-<tr class="memdesc:a3b5ac9adc40f2dbaf072531eb957d7ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor signature void (*)(void*) - this should be called to destruct manager_ctx which holds the <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a>. It can be NULL if there is no way for the caller to provide a reasonable destructor. The destructors deletes the argument self as well.  <a href="structDLManagedTensor.html#a3b5ac9adc40f2dbaf072531eb957d7ea">More...</a><br /></td></tr>
+<tr class="memdesc:a3b5ac9adc40f2dbaf072531eb957d7ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor - this should be called to destruct the manager_ctx which backs the <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a>. It can be NULL if there is no way for the caller to provide a reasonable destructor. The destructor deletes the argument self as well.  <a href="structDLManagedTensor.html#a3b5ac9adc40f2dbaf072531eb957d7ea">More...</a><br /></td></tr>
 <tr class="separator:a3b5ac9adc40f2dbaf072531eb957d7ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>C Tensor object, manage memory of <a class="el" href="structDLTensor.html" title="Plain C Tensor object, does not manage memory.">DLTensor</a>. This data structure is intended to facilitate the borrowing of <a class="el" href="structDLTensor.html" title="Plain C Tensor object, does not manage memory.">DLTensor</a> by another framework. It is not meant to transfer the tensor. When the borrowing framework doesn't need the tensor, it should call the deleter to notify the host that the resource is no longer needed. </p>
+<dl class="section note"><dt>Note</dt><dd>This data structure is used as Legacy <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a> in DLPack exchange and is deprecated after DLPack v0.8 Use <a class="el" href="structDLManagedTensorVersioned.html" title="A versioned and managed C Tensor object, manage memory of DLTensor.">DLManagedTensorVersioned</a> instead. This data structure may get renamed or deleted in future versions.</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="structDLManagedTensorVersioned.html" title="A versioned and managed C Tensor object, manage memory of DLTensor.">DLManagedTensorVersioned</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00173">173</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00319">319</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a3b5ac9adc40f2dbaf072531eb957d7ea"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3b5ac9adc40f2dbaf072531eb957d7ea">&#9670;&nbsp;</a></span>deleter</h2>
@@ -131,11 +144,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Destructor signature void (*)(void*) - this should be called to destruct manager_ctx which holds the <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a>. It can be NULL if there is no way for the caller to provide a reasonable destructor. The destructors deletes the argument self as well. </p>
+<p>Destructor - this should be called to destruct the manager_ctx which backs the <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a>. It can be NULL if there is no way for the caller to provide a reasonable destructor. The destructor deletes the argument self as well. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00185">185</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00332">332</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -153,9 +164,7 @@ Public Attributes</h2></td></tr>
 
 <p><a class="el" href="structDLTensor.html" title="Plain C Tensor object, does not manage memory.">DLTensor</a> which is being memory managed. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00175">175</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00321">321</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -173,9 +182,7 @@ Public Attributes</h2></td></tr>
 
 <p>the context of the original host framework of <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a> in which <a class="el" href="structDLManagedTensor.html" title="C Tensor object, manage memory of DLTensor. This data structure is intended to facilitate the borrowi...">DLManagedTensor</a> is used in the framework. It can also be NULL. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00179">179</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00180">cloudViewer::core::Open3DDLManagedTensor::Deleter()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00325">325</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -188,7 +195,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="structDLManagedTensor.html">DLManagedTensor</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:10 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:25 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

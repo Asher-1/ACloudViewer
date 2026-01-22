@@ -1,0 +1,9 @@
+<map id="PoissonReconstruction" name="PoissonReconstruction">
+<area shape="rect" id="node1" title="Poisson Reconstruction." alt="" coords="171,184,341,211"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="106,95,227,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" id="node5" href="$classPoissonReconstructionDlg.html" title=" " alt="" coords="251,95,442,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="300,5,375,32"/>
+<area shape="rect" id="node7" title=" " alt="" coords="399,5,612,32"/>
+</map>

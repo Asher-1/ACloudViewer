@@ -1,0 +1,52 @@
+<map id="DistanceMapGenerationDlg" name="DistanceMapGenerationDlg">
+<area shape="rect" id="node1" title="Dialog for generating a distance map (surface of revolution)" alt="" coords="3351,183,3552,209"/>
+<area shape="rect" id="node2" title=" " alt="" coords="3079,5,3154,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="3005,56,3228,83"/>
+<area shape="rect" id="node4" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="1981,259,2087,285"/>
+<area shape="rect" id="node12" href="$classccPointCloud.html" title="A 3D cloud and its associated features (color, normals, scalar fields, etc.)" alt="" coords="2776,368,2883,395"/>
+<area shape="rect" id="node37" href="$structccPointCloud_1_1vboSet.html" title="VBO set." alt="" coords="2401,387,2559,413"/>
+<area shape="rect" id="node41" href="$classccMapWindow.html" title="2D map display window" alt="" coords="2422,107,2538,133"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="1482,271,1663,297"/>
+<area shape="rect" id="node6" title=" " alt="" coords="1211,271,1402,297"/>
+<area shape="rect" id="node7" href="$classCCShareable.html" title=" " alt="" coords="1254,455,1359,481"/>
+<area shape="rect" id="node30" href="$classccArray.html" title=" " alt="" coords="1915,430,2153,471"/>
+<area shape="rect" id="node32" href="$classccArray.html" title="Shareable array that can be properly inserted in the DB tree." alt="" coords="1464,490,1681,531"/>
+<area shape="rect" id="node35" href="$classccArray.html" title=" " alt="" coords="1940,617,2128,658"/>
+<area shape="rect" id="node8" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="481,144,636,171"/>
+<area shape="rect" id="node17" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="841,315,920,341"/>
+<area shape="rect" id="node46" href="$classccGLMatrixTpl.html" title=" " alt="" coords="1212,68,1401,95"/>
+<area shape="rect" id="node47" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="804,68,957,95"/>
+<area shape="rect" id="node9" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="1481,220,1664,247"/>
+<area shape="rect" id="node10" title=" " alt="" coords="1217,220,1397,247"/>
+<area shape="rect" id="node11" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="1495,321,1651,348"/>
+<area shape="rect" id="node43" href="$classccSymbolCloud.html" title=" " alt="" coords="3055,183,3178,209"/>
+<area shape="rect" id="node13" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="2380,754,2580,795"/>
+<area shape="rect" id="node14" href="$classccGenericPointCloud.html" title="A 3D cloud interface with associated features (color, normals, octree, etc.)" alt="" coords="1956,812,2112,839"/>
+<area shape="rect" id="node15" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="1511,825,1634,852"/>
+<area shape="rect" id="node48" href="$classccPolyline.html" title="Colored polyline." alt="" coords="2785,873,2873,900"/>
+<area shape="rect" id="node16" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="1263,633,1351,660"/>
+<area shape="rect" id="node18" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="811,695,951,721"/>
+<area shape="rect" id="node19" href="$classVector3Tpl.html" title=" " alt="" coords="476,764,641,791"/>
+<area shape="rect" id="node28" href="$classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="981,757,1177,798"/>
+<area shape="rect" id="node20" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="5,768,149,795"/>
+<area shape="rect" id="node21" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="199,793,349,820"/>
+<area shape="rect" id="node22" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="511,652,606,679"/>
+<area shape="rect" id="node23" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="1467,978,1678,1019"/>
+<area shape="rect" id="node50" href="$classcloudViewer_1_1ReferenceCloud.html" title="A very simple point cloud (no point duplication)" alt="" coords="1927,963,2141,989"/>
+<area shape="rect" id="node24" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="1201,978,1412,1019"/>
+<area shape="rect" id="node25" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="1915,761,2153,788"/>
+<area shape="rect" id="node26" title=" " alt="" coords="1553,775,1592,801"/>
+<area shape="rect" id="node27" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="1469,877,1676,918"/>
+<area shape="rect" id="node29" href="$classNormsIndexesTableType.html" title="Array of compressed 3D normals (single index)" alt="" coords="2391,437,2569,464"/>
+<area shape="rect" id="node31" title=" " alt="" coords="1461,373,1684,414"/>
+<area shape="rect" id="node33" title=" " alt="" coords="1231,540,1382,567"/>
+<area shape="rect" id="node34" href="$classColorsTableType.html" title="Array of RGB colors for each point." alt="" coords="2417,521,2543,548"/>
+<area shape="rect" id="node36" title=" " alt="" coords="1491,709,1654,750"/>
+<area shape="rect" id="node38" href="$classccPointCloudLOD.html" title="L.O.D. (Level of Detail) structure." alt="" coords="2413,208,2547,235"/>
+<area shape="rect" id="node39" href="$structccPointCloudLOD_1_1RenderParams.html" title="Parameters of the current render state." alt="" coords="1917,159,2151,185"/>
+<area shape="rect" id="node40" title=" " alt="" coords="1535,119,1610,145"/>
+<area shape="rect" id="node42" title=" " alt="" coords="1995,15,2073,41"/>
+<area shape="rect" id="node44" href="$structccGLCameraParameters.html" title="OpenGL camera parameters." alt="" coords="2177,83,2356,109"/>
+<area shape="rect" id="node45" href="$classccGLMatrixd.html" title="Double version of ccGLMatrixTpl." alt="" coords="1521,67,1624,93"/>
+<area shape="rect" id="node49" href="$classcloudViewer_1_1Polyline.html" title="A simple polyline class." alt="" coords="2399,951,2561,977"/>
+</map>

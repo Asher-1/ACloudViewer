@@ -1,0 +1,5 @@
+<map id="cloudViewer::GenericDistribution" name="cloudViewer::GenericDistribution">
+<area shape="rect" id="node1" title="A generic class to handle a probability distribution." alt="" coords="134,5,370,32"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1NormalDistribution.html" title="The Normal/Gaussian statistical distribution." alt="" coords="5,80,240,107"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1WeibullDistribution.html" title="The Weibull statistical parametric distribution." alt="" coords="264,80,499,107"/>
+</map>

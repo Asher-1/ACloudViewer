@@ -106,11 +106,26 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1DgmOctree.html',''
 Inheritance diagram for cloudViewer::DgmOctree:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1DgmOctree__inherit__graph.png" border="0" usemap="#acloudViewer_1_1DgmOctree_inherit__map" alt="Inheritance graph"/></div>
+<map name="acloudViewer_1_1DgmOctree_inherit__map" id="acloudViewer_1_1DgmOctree_inherit__map">
+<area shape="rect" title="The octree structure used throughout the library." alt="" coords="15,80,199,107"/>
+<area shape="rect" href="classccOctree.html" title="Octree structure." alt="" coords="67,155,146,181"/>
+<area shape="rect" href="classcloudViewer_1_1GenericOctree.html" title=" " alt="" coords="5,5,208,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for cloudViewer::DgmOctree:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1DgmOctree__coll__graph.png" border="0" usemap="#acloudViewer_1_1DgmOctree_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1DgmOctree_coll__map" id="acloudViewer_1_1DgmOctree_coll__map">
+<area shape="rect" title="The octree structure used throughout the library." alt="" coords="1092,52,1276,79"/>
+<area shape="rect" href="classcloudViewer_1_1GenericOctree.html" title=" " alt="" coords="684,5,887,32"/>
+<area shape="rect" href="classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="680,57,891,98"/>
+<area shape="rect" href="classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="252,57,463,98"/>
+<area shape="rect" href="classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="5,64,203,91"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="680,134,891,175"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="32,145,176,172"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="282,176,433,203"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -204,7 +219,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a35792bc2bfcac83255109b8f19063589"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a041723490f16fb00474bf2b95a2d3def"><td class="memItemLeft" align="right" valign="top">const int *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a041723490f16fb00474bf2b95a2d3def">getMaxFillIndexes</a> (unsigned char level) const</td></tr>
 <tr class="separator:a041723490f16fb00474bf2b95a2d3def"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c1f23435a83b9213c3d9b9bf307d834"><td class="memItemLeft" align="right" valign="top">const PointCoordinateType &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a7c1f23435a83b9213c3d9b9bf307d834">getCellSize</a> (unsigned char level) const</td></tr>
+<tr class="memitem:a7c1f23435a83b9213c3d9b9bf307d834"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a7c1f23435a83b9213c3d9b9bf307d834">getCellSize</a> (unsigned char level) const</td></tr>
 <tr class="memdesc:a7c1f23435a83b9213c3d9b9bf307d834"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the octree cells length for a given level of subdivision.  <a href="classcloudViewer_1_1DgmOctree.html#a7c1f23435a83b9213c3d9b9bf307d834">More...</a><br /></td></tr>
 <tr class="separator:a7c1f23435a83b9213c3d9b9bf307d834"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a175e9e91b6f539b066e199449f4d4426"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a175e9e91b6f539b066e199449f4d4426">getCellDistanceFromBorders</a> (const <a class="el" href="CVGeom_8h.html#a59c62b833cbee82712058d3f018ecc66">Tuple3i</a> &amp;cellPos, unsigned char level, int *cellDists) const</td></tr>
@@ -230,7 +245,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7841c619fd51888bd9e455607a7a4e09"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a7841c619fd51888bd9e455607a7a4e09">findNeighborsInASphereStartingFromCell</a> (<a class="el" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html">NearestNeighboursSearchStruct</a> &amp;nNSS, double radius, bool sortValues=true) const</td></tr>
 <tr class="memdesc:a7841c619fd51888bd9e455607a7a4e09"><td class="mdescLeft">&#160;</td><td class="mdescRight">Advanced form of the nearest neighbours search algorithm (in a sphere)  <a href="classcloudViewer_1_1DgmOctree.html#a7841c619fd51888bd9e455607a7a4e09">More...</a><br /></td></tr>
 <tr class="separator:a7841c619fd51888bd9e455607a7a4e09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae602397548c81636258ebe52cfa449be"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#ae602397548c81636258ebe52cfa449be">getPointsInSphericalNeighbourhood</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;sphereCenter, PointCoordinateType radius, <a class="el" href="classcloudViewer_1_1DgmOctree.html#ae908f6d02f4324064546d2a90d9aa6c6">NeighboursSet</a> &amp;neighbours, unsigned char level) const</td></tr>
+<tr class="memitem:ae602397548c81636258ebe52cfa449be"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#ae602397548c81636258ebe52cfa449be">getPointsInSphericalNeighbourhood</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;sphereCenter, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius, <a class="el" href="classcloudViewer_1_1DgmOctree.html#ae908f6d02f4324064546d2a90d9aa6c6">NeighboursSet</a> &amp;neighbours, unsigned char level) const</td></tr>
 <tr class="memdesc:ae602397548c81636258ebe52cfa449be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the points falling inside a sphere.  <a href="classcloudViewer_1_1DgmOctree.html#ae602397548c81636258ebe52cfa449be">More...</a><br /></td></tr>
 <tr class="separator:ae602397548c81636258ebe52cfa449be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a97862fd11978fab60e8ba210d86cf7e5"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a97862fd11978fab60e8ba210d86cf7e5">getPointsInCylindricalNeighbourhood</a> (<a class="el" href="structcloudViewer_1_1DgmOctree_1_1CylindricalNeighbourhood.html">CylindricalNeighbourhood</a> &amp;<a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) const</td></tr>
@@ -260,7 +275,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a91b110d59542c7df63f3a049dfc7c9ed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a91b110d59542c7df63f3a049dfc7c9ed">computeCellLimits</a> (<a class="el" href="classcloudViewer_1_1DgmOctree.html#a0712676b68c5e4935c396dbbe0b7d182">CellCode</a> code, unsigned char level, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;cellMin, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;cellMax, bool isCodeTruncated=false) const</td></tr>
 <tr class="memdesc:a91b110d59542c7df63f3a049dfc7c9ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the spatial limits of a given cell.  <a href="classcloudViewer_1_1DgmOctree.html#a91b110d59542c7df63f3a049dfc7c9ed">More...</a><br /></td></tr>
 <tr class="separator:a91b110d59542c7df63f3a049dfc7c9ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b57ec3c21c660206bd3355dc2871a0b"><td class="memItemLeft" align="right" valign="top">unsigned char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a8b57ec3c21c660206bd3355dc2871a0b">findBestLevelForAGivenNeighbourhoodSizeExtraction</a> (PointCoordinateType radius) const</td></tr>
+<tr class="memitem:a8b57ec3c21c660206bd3355dc2871a0b"><td class="memItemLeft" align="right" valign="top">unsigned char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a8b57ec3c21c660206bd3355dc2871a0b">findBestLevelForAGivenNeighbourhoodSizeExtraction</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius) const</td></tr>
 <tr class="separator:a8b57ec3c21c660206bd3355dc2871a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a725e5b1796d3099846356489c9451c68"><td class="memItemLeft" align="right" valign="top">unsigned char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a725e5b1796d3099846356489c9451c68">findBestLevelForComparisonWithOctree</a> (const <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *theOtherOctree) const</td></tr>
 <tr class="separator:a725e5b1796d3099846356489c9451c68"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -320,7 +335,7 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a44a6e9c4754a1846428f500bfb8ac709"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1DgmOctree.html#a0712676b68c5e4935c396dbbe0b7d182">CellCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a44a6e9c4754a1846428f500bfb8ac709">GenerateTruncatedCellCode</a> (const <a class="el" href="CVGeom_8h.html#ad610bf85dff7419f806e875024a7b8ab">Tuple3s</a> &amp;pos, unsigned char level)</td></tr>
 <tr class="memdesc:a44a6e9c4754a1846428f500bfb8ac709"><td class="mdescLeft">&#160;</td><td class="mdescRight">Short version of GenerateTruncatedCellCode.  <a href="classcloudViewer_1_1DgmOctree.html#a44a6e9c4754a1846428f500bfb8ac709">More...</a><br /></td></tr>
 <tr class="separator:a44a6e9c4754a1846428f500bfb8ac709"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3cdb1b64a81b22de749ee352f5446e37"><td class="memItemLeft" align="right" valign="top">static PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a3cdb1b64a81b22de749ee352f5446e37">ComputeMinDistanceToCellBorder</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;queryPoint, PointCoordinateType cs, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;cellCenter)</td></tr>
+<tr class="memitem:a3cdb1b64a81b22de749ee352f5446e37"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a3cdb1b64a81b22de749ee352f5446e37">ComputeMinDistanceToCellBorder</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;queryPoint, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cs, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;cellCenter)</td></tr>
 <tr class="separator:a3cdb1b64a81b22de749ee352f5446e37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a33c5877a7096d5a4097f37e20a4c5b15"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a33c5877a7096d5a4097f37e20a4c5b15">MultiThreadSupport</a> ()</td></tr>
 <tr class="separator:a33c5877a7096d5a4097f37e20a4c5b15"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -387,7 +402,7 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a3fca22aa03e83e0b4313f51b357a2be9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec3277fd1c8a50619af012688f3760d7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#aec3277fd1c8a50619af012688f3760d7">m_pointsMax</a></td></tr>
 <tr class="separator:aec3277fd1c8a50619af012688f3760d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a784503469dcc93dcb888b6874b4e8790"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a784503469dcc93dcb888b6874b4e8790">m_cellSize</a> [<a class="el" href="classcloudViewer_1_1DgmOctree.html#a2eada4ab067e6b244e2138e07aba7a8a">MAX_OCTREE_LEVEL</a>+2]</td></tr>
+<tr class="memitem:a784503469dcc93dcb888b6874b4e8790"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a784503469dcc93dcb888b6874b4e8790">m_cellSize</a> [<a class="el" href="classcloudViewer_1_1DgmOctree.html#a2eada4ab067e6b244e2138e07aba7a8a">MAX_OCTREE_LEVEL</a>+2]</td></tr>
 <tr class="memdesc:a784503469dcc93dcb888b6874b4e8790"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cell dimensions for all subdivision levels.  <a href="classcloudViewer_1_1DgmOctree.html#a784503469dcc93dcb888b6874b4e8790">More...</a><br /></td></tr>
 <tr class="separator:a784503469dcc93dcb888b6874b4e8790"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a18317c5938cb538fa97d3187bf7c0baf"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1DgmOctree.html#a18317c5938cb538fa97d3187bf7c0baf">m_fillIndexes</a> [(<a class="el" href="classcloudViewer_1_1DgmOctree.html#a2eada4ab067e6b244e2138e07aba7a8a">MAX_OCTREE_LEVEL</a>+1) *6]</td></tr>
@@ -1069,7 +1084,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static PointCoordinateType cloudViewer::DgmOctree::ComputeMinDistanceToCellBorder </td>
+          <td class="memname">static <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::DgmOctree::ComputeMinDistanceToCellBorder </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
@@ -1077,7 +1092,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>cs</em>, </td>
         </tr>
         <tr>
@@ -1533,7 +1548,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
         <tr>
           <td class="memname">unsigned char cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>radius</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -2419,7 +2434,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const PointCoordinateType&amp; cloudViewer::DgmOctree::getCellSize </td>
+          <td class="memname">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&amp; cloudViewer::DgmOctree::getCellSize </td>
           <td>(</td>
           <td class="paramtype">unsigned char&#160;</td>
           <td class="paramname"><em>level</em></td><td>)</td>
@@ -2966,7 +2981,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>radius</em>, </td>
         </tr>
         <tr>
@@ -3480,7 +3495,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType cloudViewer::DgmOctree::m_cellSize[<a class="el" href="classcloudViewer_1_1DgmOctree.html#a2eada4ab067e6b244e2138e07aba7a8a">MAX_OCTREE_LEVEL</a>+2]</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::DgmOctree::m_cellSize[<a class="el" href="classcloudViewer_1_1DgmOctree.html#a2eada4ab067e6b244e2138e07aba7a8a">MAX_OCTREE_LEVEL</a>+2]</td>
         </tr>
       </table>
   </td>
@@ -3846,7 +3861,7 @@ Never pass a 'constant initializer' by reference </dd></dl>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

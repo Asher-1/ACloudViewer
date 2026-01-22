@@ -93,7 +93,7 @@ Yes, ACloudViewer is released under a permissive license that allows commercial 
 What file formats are supported?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ACloudViewer supports a wide range of file formats through core I/O libraries (``libs/eCV_io``) and extensible I/O plugins (``plugins/core/IO``).
+ACloudViewer supports a wide range of file formats through core I/O libraries (``libs/CV_io``) and extensible I/O plugins (``plugins/core/IO``).
 
 **Point Cloud Formats:**
 
@@ -268,7 +268,7 @@ ACloudViewer provides seamless integration:
    
    # NumPy array to PointCloud
    points = np.random.rand(1000, 3)
-   pcd = cv3d.geometry.PointCloud()
+   pcd = cv3d.geometry.ccPointCloud()
    pcd.points = cv3d.utility.Vector3dVector(points)
    
    # PointCloud to NumPy array

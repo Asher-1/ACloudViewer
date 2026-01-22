@@ -1,0 +1,14 @@
+<map id="ecvOrientedBBox" name="ecvOrientedBBox">
+<area shape="rect" id="node1" title=" " alt="" coords="80,513,215,540"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1OrientedBoundingBox.html" title="A bounding box oriented along an arbitrary frame of reference." alt="" coords="5,437,257,464"/>
+<area shape="rect" id="node3" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="282,437,370,464"/>
+<area shape="rect" id="node4" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="223,132,301,159"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="245,5,399,32"/>
+<area shape="rect" id="node11" href="$classccGLMatrixTpl.html" title=" " alt="" coords="300,183,475,209"/>
+<area shape="rect" id="node12" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="360,81,513,108"/>
+<area shape="rect" id="node6" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="468,361,608,388"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title=" " alt="" coords="457,272,622,299"/>
+<area shape="rect" id="node8" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="555,81,699,108"/>
+<area shape="rect" id="node9" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="568,183,719,209"/>
+<area shape="rect" id="node10" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="337,272,432,299"/>
+</map>

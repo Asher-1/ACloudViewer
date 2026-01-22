@@ -1,0 +1,6 @@
+<map id="ComboSiftGPU" name="ComboSiftGPU">
+<area shape="rect" id="node1" title=" " alt="" coords="46,155,163,181"/>
+<area shape="rect" id="node2" href="$classSiftGPU.html" title=" " alt="" coords="12,80,83,107"/>
+<area shape="rect" id="node3" href="$classSiftParam.html" title=" " alt="" coords="5,5,89,32"/>
+<area shape="rect" id="node4" href="$classSiftMatchGPU.html" title="matcher export" alt="" coords="107,80,217,107"/>
+</map>

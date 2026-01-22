@@ -1,0 +1,9 @@
+cloudViewer.visualization.tensorboard_plugin.summary.Summary
+------------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.tensorboard_plugin.summary
+
+.. autoclass:: Summary
+    :members:
+    :undoc-members:
+    :inherited-members:

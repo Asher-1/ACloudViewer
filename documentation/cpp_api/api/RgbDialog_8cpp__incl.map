@@ -1,0 +1,52 @@
+<map id="/root/ACloudViewer/plugins/core/Standard/qColorimetricSegmenter/RgbDialog.cpp" name="/root/ACloudViewer/plugins/core/Standard/qColorimetricSegmenter/RgbDialog.cpp">
+<area shape="rect" id="node1" title=" " alt="" coords="1319,5,1504,76"/>
+<area shape="rect" id="node2" href="$RgbDialog_8h.html" title=" " alt="" coords="434,124,535,151"/>
+<area shape="rect" id="node6" href="$ecvGenericPointCloud_8h.html" title=" " alt="" coords="1233,124,1411,151"/>
+<area shape="rect" id="node49" title=" " alt="" coords="1435,124,1566,151"/>
+<area shape="rect" id="node50" title=" " alt="" coords="1591,124,1688,151"/>
+<area shape="rect" id="node3" title=" " alt="" coords="185,199,339,225"/>
+<area shape="rect" id="node4" title=" " alt="" coords="363,199,483,225"/>
+<area shape="rect" id="node5" title=" " alt="" coords="507,199,582,225"/>
+<area shape="rect" id="node7" href="$ecvAdvancedTypes_8h.html" title=" " alt="" coords="607,199,765,225"/>
+<area shape="rect" id="node16" title=" " alt="" coords="1773,871,1836,897"/>
+<area shape="rect" id="node41" href="$ecvBBox_8h.html" title=" " alt="" coords="1422,273,1513,300"/>
+<area shape="rect" id="node42" href="$ecvOctree_8h.html" title=" " alt="" coords="2200,273,2300,300"/>
+<area shape="rect" id="node46" href="$ecvOrientedBBox_8h.html" title=" " alt="" coords="694,273,841,300"/>
+<area shape="rect" id="node48" href="$ecvShiftedObject_8h.html" title=" " alt="" coords="1250,199,1394,225"/>
+<area shape="rect" id="node8" href="$ecvArray_8h.html" title=" " alt="" coords="1666,273,1757,300"/>
+<area shape="rect" id="node23" href="$ecvColorTypes_8h.html" title=" " alt="" coords="655,572,783,599"/>
+<area shape="rect" id="node39" href="$ecvBasicTypes_8h.html" title=" " alt="" coords="5,348,135,375"/>
+<area shape="rect" id="node40" href="$ecvNormalCompressor_8h.html" title=" " alt="" coords="132,273,315,300"/>
+<area shape="rect" id="node9" href="$ecvHObject_8h.html" title=" " alt="" coords="1267,348,1377,375"/>
+<area shape="rect" id="node38" href="$CVShareable_8h.html" title=" " alt="" coords="1973,423,2090,449"/>
+<area shape="rect" id="node10" href="$BoundingBox_8h.html" title=" " alt="" coords="1842,572,1962,599"/>
+<area shape="rect" id="node32" href="$ecvDrawableObject_8h.html" title=" " alt="" coords="1203,423,1364,449"/>
+<area shape="rect" id="node34" href="$ecvGLMatrix_8h.html" title=" " alt="" coords="1389,572,1505,599"/>
+<area shape="rect" id="node36" href="$ecvGenericDisplayTools_8h.html" title=" " alt="" coords="855,497,1045,524"/>
+<area shape="rect" id="node37" href="$ecvObject_8h.html" title=" " alt="" coords="362,497,461,524"/>
+<area shape="rect" id="node11" href="$SquareMatrix_8h.html" title=" " alt="" coords="1645,647,1767,673"/>
+<area shape="rect" id="node17" title=" " alt="" coords="1411,796,1497,823"/>
+<area shape="rect" id="node20" title=" " alt="" coords="1991,647,2133,673"/>
+<area shape="rect" id="node21" title=" " alt="" coords="2157,647,2223,673"/>
+<area shape="rect" id="node22" title=" " alt="" coords="1893,647,1967,673"/>
+<area shape="rect" id="node12" href="$CVGeom_8h.html" title=" " alt="" coords="1327,721,1418,748"/>
+<area shape="rect" id="node19" title=" " alt="" coords="2241,721,2310,748"/>
+<area shape="rect" id="node13" title=" " alt="" coords="676,871,768,897"/>
+<area shape="rect" id="node14" href="$CVTypes_8h.html" title=" " alt="" coords="473,796,563,823"/>
+<area shape="rect" id="node15" href="$Eigen_8h.html" title=" " alt="" coords="1521,796,1592,823"/>
+<area shape="rect" id="node18" title=" " alt="" coords="603,796,665,823"/>
+<area shape="rect" id="node24" href="$CV__db_8h.html" title=" " alt="" coords="263,647,338,673"/>
+<area shape="rect" id="node26" title=" " alt="" coords="829,647,895,673"/>
+<area shape="rect" id="node27" href="$CVConst_8h.html" title=" " alt="" coords="515,721,604,748"/>
+<area shape="rect" id="node28" href="$core_2include_2Logging_8h.html" title=" " alt="" coords="919,647,1005,673"/>
+<area shape="rect" id="node29" title=" " alt="" coords="975,721,1055,748"/>
+<area shape="rect" id="node30" title=" " alt="" coords="615,647,687,673"/>
+<area shape="rect" id="node31" title=" " alt="" coords="712,647,804,673"/>
+<area shape="rect" id="node25" title=" " alt="" coords="261,721,389,748"/>
+<area shape="rect" id="node33" href="$ecvDrawContext_8h.html" title=" " alt="" coords="1120,497,1263,524"/>
+<area shape="rect" id="node35" href="$ecvGLMatrixTpl_8h.html" title=" " alt="" coords="1231,647,1367,673"/>
+<area shape="rect" id="node43" href="$DgmOctree_8h.html" title=" " alt="" coords="2400,647,2508,673"/>
+<area shape="rect" id="node44" href="$ReferenceCloud_8h.html" title=" " alt="" coords="2187,497,2324,524"/>
+<area shape="rect" id="node45" title=" " alt="" coords="2199,348,2274,375"/>
+<area shape="rect" id="node47" href="$OrientedBoundingBox_8h.html" title=" " alt="" coords="1490,497,1666,524"/>
+</map>

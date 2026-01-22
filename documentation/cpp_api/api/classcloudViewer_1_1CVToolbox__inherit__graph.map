@@ -1,0 +1,19 @@
+<map id="cloudViewer::CVToolbox" name="cloudViewer::CVToolbox">
+<area shape="rect" id="node1" title="Empty class &#45; for classification purpose only." alt="" coords="5,359,184,386"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1AutoSegmentationTools.html" title=" " alt="" coords="242,5,473,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1CCMiscTools.html" title="Miscellaneous useful functions (geometrical elements handling)" alt="" coords="262,71,453,98"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1CloudSamplingTools.html" title="Several point cloud resampling algorithms (octree&#45;based, random, etc.)" alt="" coords="253,123,461,164"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1DistanceComputationTools.html" title=" " alt="" coords="232,188,483,229"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1GeometricalAnalysisTools.html" title=" " alt="" coords="262,253,453,295"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1ManualSegmentationTools.html" title="Manual segmentation algorithms (inside/outside a polyline, etc.)" alt="" coords="233,319,482,360"/>
+<area shape="rect" id="node8" href="$classcloudViewer_1_1MeshSamplingTools.html" title="Mesh sampling algorithms." alt="" coords="254,384,461,425"/>
+<area shape="rect" id="node9" href="$classcloudViewer_1_1PointProjectionTools.html" title=" " alt="" coords="253,449,461,491"/>
+<area shape="rect" id="node10" href="$classcloudViewer_1_1RegistrationTools.html" title="Common point cloud registration algorithms." alt="" coords="263,515,452,556"/>
+<area shape="rect" id="node14" href="$classcloudViewer_1_1ScalarFieldTools.html" title="Several scalar field treatment algorithms (gradient, classification, etc.)" alt="" coords="267,580,448,621"/>
+<area shape="rect" id="node15" href="$classcloudViewer_1_1StatisticalTestingTools.html" title=" " alt="" coords="270,645,445,687"/>
+<area shape="rect" id="node16" href="$classecvGenericDisplayTools.html" title="Generic display tools." alt="" coords="269,711,446,738"/>
+<area shape="rect" id="node11" href="$classcloudViewer_1_1FPCSRegistrationTools.html" title=" " alt="" coords="531,449,753,491"/>
+<area shape="rect" id="node12" href="$classcloudViewer_1_1HornRegistrationTools.html" title="Horn point cloud registration algorithm." alt="" coords="532,515,752,556"/>
+<area shape="rect" id="node13" href="$classcloudViewer_1_1ICPRegistrationTools.html" title="ICP point cloud registration algorithm (Besl et al.)." alt="" coords="537,580,747,621"/>
+<area shape="rect" id="node17" href="$classecvDisplayTools.html" title=" " alt="" coords="579,711,705,738"/>
+</map>

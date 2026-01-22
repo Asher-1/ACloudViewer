@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: /root/ACloudViewer/libs/eCV_db/include/ecvRasterGrid.h Source File</title>
+<title>ACloudViewer: /root/ACloudViewer/libs/CV_db/include/ecvRasterGrid.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -98,7 +98,7 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// local</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="eCV__db_8h.html">eCV_db.h</a>&quot;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CV__db_8h.html">CV_db.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvBBox_8h.html">ecvBBox.h</a>&quot;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">// system</span></div>
@@ -108,7 +108,7 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">class </span><a class="code" href="classccPointCloud.html">ccPointCloud</a>;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">class </span><a class="code" href="classecvProgressDialog.html">ecvProgressDialog</a>;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="structccRasterCell.html">   22</a></span>&#160;<span class="keyword">struct </span><a class="code" href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a> <a class="code" href="structccRasterCell.html">ccRasterCell</a> {</div>
+<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="structccRasterCell.html">   22</a></span>&#160;<span class="keyword">struct </span><a class="code" href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a> <a class="code" href="structccRasterCell.html">ccRasterCell</a> {</div>
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="structccRasterCell.html#a46d6e9c38c3a57b24d0e67c23c751442">   24</a></span>&#160;    <a class="code" href="structccRasterCell.html#a46d6e9c38c3a57b24d0e67c23c751442">ccRasterCell</a>()</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        : h(<a class="code" href="namespacestd.html">std</a>::numeric_limits&lt;double&gt;::quiet_NaN()),</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;          avgHeight(0),</div>
@@ -122,14 +122,14 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="structccRasterCell.html#a34a8a1baaec17a1beffd398983986177">   35</a></span>&#160;    <span class="keywordtype">double</span> <a class="code" href="structccRasterCell.html#a34a8a1baaec17a1beffd398983986177">h</a>;</div>
 <div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="structccRasterCell.html#a2d8783112e80e4311a4bf39ec4b58cee">   37</a></span>&#160;    <span class="keywordtype">double</span> <a class="code" href="structccRasterCell.html#a2d8783112e80e4311a4bf39ec4b58cee">avgHeight</a>;</div>
 <div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="structccRasterCell.html#ae51c5758619f92585098c7c482fe11f3">   39</a></span>&#160;    <span class="keywordtype">double</span> <a class="code" href="structccRasterCell.html#ae51c5758619f92585098c7c482fe11f3">stdDevHeight</a>;</div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="structccRasterCell.html#adc89fed96d5ddfed3fc7ff62a266ec4f">   41</a></span>&#160;    PointCoordinateType <a class="code" href="structccRasterCell.html#adc89fed96d5ddfed3fc7ff62a266ec4f">minHeight</a>;</div>
-<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="structccRasterCell.html#aa2cdad2695adb887d6860f787a83cc2f">   43</a></span>&#160;    PointCoordinateType <a class="code" href="structccRasterCell.html#aa2cdad2695adb887d6860f787a83cc2f">maxHeight</a>;</div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="structccRasterCell.html#adc89fed96d5ddfed3fc7ff62a266ec4f">   41</a></span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="structccRasterCell.html#adc89fed96d5ddfed3fc7ff62a266ec4f">minHeight</a>;</div>
+<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="structccRasterCell.html#aa2cdad2695adb887d6860f787a83cc2f">   43</a></span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="structccRasterCell.html#aa2cdad2695adb887d6860f787a83cc2f">maxHeight</a>;</div>
 <div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="structccRasterCell.html#a445ca52d4cbed6931d1d107e76eba697">   45</a></span>&#160;    <span class="keywordtype">unsigned</span> <a class="code" href="structccRasterCell.html#a445ca52d4cbed6931d1d107e76eba697">nbPoints</a>;</div>
 <div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structccRasterCell.html#a649a58b1e7f0733fae5a843f70bf36c9">   47</a></span>&#160;    <span class="keywordtype">unsigned</span> <a class="code" href="structccRasterCell.html#a649a58b1e7f0733fae5a843f70bf36c9">pointIndex</a>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="structccRasterCell.html#a32100eafd7cdd5fa70d43d3a3e824b88">   49</a></span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3d</a> <a class="code" href="structccRasterCell.html#a32100eafd7cdd5fa70d43d3a3e824b88">color</a>;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;};</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="structccRasterGrid.html">   53</a></span>&#160;<span class="keyword">struct </span><a class="code" href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a> <a class="code" href="structccRasterGrid.html">ccRasterGrid</a> {</div>
+<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="structccRasterGrid.html">   53</a></span>&#160;<span class="keyword">struct </span><a class="code" href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a> <a class="code" href="structccRasterGrid.html">ccRasterGrid</a> {</div>
 <div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="structccRasterGrid.html#a2db1ead501626c43b68baeacae3757d2">   55</a></span>&#160;    <a class="code" href="structccRasterGrid.html#a2db1ead501626c43b68baeacae3757d2">ccRasterGrid</a>();</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="structccRasterGrid.html#ada8a38ce4168f5a8df67e1f13b0937a9">   58</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="structccRasterGrid.html#ada8a38ce4168f5a8df67e1f13b0937a9">~ccRasterGrid</a>();</div>
@@ -263,6 +263,9 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160; </div>
 <div class="line"><a name="l00225"></a><span class="lineno"><a class="line" href="structccRasterGrid.html#ae237d64b676b07de7683cf2d0755ba2e">  225</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="structccRasterGrid.html#ae237d64b676b07de7683cf2d0755ba2e">valid</a>;</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;};</div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCV__db_8h_html"><div class="ttname"><a href="CV__db_8h.html">CV_db.h</a></div></div>
+<div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad12fc34ce789bce6c8a05d8a17138534"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a></div><div class="ttdeci">int height</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00143">FileIOFactory.cpp:143</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
@@ -272,12 +275,10 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="ttc" id="aclassVector2Tpl_html_afcde09772afcd63780b31b565da5a19d"><div class="ttname"><a href="classVector2Tpl.html#afcde09772afcd63780b31b565da5a19d">Vector2Tpl::u</a></div><div class="ttdeci">Type u[2]</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00038">CVGeom.h:38</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; double &gt;</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html_a7afd060d5392e69ceed8c9dd9775bca5"><div class="ttname"><a href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">Vector3Tpl&lt; double &gt;::fromArray</a></div><div class="ttdeci">static Vector3Tpl fromArray(const int a[3])</div><div class="ttdoc">Constructor from an int array.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00268">CVGeom.h:268</a></div></div>
-<div class="ttc" id="aclassccBBox_html"><div class="ttname"><a href="classccBBox.html">ccBBox</a></div><div class="ttdoc">Bounding box structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBBox_8h_source.html#l00025">ecvBBox.h:26</a></div></div>
+<div class="ttc" id="aclassccBBox_html"><div class="ttname"><a href="classccBBox.html">ccBBox</a></div><div class="ttdoc">Bounding box structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBBox_8h_source.html#l00025">ecvBBox.h:25</a></div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html"><div class="ttname"><a href="classccGenericPointCloud.html">ccGenericPointCloud</a></div><div class="ttdoc">A 3D cloud interface with associated features (color, normals, octree, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvGenericPointCloud_8h_source.html#l00045">ecvGenericPointCloud.h:47</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassecvProgressDialog_html"><div class="ttname"><a href="classecvProgressDialog.html">ecvProgressDialog</a></div><div class="ttdoc">Graphical progress indicator (thread-safe)</div><div class="ttdef"><b>Definition:</b> <a href="ecvProgressDialog_8h_source.html#l00027">ecvProgressDialog.h:29</a></div></div>
-<div class="ttc" id="aeCV__db_8h_html"><div class="ttname"><a href="eCV__db_8h.html">eCV_db.h</a></div></div>
-<div class="ttc" id="aeCV__db_8h_html_a9a6d6d5da9760a0b3de8ac5d783f93d0"><div class="ttname"><a href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a></div><div class="ttdeci">#define ECV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="eCV__db_8h_source.html#l00015">eCV_db.h:15</a></div></div>
 <div class="ttc" id="aecvBBox_8h_html"><div class="ttname"><a href="ecvBBox_8h.html">ecvBBox.h</a></div></div>
 <div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
 <div class="ttc" id="astructccRasterCell_html"><div class="ttname"><a href="structccRasterCell.html">ccRasterCell</a></div><div class="ttdoc">Raster grid cell.</div><div class="ttdef"><b>Definition:</b> <a href="ecvRasterGrid_8h_source.html#l00022">ecvRasterGrid.h:22</a></div></div>
@@ -343,8 +344,8 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_c4299987a504bc66471641292258c6d3.html">eCV_db</a></li><li class="navelem"><a class="el" href="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html">include</a></li><li class="navelem"><a class="el" href="ecvRasterGrid_8h.html">ecvRasterGrid.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvRasterGrid_8h.html">ecvRasterGrid.h</a></li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

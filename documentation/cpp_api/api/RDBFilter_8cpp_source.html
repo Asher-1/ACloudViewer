@@ -111,7 +111,7 @@ $(document).ready(function(){initNavTree('RDBFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CVLog_8h.html">CVLog.h</a>&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ScalarField_8h.html">ScalarField.h</a>&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">// ECV_DB_LIB</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">// CV_DB_LIB</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvHObject_8h.html">ecvHObject.h</a>&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMaterial_8h.html">ecvMaterial.h</a>&gt;</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMaterialSet_8h.html">ecvMaterialSet.h</a>&gt;</span></div>
@@ -602,9 +602,9 @@ $(document).ready(function(){initNavTree('RDBFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;                    <a class="code" href="classccGLMatrix.html">ccGLMatrix</a> mat(<a class="code" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>, Y, Z, t);</div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;                    <span class="comment">// create plane patch</span></div>
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;                    <a class="code" href="classccPlane.html">ccPlane</a> *plane =</div>
-<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;                            <span class="keyword">new</span> <a class="code" href="classccPlane.html">ccPlane</a>(<span class="keyword">static_cast&lt;</span>PointCoordinateType<span class="keyword">&gt;</span>(</div>
+<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;                            <span class="keyword">new</span> <a class="code" href="classccPlane.html">ccPlane</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;                                                buffer_plane_width[i]),</div>
-<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;                                        <span class="keyword">static_cast&lt;</span>PointCoordinateType<span class="keyword">&gt;</span>(</div>
+<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;                                        <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;                                                buffer_plane_height[i]),</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;                                        &amp;mat);</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;                    <span class="keywordflow">if</span> (rdb_hasRGBA) {</div>
@@ -660,7 +660,8 @@ $(document).ready(function(){initNavTree('RDBFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
-<div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00094">CVTypes.h:94</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
@@ -740,7 +741,7 @@ $(document).ready(function(){initNavTree('RDBFilter_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_13540ec1da675ee4da9efb7c9e9678d3.html">qRDBIO</a></li><li class="navelem"><a class="el" href="dir_9adc24ac07a53639d27e5f98be5674c8.html">src</a></li><li class="navelem"><a class="el" href="RDBFilter_8cpp.html">RDBFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:05 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

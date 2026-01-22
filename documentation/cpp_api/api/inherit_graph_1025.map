@@ -1,0 +1,12 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classOrientedPointStream.html" title=" " alt="" coords="5,136,164,177"/>
+<area shape="rect" id="node2" href="$classASCIIOrientedPointStream.html" title=" " alt="" coords="225,5,417,47"/>
+<area shape="rect" id="node3" href="$classBinaryOrientedPointStream.html" title=" " alt="" coords="221,71,421,112"/>
+<area shape="rect" id="node4" href="$classMemoryOrientedPointStream.html" title=" " alt="" coords="215,136,427,177"/>
+<area shape="rect" id="node5" href="$classOrientedPointStreamWithData.html" title=" " alt="" coords="212,201,431,243"/>
+<area shape="rect" id="node10" href="$classPLYOrientedPointStream.html" title=" " alt="" coords="232,267,411,308"/>
+<area shape="rect" id="node6" href="$classASCIIOrientedPointStreamWithData.html" title=" " alt="" coords="489,103,681,144"/>
+<area shape="rect" id="node7" href="$classBinaryOrientedPointStreamWithData.html" title=" " alt="" coords="485,168,685,209"/>
+<area shape="rect" id="node8" href="$classMemoryOrientedPointStreamWithData.html" title=" " alt="" coords="479,233,691,275"/>
+<area shape="rect" id="node9" href="$classPLYOrientedPointStreamWithData.html" title=" " alt="" coords="480,299,689,340"/>
+</map>

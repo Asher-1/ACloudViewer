@@ -1,31 +1,35 @@
-I/O Examples
-============
+IO
+--
 
-Python examples for input/output operations.
+image_io.py
+```````````
 
-.. toctree::
-   :maxdepth: 1
-   
-   ../../tutorial/geometry/file_io
+.. literalinclude:: image_io.py
+   :language: python
+   :linenos:
 
-File Format Support
--------------------
 
-**Point Clouds:**
+point_cloud_io.py
+`````````````````
 
-- PCD, PLY, XYZ, XYZN, XYZRGB, PTS
+.. literalinclude:: point_cloud_io.py
+   :language: python
+   :linenos:
 
-**Meshes:**
 
-- PLY, OBJ, STL, OFF, GLTF, GLB
+realsense_io.py
+```````````````
 
-**Images:**
+.. literalinclude:: realsense_io.py
+   :language: python
+   :linenos:
 
-- PNG, JPG, JPEG
 
-See Also
---------
+triangle_mesh_io.py
+```````````````````
 
-- :doc:`../../tutorial/geometry/pointcloud` - Point Cloud Tutorial
-- :doc:`../../python_api/cloudViewer.io` - I/O API Reference
+.. literalinclude:: triangle_mesh_io.py
+   :language: python
+   :linenos:
+
 

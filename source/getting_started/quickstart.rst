@@ -15,7 +15,7 @@ Basic Point Cloud Operations
    import numpy as np
 
    # Create a point cloud
-   pcd = cv3d.geometry.PointCloud()
+   pcd = cv3d.geometry.ccPointCloud()
    points = np.random.rand(1000, 3)
    pcd.points = cv3d.utility.Vector3dVector(points)
 
@@ -96,7 +96,7 @@ Surface Reconstruction
    pcd.estimate_normals()
 
    # Poisson reconstruction
-   mesh, densities = cv3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+   mesh, densities = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(
        pcd, depth=9)
 
    # Remove low-density vertices
@@ -226,7 +226,7 @@ Workflow 2: Mesh Generation
    pcd.orient_normals_consistent_tangent_plane(100)
 
    # Create mesh
-   mesh, densities = cv3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+   mesh, densities = cv3d.geometry.ccMesh.create_from_point_cloud_poisson(
        pcd, depth=9)
 
    # Simplify mesh
@@ -238,7 +238,7 @@ Workflow 2: Mesh Generation
 Next Steps
 ----------
 
-* :doc:`../tutorials/basic_usage` - Detailed tutorials
-* :doc:`../api/python_api` - Python API reference
-* :doc:`../examples/python_examples` - More examples
+* :doc:`../tutorial/index` - Detailed tutorials
+* :doc:`../python_api/cloudViewer.core` - Python API reference
+* :doc:`../python_example/geometry/index` - More examples
 

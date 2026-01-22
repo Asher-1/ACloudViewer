@@ -1,0 +1,9 @@
+cloudViewer.visualization.tensorboard_plugin.summary.BoundingBox3D
+------------------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.tensorboard_plugin.summary
+
+.. autoclass:: BoundingBox3D
+    :members:
+    :undoc-members:
+    :inherited-members:

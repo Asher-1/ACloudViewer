@@ -97,11 +97,19 @@ $(document).ready(function(){initNavTree('classPyPrintLogger.html',''); initResi
 Inheritance diagram for PyPrintLogger:</div>
 <div class="dyncontent">
 <div class="center"><img src="classPyPrintLogger__inherit__graph.png" border="0" usemap="#aPyPrintLogger_inherit__map" alt="Inheritance graph"/></div>
+<map name="aPyPrintLogger_inherit__map" id="aPyPrintLogger_inherit__map">
+<area shape="rect" title=" " alt="" coords="5,80,117,107"/>
+<area shape="rect" href="classCVLog.html" title="Main log interface." alt="" coords="30,5,93,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for PyPrintLogger:</div>
 <div class="dyncontent">
 <div class="center"><img src="classPyPrintLogger__coll__graph.png" border="0" usemap="#aPyPrintLogger_coll__map" alt="Collaboration graph"/></div>
+<map name="aPyPrintLogger_coll__map" id="aPyPrintLogger_coll__map">
+<area shape="rect" title=" " alt="" coords="5,80,117,107"/>
+<area shape="rect" href="classCVLog.html" title="Main log interface." alt="" coords="30,5,93,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -122,10 +130,10 @@ Public Member Functions</h2></td></tr>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classCVLog"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classCVLog')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classCVLog.html">CVLog</a></td></tr>
 <tr class="memitem:a9ec2d345e360523551943fdba3378780 inherit pub_types_classCVLog"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780">MessageLevelFlags</a> { <br />
-&#160;&#160;<a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780aa3a315b136baf1b03532047b0f766c09">LOG_STANDARD</a> = 0
-, <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780ae949015bd273d182622cf21494bfadc1">LOG_VERBOSE</a> = 1
-, <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780af21e58e19173e7df5c6fd188e0aa3ca6">LOG_WARNING</a> = 2
-, <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780a39ce22d93883faa5f80356b4bbd2c6d6">LOG_IMPORTANT</a> = 3
+&#160;&#160;<a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780ae949015bd273d182622cf21494bfadc1">LOG_VERBOSE</a> = 0
+, <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780aa3a315b136baf1b03532047b0f766c09">LOG_STANDARD</a> = 1
+, <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780a39ce22d93883faa5f80356b4bbd2c6d6">LOG_IMPORTANT</a> = 2
+, <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780af21e58e19173e7df5c6fd188e0aa3ca6">LOG_WARNING</a> = 3
 , <br />
 &#160;&#160;<a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780af38f34287b5dd6b9d18965113f5331f3">LOG_ERROR</a> = 4
 , <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780adbe156a47218b1804663d54e5d5a513e">DEBUG_FLAG</a> = 8
@@ -143,6 +151,12 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a4fdf80d13522669575daad84f7ba9bf1 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a4fdf80d13522669575daad84f7ba9bf1">EnableMessageBackup</a> (bool state)</td></tr>
 <tr class="memdesc:a4fdf80d13522669575daad84f7ba9bf1 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables the message backup system.  <a href="classCVLog.html#a4fdf80d13522669575daad84f7ba9bf1">More...</a><br /></td></tr>
 <tr class="separator:a4fdf80d13522669575daad84f7ba9bf1 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7d4835ba3f3ea79a5f2a7d48aaecb5c inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ab7d4835ba3f3ea79a5f2a7d48aaecb5c">VerbosityLevel</a> ()</td></tr>
+<tr class="memdesc:ab7d4835ba3f3ea79a5f2a7d48aaecb5c inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the current verbosity level.  <a href="classCVLog.html#ab7d4835ba3f3ea79a5f2a7d48aaecb5c">More...</a><br /></td></tr>
+<tr class="separator:ab7d4835ba3f3ea79a5f2a7d48aaecb5c inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af20a151f1eeaa62ffe6dc20784e2b4e0 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af20a151f1eeaa62ffe6dc20784e2b4e0">SetVerbosityLevel</a> (int level)</td></tr>
+<tr class="memdesc:af20a151f1eeaa62ffe6dc20784e2b4e0 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the verbosity level.  <a href="classCVLog.html#af20a151f1eeaa62ffe6dc20784e2b4e0">More...</a><br /></td></tr>
+<tr class="separator:af20a151f1eeaa62ffe6dc20784e2b4e0 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2ed33e05ca3cab1aa8d9292b87765ca inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">LogMessage</a> (const QString &amp;message, int level)</td></tr>
 <tr class="memdesc:af2ed33e05ca3cab1aa8d9292b87765ca inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Static shortcut to <a class="el" href="classCVLog.html#a4232bbaef2d69819c22a9dfc12e66d8d" title="Generic message logging method.">CVLog::logMessage</a>.  <a href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">More...</a><br /></td></tr>
 <tr class="separator:af2ed33e05ca3cab1aa8d9292b87765ca inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -156,7 +170,7 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:aa28f523a139f6c8343acacf9df97a6fd inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a formatted message in console.  <a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">More...</a><br /></td></tr>
 <tr class="separator:aa28f523a139f6c8343acacf9df97a6fd inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ca0c72f6755b28027b99b16e6433f97 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a7ca0c72f6755b28027b99b16e6433f97">Print</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a7ca0c72f6755b28027b99b16e6433f97 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of <a class="el" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd" title="Prints out a formatted message in console.">CVLog::Print</a>.  <a href="classCVLog.html#a7ca0c72f6755b28027b99b16e6433f97">More...</a><br /></td></tr>
+<tr class="memdesc:a7ca0c72f6755b28027b99b16e6433f97 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::Print.  <a href="classCVLog.html#a7ca0c72f6755b28027b99b16e6433f97">More...</a><br /></td></tr>
 <tr class="separator:a7ca0c72f6755b28027b99b16e6433f97 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1899ac54088886772cdb1450960508de inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a1899ac54088886772cdb1450960508de">PrintHigh</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
 <tr class="memdesc:a1899ac54088886772cdb1450960508de inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out an important formatted message in console.  <a href="classCVLog.html#a1899ac54088886772cdb1450960508de">More...</a><br /></td></tr>
@@ -165,22 +179,22 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:aa1bb9d0c42fe5873be2e0ee34b4cc9d9 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintHigh.  <a href="classCVLog.html#aa1bb9d0c42fe5873be2e0ee34b4cc9d9">More...</a><br /></td></tr>
 <tr class="separator:aa1bb9d0c42fe5873be2e0ee34b4cc9d9 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f2bdbc25c84bbcce78166ad1047ee06 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">PrintDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:a9f2bdbc25c84bbcce78166ad1047ee06 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Print, but works only in debug mode.  <a href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">More...</a><br /></td></tr>
+<tr class="memdesc:a9f2bdbc25c84bbcce78166ad1047ee06 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Print, but works only in Debug mode.  <a href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">More...</a><br /></td></tr>
 <tr class="separator:a9f2bdbc25c84bbcce78166ad1047ee06 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0475492fb55e589531404a63606919e3 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a0475492fb55e589531404a63606919e3">PrintDebug</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a0475492fb55e589531404a63606919e3 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of <a class="el" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06" title="Same as Print, but works only in debug mode.">CVLog::PrintDebug</a>.  <a href="classCVLog.html#a0475492fb55e589531404a63606919e3">More...</a><br /></td></tr>
+<tr class="memdesc:a0475492fb55e589531404a63606919e3 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintDebug.  <a href="classCVLog.html#a0475492fb55e589531404a63606919e3">More...</a><br /></td></tr>
 <tr class="separator:a0475492fb55e589531404a63606919e3 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fa9d49971249fc22958b1f9ebfdc789 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">Warning</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
 <tr class="memdesc:a5fa9d49971249fc22958b1f9ebfdc789 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a formatted warning message in console.  <a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">More...</a><br /></td></tr>
 <tr class="separator:a5fa9d49971249fc22958b1f9ebfdc789 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af97e3460a2850fd59329bbbeb2157cbd inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af97e3460a2850fd59329bbbeb2157cbd">Warning</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:af97e3460a2850fd59329bbbeb2157cbd inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of <a class="el" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789" title="Prints out a formatted warning message in console.">CVLog::Warning</a>.  <a href="classCVLog.html#af97e3460a2850fd59329bbbeb2157cbd">More...</a><br /></td></tr>
+<tr class="memdesc:af97e3460a2850fd59329bbbeb2157cbd inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::Warning.  <a href="classCVLog.html#af97e3460a2850fd59329bbbeb2157cbd">More...</a><br /></td></tr>
 <tr class="separator:af97e3460a2850fd59329bbbeb2157cbd inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af86f70fa47d71d64dd9b1546ff0fcb48 inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48">WarningDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:af86f70fa47d71d64dd9b1546ff0fcb48 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Warning, but works only in debug mode.  <a href="classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48">More...</a><br /></td></tr>
+<tr class="memdesc:af86f70fa47d71d64dd9b1546ff0fcb48 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Warning, but works only in Debug mode.  <a href="classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48">More...</a><br /></td></tr>
 <tr class="separator:af86f70fa47d71d64dd9b1546ff0fcb48 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a611a3ff3d092dbc2fd30efde311526da inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a611a3ff3d092dbc2fd30efde311526da">WarningDebug</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a611a3ff3d092dbc2fd30efde311526da inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of <a class="el" href="classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48" title="Same as Warning, but works only in debug mode.">CVLog::WarningDebug</a>.  <a href="classCVLog.html#a611a3ff3d092dbc2fd30efde311526da">More...</a><br /></td></tr>
+<tr class="memdesc:a611a3ff3d092dbc2fd30efde311526da inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::WarningDebug.  <a href="classCVLog.html#a611a3ff3d092dbc2fd30efde311526da">More...</a><br /></td></tr>
 <tr class="separator:a611a3ff3d092dbc2fd30efde311526da inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af943c02dcca9d57434d6b8e35d8d713d inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">Error</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
 <tr class="memdesc:af943c02dcca9d57434d6b8e35d8d713d inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Display an error dialog with formatted message.  <a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">More...</a><br /></td></tr>
@@ -189,10 +203,10 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:a2cd762e02214b37467ee30147023dc84 inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of 'Error'.  <a href="classCVLog.html#a2cd762e02214b37467ee30147023dc84">More...</a><br /></td></tr>
 <tr class="separator:a2cd762e02214b37467ee30147023dc84 inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a83533fdb779dc913ddc5905a2389e0ab inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a83533fdb779dc913ddc5905a2389e0ab">ErrorDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:a83533fdb779dc913ddc5905a2389e0ab inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Error, but works only in debug mode.  <a href="classCVLog.html#a83533fdb779dc913ddc5905a2389e0ab">More...</a><br /></td></tr>
+<tr class="memdesc:a83533fdb779dc913ddc5905a2389e0ab inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Error, but works only in Debug mode.  <a href="classCVLog.html#a83533fdb779dc913ddc5905a2389e0ab">More...</a><br /></td></tr>
 <tr class="separator:a83533fdb779dc913ddc5905a2389e0ab inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ac2dcdf36b4ab95698222a21111682d inherit pub_static_methods_classCVLog"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a6ac2dcdf36b4ab95698222a21111682d">ErrorDebug</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a6ac2dcdf36b4ab95698222a21111682d inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of <a class="el" href="classCVLog.html#a83533fdb779dc913ddc5905a2389e0ab" title="Same as Error, but works only in debug mode.">CVLog::ErrorDebug</a>.  <a href="classCVLog.html#a6ac2dcdf36b4ab95698222a21111682d">More...</a><br /></td></tr>
+<tr class="memdesc:a6ac2dcdf36b4ab95698222a21111682d inherit pub_static_methods_classCVLog"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::ErrorDebug.  <a href="classCVLog.html#a6ac2dcdf36b4ab95698222a21111682d">More...</a><br /></td></tr>
 <tr class="separator:a6ac2dcdf36b4ab95698222a21111682d inherit pub_static_methods_classCVLog"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -313,7 +327,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classPyPrintLogger.html">PyPrintLogger</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

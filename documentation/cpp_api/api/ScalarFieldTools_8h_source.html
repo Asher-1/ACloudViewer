@@ -126,7 +126,7 @@ $(document).ready(function(){initNavTree('ScalarFieldTools_8h_source.html',''); 
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ScalarFieldTools.html#aafa2f9c88409b0d2d75fe8b7783b4e41">   68</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1ScalarFieldTools.html#aafa2f9c88409b0d2d75fe8b7783b4e41">computeScalarFieldGradient</a>(</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* theCloud,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            PointCoordinateType radius,</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius,</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;            <span class="keywordtype">bool</span> euclideanDistances,</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            <span class="keywordtype">bool</span> sameInAndOutScalarField = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a>* progressCb = <span class="keyword">nullptr</span>,</div>
@@ -134,9 +134,9 @@ $(document).ready(function(){initNavTree('ScalarFieldTools_8h_source.html',''); 
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ScalarFieldTools.html#aa7f24b1d19102a6579ccf606d4cb6b67">   96</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1ScalarFieldTools.html#aa7f24b1d19102a6579ccf606d4cb6b67">applyScalarFieldGaussianFilter</a>(</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            PointCoordinateType sigma,</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> sigma,</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* theCloud,</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            PointCoordinateType sigmaSF,</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> sigmaSF,</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a>* progressCb = <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <a class="code" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a>* theOctree = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
@@ -193,6 +193,7 @@ $(document).ready(function(){initNavTree('ScalarFieldTools_8h_source.html',''); 
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aCVCoreLibWin_8h_html_a1dafbf7307681e0ae43ca1905b2d2e5c"><div class="ttname"><a href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a></div><div class="ttdeci">#define CV_CORE_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CVCoreLibWin_8h_source.html#l00015">CVCoreLibWin.h:15</a></div></div>
 <div class="ttc" id="aCVToolbox_8h_html"><div class="ttname"><a href="CVToolbox_8h.html">CVToolbox.h</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aDgmOctree_8h_html"><div class="ttname"><a href="DgmOctree_8h.html">DgmOctree.h</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CVToolbox_html"><div class="ttname"><a href="classcloudViewer_1_1CVToolbox.html">cloudViewer::CVToolbox</a></div><div class="ttdoc">Empty class - for classification purpose only.</div><div class="ttdef"><b>Definition:</b> <a href="CVToolbox_8h_source.html#l00015">CVToolbox.h:15</a></div></div>
@@ -230,7 +231,7 @@ $(document).ready(function(){initNavTree('ScalarFieldTools_8h_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="ScalarFieldTools_8h.html">ScalarFieldTools.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

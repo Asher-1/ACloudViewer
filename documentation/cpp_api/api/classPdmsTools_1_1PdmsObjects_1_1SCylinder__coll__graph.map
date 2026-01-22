@@ -1,0 +1,8 @@
+<map id="PdmsTools::PdmsObjects::SCylinder" name="PdmsTools::PdmsObjects::SCylinder">
+<area shape="rect" id="node1" title="Cylinder." alt="" coords="19,488,203,529"/>
+<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsObjects_1_1DesignElement.html" title="Design element." alt="" coords="19,397,203,439"/>
+<area shape="rect" id="node3" href="$classPdmsTools_1_1PdmsObjects_1_1GenericItem.html" title="Generic item." alt="" coords="19,298,203,339"/>
+<area shape="rect" id="node4" href="$classVector3Tpl.html" title=" " alt="" coords="5,171,216,212"/>
+<area shape="rect" id="node5" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="33,5,177,32"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="127,81,278,108"/>
+</map>

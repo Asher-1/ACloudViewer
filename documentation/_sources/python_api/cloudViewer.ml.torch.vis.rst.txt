@@ -1,0 +1,38 @@
+cloudViewer.ml.torch.vis
+========================
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+**Classes**
+
+.. autosummary::
+
+    BoundingBox3D
+    Colormap
+    DataModel
+    DatasetModel
+    LabelLUT
+    Model
+    Visualizer
+    deque
+
+
+**Functions**
+
+.. autosummary::
+
+    rgb_to_yiq
+
+
+.. toctree::
+    :hidden:
+
+    BoundingBox3D <cloudViewer.ml.torch.vis.BoundingBox3D>
+    Colormap <cloudViewer.ml.torch.vis.Colormap>
+    DataModel <cloudViewer.ml.torch.vis.DataModel>
+    DatasetModel <cloudViewer.ml.torch.vis.DatasetModel>
+    LabelLUT <cloudViewer.ml.torch.vis.LabelLUT>
+    Model <cloudViewer.ml.torch.vis.Model>
+    Visualizer <cloudViewer.ml.torch.vis.Visualizer>
+    deque <cloudViewer.ml.torch.vis.deque>
+    rgb_to_yiq <cloudViewer.ml.torch.vis.rgb_to_yiq>

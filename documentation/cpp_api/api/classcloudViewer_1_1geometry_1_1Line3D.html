@@ -98,16 +98,26 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1geometry_1_1Line3D
 <p><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the semantic differences between a "line", "ray", and "line segment" for operations in which the difference is important, such as intersection and distance tests. The underlying <a class="el" href="namespaceEigen.html">Eigen</a> object can always be retrieved with the .<a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a98f067791e6becc94bdba3250645d2b3" title="Returns a const reference to the underlying Eigen::ParametrizedLine object.">Line()</a> method.  
  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for cloudViewer::geometry::Line3D:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1geometry_1_1Line3D__inherit__graph.png" border="0" usemap="#acloudViewer_1_1geometry_1_1Line3D_inherit__map" alt="Inheritance graph"/></div>
+<map name="acloudViewer_1_1geometry_1_1Line3D_inherit__map" id="acloudViewer_1_1geometry_1_1Line3D_inherit__map">
+<area shape="rect" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman..." alt="" coords="104,95,277,136"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and..." alt="" coords="5,184,179,225"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint..." alt="" coords="203,184,376,225"/>
+<area shape="rect" title=" " alt="" coords="101,5,280,47"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for cloudViewer::geometry::Line3D:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1geometry_1_1Line3D__coll__graph.png" border="0" usemap="#acloudViewer_1_1geometry_1_1Line3D_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1geometry_1_1Line3D_coll__map" id="acloudViewer_1_1geometry_1_1Line3D_coll__map">
+<area shape="rect" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman..." alt="" coords="8,95,181,136"/>
+<area shape="rect" title=" " alt="" coords="5,5,184,47"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -196,7 +206,7 @@ Protected Member Functions</h2></td></tr>
 <p>The underlying motivation is to enforce correctness when performing line operations based on Eigen::ParametrizedLine&lt;double, 3&gt; even as subtleties about how a line is represented begin to affect the outcomes of different operations. Some performance is sacrificed in the use of virtual functions for a clean API in cases where the compiler cannot determine at compile time which function will be called and cannot de-virtualize the call.</p>
 <p>In such cases where performance is extremely important, avoid iterating through a list of derived objects stored as <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> and calling virtual functions on them so that the compiler can hopefully remove the vtable lookup, or consider a hand implementation of your problem in which you carefully account for the semantics yourself. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00049">49</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00049">49</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 </div><h2 class="groupheader">Member Enumeration Documentation</h2>
 <a id="a3edd6c057f6671b34227419be6c10db6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3edd6c057f6671b34227419be6c10db6">&#9670;&nbsp;</a></span>LineType</h2>
@@ -228,7 +238,7 @@ Protected Member Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00062">62</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00062">62</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -361,7 +371,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#acd5e18e444a8030157b90cc26aebb578">cloudViewer::geometry::Segment3D</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html#aba0c7c386f8dfad52eb7ee8c4414fff6">cloudViewer::geometry::Ray3D</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00202">202</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00202">202</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -430,7 +440,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Gets the line's direction vector. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00087">87</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00087">87</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -511,7 +521,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Gets the semantic type of the line. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00081">81</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00081">81</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -573,7 +583,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a0a5dc51b2261829ce8b436e4800a4182">cloudViewer::geometry::Segment3D</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html#af1b3918f9ecdda5cd543bf908a5bc1de">cloudViewer::geometry::Ray3D</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00208">208</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00208">208</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -604,7 +614,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a10ad9bb6e58b85ac348cdcb4fcbb7039">cloudViewer::geometry::Segment3D</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html#aa1a6f87a294bb93bbce379b08a09088f">cloudViewer::geometry::Ray3D</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00091">91</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00091">91</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 <p class="reference">References <a class="el" href="cuda_2result__set_8h_source.html#l00036">infinity()</a>.</p>
 
@@ -635,7 +645,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Returns a const reference to the underlying Eigen::ParametrizedLine object. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00100">100</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00100">100</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -664,7 +674,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Gets the line's origin point. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00084">84</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00084">84</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -815,7 +825,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Creates a line through two points. The line origin will take the value of p0, and the line direction will be a normalized vector from p0 to p1. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Line3D_8h_source.html#l00054">54</a> of file <a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00054">54</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
 </div>
 </div>
@@ -850,7 +860,7 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_db/include/<a class="el" href="eCV__db_2include_2Line3D_8h_source.html">Line3D.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -858,7 +868,7 @@ Protected Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1geometry.html">geometry</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">Line3D</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

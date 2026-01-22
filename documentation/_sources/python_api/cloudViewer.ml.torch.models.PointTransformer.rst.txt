@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.models.PointTransformer
+--------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+.. autoclass:: PointTransformer
+    :members:
+    :undoc-members:

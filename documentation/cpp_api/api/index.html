@@ -185,7 +185,7 @@ Detailed Architecture</h2>
 │                        <b>Core Processing Layer</b>                         │
 │                                                                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ cloudViewer  │  │   eCV_db     │  │   eCV_io     │  │  PCLEngine   │     │
+│  │ cloudViewer  │  │   CV_db     │  │   CV_io     │  │  PCLEngine   │     │
 │  │              │  │              │  │              │  │              │     │
 │  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
 │  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
@@ -210,8 +210,8 @@ Detailed Architecture</h2>
 └─────────────────────────────────────────────────────────────────────────────┘
 
 <b>Data Flow:</b>
-  Input Files → eCV_io → Core Structures → Processing (Plugins/PCL) → 
-  Visualization/Output → Export (eCV_io)
+  Input Files → CV_io → Core Structures → Processing (Plugins/PCL) → 
+  Visualization/Output → Export (CV_io)
 
 <b>Extension Points:</b>
   • Plugin System: Add custom I/O formats and processing algorithms
@@ -231,8 +231,8 @@ Core Modules</h2>
 <li><a class="el" href="classccGenericPointCloud.html" title="A 3D cloud interface with associated features (color, normals, octree, etc.)">ccGenericPointCloud</a> - Abstract point cloud interface</li>
 </ul>
 </li>
-<li><b>eCV_db</b>: Database and entity management for complex 3D scenes</li>
-<li><b>eCV_io</b>: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)</li>
+<li><b>CV_db</b>: Database and entity management for complex 3D scenes</li>
+<li><b>CV_io</b>: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)</li>
 <li><b>PCLEngine</b>: Integration with Point Cloud Library (PCL)<ul>
 <li>Filtering algorithms</li>
 <li>Registration (ICP, NDT)</li>
@@ -262,7 +262,7 @@ Plugin System</h2>
 Application Layer</h2>
 <ul>
 <li><b>CVViewer</b>: Standalone 3D viewer application</li>
-<li><b>eCV</b>: Main ACloudViewer application with full GUI</li>
+<li><b>ACloudViewer</b>: Main ACloudViewer application with full GUI</li>
 </ul>
 <h1><a class="anchor" id="quickstart_cpp_sec"></a>
 C++ Quick Start</h1>
@@ -295,7 +295,7 @@ Basic Usage</h2>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aflann__mpi__client_8cpp_html_a0ddf1224851353fc92bfbff6f499fa97"><div class="ttname"><a href="flann__mpi__client_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97">main</a></div><div class="ttdeci">int main(int argc, char *argv[])</div><div class="ttdef"><b>Definition:</b> <a href="flann__mpi__client_8cpp_source.html#l00053">flann_mpi_client.cpp:53</a></div></div>
-<div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00707">QtCompat.h:707</a></div></div>
+<div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
 </div><!-- fragment --><h2><a class="anchor" id="cmake_integration"></a>
 CMake Integration</h2>
 <div class="fragment"><div class="line">cmake_minimum_required(VERSION 3.15)</div>
@@ -369,8 +369,8 @@ API Documentation</h2>
 <ul>
 <li><b>C++ API</b>: Browse the complete API reference using the navigation above<ul>
 <li><a class="el" href="namespacecloudViewer.html" title="Generic file read and write utility for python interface.">cloudViewer</a> - Core <a class="el" href="structModule.html">Module</a></li>
-<li>eCV_db - Database <a class="el" href="structModule.html">Module</a></li>
-<li>eCV_io - I/O <a class="el" href="structModule.html">Module</a></li>
+<li>CV_db - Database <a class="el" href="structModule.html">Module</a></li>
+<li>CV_io - I/O <a class="el" href="structModule.html">Module</a></li>
 <li>Classes, Namespaces, Files tabs for detailed navigation</li>
 </ul>
 </li>
@@ -407,7 +407,7 @@ License</h1>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:14 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

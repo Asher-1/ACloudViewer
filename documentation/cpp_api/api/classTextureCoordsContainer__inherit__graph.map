@@ -1,0 +1,12 @@
+<map id="TextureCoordsContainer" name="TextureCoordsContainer">
+<area shape="rect" id="node1" title="Array of 2D texture coordinates." alt="" coords="197,428,375,455"/>
+<area shape="rect" id="node2" href="$classccArray.html" title=" " alt="" coords="199,337,373,379"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,241,212,267"/>
+<area shape="rect" id="node4" href="$classCCShareable.html" title=" " alt="" coords="195,157,300,184"/>
+<area shape="rect" id="node9" href="$classccArray.html" title="Shareable array that can be properly inserted in the DB tree." alt="" coords="288,233,505,275"/>
+<area shape="rect" id="node5" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="499,157,587,184"/>
+<area shape="rect" id="node6" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="412,81,491,108"/>
+<area shape="rect" id="node7" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="374,5,529,32"/>
+<area shape="rect" id="node8" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="515,81,655,108"/>
+<area shape="rect" id="node10" title=" " alt="" coords="324,157,475,184"/>
+</map>

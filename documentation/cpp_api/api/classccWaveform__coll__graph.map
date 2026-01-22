@@ -1,0 +1,10 @@
+<map id="ccWaveform" name="ccWaveform">
+<area shape="rect" id="node1" title="Waveform." alt="" coords="293,275,395,301"/>
+<area shape="rect" id="node2" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,171,160,197"/>
+<area shape="rect" id="node3" title=" " alt="" coords="184,171,259,197"/>
+<area shape="rect" id="node4" title=" " alt="" coords="307,171,381,197"/>
+<area shape="rect" id="node5" title=" " alt="" coords="435,171,501,197"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title=" " alt="" coords="527,171,678,197"/>
+<area shape="rect" id="node7" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="507,5,651,32"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="601,81,751,108"/>
+</map>

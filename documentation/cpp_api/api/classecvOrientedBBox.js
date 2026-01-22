@@ -6,6 +6,7 @@ var classecvOrientedBBox =
     [ "CreateFromAxisAlignedBoundingBox", "classecvOrientedBBox.html#aabe26d353a5b5aa71636736f9057b825", null ],
     [ "CreateFromPoints", "classecvOrientedBBox.html#ad8f0bf542d86b1c81bd7ae2c2b68e16c", null ],
     [ "CreateFromPoints", "classecvOrientedBBox.html#a9cedc77c169fb20c6e05622a043d057e", null ],
+    [ "draw", "classecvOrientedBBox.html#aae1ee8f281d376ef91745ea80732cc37", null ],
     [ "draw", "classecvOrientedBBox.html#acd24f2ff4d1c8700f7b8dd8474a3f5a4", null ],
     [ "GetAxisAlignedBoundingBox", "classecvOrientedBBox.html#a034664c367fcc5b78ee6ffec429bbb1f", null ],
     [ "GetCenter", "classecvOrientedBBox.html#a67ff45b192fc568e70b921322a10994b", null ],

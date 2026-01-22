@@ -1,0 +1,6 @@
+<map id="cloudViewer::ScalarField" name="cloudViewer::ScalarField">
+<area shape="rect" id="node1" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="95,80,277,107"/>
+<area shape="rect" id="node4" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="133,155,239,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,196,32"/>
+<area shape="rect" id="node3" href="$classCCShareable.html" title=" " alt="" coords="220,5,325,32"/>
+</map>

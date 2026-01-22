@@ -2,11 +2,25 @@
  "cells": [
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 1,
    "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:53.753380Z",
+     "iopub.status.busy": "2026-01-22T14:04:53.753183Z",
+     "iopub.status.idle": "2026-01-22T14:04:55.137315Z",
+     "shell.execute_reply": "2026-01-22T14:04:55.136671Z"
+    },
     "nbsphinx": "hidden"
    },
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Using external CloudViewer-ML in /root/CloudViewer-ML\n"
+     ]
+    }
+   ],
    "source": [
     "import cloudViewer as cv3d\n",
     "import numpy as np\n",
@@ -64,8 +78,15 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
+   "execution_count": 2,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:55.140407Z",
+     "iopub.status.busy": "2026-01-22T14:04:55.139896Z",
+     "iopub.status.idle": "2026-01-22T14:04:55.144324Z",
+     "shell.execute_reply": "2026-01-22T14:04:55.143775Z"
+    }
+   },
    "outputs": [],
    "source": [
     "def draw_registration_result(source, target, transformation):\n",
@@ -83,9 +104,39 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
+   "execution_count": 3,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:55.146345Z",
+     "iopub.status.busy": "2026-01-22T14:04:55.146155Z",
+     "iopub.status.idle": "2026-01-22T14:04:55.815564Z",
+     "shell.execute_reply": "2026-01-22T14:04:55.814658Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;33m[CloudViewer WARNING] GLFW Error: X11: The DISPLAY environment variable is missing\u001b[0;m\n",
+      "\u001b[1;33m[CloudViewer WARNING] GLFW initialized for headless rendering.\u001b[0;m\n",
+      "\u001b[1;33m[CloudViewer WARNING] Failed to initialize GLEW: Missing GL version (1)\u001b[0;m\n"
+     ]
+    },
+    {
+     "ename": "AttributeError",
+     "evalue": "'NoneType' object has no attribute 'point_show_normal'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mAttributeError\u001b[0m                            Traceback (most recent call last)",
+      "Cell \u001b[0;32mIn[3], line 7\u001b[0m\n\u001b[1;32m      3\u001b[0m target \u001b[38;5;241m=\u001b[39m cv3d\u001b[38;5;241m.\u001b[39mio\u001b[38;5;241m.\u001b[39mread_point_cloud(demo_icp_pcds\u001b[38;5;241m.\u001b[39mpaths[\u001b[38;5;241m1\u001b[39m])\n\u001b[1;32m      4\u001b[0m trans_init \u001b[38;5;241m=\u001b[39m np\u001b[38;5;241m.\u001b[39masarray([[\u001b[38;5;241m0.862\u001b[39m, \u001b[38;5;241m0.011\u001b[39m, \u001b[38;5;241m-\u001b[39m\u001b[38;5;241m0.507\u001b[39m, \u001b[38;5;241m0.5\u001b[39m],\n\u001b[1;32m      5\u001b[0m                          [\u001b[38;5;241m-\u001b[39m\u001b[38;5;241m0.139\u001b[39m, \u001b[38;5;241m0.967\u001b[39m, \u001b[38;5;241m-\u001b[39m\u001b[38;5;241m0.215\u001b[39m, \u001b[38;5;241m0.7\u001b[39m],\n\u001b[1;32m      6\u001b[0m                          [\u001b[38;5;241m0.487\u001b[39m, \u001b[38;5;241m0.255\u001b[39m, \u001b[38;5;241m0.835\u001b[39m, \u001b[38;5;241m-\u001b[39m\u001b[38;5;241m1.4\u001b[39m], [\u001b[38;5;241m0.0\u001b[39m, \u001b[38;5;241m0.0\u001b[39m, \u001b[38;5;241m0.0\u001b[39m, \u001b[38;5;241m1.0\u001b[39m]])\n\u001b[0;32m----> 7\u001b[0m \u001b[43mdraw_registration_result\u001b[49m\u001b[43m(\u001b[49m\u001b[43msource\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mtarget\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mtrans_init\u001b[49m\u001b[43m)\u001b[49m\n",
+      "Cell \u001b[0;32mIn[2], line 7\u001b[0m, in \u001b[0;36mdraw_registration_result\u001b[0;34m(source, target, transformation)\u001b[0m\n\u001b[1;32m      5\u001b[0m target_temp\u001b[38;5;241m.\u001b[39mpaint_uniform_color([\u001b[38;5;241m0\u001b[39m, \u001b[38;5;241m0.651\u001b[39m, \u001b[38;5;241m0.929\u001b[39m])\n\u001b[1;32m      6\u001b[0m source_temp\u001b[38;5;241m.\u001b[39mtransform(transformation)\n\u001b[0;32m----> 7\u001b[0m \u001b[43mcv3d\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mvisualization\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mdraw_geometries\u001b[49m\u001b[43m(\u001b[49m\u001b[43m[\u001b[49m\u001b[43msource_temp\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mtarget_temp\u001b[49m\u001b[43m]\u001b[49m\u001b[43m,\u001b[49m\n\u001b[1;32m      8\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mzoom\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[38;5;241;43m0.4459\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[1;32m      9\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mfront\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43m[\u001b[49m\u001b[38;5;241;43m0.9288\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.2951\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.2242\u001b[39;49m\u001b[43m]\u001b[49m\u001b[43m,\u001b[49m\n\u001b[1;32m     10\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mlookat\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43m[\u001b[49m\u001b[38;5;241;43m1.6784\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m2.0612\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m1.4451\u001b[39;49m\u001b[43m]\u001b[49m\u001b[43m,\u001b[49m\n\u001b[1;32m     11\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mup\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43m[\u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.3402\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.9189\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.1996\u001b[39;49m\u001b[43m]\u001b[49m\u001b[43m)\u001b[49m\n",
+      "File \u001b[0;32m~/ACloudViewer/docs/source/tutorial/pipelines/../cloudViewer_tutorial.py:40\u001b[0m, in \u001b[0;36mjupyter_draw_geometries\u001b[0;34m(geoms, window_name, width, height, left, top, point_show_normal, mesh_show_wireframe, mesh_show_back_face, lookat, up, front, zoom)\u001b[0m\n\u001b[1;32m     31\u001b[0m vis \u001b[38;5;241m=\u001b[39m cv3d\u001b[38;5;241m.\u001b[39mvisualization\u001b[38;5;241m.\u001b[39mVisualizer()\n\u001b[1;32m     32\u001b[0m vis\u001b[38;5;241m.\u001b[39mcreate_window(\n\u001b[1;32m     33\u001b[0m     window_name\u001b[38;5;241m=\u001b[39mwindow_name,\n\u001b[1;32m     34\u001b[0m     width\u001b[38;5;241m=\u001b[39mwidth,\n\u001b[0;32m   (...)\u001b[0m\n\u001b[1;32m     38\u001b[0m     visible\u001b[38;5;241m=\u001b[39m\u001b[38;5;28;01mTrue\u001b[39;00m,  \u001b[38;5;66;03m# If false, capture_screen_float_buffer() won't work.\u001b[39;00m\n\u001b[1;32m     39\u001b[0m )\n\u001b[0;32m---> 40\u001b[0m \u001b[43mvis\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_render_option\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mpoint_show_normal\u001b[49m \u001b[38;5;241m=\u001b[39m point_show_normal\n\u001b[1;32m     41\u001b[0m vis\u001b[38;5;241m.\u001b[39mget_render_option()\u001b[38;5;241m.\u001b[39mmesh_show_wireframe \u001b[38;5;241m=\u001b[39m mesh_show_wireframe\n\u001b[1;32m     42\u001b[0m vis\u001b[38;5;241m.\u001b[39mget_render_option()\u001b[38;5;241m.\u001b[39mmesh_show_back_face \u001b[38;5;241m=\u001b[39m mesh_show_back_face\n",
+      "\u001b[0;31mAttributeError\u001b[0m: 'NoneType' object has no attribute 'point_show_normal'"
+     ]
+    }
+   ],
    "source": [
     "demo_icp_pcds = cv3d.data.DemoICPPointClouds()\n",
     "source = cv3d.io.read_point_cloud(demo_icp_pcds.paths[0])\n",
@@ -312,7 +363,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.7.11"
+   "version": "3.10.12"
   }
  },
  "nbformat": 4,

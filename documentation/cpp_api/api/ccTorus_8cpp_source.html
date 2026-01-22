@@ -138,11 +138,11 @@ $(document).ready(function(){initNavTree('ccTorus_8cpp_source.html',''); initRes
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="stringliteral">        torus = pycc.ccTorus(5.0, 10.0)</span></div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="stringliteral">    )doc&quot;)</span></div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="stringliteral">        .def(</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="stringliteral">            py::init&lt;PointCoordinateType,</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="stringliteral">                     PointCoordinateType,</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="stringliteral">            py::init&lt;<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>,</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="stringliteral">                     <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>,</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="stringliteral">                     </span><span class="keywordtype">double</span>,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                     <span class="keywordtype">bool</span>,</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                     PointCoordinateType,</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                     <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>,</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classccGLMatrix.html">ccGLMatrix</a> *,</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                     QString,</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                     <span class="keywordtype">unsigned</span>&gt;(),</div>
@@ -156,6 +156,7 @@ $(document).ready(function(){initNavTree('ccTorus_8cpp_source.html',''); initRes
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            <span class="stringliteral">&quot;precision&quot;</span>_a = []() { <span class="keywordflow">return</span> <a class="code" href="classccTorus.html#a4346ee4d3da486499c9196731d96e20c">ccTorus::DEFAULT_DRAWING_PRECISION</a>; }());</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}</div>
 <div class="ttc" id="aCVConst_8h_html_a7dd8de910244c0c514f90d00e2854724"><div class="ttname"><a href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a></div><div class="ttdeci">constexpr double M_PI</div><div class="ttdoc">Pi.</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00019">CVConst.h:19</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="accTorus_8cpp_html_ac81ed8e625bd86c25f798fc675130e40"><div class="ttname"><a href="ccTorus_8cpp.html#ac81ed8e625bd86c25f798fc675130e40">define_ccTorus</a></div><div class="ttdeci">void define_ccTorus(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="ccTorus_8cpp_source.html#l00019">ccTorus.cpp:19</a></div></div>
 <div class="ttc" id="aclassccGLMatrix_html"><div class="ttname"><a href="classccGLMatrix.html">ccGLMatrix</a></div><div class="ttdoc">Float version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00019">ecvGLMatrix.h:19</a></div></div>
 <div class="ttc" id="aclassccTorus_html_a4346ee4d3da486499c9196731d96e20c"><div class="ttname"><a href="classccTorus.html#a4346ee4d3da486499c9196731d96e20c">ccTorus::DEFAULT_DRAWING_PRECISION</a></div><div class="ttdeci">static const unsigned DEFAULT_DRAWING_PRECISION</div><div class="ttdoc">Default drawing precision.</div><div class="ttdef"><b>Definition:</b> <a href="ecvTorus_8h_source.html#l00021">ecvTorus.h:21</a></div></div>
@@ -167,7 +168,7 @@ $(document).ready(function(){initNavTree('ccTorus_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="dir_dbcd8066c330fac67641cc3989022fe2.html">qcc_db</a></li><li class="navelem"><a class="el" href="ccTorus_8cpp.html">ccTorus.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

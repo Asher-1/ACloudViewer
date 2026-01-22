@@ -346,7 +346,6 @@ var annotated_dup =
           [ "RaycastingScene", "classcloudViewer_1_1t_1_1geometry_1_1RaycastingScene.html", "classcloudViewer_1_1t_1_1geometry_1_1RaycastingScene" ],
           [ "RGBDImage", "classcloudViewer_1_1t_1_1geometry_1_1RGBDImage.html", "classcloudViewer_1_1t_1_1geometry_1_1RGBDImage" ],
           [ "TensorMap", "classcloudViewer_1_1t_1_1geometry_1_1TensorMap.html", "classcloudViewer_1_1t_1_1geometry_1_1TensorMap" ],
-          [ "TupleEdgeHash", "structcloudViewer_1_1t_1_1geometry_1_1TupleEdgeHash.html", "structcloudViewer_1_1t_1_1geometry_1_1TupleEdgeHash" ],
           [ "TriangleMesh", "classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html", "classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh" ],
           [ "VoxelBlockGrid", "classcloudViewer_1_1t_1_1geometry_1_1VoxelBlockGrid.html", "classcloudViewer_1_1t_1_1geometry_1_1VoxelBlockGrid" ]
         ] ],
@@ -400,10 +399,6 @@ var annotated_dup =
         [ "filesystem", "namespacecloudViewer_1_1utility_1_1filesystem.html", [
           [ "CFile", "classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html", "classcloudViewer_1_1utility_1_1filesystem_1_1CFile" ]
         ] ],
-        [ "hash_tuple", "namespacecloudViewer_1_1utility_1_1hash__tuple.html", [
-          [ "hash", "structcloudViewer_1_1utility_1_1hash__tuple_1_1hash.html", "structcloudViewer_1_1utility_1_1hash__tuple_1_1hash" ],
-          [ "hash< std::tuple< TT... > >", "structcloudViewer_1_1utility_1_1hash__tuple_1_1hash_3_01std_1_1tuple_3_01TT_8_8_8_01_4_01_4.html", "structcloudViewer_1_1utility_1_1hash__tuple_1_1hash_3_01std_1_1tuple_3_01TT_8_8_8_01_4_01_4" ]
-        ] ],
         [ "random", "namespacecloudViewer_1_1utility_1_1random.html", [
           [ "RandomContext", "classcloudViewer_1_1utility_1_1random_1_1RandomContext.html", "classcloudViewer_1_1utility_1_1random_1_1RandomContext" ],
           [ "UniformIntGenerator", "classcloudViewer_1_1utility_1_1random_1_1UniformIntGenerator.html", "classcloudViewer_1_1utility_1_1random_1_1UniformIntGenerator" ],
@@ -419,6 +414,8 @@ var annotated_dup =
         [ "Overloaded< T1, Ts... >", "structcloudViewer_1_1utility_1_1Overloaded_3_01T1_00_01Ts_8_8_8_01_4.html", "structcloudViewer_1_1utility_1_1Overloaded_3_01T1_00_01Ts_8_8_8_01_4" ],
         [ "Overloaded< T1 >", "structcloudViewer_1_1utility_1_1Overloaded_3_01T1_01_4.html", "structcloudViewer_1_1utility_1_1Overloaded_3_01T1_01_4" ],
         [ "CPUInfo", "classcloudViewer_1_1utility_1_1CPUInfo.html", "classcloudViewer_1_1utility_1_1CPUInfo" ],
+        [ "hash_tuple", "structcloudViewer_1_1utility_1_1hash__tuple.html", "structcloudViewer_1_1utility_1_1hash__tuple" ],
+        [ "hash_tuple< std::tuple< TT... > >", "structcloudViewer_1_1utility_1_1hash__tuple_3_01std_1_1tuple_3_01TT_8_8_8_01_4_01_4.html", "structcloudViewer_1_1utility_1_1hash__tuple_3_01std_1_1tuple_3_01TT_8_8_8_01_4_01_4" ],
         [ "hash_eigen", "structcloudViewer_1_1utility_1_1hash__eigen.html", "structcloudViewer_1_1utility_1_1hash__eigen" ],
         [ "hash_enum_class", "structcloudViewer_1_1utility_1_1hash__enum__class.html", "structcloudViewer_1_1utility_1_1hash__enum__class" ],
         [ "UniformRandIntGenerator", "classcloudViewer_1_1utility_1_1UniformRandIntGenerator.html", "classcloudViewer_1_1utility_1_1UniformRandIntGenerator" ],
@@ -1408,9 +1405,13 @@ var annotated_dup =
     [ "DistanceMapGenerationDlg", "classDistanceMapGenerationDlg.html", "classDistanceMapGenerationDlg" ],
     [ "DistanceMapGenerationTool", "classDistanceMapGenerationTool.html", "classDistanceMapGenerationTool" ],
     [ "DistinctCtx", "structDistinctCtx.html", "structDistinctCtx" ],
-    [ "DLContext", "structDLContext.html", "structDLContext" ],
     [ "DLDataType", "structDLDataType.html", "structDLDataType" ],
+    [ "DLDevice", "structDLDevice.html", "structDLDevice" ],
     [ "DLManagedTensor", "structDLManagedTensor.html", "structDLManagedTensor" ],
+    [ "DLManagedTensorVersioned", "structDLManagedTensorVersioned.html", "structDLManagedTensorVersioned" ],
+    [ "DLPackExchangeAPI", "structDLPackExchangeAPI.html", "structDLPackExchangeAPI" ],
+    [ "DLPackExchangeAPIHeader", "structDLPackExchangeAPIHeader.html", "structDLPackExchangeAPIHeader" ],
+    [ "DLPackVersion", "structDLPackVersion.html", "structDLPackVersion" ],
     [ "DLTensor", "structDLTensor.html", "structDLTensor" ],
     [ "DONSegmentation", "classDONSegmentation.html", "classDONSegmentation" ],
     [ "DONSegmentationDlg", "classDONSegmentationDlg.html", "classDONSegmentationDlg" ],
@@ -1708,8 +1709,8 @@ var annotated_dup =
     [ "PlyOrientedVertex", "classPlyOrientedVertex.html", "classPlyOrientedVertex" ],
     [ "PlyOtherElems", "structPlyOtherElems.html", "structPlyOtherElems" ],
     [ "PlyOtherProp", "structPlyOtherProp.html", "structPlyOtherProp" ],
-    [ "PlyProperty", "structPlyProperty.html", "structPlyProperty" ],
     [ "plyProperty", "structplyProperty.html", "structplyProperty" ],
+    [ "PlyProperty", "structPlyProperty.html", "structPlyProperty" ],
     [ "PlyValueVertex", "classPlyValueVertex.html", "classPlyValueVertex" ],
     [ "PlyVertex", "classPlyVertex.html", "classPlyVertex" ],
     [ "PmaReader", "structPmaReader.html", "structPmaReader" ],

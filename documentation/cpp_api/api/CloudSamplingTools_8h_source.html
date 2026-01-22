@@ -170,7 +170,7 @@ $(document).ready(function(){initNavTree('CloudSamplingTools_8h_source.html','')
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
 <div class="line"><a name="l00164"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CloudSamplingTools.html#a591467ceb89e66a5e47b3704be90ebdd">  164</a></span>&#160;    <span class="keyword">static</span> <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* <a class="code" href="classcloudViewer_1_1CloudSamplingTools.html#a591467ceb89e66a5e47b3704be90ebdd">resampleCloudSpatially</a>(</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* cloud,</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            PointCoordinateType minDistance,</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minDistance,</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html">SFModulationParams</a>&amp; modParams,</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            <a class="code" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a>* <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a> = <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a>* progressCb = <span class="keyword">nullptr</span>);</div>
@@ -186,7 +186,7 @@ $(document).ready(function(){initNavTree('CloudSamplingTools_8h_source.html','')
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
 <div class="line"><a name="l00208"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CloudSamplingTools.html#a44ec142be61ab27069101d0e46736036">  208</a></span>&#160;    <span class="keyword">static</span> <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* <a class="code" href="classcloudViewer_1_1CloudSamplingTools.html#a44ec142be61ab27069101d0e46736036">noiseFilter</a>(</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* cloud,</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            PointCoordinateType kernelRadius,</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> kernelRadius,</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            <span class="keywordtype">double</span> nSigma,</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;            <span class="keywordtype">bool</span> removeIsolatedPoints = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;            <span class="keywordtype">bool</span> useKnn = <span class="keyword">false</span>,</div>
@@ -222,6 +222,7 @@ $(document).ready(function(){initNavTree('CloudSamplingTools_8h_source.html','')
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aCVCoreLibWin_8h_html_a1dafbf7307681e0ae43ca1905b2d2e5c"><div class="ttname"><a href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a></div><div class="ttdeci">#define CV_CORE_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CVCoreLibWin_8h_source.html#l00015">CVCoreLibWin.h:15</a></div></div>
 <div class="ttc" id="aCVToolbox_8h_html"><div class="ttname"><a href="CVToolbox_8h.html">CVToolbox.h</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aDgmOctree_8h_html"><div class="ttname"><a href="DgmOctree_8h.html">DgmOctree.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CVToolbox_html"><div class="ttname"><a href="classcloudViewer_1_1CVToolbox.html">cloudViewer::CVToolbox</a></div><div class="ttdoc">Empty class - for classification purpose only.</div><div class="ttdef"><b>Definition:</b> <a href="CVToolbox_8h_source.html#l00015">CVToolbox.h:15</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CloudSamplingTools_html"><div class="ttname"><a href="classcloudViewer_1_1CloudSamplingTools.html">cloudViewer::CloudSamplingTools</a></div><div class="ttdoc">Several point cloud resampling algorithms (octree-based, random, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="CloudSamplingTools_8h_source.html#l00025">CloudSamplingTools.h:25</a></div></div>
@@ -265,7 +266,7 @@ $(document).ready(function(){initNavTree('CloudSamplingTools_8h_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="CloudSamplingTools_8h.html">CloudSamplingTools.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,6 +1,7 @@
 var classPlyOpenDlg =
 [
-    [ "PlyOpenDlg", "classPlyOpenDlg.html#a5aa96e628d04bc5877cff6e0c4d85b2d", null ],
+    [ "PlyOpenDlg", "classPlyOpenDlg.html#a4b2c57c79d5a19217d6bdcad7df444ea", null ],
+    [ "addAllStdPropsAsSF", "classPlyOpenDlg.html#a0dc0366b82362f1987d09710f271ab9e", null ],
     [ "addSFComboBox", "classPlyOpenDlg.html#a1cbc213c7d723d3e86afca37a4e5e2c6", null ],
     [ "apply", "classPlyOpenDlg.html#a60dee1d72c7fb4e8791616c232ce45aa", null ],
     [ "applyAll", "classPlyOpenDlg.html#a9218a52e648901e804e7ef1dfa56a4ed", null ],

@@ -1,0 +1,10 @@
+<map id="ExtractSIFT" name="ExtractSIFT">
+<area shape="rect" id="node1" title="SIFT keypoints extraction." alt="" coords="281,184,375,211"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="123,95,245,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" id="node5" href="$classSIFTExtractDlg.html" title=" " alt="" coords="269,95,387,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="291,5,365,32"/>
+<area shape="rect" id="node7" title=" " alt="" coords="389,5,528,32"/>
+<area shape="rect" id="node8" title=" " alt="" coords="411,95,469,121"/>
+</map>

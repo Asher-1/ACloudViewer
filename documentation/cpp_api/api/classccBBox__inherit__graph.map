@@ -1,0 +1,9 @@
+<map id="ccBBox" name="ccBBox">
+<area shape="rect" id="node1" title="Bounding box structure." alt="" coords="275,261,346,288"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="172,185,260,212"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,89,122,115"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,89,286,115"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="298,185,494,212"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="310,81,506,123"/>
+</map>

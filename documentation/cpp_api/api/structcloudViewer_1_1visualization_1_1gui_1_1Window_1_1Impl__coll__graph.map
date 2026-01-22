@@ -1,0 +1,10 @@
+<map id="cloudViewer::visualization::gui::Window::Impl" name="cloudViewer::visualization::gui::Window::Impl">
+<area shape="rect" id="node1" title=" " alt="" coords="860,255,1053,297"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1gui_1_1Widget.html" title=" " alt="" coords="447,138,641,179"/>
+<area shape="rect" id="node3" title=" " alt="" coords="471,204,617,231"/>
+<area shape="rect" id="node4" href="$structcloudViewer_1_1visualization_1_1gui_1_1Theme.html" title=" " alt="" coords="447,255,641,297"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1visualization_1_1gui_1_1Color.html" title=" " alt="" coords="5,167,199,209"/>
+<area shape="rect" id="node6" title=" " alt="" coords="73,300,131,327"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1visualization_1_1rendering_1_1FilamentRenderer.html" title=" " alt="" coords="436,385,652,426"/>
+<area shape="rect" id="node8" href="$classcloudViewer_1_1visualization_1_1rendering_1_1Renderer.html" title=" " alt="" coords="5,385,199,426"/>
+</map>

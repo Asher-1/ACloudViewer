@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: /root/ACloudViewer/libs/eCV_db/include/ecvMaterial.h Source File</title>
+<title>ACloudViewer: /root/ACloudViewer/libs/CV_db/include/ecvMaterial.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -114,7 +114,7 @@ $(document).ready(function(){initNavTree('ecvMaterial_8h_source.html',''); initR
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">class </span>QImage;</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">class </span>QOpenGLContext;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classccMaterial.html">   28</a></span>&#160;<span class="keyword">class </span><a class="code" href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a> <a class="code" href="classccMaterial.html">ccMaterial</a> : <span class="keyword">public</span> <a class="code" href="classccSerializableObject.html">ccSerializableObject</a> {</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classccMaterial.html">   28</a></span>&#160;<span class="keyword">class </span><a class="code" href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a> <a class="code" href="classccMaterial.html">ccMaterial</a> : <span class="keyword">public</span> <a class="code" href="classccSerializableObject.html">ccSerializableObject</a> {</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classccMaterial.html#a52c6e12c5509f27bc021038e4b86fdb6">   31</a></span>&#160;    <span class="keyword">typedef</span> QSharedPointer&lt;const ccMaterial&gt; <a class="code" href="classccMaterial.html#a52c6e12c5509f27bc021038e4b86fdb6">CShared</a>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classccMaterial.html#aaf8b5b4031b2a75fb4b2fa5f41acd2ab">   33</a></span>&#160;    <span class="keyword">typedef</span> QSharedPointer&lt;ccMaterial&gt; <a class="code" href="classccMaterial.html#aaf8b5b4031b2a75fb4b2fa5f41acd2ab">Shared</a>;</div>
@@ -292,6 +292,7 @@ $(document).ready(function(){initNavTree('ecvMaterial_8h_source.html',''); initR
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="comment">// Support multiple textures of the same type (e.g., multiple map_Kd)</span></div>
 <div class="line"><a name="l00273"></a><span class="lineno"><a class="line" href="classccMaterial.html#a37cf88b079a420e60ce0166c6d53b65d">  273</a></span>&#160;    std::map&lt;TextureMapType, std::vector&lt;QString&gt;&gt; <a class="code" href="classccMaterial.html#a37cf88b079a420e60ce0166c6d53b65d">m_textureFilenames</a>;</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;};</div>
+<div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aFilamentRenderer_8cpp_html_a60b0c69b08810766e366c4b90031cd0d"><div class="ttname"><a href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a></div><div class="ttdeci">std::shared_ptr&lt; core::Tensor &gt; image</div><div class="ttdef"><b>Definition:</b> <a href="FilamentRenderer_8cpp_source.html#l00184">FilamentRenderer.cpp:184</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
@@ -382,7 +383,6 @@ $(document).ready(function(){initNavTree('ecvMaterial_8h_source.html',''); initR
 <div class="ttc" id="aclassccSerializableObject_html"><div class="ttname"><a href="classccSerializableObject.html">ccSerializableObject</a></div><div class="ttdoc">Serializable object interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00025">ecvSerializableObject.h:25</a></div></div>
 <div class="ttc" id="aclassccSerializableObject_html_a385173fb71d7ee49fa1d3c1573af4992"><div class="ttname"><a href="classccSerializableObject.html#a385173fb71d7ee49fa1d3c1573af4992">ccSerializableObject::LoadedIDMap</a></div><div class="ttdeci">QMultiMap&lt; unsigned, unsigned &gt; LoadedIDMap</div><div class="ttdoc">Map of loaded unique IDs (old ID --&gt; new ID)</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00061">ecvSerializableObject.h:61</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbaTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbaTpl.html">ecvColor::RgbaTpl</a></div><div class="ttdoc">RGBA color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00145">ecvColorTypes.h:145</a></div></div>
-<div class="ttc" id="aeCV__db_8h_html_a9a6d6d5da9760a0b3de8ac5d783f93d0"><div class="ttname"><a href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a></div><div class="ttdeci">#define ECV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="eCV__db_8h_source.html#l00015">eCV_db.h:15</a></div></div>
 <div class="ttc" id="aecvColorTypes_8h_html"><div class="ttname"><a href="ecvColorTypes_8h.html">ecvColorTypes.h</a></div></div>
 <div class="ttc" id="aecvSerializableObject_8h_html"><div class="ttname"><a href="ecvSerializableObject_8h.html">ecvSerializableObject.h</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a368b2158af5862ac284eba820f06632e"><div class="ttname"><a href="namespaceecvColor.html#a368b2158af5862ac284eba820f06632e">ecvColor::OPACITY</a></div><div class="ttdeci">constexpr ColorCompType OPACITY</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00035">ecvColorTypes.h:35</a></div></div>
@@ -391,8 +391,8 @@ $(document).ready(function(){initNavTree('ecvMaterial_8h_source.html',''); initR
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_c4299987a504bc66471641292258c6d3.html">eCV_db</a></li><li class="navelem"><a class="el" href="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html">include</a></li><li class="navelem"><a class="el" href="ecvMaterial_8h.html">ecvMaterial.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvMaterial_8h.html">ecvMaterial.h</a></li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

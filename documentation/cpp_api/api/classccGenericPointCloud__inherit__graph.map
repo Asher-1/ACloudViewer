@@ -1,0 +1,15 @@
+<map id="ccGenericPointCloud" name="ccGenericPointCloud">
+<area shape="rect" id="node1" title="A 3D cloud interface with associated features (color, normals, octree, etc.)" alt="" coords="234,333,390,360"/>
+<area shape="rect" id="node10" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="212,408,412,449"/>
+<area shape="rect" id="node2" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="156,251,279,278"/>
+<area shape="rect" id="node3" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="172,162,260,189"/>
+<area shape="rect" id="node4" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,80,122,107"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" id="node6" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,80,286,107"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="303,244,513,285"/>
+<area shape="rect" id="node8" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="303,155,513,196"/>
+<area shape="rect" id="node9" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="311,80,508,107"/>
+<area shape="rect" id="node11" href="$classccPointCloud.html" title="A 3D cloud and its associated features (color, normals, scalar fields, etc.)" alt="" coords="259,497,365,524"/>
+<area shape="rect" id="node12" href="$classccSNECloud.html" title=" " alt="" coords="196,572,295,599"/>
+<area shape="rect" id="node13" href="$classccSymbolCloud.html" title=" " alt="" coords="319,572,441,599"/>
+</map>

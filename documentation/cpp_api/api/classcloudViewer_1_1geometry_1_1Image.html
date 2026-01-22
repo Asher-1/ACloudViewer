@@ -99,16 +99,36 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1geometry_1_1Image.
 <p>The <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel.">Image</a> class stores image with customizable width, height, num of channels and bytes per channel.  
  <a href="classcloudViewer_1_1geometry_1_1Image.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for cloudViewer::geometry::Image:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1geometry_1_1Image__inherit__graph.png" border="0" usemap="#acloudViewer_1_1geometry_1_1Image_inherit__map" alt="Inheritance graph"/></div>
+<map name="acloudViewer_1_1geometry_1_1Image_inherit__map" id="acloudViewer_1_1geometry_1_1Image_inherit__map">
+<area shape="rect" title="The Image class stores image with customizable width, height, num of channels and bytes per channel." alt="" coords="63,229,236,271"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="105,155,193,181"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,80,122,107"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,80,286,107"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for cloudViewer::geometry::Image:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1geometry_1_1Image__coll__graph.png" border="0" usemap="#acloudViewer_1_1geometry_1_1Image_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1geometry_1_1Image_coll__map" id="acloudViewer_1_1geometry_1_1Image_coll__map">
+<area shape="rect" title="The Image class stores image with customizable width, height, num of channels and bytes per channel." alt="" coords="21,513,194,555"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="63,437,151,464"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="5,132,84,159"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="27,5,182,32"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title=" " alt="" coords="83,183,257,209"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="143,81,296,108"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="249,361,389,388"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="238,272,403,299"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="333,81,477,108"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="345,183,496,209"/>
+<area shape="rect" href="classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="119,272,213,299"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -278,7 +298,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a3817540ce25b70106566ac760c0a2493 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an axis-aligned bounding box of the geometry.  <a href="classccHObject.html#a3817540ce25b70106566ac760c0a2493">More...</a><br /></td></tr>
 <tr class="separator:a3817540ce25b70106566ac760c0a2493 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classecvOrientedBBox.html">ecvOrientedBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">GetOrientedBoundingBox</a> () const</td></tr>
-<tr class="memdesc:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an oriented bounding box of the geometry.  <a href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">More...</a><br /></td></tr>
 <tr class="separator:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad45ba56d6d3ba8398a15886292fd1bce inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccHObject.html">ccHObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#ad45ba56d6d3ba8398a15886292fd1bce">Transform</a> (const Eigen::Matrix4d &amp;transformation)</td></tr>
 <tr class="memdesc:ad45ba56d6d3ba8398a15886292fd1bce inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply transformation (4x4 matrix) to the geometry coordinates.  <a href="classccHObject.html#ad45ba56d6d3ba8398a15886292fd1bce">More...</a><br /></td></tr>
@@ -393,7 +412,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aea53c4efc95be608547a555bf40f795e inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a7d28a89dc197e089208b6b43648b50b7">setPointSizeRecursive</a> (int pSize)</td></tr>
 <tr class="separator:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (PointCoordinateType <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
+<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
 <tr class="separator:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccBBox.html">ccBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">getBB_recursive</a> (bool withGLFeatures=false, bool onlyEnabledChildren=true)</td></tr>
 <tr class="memdesc:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the bounding-box of this entity and it's children.  <a href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">More...</a><br /></td></tr>
@@ -998,7 +1017,7 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel.">Image</a> class stores image with customizable width, height, num of channels and bytes per channel. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00033">33</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00033">33</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 </div><h2 class="groupheader">Member Enumeration Documentation</h2>
 <a id="a16ae0d5d05a3290949a2b504cbdf896c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a16ae0d5d05a3290949a2b504cbdf896c">&#9670;&nbsp;</a></span>ColorToIntensityConversionType</h2>
@@ -1029,7 +1048,7 @@ Additional Inherited Members</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00042">42</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00042">42</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1067,7 +1086,7 @@ Additional Inherited Members</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00052">52</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00052">52</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1098,7 +1117,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Default Constructor. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00067">67</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00067">67</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1125,7 +1144,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00068">68</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00068">68</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1153,7 +1172,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00213">213</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00213">213</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1182,7 +1201,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Returns data size per line (row, or the width) in bytes. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00122">122</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">122</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerRender_8cpp_source.html#l00262">cloudViewer::visualization::Visualizer::CaptureDepthFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00326">cloudViewer::visualization::Visualizer::CaptureDepthImage()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00409">cloudViewer::visualization::Visualizer::CaptureDepthPointCloud()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00185">cloudViewer::visualization::Visualizer::CaptureScreenFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00216">cloudViewer::visualization::Visualizer::CaptureScreenImage()</a>, <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>, and <a class="el" href="Image_8cpp_source.html#l00534">cloudViewer::t::geometry::Image::ToLegacy()</a>.</p>
 
@@ -1469,7 +1488,7 @@ template&lt;typename T &gt; </div>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a24ac246dbdba8740de99af3e72c3b80b">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00082">82</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00082">82</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1675,9 +1694,9 @@ template&lt;typename T &gt; </div>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#afc2bf64b81f149ab17b5c38c1fffedba">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00074">74</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00074">74</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
-<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00153">CV_TYPES::IMAGE2</a>.</p>
+<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00156">CV_TYPES::IMAGE2</a>.</p>
 
 </div>
 </div>
@@ -1797,7 +1816,7 @@ template&lt;typename T &gt; </div>
 
 <p>Returns <code>true</code> if the <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel.">Image</a> has valid data. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00103">103</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00103">103</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -1826,7 +1845,7 @@ template&lt;typename T &gt; </div>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a96bed4c10cf153d6ef0d3dd4838a319f">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00087">87</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00087">87</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>.</p>
 
@@ -1859,7 +1878,7 @@ template&lt;typename T &gt; </div>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a4f18fd99665649ae671fb887e48fcfe4">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00071">71</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00071">71</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 </div>
 </div>
@@ -2045,7 +2064,7 @@ template&lt;typename T &gt; </div>
 
 <p>Prepare <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel.">Image</a> properties and allocate <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel.">Image</a> buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00109">109</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">109</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerRender_8cpp_source.html#l00262">cloudViewer::visualization::Visualizer::CaptureDepthFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00326">cloudViewer::visualization::Visualizer::CaptureDepthImage()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00409">cloudViewer::visualization::Visualizer::CaptureDepthPointCloud()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00185">cloudViewer::visualization::Visualizer::CaptureScreenFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00216">cloudViewer::visualization::Visualizer::CaptureScreenImage()</a>, <a class="el" href="SelectionPolygon_8cpp_source.html#l00071">cloudViewer::visualization::SelectionPolygon::FillPolygon()</a>, <a class="el" href="Odometry_8cpp_source.html#l00023">cloudViewer::pipelines::odometry::InitializeCorrespondenceMap()</a>, and <a class="el" href="Image_8cpp_source.html#l00534">cloudViewer::t::geometry::Image::ToLegacy()</a>.</p>
 
@@ -2130,7 +2149,7 @@ template&lt;typename T &gt; </div>
 
 <p>Number of bytes per channel. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00225">225</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00225">225</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Odometry_8cpp_source.html#l00325">cloudViewer::pipelines::odometry::CheckRGBDImagePair()</a>, <a class="el" href="AzureKinectSensor_8cpp_source.html#l00142">cloudViewer::io::ConvertBGRAToRGB()</a>, <a class="el" href="Odometry_8cpp_source.html#l00175">cloudViewer::pipelines::odometry::ConvertDepthImageToXYZImage()</a>, and <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>.</p>
 
@@ -2150,7 +2169,7 @@ template&lt;typename T &gt; </div>
 
 <p><a class="el" href="classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel.">Image</a> storage buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00227">227</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">227</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerRender_8cpp_source.html#l00262">cloudViewer::visualization::Visualizer::CaptureDepthFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00326">cloudViewer::visualization::Visualizer::CaptureDepthImage()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00409">cloudViewer::visualization::Visualizer::CaptureDepthPointCloud()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00185">cloudViewer::visualization::Visualizer::CaptureScreenFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00216">cloudViewer::visualization::Visualizer::CaptureScreenImage()</a>, <a class="el" href="SelectionPolygon_8cpp_source.html#l00071">cloudViewer::visualization::SelectionPolygon::FillPolygon()</a>, <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>, and <a class="el" href="Image_8cpp_source.html#l00534">cloudViewer::t::geometry::Image::ToLegacy()</a>.</p>
 
@@ -2170,7 +2189,7 @@ template&lt;typename T &gt; </div>
 
 <p>Height of the image. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00221">221</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">221</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerRender_8cpp_source.html#l00262">cloudViewer::visualization::Visualizer::CaptureDepthFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00326">cloudViewer::visualization::Visualizer::CaptureDepthImage()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00409">cloudViewer::visualization::Visualizer::CaptureDepthPointCloud()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00185">cloudViewer::visualization::Visualizer::CaptureScreenFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00216">cloudViewer::visualization::Visualizer::CaptureScreenImage()</a>, <a class="el" href="Odometry_8cpp_source.html#l00315">cloudViewer::pipelines::odometry::CheckImagePair()</a>, <a class="el" href="Odometry_8cpp_source.html#l00100">cloudViewer::pipelines::odometry::ComputeCorrespondence()</a>, <a class="el" href="AzureKinectSensor_8cpp_source.html#l00142">cloudViewer::io::ConvertBGRAToRGB()</a>, <a class="el" href="Odometry_8cpp_source.html#l00175">cloudViewer::pipelines::odometry::ConvertDepthImageToXYZImage()</a>, <a class="el" href="Odometry_8cpp_source.html#l00086">cloudViewer::pipelines::odometry::CountCorrespondence()</a>, <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>, <a class="el" href="Odometry_8cpp_source.html#l00023">cloudViewer::pipelines::odometry::InitializeCorrespondenceMap()</a>, <a class="el" href="Odometry_8cpp_source.html#l00067">cloudViewer::pipelines::odometry::MergeCorrespondenceMaps()</a>, <a class="el" href="Odometry_8cpp_source.html#l00269">cloudViewer::pipelines::odometry::NormalizeIntensity()</a>, and <a class="el" href="Image_8cpp_source.html#l00534">cloudViewer::t::geometry::Image::ToLegacy()</a>.</p>
 
@@ -2190,7 +2209,7 @@ template&lt;typename T &gt; </div>
 
 <p>Number of chanels in the image. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00223">223</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00223">223</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Odometry_8cpp_source.html#l00325">cloudViewer::pipelines::odometry::CheckRGBDImagePair()</a>, <a class="el" href="AzureKinectSensor_8cpp_source.html#l00142">cloudViewer::io::ConvertBGRAToRGB()</a>, <a class="el" href="Odometry_8cpp_source.html#l00175">cloudViewer::pipelines::odometry::ConvertDepthImageToXYZImage()</a>, and <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>.</p>
 
@@ -2210,14 +2229,14 @@ template&lt;typename T &gt; </div>
 
 <p>Width of the image. </p>
 
-<p class="definition">Definition at line <a class="el" href="eCV__db_2include_2Image_8h_source.html#l00219">219</a> of file <a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CV__db_2include_2Image_8h_source.html#l00219">219</a> of file <a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerRender_8cpp_source.html#l00262">cloudViewer::visualization::Visualizer::CaptureDepthFloatBuffer()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00326">cloudViewer::visualization::Visualizer::CaptureDepthImage()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00409">cloudViewer::visualization::Visualizer::CaptureDepthPointCloud()</a>, <a class="el" href="Odometry_8cpp_source.html#l00315">cloudViewer::pipelines::odometry::CheckImagePair()</a>, <a class="el" href="Odometry_8cpp_source.html#l00100">cloudViewer::pipelines::odometry::ComputeCorrespondence()</a>, <a class="el" href="AzureKinectSensor_8cpp_source.html#l00142">cloudViewer::io::ConvertBGRAToRGB()</a>, <a class="el" href="Odometry_8cpp_source.html#l00175">cloudViewer::pipelines::odometry::ConvertDepthImageToXYZImage()</a>, <a class="el" href="Odometry_8cpp_source.html#l00086">cloudViewer::pipelines::odometry::CountCorrespondence()</a>, <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>, <a class="el" href="Odometry_8cpp_source.html#l00023">cloudViewer::pipelines::odometry::InitializeCorrespondenceMap()</a>, <a class="el" href="Odometry_8cpp_source.html#l00067">cloudViewer::pipelines::odometry::MergeCorrespondenceMaps()</a>, and <a class="el" href="Odometry_8cpp_source.html#l00269">cloudViewer::pipelines::odometry::NormalizeIntensity()</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_db/include/<a class="el" href="eCV__db_2include_2Image_8h_source.html">Image.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="CV__db_2include_2Image_8h_source.html">Image.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -2225,7 +2244,7 @@ template&lt;typename T &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1geometry.html">geometry</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">Image</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

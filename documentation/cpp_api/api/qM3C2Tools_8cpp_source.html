@@ -102,7 +102,7 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Jacobi_8h.html">Jacobi.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Neighbourhood_8h.html">Neighbourhood.h</a>&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">// ECV_DB_LIB</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">// CV_DB_LIB</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvAdvancedTypes_8h.html">ecvAdvancedTypes.h</a>&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvGenericPointCloud_8h.html">ecvGenericPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
@@ -322,7 +322,7 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        }</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    }</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    PointCoordinateType biggestRadius =</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> biggestRadius =</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;            sortedRadii.back();  <span class="comment">// we extract the biggest neighborhood</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> <a class="code" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a> =</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            theOctree-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a8b57ec3c21c660206bd3355dc2871a0b">findBestLevelForAGivenNeighbourhoodSizeExtraction</a>(</div>
@@ -408,11 +408,11 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    <span class="comment">// find nearest point in &#39;orientation cloud&#39;</span></div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    <span class="comment">//(brute force: we don&#39;t expect much points!)</span></div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> orientation(0, 0, 1);</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    PointCoordinateType minSquareDist = 0;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minSquareDist = 0;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> j = 0; j &lt; <a class="code" href="qM3C2Tools_8cpp.html#a570aa5710e132c4c29d8e0a43eeaa5e1">s_normOriWithCloud</a>.orientationCloud-&gt;size(); ++j) {</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* Q = <a class="code" href="qM3C2Tools_8cpp.html#a570aa5710e132c4c29d8e0a43eeaa5e1">s_normOriWithCloud</a>.orientationCloud-&gt;getPoint(j);</div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> PQ = (*Q - *P);</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;        PointCoordinateType squareDist = PQ.<a class="code" href="classVector3Tpl.html#a1ac91ab0a155e72a6892e130912e6d44">norm2</a>();</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;        <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> squareDist = PQ.<a class="code" href="classVector3Tpl.html#a1ac91ab0a155e72a6892e130912e6d44">norm2</a>();</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        <span class="keywordflow">if</span> (j == 0 || squareDist &lt; minSquareDist) {</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            orientation = PQ;</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;            minSquareDist = squareDist;</div>
@@ -670,9 +670,9 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;        probingCount = std::max&lt;unsigned&gt;(probingCount, 10);</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160; </div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;        <span class="comment">// starting scale = smallest octree cell size!</span></div>
-<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;        PointCoordinateType baseScale =</div>
+<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;        <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> baseScale =</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;                octree1-&gt;getCellSize(<a class="code" href="classcloudViewer_1_1DgmOctree.html#a2eada4ab067e6b244e2138e07aba7a8a">ccOctree::MAX_OCTREE_LEVEL</a>);</div>
-<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;        PointCoordinateType scale = baseScale;</div>
+<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;        <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> scale = baseScale;</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160; </div>
 <div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;        <span class="keywordtype">bool</span> hasBestNormLevel = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;        <span class="keywordtype">bool</span> hasBestProjLevel = <span class="keyword">false</span>;</div>
@@ -728,7 +728,7 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;                    }</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160; </div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;                    <a class="code" href="classcloudViewer_1_1Neighbourhood.html">cloudViewer::Neighbourhood</a> Yk(&amp;neighborCloud);</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;                    <span class="keyword">const</span> PointCoordinateType* lsPlane = Yk.<a class="code" href="classcloudViewer_1_1Neighbourhood.html#a37efa2e416c5914854c19d62d165f36b">getLSPlane</a>();</div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;                    <span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>* lsPlane = Yk.<a class="code" href="classcloudViewer_1_1Neighbourhood.html#a37efa2e416c5914854c19d62d165f36b">getLSPlane</a>();</div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;                    <span class="keywordflow">if</span> (lsPlane) {</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;                        ScalarType d = <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a6c1162d5062dd92363a28cd33eac0d71">cloudViewer::DistanceComputationTools::</a></div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a6c1162d5062dd92363a28cd33eac0d71">                                computePoint2PlaneDistance</a>(P, lsPlane);</div>
@@ -869,6 +869,7 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;    <span class="keywordflow">return</span> success;</div>
 <div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;}</div>
 <div class="ttc" id="aCVConst_8h_html_aaa9d7ace0c01a72fa505949da3727f7d"><div class="ttname"><a href="CVConst_8h.html#aaa9d7ace0c01a72fa505949da3727f7d">NAN_VALUE</a></div><div class="ttdeci">constexpr ScalarType NAN_VALUE</div><div class="ttdoc">NaN as a ScalarType value.</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00076">CVConst.h:76</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aDistanceComputationTools_8h_html"><div class="ttname"><a href="DistanceComputationTools_8h.html">DistanceComputationTools.h</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aJacobi_8h_html"><div class="ttname"><a href="Jacobi_8h.html">Jacobi.h</a></div></div>
@@ -897,7 +898,7 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div class="ttc" id="aclassccGenericPointCloud_html_a918244f8ab192c464dfcc69b8ccb2b2c"><div class="ttname"><a href="classccGenericPointCloud.html#a918244f8ab192c464dfcc69b8ccb2b2c">ccGenericPointCloud::getOctreeProxy</a></div><div class="ttdeci">virtual ccOctreeProxy * getOctreeProxy() const</div><div class="ttdoc">Returns the associated octree proxy (if any)</div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html_abce9d67b82fddacfcb10f79930672938"><div class="ttname"><a href="classccGenericPointCloud.html#abce9d67b82fddacfcb10f79930672938">ccGenericPointCloud::getOwnBB</a></div><div class="ttdeci">ccBBox getOwnBB(bool withGLFeatures=false) override</div><div class="ttdoc">Returns the entity's own bounding-box.</div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html_accfd073e6344928840a5b5ed1e1eda0e"><div class="ttname"><a href="classccGenericPointCloud.html#accfd073e6344928840a5b5ed1e1eda0e">ccGenericPointCloud::getOctree</a></div><div class="ttdeci">virtual ccOctree::Shared getOctree() const</div><div class="ttdoc">Returns the associated octree (if any)</div></div>
-<div class="ttc" id="aclassccHObject_html_aad8e05c6068a3a8089f1fdce795c3066"><div class="ttname"><a href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">ccHObject::getParent</a></div><div class="ttdeci">ccHObject * getParent() const</div><div class="ttdoc">Returns parent object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00246">ecvHObject.h:246</a></div></div>
+<div class="ttc" id="aclassccHObject_html_aad8e05c6068a3a8089f1fdce795c3066"><div class="ttname"><a href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">ccHObject::getParent</a></div><div class="ttdeci">ccHObject * getParent() const</div><div class="ttdoc">Returns parent object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00245">ecvHObject.h:245</a></div></div>
 <div class="ttc" id="aclassccNormalVectors_html_aa667b103fb4f78fdeb688e64558988ca"><div class="ttname"><a href="classccNormalVectors.html#aa667b103fb4f78fdeb688e64558988ca">ccNormalVectors::GetNormal</a></div><div class="ttdeci">static const CCVector3 &amp; GetNormal(unsigned normIndex)</div><div class="ttdoc">Static access to ccNormalVectors::getNormal.</div><div class="ttdef"><b>Definition:</b> <a href="ecvNormalVectors_8h_source.html#l00037">ecvNormalVectors.h:37</a></div></div>
 <div class="ttc" id="aclassccNormalVectors_html_adf6988b9e1a9e33f2b2a593f90497b2d"><div class="ttname"><a href="classccNormalVectors.html#adf6988b9e1a9e33f2b2a593f90497b2d">ccNormalVectors::GetNormIndex</a></div><div class="ttdeci">static CompressedNormType GetNormIndex(const PointCoordinateType N[])</div><div class="ttdoc">Returns the compressed index corresponding to a normal vector.</div></div>
 <div class="ttc" id="aclassccOctree_html_af435f6e496610de74232af94a213fc29"><div class="ttname"><a href="classccOctree.html#af435f6e496610de74232af94a213fc29">ccOctree::Shared</a></div><div class="ttdeci">QSharedPointer&lt; ccOctree &gt; Shared</div><div class="ttdoc">Shared pointer.</div><div class="ttdef"><b>Definition:</b> <a href="ecvOctree_8h_source.html#l00032">ecvOctree.h:32</a></div></div>
@@ -984,7 +985,7 @@ $(document).ready(function(){initNavTree('qM3C2Tools_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_496720c7e7870a9ab5c24efb39eb21c7.html">qM3C2</a></li><li class="navelem"><a class="el" href="dir_7b9527848eb4b4d952169a46807f709b.html">src</a></li><li class="navelem"><a class="el" href="qM3C2Tools_8cpp.html">qM3C2Tools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:05 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

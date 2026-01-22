@@ -20,6 +20,7 @@ var classcloudViewer_1_1geometry_1_1VoxelGrid =
     [ "CreateFromPointCloudWithinBounds", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a86a670a3c01e525c8d60b2c9d20fccdb", null ],
     [ "CreateFromTriangleMesh", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a5779d8d90260f34246d4a07fa0d1efda", null ],
     [ "CreateFromTriangleMeshWithinBounds", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#afb210f6b812ca4179b88c54fab049f81", null ],
+    [ "GetAllVoxelCorners", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a4df42546cdb1c914ec829aa66a07ca8e", null ],
     [ "GetAxisAlignedBoundingBox", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a3439107bafeaf4b1906a5f2c3577df1f", null ],
     [ "GetCenter", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#aa125ed8939e8fcf6dbe04e7d346b8b78", null ],
     [ "getClassID", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#afd87fd1ea46b1f32ae08611a20791dff", null ],
@@ -44,6 +45,7 @@ var classcloudViewer_1_1geometry_1_1VoxelGrid =
     [ "Transform", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#acb34da558af46b0888b832a079c50ef1", null ],
     [ "Translate", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#aaef8879b5e29e260b22daa579e2c16ce", null ],
     [ "origin_", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a9d5b7d5657edaa81a2e266bd25939588", null ],
+    [ "rotation_", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a0f58c9792adf0e37f6998da631d1ce37", null ],
     [ "voxel_size_", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a4c07d21fe3b298b3a8395bf09f6b51eb", null ],
     [ "voxels_", "classcloudViewer_1_1geometry_1_1VoxelGrid.html#a4aa5c353e843543d0d0650c3c22ac9f0", null ]
 ];

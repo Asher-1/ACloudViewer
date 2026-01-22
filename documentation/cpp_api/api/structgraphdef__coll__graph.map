@@ -1,0 +1,8 @@
+<map id="graphdef" name="graphdef">
+<area shape="rect" id="node1" title=" " alt="" coords="131,185,211,212"/>
+<area shape="rect" id="node2" href="$structvrinfodef.html" title=" " alt="" coords="23,95,105,121"/>
+<area shape="rect" id="node3" href="$structvedegreedef.html" title=" " alt="" coords="5,5,109,32"/>
+<area shape="rect" id="node4" href="$structrinfodef.html" title=" " alt="" coords="134,95,207,121"/>
+<area shape="rect" id="node5" href="$structedegreedef.html" title=" " alt="" coords="133,5,229,32"/>
+<area shape="rect" id="node6" href="$structnrinfodef.html" title=" " alt="" coords="231,95,313,121"/>
+</map>

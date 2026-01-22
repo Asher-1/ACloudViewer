@@ -118,11 +118,13 @@ $(document).ready(function(){initNavTree('SYCLUtils_8h_source.html',''); initRes
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;std::vector&lt;Device&gt; <a class="code" href="namespacecloudViewer_1_1core_1_1sy.html#acbd5d2520424e36c5eedc0e67e6bd6f1">GetAvailableSYCLDevices</a>();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1core_1_1sy.html#a21c2c52e25958fe9ee298abfbc944ecf">enablePersistentJITCache</a>();</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;}  <span class="comment">// namespace sy</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;}  <span class="comment">// namespace core</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1core_1_1sy.html#afb35aa626f8fbff33cefe365a0cf5164">   48</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="namespacecloudViewer_1_1core_1_1sy.html#afb35aa626f8fbff33cefe365a0cf5164">GetDeviceCount</a>() { <span class="keywordflow">return</span> <a class="code" href="namespacecloudViewer_1_1core_1_1sy.html#acbd5d2520424e36c5eedc0e67e6bd6f1">GetAvailableSYCLDevices</a>().size(); }</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1core_1_1sy.html#a21c2c52e25958fe9ee298abfbc944ecf">enablePersistentJITCache</a>();</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}  <span class="comment">// namespace sy</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;}  <span class="comment">// namespace core</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aDevice_8h_html"><div class="ttname"><a href="Device_8h.html">Device.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_a21c2c52e25958fe9ee298abfbc944ecf"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#a21c2c52e25958fe9ee298abfbc944ecf">cloudViewer::core::sy::enablePersistentJITCache</a></div><div class="ttdeci">void enablePersistentJITCache()</div><div class="ttdef"><b>Definition:</b> <a href="SYCLUtils_8cpp_source.html#l00238">SYCLUtils.cpp:238</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_a7d91c496899c9b5ef904d3a2c901efc1"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#a7d91c496899c9b5ef904d3a2c901efc1">cloudViewer::core::sy::IsAvailable</a></div><div class="ttdeci">bool IsAvailable()</div><div class="ttdoc">Returns true if there is at least one SYCL device available.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLUtils_8cpp_source.html#l00200">SYCLUtils.cpp:200</a></div></div>
@@ -131,6 +133,7 @@ $(document).ready(function(){initNavTree('SYCLUtils_8h_source.html',''); initRes
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_ac62b98cb2a64a4151095a1401b58016a"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#ac62b98cb2a64a4151095a1401b58016a">cloudViewer::core::sy::SYCLDemo</a></div><div class="ttdeci">int SYCLDemo()</div><div class="ttdef"><b>Definition:</b> <a href="SYCLUtils_8cpp_source.html#l00034">SYCLUtils.cpp:34</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_acbd5d2520424e36c5eedc0e67e6bd6f1"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#acbd5d2520424e36c5eedc0e67e6bd6f1">cloudViewer::core::sy::GetAvailableSYCLDevices</a></div><div class="ttdeci">std::vector&lt; Device &gt; GetAvailableSYCLDevices()</div><div class="ttdoc">Return a list of available SYCL devices.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLUtils_8cpp_source.html#l00230">SYCLUtils.cpp:230</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_af0e2230d22e812b999642b459df3560e"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#af0e2230d22e812b999642b459df3560e">cloudViewer::core::sy::PrintSYCLDevices</a></div><div class="ttdeci">void PrintSYCLDevices(bool print_all)</div><div class="ttdef"><b>Definition:</b> <a href="SYCLUtils_8cpp_source.html#l00122">SYCLUtils.cpp:122</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_afb35aa626f8fbff33cefe365a0cf5164"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#afb35aa626f8fbff33cefe365a0cf5164">cloudViewer::core::sy::GetDeviceCount</a></div><div class="ttdeci">size_t GetDeviceCount()</div><div class="ttdoc">Return the number of available SYCL devices.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLUtils_8h_source.html#l00048">SYCLUtils.h:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -138,7 +141,7 @@ $(document).ready(function(){initNavTree('SYCLUtils_8h_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="SYCLUtils_8h.html">SYCLUtils.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

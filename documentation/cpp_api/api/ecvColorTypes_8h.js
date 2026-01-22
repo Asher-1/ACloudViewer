@@ -23,7 +23,7 @@ var ecvColorTypes_8h =
     [ "darker", "ecvColorTypes_8h.html#aadd4058d0dfa01fb46ac764637465caf", null ],
     [ "darkest", "ecvColorTypes_8h.html#a646e42c2f18e1471ed8ea284225f3980", null ],
     [ "darkGrey", "ecvColorTypes_8h.html#a64164ead18a6936024dfb26322a147d9", null ],
-    [ "defaultBkgColor", "ecvColorTypes_8h.html#abf5402aeb9a427836ebde5a143966648", null ],
+    [ "defaultBkgColor", "ecvColorTypes_8h.html#aeccd4f7e9e99740c217fbd165719d815", null ],
     [ "defaultColor", "ecvColorTypes_8h.html#a03818140cf906d39872f4095dfa3ee4a", null ],
     [ "defaultLabelBkgColor", "ecvColorTypes_8h.html#af05de796281578489797609f9f0bacf9", null ],
     [ "defaultLabelMarkerColor", "ecvColorTypes_8h.html#a0768252b9c88db7f988fc7f449496d9e", null ],

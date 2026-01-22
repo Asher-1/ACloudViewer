@@ -1,0 +1,13 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="5,268,112,295"/>
+<area shape="rect" id="node2" href="$structflann_1_1AutotunedIndexParams.html" title=" " alt="" coords="161,5,375,32"/>
+<area shape="rect" id="node3" href="$structflann_1_1CompositeIndexParams.html" title=" " alt="" coords="160,56,376,83"/>
+<area shape="rect" id="node4" href="$structflann_1_1HierarchicalClusteringIndexParams.html" title=" " alt="" coords="165,107,371,149"/>
+<area shape="rect" id="node5" href="$structflann_1_1KDTreeCuda3dIndexParams.html" title=" " alt="" coords="171,173,365,214"/>
+<area shape="rect" id="node6" href="$structflann_1_1KDTreeIndexParams.html" title=" " alt="" coords="172,239,364,265"/>
+<area shape="rect" id="node7" href="$structflann_1_1KDTreeSingleIndexParams.html" title=" " alt="" coords="176,290,360,331"/>
+<area shape="rect" id="node8" href="$structflann_1_1KMeansIndexParams.html" title=" " alt="" coords="169,356,367,383"/>
+<area shape="rect" id="node9" href="$structflann_1_1LinearIndexParams.html" title=" " alt="" coords="175,407,361,433"/>
+<area shape="rect" id="node10" href="$structflann_1_1LshIndexParams.html" title=" " alt="" coords="184,457,352,484"/>
+<area shape="rect" id="node11" href="$structflann_1_1SavedIndexParams.html" title=" " alt="" coords="175,508,361,535"/>
+</map>

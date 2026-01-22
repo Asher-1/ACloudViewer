@@ -97,11 +97,19 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1AutoSegmentationTo
 Inheritance diagram for cloudViewer::AutoSegmentationTools:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1AutoSegmentationTools__inherit__graph.png" border="0" usemap="#acloudViewer_1_1AutoSegmentationTools_inherit__map" alt="Inheritance graph"/></div>
+<map name="acloudViewer_1_1AutoSegmentationTools_inherit__map" id="acloudViewer_1_1AutoSegmentationTools_inherit__map">
+<area shape="rect" title=" " alt="" coords="5,80,236,121"/>
+<area shape="rect" href="classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="31,5,210,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for cloudViewer::AutoSegmentationTools:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1AutoSegmentationTools__coll__graph.png" border="0" usemap="#acloudViewer_1_1AutoSegmentationTools_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1AutoSegmentationTools_coll__map" id="acloudViewer_1_1AutoSegmentationTools_coll__map">
+<area shape="rect" title=" " alt="" coords="5,80,236,121"/>
+<area shape="rect" href="classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="31,5,210,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
@@ -112,7 +120,7 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a146b1a9e46fa96e14bc19a0caf964bcd"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1AutoSegmentationTools.html#a146b1a9e46fa96e14bc19a0caf964bcd">extractConnectedComponents</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, <a class="el" href="namespacecloudViewer.html#ac7a1706450d10e17651aa5c604c25e12">ReferenceCloudContainer</a> &amp;ccc)</td></tr>
 <tr class="memdesc:a146b1a9e46fa96e14bc19a0caf964bcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extracts connected components from a point cloud.  <a href="classcloudViewer_1_1AutoSegmentationTools.html#a146b1a9e46fa96e14bc19a0caf964bcd">More...</a><br /></td></tr>
 <tr class="separator:a146b1a9e46fa96e14bc19a0caf964bcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ab805e907c6ca37bb13af8a74e3e0f0"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1AutoSegmentationTools.html#a1ab805e907c6ca37bb13af8a74e3e0f0">frontPropagationBasedSegmentation</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, ScalarType minSeedDist, PointCoordinateType radius, unsigned char <a class="el" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>, <a class="el" href="namespacecloudViewer.html#ac7a1706450d10e17651aa5c604c25e12">ReferenceCloudContainer</a> &amp;theSegmentedLists, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a> *inputOctree=nullptr, bool applyGaussianFilter=false, float alpha=2.0f)</td></tr>
+<tr class="memitem:a1ab805e907c6ca37bb13af8a74e3e0f0"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1AutoSegmentationTools.html#a1ab805e907c6ca37bb13af8a74e3e0f0">frontPropagationBasedSegmentation</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, ScalarType minSeedDist, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius, unsigned char <a class="el" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>, <a class="el" href="namespacecloudViewer.html#ac7a1706450d10e17651aa5c604c25e12">ReferenceCloudContainer</a> &amp;theSegmentedLists, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a> *inputOctree=nullptr, bool applyGaussianFilter=false, float alpha=2.0f)</td></tr>
 <tr class="separator:a1ab805e907c6ca37bb13af8a74e3e0f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -192,7 +200,7 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>radius</em>, </td>
         </tr>
         <tr>
@@ -341,7 +349,7 @@ Static Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1AutoSegmentationTools.html">AutoSegmentationTools</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

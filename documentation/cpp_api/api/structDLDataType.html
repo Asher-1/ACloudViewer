@@ -92,7 +92,7 @@ $(document).ready(function(){initNavTree('structDLDataType.html',''); initResiza
 </div><!--header-->
 <div class="contents">
 
-<p>The data type the tensor can hold.  
+<p>The data type the tensor can hold. The data type is assumed to follow the native endian-ness. An explicit error message should be raised when attempting to export an array with non-native endianness.  
  <a href="structDLDataType.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="DLPack_8h_source.html">DLPack.h</a>&gt;</code></p>
@@ -100,6 +100,11 @@ $(document).ready(function(){initNavTree('structDLDataType.html',''); initResiza
 Collaboration diagram for DLDataType:</div>
 <div class="dyncontent">
 <div class="center"><img src="structDLDataType__coll__graph.png" border="0" usemap="#aDLDataType_coll__map" alt="Collaboration graph"/></div>
+<map name="aDLDataType_coll__map" id="aDLDataType_coll__map">
+<area shape="rect" title="The data type the tensor can hold. The data type is assumed to follow the native endian&#45;ness...." alt="" coords="39,109,139,136"/>
+<area shape="rect" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" title=" " alt="" coords="104,5,171,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -115,14 +120,20 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a24de092fe56d358c1582e41499862594"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>The data type the tensor can hold. </p>
+<div class="textblock"><p>The data type the tensor can hold. The data type is assumed to follow the native endian-ness. An explicit error message should be raised when attempting to export an array with non-native endianness. </p>
 <p>Examples</p><ul>
-<li>float: type_code = 2, bits = 32, lanes=1</li>
-<li>float4(vectorized 4 float): type_code = 2, bits = 32, lanes=4</li>
-<li>int8: type_code = 0, bits = 8, lanes=1 </li>
+<li>float: type_code = 2, bits = 32, lanes = 1</li>
+<li>float4(vectorized 4 float): type_code = 2, bits = 32, lanes = 4</li>
+<li>int8: type_code = 0, bits = 8, lanes = 1</li>
+<li>std::complex&lt;float&gt;: type_code = 5, bits = 64, lanes = 1</li>
+<li>bool: type_code = 6, bits = 8, lanes = 1 (as per common array library convention, the underlying storage size of bool is 8 bits)</li>
+<li>float8_e4m3: type_code = 8, bits = 8, lanes = 1 (packed in memory)</li>
+<li>float6_e3m2fn: type_code = 16, bits = 6, lanes = 1 (packed in memory)</li>
+<li>float4_e2m1fn: type_code = 17, bits = 4, lanes = 1 (packed in memory)</li>
 </ul>
+<p>When a sub-byte type is packed, DLPack requires the data to be in little bit-endian, i.e., for a packed data set D ((D &gt;&gt; (i * bits)) &amp;&amp; bit_mask) stores the i-th element. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00110">110</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00226">226</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a412e36fa9c58e808a2333e9044c5d9b5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a412e36fa9c58e808a2333e9044c5d9b5">&#9670;&nbsp;</a></span>bits</h2>
@@ -138,9 +149,9 @@ Public Attributes</h2></td></tr>
 
 <p>Number of bits, common choices are 8, 16, 32. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00120">120</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00236">236</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00057">cloudViewer::core::DLDataTypeToDtype()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00060">cloudViewer::core::DLDataTypeToDtype()</a>.</p>
 
 </div>
 </div>
@@ -158,9 +169,9 @@ Public Attributes</h2></td></tr>
 
 <p>Type code of base types. We keep it uint8_t instead of DLDataTypeCode for minimal memory footprint, but the value should be one of DLDataTypeCode enum values. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00116">116</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00232">232</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00057">cloudViewer::core::DLDataTypeToDtype()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00060">cloudViewer::core::DLDataTypeToDtype()</a>.</p>
 
 </div>
 </div>
@@ -178,9 +189,9 @@ Public Attributes</h2></td></tr>
 
 <p>Number of lanes in the type, used for vector types. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00122">122</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00238">238</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00057">cloudViewer::core::DLDataTypeToDtype()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l00060">cloudViewer::core::DLDataTypeToDtype()</a>.</p>
 
 </div>
 </div>
@@ -193,7 +204,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="structDLDataType.html">DLDataType</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:10 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:25 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

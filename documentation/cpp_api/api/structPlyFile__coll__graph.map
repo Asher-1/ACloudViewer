@@ -1,0 +1,9 @@
+<map id="PlyFile" name="PlyFile">
+<area shape="rect" id="node1" title=" " alt="" coords="42,389,107,416"/>
+<area shape="rect" id="node2" href="$structPlyElement.html" title=" " alt="" coords="5,145,101,172"/>
+<area shape="rect" id="node3" href="$structPlyProperty.html" title=" " alt="" coords="41,5,138,32"/>
+<area shape="rect" id="node7" href="$structPlyOtherProp.html" title=" " alt="" coords="91,95,197,121"/>
+<area shape="rect" id="node4" href="$structPlyOtherElems.html" title=" " alt="" coords="97,300,215,327"/>
+<area shape="rect" id="node5" href="$structOtherElem.html" title=" " alt="" coords="117,196,208,223"/>
+<area shape="rect" id="node6" href="$structOtherData.html" title=" " alt="" coords="222,95,311,121"/>
+</map>

@@ -100,6 +100,15 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1KDTree.html',''); 
 Collaboration diagram for cloudViewer::KDTree:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1KDTree__coll__graph.png" border="0" usemap="#acloudViewer_1_1KDTree_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1KDTree_coll__map" id="acloudViewer_1_1KDTree_coll__map">
+<area shape="rect" title=" " alt="" coords="139,425,295,452"/>
+<area shape="rect" href="classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="8,320,219,361"/>
+<area shape="rect" href="classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="5,178,203,205"/>
+<area shape="rect" href="structcloudViewer_1_1KDTree_1_1KdCell.html" title="A KDTre cell struct." alt="" coords="249,320,405,361"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="227,171,437,212"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="236,5,380,32"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="330,81,481,108"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -122,18 +131,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab87ea867bbca625899afb74ffadb2826"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ab87ea867bbca625899afb74ffadb2826">getAssociatedCloud</a> () const</td></tr>
 <tr class="memdesc:ab87ea867bbca625899afb74ffadb2826"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the point cloud from which the tree has been build.  <a href="classcloudViewer_1_1KDTree.html#ab87ea867bbca625899afb74ffadb2826">More...</a><br /></td></tr>
 <tr class="separator:ab87ea867bbca625899afb74ffadb2826"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb4fde0ad9f38840f1b3a4c91214fda8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#aeb4fde0ad9f38840f1b3a4c91214fda8">findNearestNeighbour</a> (const PointCoordinateType *queryPoint, unsigned &amp;nearestPointIndex, ScalarType maxDist)</td></tr>
+<tr class="memitem:aeb4fde0ad9f38840f1b3a4c91214fda8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#aeb4fde0ad9f38840f1b3a4c91214fda8">findNearestNeighbour</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, unsigned &amp;nearestPointIndex, ScalarType maxDist)</td></tr>
 <tr class="memdesc:aeb4fde0ad9f38840f1b3a4c91214fda8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nearest point search.  <a href="classcloudViewer_1_1KDTree.html#aeb4fde0ad9f38840f1b3a4c91214fda8">More...</a><br /></td></tr>
 <tr class="separator:aeb4fde0ad9f38840f1b3a4c91214fda8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53fc006ca228e5edbd7ac2ecbeb96eac"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a53fc006ca228e5edbd7ac2ecbeb96eac">findNearestNeighbourWithMaxDist</a> (const PointCoordinateType *queryPoint, ScalarType maxDist)</td></tr>
+<tr class="memitem:a53fc006ca228e5edbd7ac2ecbeb96eac"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a53fc006ca228e5edbd7ac2ecbeb96eac">findNearestNeighbourWithMaxDist</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType maxDist)</td></tr>
 <tr class="memdesc:a53fc006ca228e5edbd7ac2ecbeb96eac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optimized version of findNearestNeighbour with a maximum distance.  <a href="classcloudViewer_1_1KDTree.html#a53fc006ca228e5edbd7ac2ecbeb96eac">More...</a><br /></td></tr>
 <tr class="separator:a53fc006ca228e5edbd7ac2ecbeb96eac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae837c3c5d9b0737de8d24f0890207eaf"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ae837c3c5d9b0737de8d24f0890207eaf">radiusSearch</a> (const PointCoordinateType *queryPoint, ScalarType distance, ScalarType tolerance, std::vector&lt; unsigned &gt; &amp;pointndexes)</td></tr>
+<tr class="memitem:ae837c3c5d9b0737de8d24f0890207eaf"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ae837c3c5d9b0737de8d24f0890207eaf">radiusSearch</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType distance, ScalarType tolerance, std::vector&lt; unsigned &gt; &amp;pointndexes)</td></tr>
 <tr class="separator:ae837c3c5d9b0737de8d24f0890207eaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a18bc4122101235cbd749434ce661fbb3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a18bc4122101235cbd749434ce661fbb3">findPointBelowDistance</a> (const PointCoordinateType *queryPoint, ScalarType maxDist)</td></tr>
+<tr class="memitem:a18bc4122101235cbd749434ce661fbb3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a18bc4122101235cbd749434ce661fbb3">findPointBelowDistance</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType maxDist)</td></tr>
 <tr class="memdesc:a18bc4122101235cbd749434ce661fbb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optimized version of nearest point search method.  <a href="classcloudViewer_1_1KDTree.html#a18bc4122101235cbd749434ce661fbb3">More...</a><br /></td></tr>
 <tr class="separator:a18bc4122101235cbd749434ce661fbb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a89957b846aae6e18bf217aba7f354cc9"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a89957b846aae6e18bf217aba7f354cc9">findPointsLyingToDistance</a> (const PointCoordinateType *queryPoint, ScalarType distance, ScalarType tolerance, std::vector&lt; unsigned &gt; &amp;<a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>)</td></tr>
+<tr class="memitem:a89957b846aae6e18bf217aba7f354cc9"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a89957b846aae6e18bf217aba7f354cc9">findPointsLyingToDistance</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType distance, ScalarType tolerance, std::vector&lt; unsigned &gt; &amp;<a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>)</td></tr>
 <tr class="separator:a89957b846aae6e18bf217aba7f354cc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
@@ -148,18 +157,18 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a984c2adfe75688dab5d7607d37909373"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae69080aec006cbe08b3a71e9d9ab891c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ae69080aec006cbe08b3a71e9d9ab891c">updateOutsideBoundingBox</a> (<a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
 <tr class="separator:ae69080aec006cbe08b3a71e9d9ab891c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3353cdaea2b0f16ad6032754fb3a34b1"><td class="memItemLeft" align="right" valign="top">ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a3353cdaea2b0f16ad6032754fb3a34b1">pointToCellSquareDistance</a> (const PointCoordinateType *queryPoint, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
+<tr class="memitem:a3353cdaea2b0f16ad6032754fb3a34b1"><td class="memItemLeft" align="right" valign="top">ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a3353cdaea2b0f16ad6032754fb3a34b1">pointToCellSquareDistance</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
 <tr class="memdesc:a3353cdaea2b0f16ad6032754fb3a34b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the distance between a point and a cell inside bounding box.  <a href="classcloudViewer_1_1KDTree.html#a3353cdaea2b0f16ad6032754fb3a34b1">More...</a><br /></td></tr>
 <tr class="separator:a3353cdaea2b0f16ad6032754fb3a34b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae20790f4c1a6a3185eac920199aa6021"><td class="memItemLeft" align="right" valign="top">ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ae20790f4c1a6a3185eac920199aa6021">insidePointToCellDistance</a> (const PointCoordinateType *queryPoint, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
+<tr class="memitem:ae20790f4c1a6a3185eac920199aa6021"><td class="memItemLeft" align="right" valign="top">ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ae20790f4c1a6a3185eac920199aa6021">insidePointToCellDistance</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
 <tr class="separator:ae20790f4c1a6a3185eac920199aa6021"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab350f2abf61f1c734aca037c4ff749f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ab350f2abf61f1c734aca037c4ff749f9">pointToCellDistances</a> (const PointCoordinateType *queryPoint, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell, ScalarType &amp;<a class="el" href="cutil__math_8h.html#a76f3d844135ecc32365294158d274eed">min</a>, ScalarType &amp;<a class="el" href="cutil__math_8h.html#ad71de797aaa84d9c6a604b3d429fdbca">max</a>)</td></tr>
+<tr class="memitem:ab350f2abf61f1c734aca037c4ff749f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#ab350f2abf61f1c734aca037c4ff749f9">pointToCellDistances</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell, ScalarType &amp;<a class="el" href="cutil__math_8h.html#a76f3d844135ecc32365294158d274eed">min</a>, ScalarType &amp;<a class="el" href="cutil__math_8h.html#ad71de797aaa84d9c6a604b3d429fdbca">max</a>)</td></tr>
 <tr class="separator:ab350f2abf61f1c734aca037c4ff749f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef6a3b25e14b4ffaf0c4da0c482317b1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#aef6a3b25e14b4ffaf0c4da0c482317b1">checkNearerPointInSubTree</a> (const PointCoordinateType *queryPoint, ScalarType &amp;maxSqrDist, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
+<tr class="memitem:aef6a3b25e14b4ffaf0c4da0c482317b1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#aef6a3b25e14b4ffaf0c4da0c482317b1">checkNearerPointInSubTree</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType &amp;maxSqrDist, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
 <tr class="separator:aef6a3b25e14b4ffaf0c4da0c482317b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9105f46310ef3f7f9781cc6086375f19"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a9105f46310ef3f7f9781cc6086375f19">checkDistantPointInSubTree</a> (const PointCoordinateType *queryPoint, ScalarType &amp;maxSqrDist, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
+<tr class="memitem:a9105f46310ef3f7f9781cc6086375f19"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a9105f46310ef3f7f9781cc6086375f19">checkDistantPointInSubTree</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType &amp;maxSqrDist, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell)</td></tr>
 <tr class="separator:a9105f46310ef3f7f9781cc6086375f19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bc75fd1312130d13e2b0b86093a87cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a3bc75fd1312130d13e2b0b86093a87cf">distanceScanTree</a> (const PointCoordinateType *queryPoint, ScalarType distance, ScalarType tolerance, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell, std::vector&lt; unsigned &gt; &amp;localArray)</td></tr>
+<tr class="memitem:a3bc75fd1312130d13e2b0b86093a87cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1KDTree.html#a3bc75fd1312130d13e2b0b86093a87cf">distanceScanTree</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint, ScalarType distance, ScalarType tolerance, <a class="el" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell, std::vector&lt; unsigned &gt; &amp;localArray)</td></tr>
 <tr class="separator:a3bc75fd1312130d13e2b0b86093a87cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
@@ -348,7 +357,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">bool cloudViewer::KDTree::checkDistantPointInSubTree </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -399,7 +408,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">int cloudViewer::KDTree::checkNearerPointInSubTree </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -478,7 +487,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">void cloudViewer::KDTree::distanceScanTree </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -539,7 +548,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">bool cloudViewer::KDTree::findNearestNeighbour </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -584,7 +593,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">bool cloudViewer::KDTree::findNearestNeighbourWithMaxDist </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -615,7 +624,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">bool cloudViewer::KDTree::findPointBelowDistance </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -646,7 +655,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">unsigned cloudViewer::KDTree::findPointsLyingToDistance </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -731,7 +740,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">ScalarType cloudViewer::KDTree::insidePointToCellDistance </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -775,7 +784,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">void cloudViewer::KDTree::pointToCellDistances </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -832,7 +841,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">ScalarType cloudViewer::KDTree::pointToCellSquareDistance </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -875,7 +884,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">unsigned cloudViewer::KDTree::radiusSearch </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>queryPoint</em>, </td>
         </tr>
         <tr>
@@ -1084,7 +1093,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1KDTree.html">KDTree</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,0 +1,13 @@
+<map id="flann::IndexBase" name="flann::IndexBase">
+<area shape="rect" id="node1" title=" " alt="" coords="5,274,136,301"/>
+<area shape="rect" id="node2" href="$classflann_1_1NNIndex.html" title=" " alt="" coords="184,274,389,301"/>
+<area shape="rect" id="node3" href="$classflann_1_1AutotunedIndex.html" title=" " alt="" coords="458,5,623,47"/>
+<area shape="rect" id="node4" href="$classflann_1_1CompositeIndex.html" title=" " alt="" coords="457,71,625,112"/>
+<area shape="rect" id="node5" href="$classflann_1_1HierarchicalClusteringIndex.html" title=" " alt="" coords="437,136,644,177"/>
+<area shape="rect" id="node6" href="$classflann_1_1KDTreeCuda3dIndex.html" title=" " alt="" coords="444,201,637,243"/>
+<area shape="rect" id="node7" href="$classflann_1_1KDTreeIndex.html" title=" " alt="" coords="469,267,613,308"/>
+<area shape="rect" id="node8" href="$classflann_1_1KDTreeSingleIndex.html" title=" " alt="" coords="449,332,633,373"/>
+<area shape="rect" id="node9" href="$classflann_1_1KMeansIndex.html" title=" " alt="" coords="465,397,616,439"/>
+<area shape="rect" id="node10" href="$classflann_1_1LinearIndex.html" title=" " alt="" coords="471,463,610,504"/>
+<area shape="rect" id="node11" href="$classflann_1_1LshIndex.html" title=" " alt="" coords="437,529,644,555"/>
+</map>

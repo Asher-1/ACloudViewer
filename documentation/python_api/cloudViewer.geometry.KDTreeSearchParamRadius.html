@@ -1,0 +1,1302 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cloudViewer.geometry.LineSet" href="cloudViewer.geometry.LineSet.html" /><link rel="prev" title="cloudViewer.geometry.KDTreeSearchParamKNN" href="cloudViewer.geometry.KDTreeSearchParamKNN.html" />
+
+    <link rel="shortcut icon" href="../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
+        <title>cloudViewer.geometry.KDTreeSearchParamRadius - ACloudViewer primary (5c18a435f) documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/furo_overrides.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=47d5a741" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #2196F3;
+  --color-brand-content: #2196F3;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #42A5F5;
+  --color-brand-content: #42A5F5;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ACloudViewer primary (5c18a435f) documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky">
+
+
+<div class="sidebar-brand">
+  <a href="../index.html">
+    <span class="sidebar-brand-text">ACloudViewer</span>
+  </a>
+</div>
+
+
+<div class="sidebar-version-selector">
+  <label for="docs-version-select-sidebar" class="version-label">Docs Version</label>
+  <select id="docs-version-select-sidebar" class="version-select-sidebar" onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
+    <option value="latest">Latest (main)</option>
+    <!-- Versions will be dynamically loaded by version_switch.js -->
+  </select>
+</div>
+
+<style>
+.sidebar-version-selector {
+  margin: 1em 0.5em;
+  padding: 0.75em;
+  background: var(--color-sidebar-background);
+  border-radius: 6px;
+  border: 1px solid var(--color-sidebar-item-background--hover);
+}
+
+.sidebar-version-selector .version-label {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: var(--color-sidebar-caption-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.version-select-sidebar {
+  width: 100%;
+  padding: 0.5em;
+  border: 1px solid var(--color-sidebar-item-background--hover);
+  border-radius: 4px;
+  background: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  font-size: 0.9em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.version-select-sidebar:hover {
+  border-color: var(--color-brand-primary);
+  background: var(--color-sidebar-item-background--hover);
+}
+
+.version-select-sidebar:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .sidebar-version-selector {
+    background: var(--color-sidebar-background);
+    border-color: var(--color-sidebar-item-background--hover);
+  }
+}
+</style>
+
+<script>
+// Initialize version selector in sidebar when DOM is ready
+(function() {
+  function initVersionSelector() {
+    const select = document.getElementById('docs-version-select-sidebar');
+    if (!select) return;
+    
+    if (window.ACloudViewerVersionSwitcher) {
+      // Use the version switcher's update function
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    } else {
+      // Retry after a short delay
+      setTimeout(initVersionSelector, 200);
+    }
+  }
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVersionSelector);
+  } else {
+    initVersionSelector();
+  }
+  
+  // Listen for versions loaded event
+  document.addEventListener('versionsLoaded', function() {
+    if (window.ACloudViewerVersionSwitcher) {
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    }
+  });
+})();
+</script>
+<form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_from_source.html">Building from Source</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/index.html">Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/core/tensor.html">Tensor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/core/hashmap.html">Hash map</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/file_io.html">File IO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/octree.html">Octree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/uvmaps.html">UV Maps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/python_interface.html">Python Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/geometry/working_with_numpy.html">Working with NumPy</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/t_geometry/pointcloud.html">PointCloud</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/data/index.html">Dataset</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/registration.html">Point Cloud Registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/color_map_optimization.html">Color Map Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/pipelines/robust_kernels.html">Robust kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction_system/system_overview.html">System overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction_system/make_fragments.html">Make fragments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction_system/register_fragments.html">Register fragments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction_system/refine_registration.html">Refine registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction_system/integrate_scene.html">Integrate scene</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/t_reconstruction_system/index.html">Reconstruction system (Tensor)</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/sensor/realsense.html">RealSense with ACloudViewer</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tutorial/visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/customized_visualization.html">Customized visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/interactive_visualization.html">Interactive visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/non_blocking_visualization.html">Non-blocking visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/headless_rendering.html">Headless rendering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/cpu_rendering.html">CPU rendering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/draw_plotly.html">Plotly Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/web_visualizer.html">Web visualizer and Jupyter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html">TensorBoard Plugin</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/ml/index.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.camera.html">cloudViewer.camera</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of cloudViewer.camera</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.camera.PinholeCameraIntrinsic.html">PinholeCameraIntrinsic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.camera.PinholeCameraIntrinsicParameters.html">PinholeCameraIntrinsicParameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.camera.PinholeCameraParameters.html">PinholeCameraParameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.camera.PinholeCameraTrajectory.html">PinholeCameraTrajectory</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.core.html">cloudViewer.core</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of cloudViewer.core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.Blob.html">Blob</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.DLDeviceType.html">DLDeviceType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.Device.html">Device</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.Dtype.html">Dtype</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.DynamicSizeVector.html">DynamicSizeVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.HashBackendType.html">HashBackendType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.HashMap.html">HashMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.HashSet.html">HashSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.Scalar.html">Scalar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.SizeVector.html">SizeVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.Tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.TensorList.html">TensorList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.addmm.html">addmm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.append.html">append</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.concatenate.html">concatenate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.det.html">det</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.inv.html">inv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.lstsq.html">lstsq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.lu.html">lu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.lu_ipiv.html">lu_ipiv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.matmul.html">matmul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.maximum.html">maximum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.minimum.html">minimum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.solve.html">solve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.svd.html">svd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.tril.html">tril</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.triu.html">triu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.core.triul.html">triul</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.core.cuda.html">cuda</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of cuda</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.core.cuda.device_count.html">device_count</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.core.cuda.is_available.html">is_available</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.core.cuda.release_cache.html">release_cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.core.cuda.synchronize.html">synchronize</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.core.kernel.html">kernel</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of kernel</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.core.kernel.test_linalg_integration.html">test_linalg_integration</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.core.nns.html">nns</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of nns</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.core.nns.NearestNeighborSearch.html">NearestNeighborSearch</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.data.html">cloudViewer.data</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle navigation of cloudViewer.data</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.ArmadilloMesh.html">ArmadilloMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.AvocadoModel.html">AvocadoModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.BalusterVase.html">BalusterVase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.BedroomRGBDImages.html">BedroomRGBDImages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.BunnyMesh.html">BunnyMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.CrateModel.html">CrateModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DamagedHelmetModel.html">DamagedHelmetModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DataDescriptor.html">DataDescriptor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.Dataset.html">Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoColoredICPPointClouds.html">DemoColoredICPPointClouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoCropPointCloud.html">DemoCropPointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoCustomVisualization.html">DemoCustomVisualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoDopplerICPSequence.html">DemoDopplerICPSequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoFeatureMatchingPointClouds.html">DemoFeatureMatchingPointClouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoICPPointClouds.html">DemoICPPointClouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DemoPoseGraphOptimization.html">DemoPoseGraphOptimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.DownloadDataset.html">DownloadDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.EaglePointCloud.html">EaglePointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.FacetsModel.html">FacetsModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.FlightHelmetModel.html">FlightHelmetModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.JackJackL515Bag.html">JackJackL515Bag</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.JuneauImage.html">JuneauImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.KnotMesh.html">KnotMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.LivingRoomPointClouds.html">LivingRoomPointClouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.LoungeRGBDImages.html">LoungeRGBDImages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.MetalTexture.html">MetalTexture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.MonkeyModel.html">MonkeyModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.OfficePointClouds.html">OfficePointClouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.PCDPointCloud.html">PCDPointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.PLYPointCloud.html">PLYPointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.PaintedPlasterTexture.html">PaintedPlasterTexture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.PolylinesModel.html">PolylinesModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.RedwoodIndoorLivingRoom1.html">RedwoodIndoorLivingRoom1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.RedwoodIndoorLivingRoom2.html">RedwoodIndoorLivingRoom2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.RedwoodIndoorOffice1.html">RedwoodIndoorOffice1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.RedwoodIndoorOffice2.html">RedwoodIndoorOffice2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SampleFountainRGBDImages.html">SampleFountainRGBDImages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SampleL515Bag.html">SampleL515Bag</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SampleNYURGBDImage.html">SampleNYURGBDImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SampleRedwoodRGBDImages.html">SampleRedwoodRGBDImages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SampleSUNRGBDImage.html">SampleSUNRGBDImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SampleTUMRGBDImage.html">SampleTUMRGBDImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.SwordModel.html">SwordModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.TerrazzoTexture.html">TerrazzoTexture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.TilesTexture.html">TilesTexture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.WoodFloorTexture.html">WoodFloorTexture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.WoodTexture.html">WoodTexture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.get_custom_downloads_prefix.html">get_custom_downloads_prefix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.data.set_custom_downloads_prefix.html">set_custom_downloads_prefix</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="cloudViewer.geometry.html">cloudViewer.geometry</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle navigation of cloudViewer.geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.BoundingBox.html">BoundingBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.DeformAsRigidAsPossibleEnergy.html">DeformAsRigidAsPossibleEnergy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.FilterScope.html">FilterScope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.GenericCloud.html">GenericCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.GenericIndexedCloud.html">GenericIndexedCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.GenericIndexedMesh.html">GenericIndexedMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.GenericMesh.html">GenericMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.GenericTriangle.html">GenericTriangle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.HalfEdge.html">HalfEdge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.HalfEdgeTriangleMesh.html">HalfEdgeTriangleMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.Image.html">Image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ImageFilterType.html">ImageFilterType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.KDTreeFlann.html">KDTreeFlann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.KDTreeSearchParam.html">KDTreeSearchParam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.KDTreeSearchParamHybrid.html">KDTreeSearchParamHybrid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.KDTreeSearchParamKNN.html">KDTreeSearchParamKNN</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">KDTreeSearchParamRadius</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.LineSet.html">LineSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.MeshScalarFieldProcessType.html">MeshScalarFieldProcessType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.Octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreeColorLeafNode.html">OctreeColorLeafNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreeInternalNode.html">OctreeInternalNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreeInternalPointNode.html">OctreeInternalPointNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreeLeafNode.html">OctreeLeafNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreeNode.html">OctreeNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreeNodeInfo.html">OctreeNodeInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OctreePointColorLeafNode.html">OctreePointColorLeafNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.OrientedBoundingBox.html">OrientedBoundingBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.Polyline.html">Polyline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.RGBDImage.html">RGBDImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.RansacParams.html">RansacParams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.RansacResult.html">RansacResult</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ReferenceCloud.html">ReferenceCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.SimplificationContraction.html">SimplificationContraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.TetraMesh.html">TetraMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.TriangulationType.html">TriangulationType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.VerticesIndexes.html">VerticesIndexes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.Voxel.html">Voxel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.VoxelGrid.html">VoxelGrid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccBBox.html">ccBBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccBox.html">ccBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccCircle.html">ccCircle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccCone.html">ccCone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccCoordinateSystem.html">ccCoordinateSystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccCylinder.html">ccCylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccDisc.html">ccDisc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccDish.html">ccDish</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccDrawableObject.html">ccDrawableObject</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccExtru.html">ccExtru</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccFacet.html">ccFacet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccGenericMesh.html">ccGenericMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccGenericPointCloud.html">ccGenericPointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccGenericPrimitive.html">ccGenericPrimitive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccHObject.html">ccHObject</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccMesh.html">ccMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccObject.html">ccObject</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccPlanarEntityInterface.html">ccPlanarEntityInterface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccPlane.html">ccPlane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccPointCloud.html">ccPointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccPolyline.html">ccPolyline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccQuadric.html">ccQuadric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccSphere.html">ccSphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ccTorus.html">ccTorus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ecvMeshBase.html">ecvMeshBase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ecvOrientedBBox.html">ecvOrientedBBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.To2DLabel.html">To2DLabel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.To2DViewportLabel.html">To2DViewportLabel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.To2DViewportObject.html">To2DViewportObject</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToBBox.html">ToBBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToBox.html">ToBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToCameraSensor.html">ToCameraSensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToCone.html">ToCone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToCoordinateSystem.html">ToCoordinateSystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToCylinder.html">ToCylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToDish.html">ToDish</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToExtru.html">ToExtru</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToFacet.html">ToFacet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToGBLSensor.html">ToGBLSensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToImage.html">ToImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToImage2.html">ToImage2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToKdTree.html">ToKdTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToLineSet.html">ToLineSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToMesh.html">ToMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToOctree2.html">ToOctree2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToOctreeProxy.html">ToOctreeProxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToOrientedBBox.html">ToOrientedBBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToPlane.html">ToPlane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToPointCloud.html">ToPointCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToPolyline.html">ToPolyline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToQuadric.html">ToQuadric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToRGBDImage.html">ToRGBDImage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToSensor.html">ToSensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToSphere.html">ToSphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToSubMesh.html">ToSubMesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToTorus.html">ToTorus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToTransBuffer.html">ToTransBuffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.ToVoxelGrid.html">ToVoxelGrid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_axis_angle.html">get_rotation_matrix_from_axis_angle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_euler_angle.html">get_rotation_matrix_from_euler_angle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_quaternion.html">get_rotation_matrix_from_quaternion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_xyz.html">get_rotation_matrix_from_xyz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_xzy.html">get_rotation_matrix_from_xzy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_yxz.html">get_rotation_matrix_from_yxz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_yzx.html">get_rotation_matrix_from_yzx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_zxy.html">get_rotation_matrix_from_zxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.geometry.get_rotation_matrix_from_zyx.html">get_rotation_matrix_from_zyx</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.geometry.keypoint.html">keypoint</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle navigation of keypoint</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.geometry.keypoint.compute_iss_keypoints.html">compute_iss_keypoints</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.io.html">cloudViewer.io</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle navigation of cloudViewer.io</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.FileGeometry.html">FileGeometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_entity.html">read_entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_feature.html">read_feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_file_geometry_type.html">read_file_geometry_type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_image.html">read_image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_line_set.html">read_line_set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_octree.html">read_octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_pinhole_camera_intrinsic.html">read_pinhole_camera_intrinsic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_pinhole_camera_parameters.html">read_pinhole_camera_parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_pinhole_camera_trajectory.html">read_pinhole_camera_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_point_cloud.html">read_point_cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_point_cloud_from_bytes.html">read_point_cloud_from_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_pose_graph.html">read_pose_graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_triangle_mesh.html">read_triangle_mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_triangle_model.html">read_triangle_model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.read_voxel_grid.html">read_voxel_grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_entity.html">write_entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_feature.html">write_feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_image.html">write_image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_line_set.html">write_line_set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_octree.html">write_octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_pinhole_camera_intrinsic.html">write_pinhole_camera_intrinsic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_pinhole_camera_parameters.html">write_pinhole_camera_parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_pinhole_camera_trajectory.html">write_pinhole_camera_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_point_cloud.html">write_point_cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_point_cloud_to_bytes.html">write_point_cloud_to_bytes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_pose_graph.html">write_pose_graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_triangle_mesh.html">write_triangle_mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.io.write_voxel_grid.html">write_voxel_grid</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.io.rpc.html">rpc</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><div class="visually-hidden">Toggle navigation of rpc</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.BufferConnection.html">BufferConnection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.Connection.html">Connection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.destroy_zmq_context.html">destroy_zmq_context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.data_buffer_to_meta_geometry.html">data_buffer_to_meta_geometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.set_active_camera.html">set_active_camera</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.set_legacy_camera.html">set_legacy_camera</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.set_mesh_data.html">set_mesh_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.set_point_cloud.html">set_point_cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.set_time.html">set_time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.io.rpc.set_triangle_mesh.html">set_triangle_mesh</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.t.html">cloudViewer.t</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><div class="visually-hidden">Toggle navigation of cloudViewer.t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.t.geometry.html">geometry</a><input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" role="switch" type="checkbox"/><label for="toctree-checkbox-21"><div class="visually-hidden">Toggle navigation of geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.AxisAlignedBoundingBox.html">AxisAlignedBoundingBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.DrawableGeometry.html">DrawableGeometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.Geometry.html">Geometry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.Image.html">Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.InterpType.html">InterpType</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.LineSet.html">LineSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.MethodOBBCreate.html">MethodOBBCreate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.Metric.html">Metric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.MetricParameters.html">MetricParameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.OrientedBoundingBox.html">OrientedBoundingBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.PointCloud.html">PointCloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.RGBDImage.html">RGBDImage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.RaycastingScene.html">RaycastingScene</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.TensorMap.html">TensorMap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.TriangleMesh.html">TriangleMesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.VectorMetric.html">VectorMetric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.geometry.VoxelBlockGrid.html">VoxelBlockGrid</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.t.io.html">io</a><input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" role="switch" type="checkbox"/><label for="toctree-checkbox-22"><div class="visually-hidden">Toggle navigation of io</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.DepthNoiseSimulator.html">DepthNoiseSimulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.RGBDSensor.html">RGBDSensor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.RGBDVideoMetadata.html">RGBDVideoMetadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.RGBDVideoReader.html">RGBDVideoReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.SensorType.html">SensorType</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.read_image.html">read_image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.read_npz.html">read_npz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.read_numpy.html">read_numpy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.read_point_cloud.html">read_point_cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.read_triangle_mesh.html">read_triangle_mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.write_image.html">write_image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.write_npz.html">write_npz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.write_numpy.html">write_numpy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.write_point_cloud.html">write_point_cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.t.io.write_triangle_mesh.html">write_triangle_mesh</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.t.pipelines.html">pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" role="switch" type="checkbox"/><label for="toctree-checkbox-23"><div class="visually-hidden">Toggle navigation of pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.html">odometry</a><input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" role="switch" type="checkbox"/><label for="toctree-checkbox-24"><div class="visually-hidden">Toggle navigation of odometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.Method.html">Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.OdometryConvergenceCriteria.html">OdometryConvergenceCriteria</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.OdometryLossParams.html">OdometryLossParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.OdometryResult.html">OdometryResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.compute_odometry_information_matrix.html">compute_odometry_information_matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.compute_odometry_result_hybrid.html">compute_odometry_result_hybrid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.compute_odometry_result_intensity.html">compute_odometry_result_intensity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.compute_odometry_result_point_to_plane.html">compute_odometry_result_point_to_plane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.odometry.rgbd_odometry_multi_scale.html">rgbd_odometry_multi_scale</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.t.pipelines.registration.html">registration</a><input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><div class="visually-hidden">Toggle navigation of registration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.ICPConvergenceCriteria.html">ICPConvergenceCriteria</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.RegistrationResult.html">RegistrationResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.TransformationEstimation.html">TransformationEstimation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.TransformationEstimationForColoredICP.html">TransformationEstimationForColoredICP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.TransformationEstimationForDopplerICP.html">TransformationEstimationForDopplerICP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.TransformationEstimationPointToPlane.html">TransformationEstimationPointToPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.TransformationEstimationPointToPoint.html">TransformationEstimationPointToPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.compute_fpfh_feature.html">compute_fpfh_feature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.correspondences_from_features.html">correspondences_from_features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.evaluate_registration.html">evaluate_registration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.get_information_matrix.html">get_information_matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.icp.html">icp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.registration.multi_scale_icp.html">multi_scale_icp</a></li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cloudViewer.t.pipelines.registration.robust_kernel.html">robust_kernel</a><input class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" role="switch" type="checkbox"/><label for="toctree-checkbox-26"><div class="visually-hidden">Toggle navigation of robust_kernel</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.t.pipelines.registration.robust_kernel.RobustKernel.html">RobustKernel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.t.pipelines.registration.robust_kernel.RobustKernelMethod.html">RobustKernelMethod</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.t.pipelines.slac.html">slac</a><input class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" role="switch" type="checkbox"/><label for="toctree-checkbox-27"><div class="visually-hidden">Toggle navigation of slac</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slac.control_grid.html">control_grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slac.slac_debug_option.html">slac_debug_option</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slac.slac_optimizer_params.html">slac_optimizer_params</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slac.run_rigid_optimizer_for_fragments.html">run_rigid_optimizer_for_fragments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slac.run_slac_optimizer_for_fragments.html">run_slac_optimizer_for_fragments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slac.save_correspondences_for_pointclouds.html">save_correspondences_for_pointclouds</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.t.pipelines.slam.html">slam</a><input class="toctree-checkbox" id="toctree-checkbox-28" name="toctree-checkbox-28" role="switch" type="checkbox"/><label for="toctree-checkbox-28"><div class="visually-hidden">Toggle navigation of slam</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slam.Frame.html">Frame</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.t.pipelines.slam.Model.html">Model</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.ml.html">cloudViewer.ml</a><input class="toctree-checkbox" id="toctree-checkbox-29" name="toctree-checkbox-29" role="switch" type="checkbox"/><label for="toctree-checkbox-29"><div class="visually-hidden">Toggle navigation of cloudViewer.ml</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.ml.contrib.html">contrib</a><input class="toctree-checkbox" id="toctree-checkbox-30" name="toctree-checkbox-30" role="switch" type="checkbox"/><label for="toctree-checkbox-30"><div class="visually-hidden">Toggle navigation of contrib</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.ml.contrib.iou_3d_cpu.html">iou_3d_cpu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.ml.contrib.iou_bev_cpu.html">iou_bev_cpu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.ml.contrib.knn_search.html">knn_search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.ml.contrib.radius_search.html">radius_search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.ml.contrib.subsample.html">subsample</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.ml.contrib.subsample_batch.html">subsample_batch</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.ml.torch.html">torch</a><input class="toctree-checkbox" id="toctree-checkbox-31" name="toctree-checkbox-31" role="switch" type="checkbox"/><label for="toctree-checkbox-31"><div class="visually-hidden">Toggle navigation of torch</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.classes.html">classes</a><input class="toctree-checkbox" id="toctree-checkbox-32" name="toctree-checkbox-32" role="switch" type="checkbox"/><label for="toctree-checkbox-32"><div class="visually-hidden">Toggle navigation of classes</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.classes.RaggedTensor.html">RaggedTensor</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.dataloaders.html">dataloaders</a><input class="toctree-checkbox" id="toctree-checkbox-33" name="toctree-checkbox-33" role="switch" type="checkbox"/><label for="toctree-checkbox-33"><div class="visually-hidden">Toggle navigation of dataloaders</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.dataloaders.ConcatBatcher.html">ConcatBatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.dataloaders.DefaultBatcher.html">DefaultBatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.dataloaders.TorchDataloader.html">TorchDataloader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.dataloaders.get_sampler.html">get_sampler</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.datasets.html">datasets</a><input class="toctree-checkbox" id="toctree-checkbox-34" name="toctree-checkbox-34" role="switch" type="checkbox"/><label for="toctree-checkbox-34"><div class="visually-hidden">Toggle navigation of datasets</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Argoverse.html">Argoverse</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Custom3D.html">Custom3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Electricity3D.html">Electricity3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.InferenceDummySplit.html">InferenceDummySplit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.KITTI.html">KITTI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Lyft.html">Lyft</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.NuScenes.html">NuScenes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.ParisLille3D.html">ParisLille3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.S3DIS.html">S3DIS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Scannet.html">Scannet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.SemSegRandomSampler.html">SemSegRandomSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.SemSegSpatiallyRegularSampler.html">SemSegSpatiallyRegularSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Semantic3D.html">Semantic3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.SemanticKITTI.html">SemanticKITTI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.ShapeNet.html">ShapeNet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.SunRGBD.html">SunRGBD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Toronto3D.html">Toronto3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.datasets.Waymo.html">Waymo</a></li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.html">utils</a><input class="toctree-checkbox" id="toctree-checkbox-35" name="toctree-checkbox-35" role="switch" type="checkbox"/><label for="toctree-checkbox-35"><div class="visually-hidden">Toggle navigation of utils</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.BEVBox3D.html">BEVBox3D</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.DataProcessing.html">DataProcessing</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.ObjdetAugmentation.html">ObjdetAugmentation</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.create_3D_rotations.html">create_3D_rotations</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.get_min_bbox.html">get_min_bbox</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.trans_augment.html">trans_augment</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.trans_crop_pc.html">trans_crop_pc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.datasets.utils.trans_normalize.html">trans_normalize</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.layers.html">layers</a><input class="toctree-checkbox" id="toctree-checkbox-36" name="toctree-checkbox-36" role="switch" type="checkbox"/><label for="toctree-checkbox-36"><div class="visually-hidden">Toggle navigation of layers</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.ContinuousConv.html">ContinuousConv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.FixedRadiusSearch.html">FixedRadiusSearch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.KNNSearch.html">KNNSearch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.RadiusSearch.html">RadiusSearch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.SparseConv.html">SparseConv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.SparseConvTranspose.html">SparseConvTranspose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.layers.VoxelPooling.html">VoxelPooling</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.models.html">models</a><input class="toctree-checkbox" id="toctree-checkbox-37" name="toctree-checkbox-37" role="switch" type="checkbox"/><label for="toctree-checkbox-37"><div class="visually-hidden">Toggle navigation of models</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.KPFCNN.html">KPFCNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.PVCNN.html">PVCNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.PointPillars.html">PointPillars</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.PointRCNN.html">PointRCNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.PointTransformer.html">PointTransformer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.RandLANet.html">RandLANet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.models.SparseConvUnet.html">SparseConvUnet</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.modules.html">modules</a><input class="toctree-checkbox" id="toctree-checkbox-38" name="toctree-checkbox-38" role="switch" type="checkbox"/><label for="toctree-checkbox-38"><div class="visually-hidden">Toggle navigation of modules</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cloudViewer.ml.torch.modules.losses.html">losses</a><input class="toctree-checkbox" id="toctree-checkbox-39" name="toctree-checkbox-39" role="switch" type="checkbox"/><label for="toctree-checkbox-39"><div class="visually-hidden">Toggle navigation of losses</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.modules.losses.CrossEntropyLoss.html">CrossEntropyLoss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.modules.losses.FocalLoss.html">FocalLoss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.modules.losses.SemSegLoss.html">SemSegLoss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.modules.losses.SmoothL1Loss.html">SmoothL1Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.modules.losses.filter_valid_label.html">filter_valid_label</a></li>
+</ul>
+</li>
+<li class="toctree-l4 has-children"><a class="reference internal" href="cloudViewer.ml.torch.modules.metrics.html">metrics</a><input class="toctree-checkbox" id="toctree-checkbox-40" name="toctree-checkbox-40" role="switch" type="checkbox"/><label for="toctree-checkbox-40"><div class="visually-hidden">Toggle navigation of metrics</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l5"><a class="reference internal" href="cloudViewer.ml.torch.modules.metrics.SemSegMetric.html">SemSegMetric</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.ops.html">ops</a><input class="toctree-checkbox" id="toctree-checkbox-41" name="toctree-checkbox-41" role="switch" type="checkbox"/><label for="toctree-checkbox-41"><div class="visually-hidden">Toggle navigation of ops</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.build_spatial_hash_table.html">build_spatial_hash_table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.continuous_conv.html">continuous_conv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.continuous_conv_transpose.html">continuous_conv_transpose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.fixed_radius_search.html">fixed_radius_search</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.invert_neighbors_list.html">invert_neighbors_list</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.knn_search.html">knn_search</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.nms.html">nms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.radius_search.html">radius_search</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.ragged_to_dense.html">ragged_to_dense</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.reduce_subarrays_sum.html">reduce_subarrays_sum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.sparse_conv.html">sparse_conv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.sparse_conv_transpose.html">sparse_conv_transpose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.voxel_pooling.html">voxel_pooling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.ops.voxelize.html">voxelize</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.pipelines.html">pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><div class="visually-hidden">Toggle navigation of pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.pipelines.ObjectDetection.html">ObjectDetection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.pipelines.SemanticSegmentation.html">SemanticSegmentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="cloudViewer.ml.torch.vis.html">vis</a><input class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><div class="visually-hidden">Toggle navigation of vis</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.BoundingBox3D.html">BoundingBox3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.Colormap.html">Colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.DataModel.html">DataModel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.DatasetModel.html">DatasetModel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.LabelLUT.html">LabelLUT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.Model.html">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.Visualizer.html">Visualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.deque.html">deque</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cloudViewer.ml.torch.vis.rgb_to_yiq.html">rgb_to_yiq</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.pipelines.html">cloudViewer.pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><div class="visually-hidden">Toggle navigation of cloudViewer.pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.pipelines.color_map.html">color_map</a><input class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><div class="visually-hidden">Toggle navigation of color_map</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.color_map.NonRigidOptimizerOption.html">NonRigidOptimizerOption</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.color_map.RigidOptimizerOption.html">RigidOptimizerOption</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.color_map.run_non_rigid_optimizer.html">run_non_rigid_optimizer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.color_map.run_rigid_optimizer.html">run_rigid_optimizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.pipelines.integration.html">integration</a><input class="toctree-checkbox" id="toctree-checkbox-46" name="toctree-checkbox-46" role="switch" type="checkbox"/><label for="toctree-checkbox-46"><div class="visually-hidden">Toggle navigation of integration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.integration.ScalableTSDFVolume.html">ScalableTSDFVolume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.integration.TSDFVolume.html">TSDFVolume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.integration.TSDFVolumeColorType.html">TSDFVolumeColorType</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.integration.UniformTSDFVolume.html">UniformTSDFVolume</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.pipelines.odometry.html">odometry</a><input class="toctree-checkbox" id="toctree-checkbox-47" name="toctree-checkbox-47" role="switch" type="checkbox"/><label for="toctree-checkbox-47"><div class="visually-hidden">Toggle navigation of odometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.odometry.OdometryOption.html">OdometryOption</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.odometry.RGBDOdometryJacobian.html">RGBDOdometryJacobian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.odometry.RGBDOdometryJacobianFromColorTerm.html">RGBDOdometryJacobianFromColorTerm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm.html">RGBDOdometryJacobianFromHybridTerm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.odometry.compute_rgbd_odometry.html">compute_rgbd_odometry</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.pipelines.registration.html">registration</a><input class="toctree-checkbox" id="toctree-checkbox-48" name="toctree-checkbox-48" role="switch" type="checkbox"/><label for="toctree-checkbox-48"><div class="visually-hidden">Toggle navigation of registration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.CauchyLoss.html">CauchyLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.CorrespondenceChecker.html">CorrespondenceChecker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.CorrespondenceCheckerBasedOnDistance.html">CorrespondenceCheckerBasedOnDistance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength.html">CorrespondenceCheckerBasedOnEdgeLength</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.CorrespondenceCheckerBasedOnNormal.html">CorrespondenceCheckerBasedOnNormal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.FastGlobalRegistrationOption.html">FastGlobalRegistrationOption</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.Feature.html">Feature</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.GMLoss.html">GMLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.GlobalOptimizationConvergenceCriteria.html">GlobalOptimizationConvergenceCriteria</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.GlobalOptimizationGaussNewton.html">GlobalOptimizationGaussNewton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.GlobalOptimizationLevenbergMarquardt.html">GlobalOptimizationLevenbergMarquardt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.GlobalOptimizationMethod.html">GlobalOptimizationMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.GlobalOptimizationOption.html">GlobalOptimizationOption</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.HuberLoss.html">HuberLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.ICPConvergenceCriteria.html">ICPConvergenceCriteria</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.L1Loss.html">L1Loss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.L2Loss.html">L2Loss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.PoseGraph.html">PoseGraph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.PoseGraphEdge.html">PoseGraphEdge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.PoseGraphEdgeVector.html">PoseGraphEdgeVector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.PoseGraphNode.html">PoseGraphNode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.PoseGraphNodeVector.html">PoseGraphNodeVector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.RANSACConvergenceCriteria.html">RANSACConvergenceCriteria</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.RegistrationResult.html">RegistrationResult</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.RobustKernel.html">RobustKernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.TransformationEstimation.html">TransformationEstimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.TransformationEstimationForColoredICP.html">TransformationEstimationForColoredICP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.TransformationEstimationForGeneralizedICP.html">TransformationEstimationForGeneralizedICP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.TransformationEstimationPointToPlane.html">TransformationEstimationPointToPlane</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.TransformationEstimationPointToPoint.html">TransformationEstimationPointToPoint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.TukeyLoss.html">TukeyLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.compute_fpfh_feature.html">compute_fpfh_feature</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.correspondences_from_features.html">correspondences_from_features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.evaluate_registration.html">evaluate_registration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.get_information_matrix_from_point_clouds.html">get_information_matrix_from_point_clouds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.global_optimization.html">global_optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_colored_icp.html">registration_colored_icp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_fgr_based_on_correspondence.html">registration_fgr_based_on_correspondence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_fgr_based_on_feature_matching.html">registration_fgr_based_on_feature_matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_generalized_icp.html">registration_generalized_icp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_icp.html">registration_icp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_ransac_based_on_correspondence.html">registration_ransac_based_on_correspondence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.pipelines.registration.registration_ransac_based_on_feature_matching.html">registration_ransac_based_on_feature_matching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.utility.html">cloudViewer.utility</a><input class="toctree-checkbox" id="toctree-checkbox-49" name="toctree-checkbox-49" role="switch" type="checkbox"/><label for="toctree-checkbox-49"><div class="visually-hidden">Toggle navigation of cloudViewer.utility</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.DoubleVector.html">DoubleVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.IntVector.html">IntVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Matrix.html">Matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Matrix3dVector.html">Matrix3dVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Matrix4dVector.html">Matrix4dVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Range.html">Range</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.ScalarField.html">ScalarField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Vector2dVector.html">Vector2dVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Vector2iVector.html">Vector2iVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Vector3dVector.html">Vector3dVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Vector3iVector.html">Vector3iVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.Vector4iVector.html">Vector4iVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.VerbosityContextManager.html">VerbosityContextManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.VerbosityLevel.html">VerbosityLevel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.ccScalarField.html">ccScalarField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.get_verbosity_level.html">get_verbosity_level</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.reset_print_function.html">reset_print_function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.utility.set_verbosity_level.html">set_verbosity_level</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cloudViewer.visualization.html">cloudViewer.visualization</a><input class="toctree-checkbox" id="toctree-checkbox-50" name="toctree-checkbox-50" role="switch" type="checkbox"/><label for="toctree-checkbox-50"><div class="visually-hidden">Toggle navigation of cloudViewer.visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.ItemsView.html">ItemsView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.KeysView.html">KeysView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.MeshColorOption.html">MeshColorOption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.MeshShadeOption.html">MeshShadeOption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.O3DVisualizer.html">O3DVisualizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.PickedPoint.html">PickedPoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.PointColorOption.html">PointColorOption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.RenderOption.html">RenderOption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.ScalarProperties.html">ScalarProperties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.SelectedIndex.html">SelectedIndex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.SelectionPolygonVolume.html">SelectionPolygonVolume</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.TextureMaps.html">TextureMaps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.ValuesView.html">ValuesView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.VectorProperties.html">VectorProperties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.ViewControl.html">ViewControl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.Visualizer.html">Visualizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.VisualizerWithEditing.html">VisualizerWithEditing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.VisualizerWithKeyCallback.html">VisualizerWithKeyCallback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.VisualizerWithVertexSelection.html">VisualizerWithVertexSelection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_geometries.html">draw_geometries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_geometries_with_animation_callback.html">draw_geometries_with_animation_callback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_geometries_with_custom_animation.html">draw_geometries_with_custom_animation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_geometries_with_editing.html">draw_geometries_with_editing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_geometries_with_key_callbacks.html">draw_geometries_with_key_callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_geometries_with_vertex_selection.html">draw_geometries_with_vertex_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.read_selection_polygon_volume.html">read_selection_polygon_volume</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.ExternalVisualizer.html">ExternalVisualizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw.html">draw</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_plotly.html">draw_plotly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.draw_plotly_server.html">draw_plotly_server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.get_plotly_fig.html">get_plotly_fig</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudViewer.visualization.to_mitsuba.html">to_mitsuba</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.visualization.app.html">app</a><input class="toctree-checkbox" id="toctree-checkbox-51" name="toctree-checkbox-51" role="switch" type="checkbox"/><label for="toctree-checkbox-51"><div class="visually-hidden">Toggle navigation of app</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.app.run_viewer.html">run_viewer</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.visualization.gui.html">gui</a><input class="toctree-checkbox" id="toctree-checkbox-52" name="toctree-checkbox-52" role="switch" type="checkbox"/><label for="toctree-checkbox-52"><div class="visually-hidden">Toggle navigation of gui</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Application.html">Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Window.html">Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.WindowBase.html">WindowBase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Dialog.html">Dialog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.SceneWidget.html">SceneWidget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Widget.html">Widget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Horiz.html">Horiz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Vert.html">Vert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.CollapsableVert.html">CollapsableVert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ScrollableVert.html">ScrollableVert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.StackedWidget.html">StackedWidget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.LayoutContext.html">LayoutContext</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Margins.html">Margins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Button.html">Button</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Checkbox.html">Checkbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Combobox.html">Combobox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ColorEdit.html">ColorEdit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.NumberEdit.html">NumberEdit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.RadioButton.html">RadioButton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Slider.html">Slider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.TextEdit.html">TextEdit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ToggleSwitch.html">ToggleSwitch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.VectorEdit.html">VectorEdit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Label.html">Label</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Label3D.html">Label3D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ImageWidget.html">ImageWidget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ListView.html">ListView</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ProgressBar.html">ProgressBar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.TabControl.html">TabControl</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.TreeView.html">TreeView</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.CheckableTextTreeCell.html">CheckableTextTreeCell</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.ColormapTreeCell.html">ColormapTreeCell</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.LUTTreeCell.html">LUTTreeCell</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.FileDialog.html">FileDialog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Menu.html">Menu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Theme.html">Theme</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Color.html">Color</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.FontDescription.html">FontDescription</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.FontStyle.html">FontStyle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.KeyEvent.html">KeyEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.KeyModifier.html">KeyModifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.KeyName.html">KeyName</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Layout1D.html">Layout1D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.MouseButton.html">MouseButton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.MouseEvent.html">MouseEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Size.html">Size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.Rect.html">Rect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.UIImage.html">UIImage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.VGrid.html">VGrid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.WidgetProxy.html">WidgetProxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.gui.WidgetStack.html">WidgetStack</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.visualization.rendering.html">rendering</a><input class="toctree-checkbox" id="toctree-checkbox-53" name="toctree-checkbox-53" role="switch" type="checkbox"/><label for="toctree-checkbox-53"><div class="visually-hidden">Toggle navigation of rendering</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.Camera.html">Camera</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.CloudViewerScene.html">CloudViewerScene</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.ColorGrading.html">ColorGrading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.Gradient.html">Gradient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.MaterialRecord.html">MaterialRecord</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.OffscreenRenderer.html">OffscreenRenderer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.Renderer.html">Renderer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.Scene.html">Scene</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.TextureHandle.html">TextureHandle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.TriangleMeshModel.html">TriangleMeshModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.rendering.View.html">View</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.visualization.webrtc_server.html">webrtc_server</a><input class="toctree-checkbox" id="toctree-checkbox-54" name="toctree-checkbox-54" role="switch" type="checkbox"/><label for="toctree-checkbox-54"><div class="visually-hidden">Toggle navigation of webrtc_server</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.webrtc_server.call_http_api.html">call_http_api</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.webrtc_server.disable_http_handshake.html">disable_http_handshake</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.webrtc_server.enable_webrtc.html">enable_webrtc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.webrtc_server.register_data_channel_message_callback.html">register_data_channel_message_callback</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.html">tensorboard_plugin.summary</a><input class="toctree-checkbox" id="toctree-checkbox-55" name="toctree-checkbox-55" role="switch" type="checkbox"/><label for="toctree-checkbox-55"><div class="visually-hidden">Toggle navigation of tensorboard_plugin.summary</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.BoundingBox3D.html">BoundingBox3D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.PluginDirectory.html">PluginDirectory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.Summary.html">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.SummaryWriter.html">SummaryWriter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.TensorProto.html">TensorProto</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.TensorShapeProto.html">TensorShapeProto</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.add_3d.html">add_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.makedirs.html">makedirs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.masked_crc32c.html">masked_crc32c</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloudViewer.visualization.tensorboard_plugin.summary.partial.html">partial</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/camera/index.html">Camera</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/core/index.html">Core</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python_example/geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-56" name="toctree-checkbox-56" role="switch" type="checkbox"/><label for="toctree-checkbox-56"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/geometry/index.html">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/image/index.html">Image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/kd_tree/index.html">KD Tree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/octree/index.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/point_cloud/index.html">Point Cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/ray_casting/index.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/rgbd/index.html">RGBD Image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/triangle_mesh/index.html">Triangle Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_example/geometry/voxel_grid/index.html">Voxel Grid</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/io/index.html">IO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/pipelines/index.html">Pipelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/reconstruction/index.html">Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/utility/index.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_example/visualization/index.html">Visualization</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/cpp_examples.html">C++ Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C++ API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cpp_api.html">C++ documentation</a><input class="toctree-checkbox" id="toctree-checkbox-57" name="toctree-checkbox-57" role="switch" type="checkbox"/><label for="toctree-checkbox-57"><div class="visually-hidden">Toggle navigation of C++ documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/quickstart.html">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cpp_api/plugins.html">Plugin System</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer/contributing.html">Contributing to ACloudViewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/docker.html">Docker Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/ci_cd.html">CI/CD Pipeline</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../resources/changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/support.html">Getting Support</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="cloudviewer-geometry-kdtreesearchparamradius">
+<h1>cloudViewer.geometry.KDTreeSearchParamRadius<a class="headerlink" href="#cloudviewer-geometry-kdtreesearchparamradius" title="Permalink to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cloudViewer.geometry.</span></span><span class="sig-name descname"><span class="pre">KDTreeSearchParamRadius</span></span><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius" title="Permalink to this definition">#</a></dt>
+<dd><p>KDTree search parameters for pure radius search.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.Type">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type" title="Permalink to this definition">#</a></dt>
+<dd><p>Enum class for Geometry types.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.Type.HybridSearch">
+<span class="sig-name descname"><span class="pre">HybridSearch</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type.HybridSearch" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.Type.KNNSearch">
+<span class="sig-name descname"><span class="pre">KNNSearch</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type.KNNSearch" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.Type.RadiusSearch">
+<span class="sig-name descname"><span class="pre">RadiusSearch</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type.RadiusSearch" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius" title="cloudViewer.geometry.KDTreeSearchParamRadius"><span class="pre">cloudViewer.geometry.KDTreeSearchParamRadius</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.SupportsFloat" title="(in Python v3.14)"><span class="pre">SupportsFloat</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.__init__" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.get_search_type">
+<span class="sig-name descname"><span class="pre">get_search_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.get_search_type" title="Permalink to this definition">#</a></dt>
+<dd><p>Get the search type (KNN, Radius, Hybrid) for the search parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cloudViewer::geometry::KDTreeSearchParam::SearchType</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.HybridSearch">
+<span class="sig-name descname"><span class="pre">HybridSearch</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.HybridSearch" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.KNNSearch">
+<span class="sig-name descname"><span class="pre">KNNSearch</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.KNNSearch" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.RadiusSearch">
+<span class="sig-name descname"><span class="pre">RadiusSearch</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.RadiusSearch" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cloudViewer.geometry.KDTreeSearchParamRadius.radius">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">radius</span></span><a class="headerlink" href="#cloudViewer.geometry.KDTreeSearchParamRadius.radius" title="Permalink to this definition">#</a></dt>
+<dd><p>Search radius.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="cloudViewer.geometry.LineSet.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">cloudViewer.geometry.LineSet</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="cloudViewer.geometry.KDTreeSearchParamKNN.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">cloudViewer.geometry.KDTreeSearchParamKNN</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2018 - 2026, ACloudViewer Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">cloudViewer.geometry.KDTreeSearchParamRadius</a><ul>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius</span></code></a><ul>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.Type</span></code></a><ul>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type.HybridSearch"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.Type.HybridSearch</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type.KNNSearch"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.Type.KNNSearch</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.Type.RadiusSearch"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.Type.RadiusSearch</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.__init__"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.get_search_type"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.get_search_type()</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.HybridSearch"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.HybridSearch</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.KNNSearch"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.KNNSearch</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.RadiusSearch"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.RadiusSearch</span></code></a></li>
+<li><a class="reference internal" href="#cloudViewer.geometry.KDTreeSearchParamRadius.radius"><code class="docutils literal notranslate"><span class="pre">KDTreeSearchParamRadius.radius</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8ba9d2f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=30646c52"></script>
+    <script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-3TQPKGV6Z3');</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/version_switch.js?v=0dac02bc"></script>
+    </body>
+</html>

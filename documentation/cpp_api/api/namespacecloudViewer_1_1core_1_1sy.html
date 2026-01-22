@@ -121,6 +121,9 @@ Functions</h2></td></tr>
 <tr class="separator:acbd5d2520424e36c5eedc0e67e6bd6f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a21c2c52e25958fe9ee298abfbc944ecf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1core_1_1sy.html#a21c2c52e25958fe9ee298abfbc944ecf">enablePersistentJITCache</a> ()</td></tr>
 <tr class="separator:a21c2c52e25958fe9ee298abfbc944ecf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb35aa626f8fbff33cefe365a0cf5164"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1core_1_1sy.html#afb35aa626f8fbff33cefe365a0cf5164">GetDeviceCount</a> ()</td></tr>
+<tr class="memdesc:afb35aa626f8fbff33cefe365a0cf5164"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the number of available SYCL devices.  <a href="namespacecloudViewer_1_1core_1_1sy.html#afb35aa626f8fbff33cefe365a0cf5164">More...</a><br /></td></tr>
+<tr class="separator:afb35aa626f8fbff33cefe365a0cf5164"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a21c2c52e25958fe9ee298abfbc944ecf"></a>
@@ -166,7 +169,38 @@ Functions</h2></td></tr>
 
 <p class="reference">References <a class="el" href="SYCLContext_8cpp_source.html#l00035">cloudViewer::core::sy::SYCLContext::GetAvailableSYCLDevices()</a>, and <a class="el" href="SYCLContext_8cpp_source.html#l00025">cloudViewer::core::sy::SYCLContext::GetInstance()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Device_8cpp_source.html#l00140">cloudViewer::core::Device::GetAvailableSYCLDevices()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Device_8cpp_source.html#l00140">cloudViewer::core::Device::GetAvailableSYCLDevices()</a>, and <a class="el" href="SYCLUtils_8h_source.html#l00048">GetDeviceCount()</a>.</p>
+
+</div>
+</div>
+<a id="afb35aa626f8fbff33cefe365a0cf5164"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb35aa626f8fbff33cefe365a0cf5164">&#9670;&nbsp;</a></span>GetDeviceCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t cloudViewer::core::sy::GetDeviceCount </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the number of available SYCL devices. </p>
+
+<p class="definition">Definition at line <a class="el" href="SYCLUtils_8h_source.html#l00048">48</a> of file <a class="el" href="SYCLUtils_8h_source.html">SYCLUtils.h</a>.</p>
+
+<p class="reference">References <a class="el" href="SYCLUtils_8cpp_source.html#l00230">GetAvailableSYCLDevices()</a>.</p>
 
 </div>
 </div>
@@ -319,7 +353,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1core.html">core</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1core_1_1sy.html">sy</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

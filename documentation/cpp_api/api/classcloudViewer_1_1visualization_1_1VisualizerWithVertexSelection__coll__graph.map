@@ -1,0 +1,8 @@
+<map id="cloudViewer::visualization::VisualizerWithVertexSelection" name="cloudViewer::visualization::VisualizerWithVertexSelection">
+<area shape="rect" id="node1" title=" " alt="" coords="709,90,936,131"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1Visualizer.html" title="The main Visualizer class." alt="" coords="355,57,548,98"/>
+<area shape="rect" id="node3" title=" " alt="" coords="73,5,131,32"/>
+<area shape="rect" id="node4" href="$structcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl.html" title=" " alt="" coords="5,57,199,98"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1visualization_1_1RenderOption.html" title="Defines rendering options for visualizer." alt="" coords="355,122,548,163"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="28,122,176,163"/>
+</map>

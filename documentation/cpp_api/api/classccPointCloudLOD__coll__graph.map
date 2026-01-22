@@ -1,0 +1,5 @@
+<map id="ccPointCloudLOD" name="ccPointCloudLOD">
+<area shape="rect" id="node1" title="L.O.D. (Level of Detail) structure." alt="" coords="56,199,189,225"/>
+<area shape="rect" id="node2" href="$structccPointCloudLOD_1_1RenderParams.html" title="Parameters of the current render state." alt="" coords="5,109,240,136"/>
+<area shape="rect" id="node3" title=" " alt="" coords="85,5,160,32"/>
+</map>

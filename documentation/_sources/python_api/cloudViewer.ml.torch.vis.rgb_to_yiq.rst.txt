@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.vis.rgb_to_yiq
+-----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autofunction:: rgb_to_yiq

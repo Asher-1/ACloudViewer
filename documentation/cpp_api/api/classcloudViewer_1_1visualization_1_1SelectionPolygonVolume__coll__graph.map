@@ -1,0 +1,5 @@
+<map id="cloudViewer::visualization::SelectionPolygonVolume" name="cloudViewer::visualization::SelectionPolygonVolume">
+<area shape="rect" id="node1" title="Select a polygon volume for cropping." alt="" coords="47,109,240,151"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="5,5,153,47"/>
+<area shape="rect" id="node3" title=" " alt="" coords="178,13,237,39"/>
+</map>

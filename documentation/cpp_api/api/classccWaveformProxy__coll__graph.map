@@ -1,0 +1,12 @@
+<map id="ccWaveformProxy" name="ccWaveformProxy">
+<area shape="rect" id="node1" title="Waveform proxy." alt="" coords="222,364,362,391"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,171,72,197"/>
+<area shape="rect" id="node3" href="$classccWaveform.html" title="Waveform." alt="" coords="434,275,537,301"/>
+<area shape="rect" id="node10" href="$classWaveformDescriptor.html" title="Waveform descriptor." alt="" coords="214,275,370,301"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="231,171,385,197"/>
+<area shape="rect" id="node5" title=" " alt="" coords="441,171,516,197"/>
+<area shape="rect" id="node6" title=" " alt="" coords="611,171,685,197"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title=" " alt="" coords="710,171,861,197"/>
+<area shape="rect" id="node8" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="689,5,833,32"/>
+<area shape="rect" id="node9" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="783,81,934,108"/>
+</map>

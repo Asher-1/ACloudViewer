@@ -1,0 +1,5 @@
+<map id="BasePclModule" name="BasePclModule">
+<area shape="rect" id="node1" title="Base abstract class for each implemented PCL filter." alt="" coords="53,95,174,121"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node3" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+</map>

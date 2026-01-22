@@ -1,0 +1,4 @@
+<map id="cloudViewer::FastMarchingForPropagation::PropagationCell" name="cloudViewer::FastMarchingForPropagation::PropagationCell">
+<area shape="rect" id="node1" title="A Fast Marching grid cell for surfacical propagation." alt="" coords="5,95,236,136"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1FastMarching_1_1Cell.html" title="A generic Fast Marching grid cell." alt="" coords="23,5,219,47"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="cloudViewer::t::geometry::Geometry" name="cloudViewer::t::geometry::Geometry">
+<area shape="rect" id="node1" title="The base geometry class." alt="" coords="200,201,387,243"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1t_1_1geometry_1_1AxisAlignedBoundingBox.html" title="A bounding box that is aligned along the coordinate axes and defined by the min_bound and max_bound." alt="" coords="435,5,628,47"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1t_1_1geometry_1_1Image.html" title="The Image class stores image with customizable rows, cols, channels, dtype and device." alt="" coords="438,71,625,112"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1t_1_1geometry_1_1LineSet.html" title="A LineSet contains points and lines joining them and optionally attributes on the points and lines." alt="" coords="438,136,625,177"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1t_1_1geometry_1_1OrientedBoundingBox.html" title="A bounding box oriented along an arbitrary frame of reference." alt="" coords="438,201,625,243"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html" title="A point cloud contains a list of 3D points." alt="" coords="438,267,625,308"/>
+<area shape="rect" id="node8" href="$classcloudViewer_1_1t_1_1geometry_1_1RGBDImage.html" title="RGBDImage A pair of color and depth images." alt="" coords="438,332,625,373"/>
+<area shape="rect" id="node9" href="$classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html" title="A triangle mesh contains vertices and triangles." alt="" coords="438,397,625,439"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1core_1_1IsDevice.html" title=" " alt="" coords="5,201,152,243"/>
+</map>

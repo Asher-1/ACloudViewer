@@ -1,0 +1,9 @@
+<map id="NurbsSurfaceReconstruction" name="NurbsSurfaceReconstruction">
+<area shape="rect" id="node1" title="Greedy Triangulation." alt="" coords="154,184,361,211"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="122,95,243,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" id="node5" href="$classNurbsSurfaceDlg.html" title=" " alt="" coords="268,95,399,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="295,5,369,32"/>
+<area shape="rect" id="node7" title=" " alt="" coords="394,5,547,32"/>
+</map>

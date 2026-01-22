@@ -103,6 +103,12 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1LocalModel.html','
 Collaboration diagram for cloudViewer::LocalModel:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1LocalModel__coll__graph.png" border="0" usemap="#acloudViewer_1_1LocalModel_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1LocalModel_coll__map" id="acloudViewer_1_1LocalModel_coll__map">
+<area shape="rect" title="Local modelization (generic interface)" alt="" coords="19,275,203,301"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="5,171,216,212"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="33,5,177,32"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="127,81,278,108"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -116,7 +122,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a57be2412d35f7cc53f28ffe8e8d4428b"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a57be2412d35f7cc53f28ffe8e8d4428b">getCenter</a> () const</td></tr>
 <tr class="memdesc:a57be2412d35f7cc53f28ffe8e8d4428b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the model center.  <a href="classcloudViewer_1_1LocalModel.html#a57be2412d35f7cc53f28ffe8e8d4428b">More...</a><br /></td></tr>
 <tr class="separator:a57be2412d35f7cc53f28ffe8e8d4428b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a311a4d091455f51c196464fafbb80c65"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a311a4d091455f51c196464fafbb80c65">getSquareSize</a> () const</td></tr>
+<tr class="memitem:a311a4d091455f51c196464fafbb80c65"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a311a4d091455f51c196464fafbb80c65">getSquareSize</a> () const</td></tr>
 <tr class="memdesc:a311a4d091455f51c196464fafbb80c65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the model max radius (squared)  <a href="classcloudViewer_1_1LocalModel.html#a311a4d091455f51c196464fafbb80c65">More...</a><br /></td></tr>
 <tr class="separator:a311a4d091455f51c196464fafbb80c65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afebcee7116482656175da8c1c80a6fb5"><td class="memItemLeft" align="right" valign="top">virtual ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#afebcee7116482656175da8c1c80a6fb5">computeDistanceFromModelToPoint</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *P, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *nearestPoint=nullptr) const =0</td></tr>
@@ -125,13 +131,13 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a62be6f36e4f295e48cad24f2b8059762"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1LocalModel.html">LocalModel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a62be6f36e4f295e48cad24f2b8059762">New</a> (<a class="el" href="CVConst_8h.html#a647348757b06823416b04309a5482353">CV_LOCAL_MODEL_TYPES</a> <a class="el" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>, <a class="el" href="classcloudViewer_1_1Neighbourhood.html">Neighbourhood</a> &amp;subset, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, PointCoordinateType squaredRadius)</td></tr>
+<tr class="memitem:a62be6f36e4f295e48cad24f2b8059762"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1LocalModel.html">LocalModel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a62be6f36e4f295e48cad24f2b8059762">New</a> (<a class="el" href="CVConst_8h.html#a647348757b06823416b04309a5482353">CV_LOCAL_MODEL_TYPES</a> <a class="el" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>, <a class="el" href="classcloudViewer_1_1Neighbourhood.html">Neighbourhood</a> &amp;subset, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> squaredRadius)</td></tr>
 <tr class="memdesc:a62be6f36e4f295e48cad24f2b8059762"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factory.  <a href="classcloudViewer_1_1LocalModel.html#a62be6f36e4f295e48cad24f2b8059762">More...</a><br /></td></tr>
 <tr class="separator:a62be6f36e4f295e48cad24f2b8059762"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:ab86ff62236dc4aa4dddc4c8b481d4763"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#ab86ff62236dc4aa4dddc4c8b481d4763">LocalModel</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, PointCoordinateType squaredRadius)</td></tr>
+<tr class="memitem:ab86ff62236dc4aa4dddc4c8b481d4763"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#ab86ff62236dc4aa4dddc4c8b481d4763">LocalModel</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> squaredRadius)</td></tr>
 <tr class="memdesc:ab86ff62236dc4aa4dddc4c8b481d4763"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="classcloudViewer_1_1LocalModel.html#ab86ff62236dc4aa4dddc4c8b481d4763">More...</a><br /></td></tr>
 <tr class="separator:ab86ff62236dc4aa4dddc4c8b481d4763"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -140,7 +146,7 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:ae2bc034c5e0a6bccb17ace3f129b73fc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#ae2bc034c5e0a6bccb17ace3f129b73fc">m_modelCenter</a></td></tr>
 <tr class="memdesc:ae2bc034c5e0a6bccb17ace3f129b73fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Center.  <a href="classcloudViewer_1_1LocalModel.html#ae2bc034c5e0a6bccb17ace3f129b73fc">More...</a><br /></td></tr>
 <tr class="separator:ae2bc034c5e0a6bccb17ace3f129b73fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a98e8e67ca47fdabdad483719b03172"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a1a98e8e67ca47fdabdad483719b03172">m_squaredRadius</a></td></tr>
+<tr class="memitem:a1a98e8e67ca47fdabdad483719b03172"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1LocalModel.html#a1a98e8e67ca47fdabdad483719b03172">m_squaredRadius</a></td></tr>
 <tr class="memdesc:a1a98e8e67ca47fdabdad483719b03172"><td class="mdescLeft">&#160;</td><td class="mdescRight">Max radius (squared)  <a href="classcloudViewer_1_1LocalModel.html#a1a98e8e67ca47fdabdad483719b03172">More...</a><br /></td></tr>
 <tr class="separator:a1a98e8e67ca47fdabdad483719b03172"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -195,7 +201,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>squaredRadius</em>&#160;</td>
         </tr>
         <tr>
@@ -314,7 +320,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType cloudViewer::LocalModel::getSquareSize </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::LocalModel::getSquareSize </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -396,7 +402,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>squaredRadius</em>&#160;</td>
         </tr>
         <tr>
@@ -464,7 +470,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType cloudViewer::LocalModel::m_squaredRadius</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::LocalModel::m_squaredRadius</td>
         </tr>
       </table>
   </td>
@@ -491,7 +497,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1LocalModel.html">LocalModel</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

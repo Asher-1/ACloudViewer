@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.datasets.utils.trans_crop_pc
+-------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autofunction:: trans_crop_pc

@@ -54,10 +54,15 @@ export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
+# you can use PackageManager to install 3DFin==0.4.1 as python plugin (with qt5 support not latest version)
+python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
 cd ACloudViewer
 mkdir build_app
 cd build_app
 cmake   -DDEVELOPER_BUILD=OFF \
+        -DBUILD_UNIT_TESTS=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         -DBUILD_LIBREALSENSE=OFF \
@@ -94,7 +99,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_IO_QMESH=ON \
         -DPLUGIN_IO_QPDAL=OFF \
         -DPLUGIN_IO_QPHOTOSCAN=ON \
-        -DPLUGIN_IO_QRDB=ON \
+        -DPLUGIN_IO_QRDB=OFF \
         -DPLUGIN_IO_QFBX=OFF \
         -DPLUGIN_IO_QSTEP=OFF \
         -DPLUGIN_STANDARD_QCORK=ON \
@@ -149,7 +154,7 @@ curl https://pyenv.run | bash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 python --version && pip --version
 
-CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
@@ -160,12 +165,48 @@ install_python_dependencies with-cuda with-jupyter with-unit-test
 
 ```
 
+### deploy yarn for jupyter building
+```
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - \
+ && sudo apt-get install -y nodejs \
+ && node --version \
+ && sudo npm install -g yarn \
+ && yarn --version
+```
+
+### fix cmake failed to find python and qt
+```
+PYTHON_EXE=$(pyenv which python)
+PYTHON_ROOT=$(python -c "import sysconfig, os; print(os.path.dirname(os.path.dirname(sysconfig.get_path('include'))))")
+PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path('include'))")
+PYTHON_LIB_DIR=$(python -c "import sysconfig, os; libdir = sysconfig.get_config_var('LIBDIR'); print(os.path.realpath(libdir) if os.path.islink(libdir) else libdir)")
+PYTHON_LIB_NAME=$(python -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
+PYTHON_LIB="${PYTHON_LIB_DIR}/${PYTHON_LIB_NAME}"
+-DPython3_EXECUTABLE="${PYTHON_EXE}" \
+-DPython3_ROOT_DIR="${PYTHON_ROOT}" \
+-DPython3_LIBRARY="${PYTHON_LIB}" \
+-DBUILD_WITH_CONDA=OFF \
+-DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5 \
+```
+
+### fix find_package not found
 ```
 sudo apt install libxxf86vm-dev
+sudo apt install libudev-dev
+```
 
+### build now
+```
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+
+export BUILD_PYTORCH_OPS=ON
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export BUILD_TENSORFLOW_OPS=OFF
+export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
+
 cd ACloudViewer
 mkdir build
 cd build
@@ -210,6 +251,27 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 
 ```
 
+## Test
+```
+cd ${CLOUDVIEWER_SOURCE_ROOT}
+export BUILD_PYTORCH_OPS=ON
+export BUILD_TENSORFLOW_OPS=OFF
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export CLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML
+source util/ci_utils.sh
+
+test_wheel build/lib/python_package/pip_package/cloudviewer*
+
+# test c++ and python
+run_all_tests
+
+# test c++
+run_cpp_unit_tests
+
+# test python
+run_python_tests
+```
 
 ## Install
 

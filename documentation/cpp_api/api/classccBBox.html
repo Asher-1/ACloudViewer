@@ -101,11 +101,36 @@ $(document).ready(function(){initNavTree('classccBBox.html',''); initResizable()
 Inheritance diagram for ccBBox:</div>
 <div class="dyncontent">
 <div class="center"><img src="classccBBox__inherit__graph.png" border="0" usemap="#accBBox_inherit__map" alt="Inheritance graph"/></div>
+<map name="accBBox_inherit__map" id="accBBox_inherit__map">
+<area shape="rect" title="Bounding box structure." alt="" coords="275,261,346,288"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="172,185,260,212"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,89,122,115"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,89,286,115"/>
+<area shape="rect" href="classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="298,185,494,212"/>
+<area shape="rect" href="classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="310,81,506,123"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for ccBBox:</div>
 <div class="dyncontent">
 <div class="center"><img src="classccBBox__coll__graph.png" border="0" usemap="#accBBox_coll__map" alt="Collaboration graph"/></div>
+<map name="accBBox_coll__map" id="accBBox_coll__map">
+<area shape="rect" title="Bounding box structure." alt="" coords="260,556,331,583"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="123,480,211,507"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="5,132,84,159"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="27,5,182,32"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title=" " alt="" coords="99,183,273,209"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="143,81,296,108"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="248,383,388,410"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="278,272,443,299"/>
+<area shape="rect" href="classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="412,376,608,417"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="366,81,510,108"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="363,183,513,209"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="473,272,603,299"/>
+<area shape="rect" href="classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="139,272,233,299"/>
+<area shape="rect" href="classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="369,480,565,507"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -154,7 +179,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a889fd093e242de42096489e97ce779e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an axis-aligned bounding box of the geometry.  <a href="classccBBox.html#a889fd093e242de42096489e97ce779e3">More...</a><br /></td></tr>
 <tr class="separator:a889fd093e242de42096489e97ce779e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2027f54e544132ae92ffd1c1c7b04ec5"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classecvOrientedBBox.html">ecvOrientedBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a2027f54e544132ae92ffd1c1c7b04ec5">GetOrientedBoundingBox</a> () const override</td></tr>
-<tr class="memdesc:a2027f54e544132ae92ffd1c1c7b04ec5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an oriented bounding box of the geometry.  <a href="classccBBox.html#a2027f54e544132ae92ffd1c1c7b04ec5">More...</a><br /></td></tr>
 <tr class="separator:a2027f54e544132ae92ffd1c1c7b04ec5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ade142d8ac32cd71d6fb0cbe495f3a0"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a8ade142d8ac32cd71d6fb0cbe495f3a0">Transform</a> (const Eigen::Matrix4d &amp;transformation) override</td></tr>
 <tr class="memdesc:a8ade142d8ac32cd71d6fb0cbe495f3a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply transformation (4x4 matrix) to the geometry coordinates.  <a href="classccBBox.html#a8ade142d8ac32cd71d6fb0cbe495f3a0">More...</a><br /></td></tr>
@@ -171,15 +195,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a93d2c60e49cfa22d6971cb1227266d0e"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a93d2c60e49cfa22d6971cb1227266d0e">operator+=</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;other)</td></tr>
 <tr class="separator:a93d2c60e49cfa22d6971cb1227266d0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d59ca89d23a31e2dea80fe20d87caa2"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a6d59ca89d23a31e2dea80fe20d87caa2">operator+=</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;V) override</td></tr>
-<tr class="memdesc:a6d59ca89d23a31e2dea80fe20d87caa2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shifts the bounding box with a vector.  <a href="classccBBox.html#a6d59ca89d23a31e2dea80fe20d87caa2">More...</a><br /></td></tr>
 <tr class="separator:a6d59ca89d23a31e2dea80fe20d87caa2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab58d25a4467af8bf7eaf7e85bf11a589"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#ab58d25a4467af8bf7eaf7e85bf11a589">operator-=</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;V) override</td></tr>
-<tr class="memdesc:ab58d25a4467af8bf7eaf7e85bf11a589"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shifts the bounding box with a vector.  <a href="classccBBox.html#ab58d25a4467af8bf7eaf7e85bf11a589">More...</a><br /></td></tr>
 <tr class="separator:ab58d25a4467af8bf7eaf7e85bf11a589"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa4c760b731f3b105cf6c70c54c3db6f4"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#aa4c760b731f3b105cf6c70c54c3db6f4">operator*=</a> (float scaleFactor) override</td></tr>
+<tr class="memdesc:aa4c760b731f3b105cf6c70c54c3db6f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scales the bounding box.  <a href="classccBBox.html#aa4c760b731f3b105cf6c70c54c3db6f4">More...</a><br /></td></tr>
 <tr class="separator:aa4c760b731f3b105cf6c70c54c3db6f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8073806e0ff1b401b5558fe26f0a0a98"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a8073806e0ff1b401b5558fe26f0a0a98">operator*=</a> (const <a class="el" href="namespacecloudViewer.html#abdf2ffbb1e98c4ce5037240010cf9f30">cloudViewer::SquareMatrix</a> &amp;mat) override</td></tr>
-<tr class="memdesc:a8073806e0ff1b401b5558fe26f0a0a98"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotates the bounding box.  <a href="classccBBox.html#a8073806e0ff1b401b5558fe26f0a0a98">More...</a><br /></td></tr>
 <tr class="separator:a8073806e0ff1b401b5558fe26f0a0a98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a23c6c66ef5aee1a85019b9dabc89a58c"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a23c6c66ef5aee1a85019b9dabc89a58c">operator+=</a> (const Eigen::Vector3d &amp;V)</td></tr>
 <tr class="separator:a23c6c66ef5aee1a85019b9dabc89a58c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -189,9 +211,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a1bdb8fc310a5977cfe89f9289e9830bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7b6226a1c91fd298d2812bb623dbff6"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#ac7b6226a1c91fd298d2812bb623dbff6">operator*=</a> (const Eigen::Matrix3d &amp;mat)</td></tr>
 <tr class="separator:ac7b6226a1c91fd298d2812bb623dbff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1933d92a8644a3d8ee78141f7a31e7c7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a1933d92a8644a3d8ee78141f7a31e7c7">draw</a> (<a class="el" href="ecvDrawContext_8h.html#a4104a00cf2edb8142c6fbadcbaac47ff">CC_DRAW_CONTEXT</a> &amp;<a class="el" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, const <a class="el" href="namespaceecvColor.html#a130363ede0dcec29fea72299720873c6">ecvColor::Rgb</a> &amp;col) const</td></tr>
-<tr class="memdesc:a1933d92a8644a3d8ee78141f7a31e7c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws bounding box (OpenGL)  <a href="classccBBox.html#a1933d92a8644a3d8ee78141f7a31e7c7">More...</a><br /></td></tr>
-<tr class="separator:a1933d92a8644a3d8ee78141f7a31e7c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1696087eee3c37da7d676ea003bf4cf6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a1696087eee3c37da7d676ea003bf4cf6">draw</a> (<a class="el" href="ecvDrawContext_8h.html#a4104a00cf2edb8142c6fbadcbaac47ff">CC_DRAW_CONTEXT</a> &amp;<a class="el" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) override</td></tr>
+<tr class="memdesc:a1696087eee3c37da7d676ea003bf4cf6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws entity and its children.  <a href="classccBBox.html#a1696087eee3c37da7d676ea003bf4cf6">More...</a><br /></td></tr>
+<tr class="separator:a1696087eee3c37da7d676ea003bf4cf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a51cde4f4964ac6bde8f484a17d065f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a5a51cde4f4964ac6bde8f484a17d065f">draw</a> (<a class="el" href="ecvDrawContext_8h.html#a4104a00cf2edb8142c6fbadcbaac47ff">CC_DRAW_CONTEXT</a> &amp;<a class="el" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, const <a class="el" href="namespaceecvColor.html#a130363ede0dcec29fea72299720873c6">ecvColor::Rgb</a> &amp;col)</td></tr>
+<tr class="memdesc:a5a51cde4f4964ac6bde8f484a17d065f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws bounding box (OpenGL)  <a href="classccBBox.html#a5a51cde4f4964ac6bde8f484a17d065f">More...</a><br /></td></tr>
+<tr class="separator:a5a51cde4f4964ac6bde8f484a17d065f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f21a236b212f3e03288c1392d0d792c"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a7f21a236b212f3e03288c1392d0d792c">GetPrintInfo</a> () const</td></tr>
 <tr class="memdesc:a7f21a236b212f3e03288c1392d0d792c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the 3D dimensions of the bounding box in string format.  <a href="classccBBox.html#a7f21a236b212f3e03288c1392d0d792c">More...</a><br /></td></tr>
 <tr class="separator:a7f21a236b212f3e03288c1392d0d792c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -205,7 +230,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab5174893d215bacdf40e9ce69b9262e4"><td class="memItemLeft" align="right" valign="top">Eigen::Vector3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#ab5174893d215bacdf40e9ce69b9262e4">GetHalfExtent</a> () const</td></tr>
 <tr class="memdesc:ab5174893d215bacdf40e9ce69b9262e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the half extent of the bounding box.  <a href="classccBBox.html#ab5174893d215bacdf40e9ce69b9262e4">More...</a><br /></td></tr>
 <tr class="separator:ab5174893d215bacdf40e9ce69b9262e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2349db3136eaa2267fe2c2547918d72b"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a2349db3136eaa2267fe2c2547918d72b">GetMaxExtent</a> () const</td></tr>
+<tr class="memitem:a2349db3136eaa2267fe2c2547918d72b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#a2349db3136eaa2267fe2c2547918d72b">GetMaxExtent</a> () const</td></tr>
 <tr class="separator:a2349db3136eaa2267fe2c2547918d72b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af05c705d1e09b5be2a9f0aa65165fcff"><td class="memItemLeft" align="right" valign="top">std::vector&lt; Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccBBox.html#af05c705d1e09b5be2a9f0aa65165fcff">GetBoxPoints</a> () const</td></tr>
 <tr class="memdesc:af05c705d1e09b5be2a9f0aa65165fcff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the eight points that define the bounding box.  <a href="classccBBox.html#af05c705d1e09b5be2a9f0aa65165fcff">More...</a><br /></td></tr>
@@ -328,7 +353,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aea53c4efc95be608547a555bf40f795e inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a7d28a89dc197e089208b6b43648b50b7">setPointSizeRecursive</a> (int pSize)</td></tr>
 <tr class="separator:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (PointCoordinateType <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
+<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
 <tr class="separator:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccBBox.html">ccBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">getBB_recursive</a> (bool withGLFeatures=false, bool onlyEnabledChildren=true)</td></tr>
 <tr class="memdesc:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the bounding-box of this entity and it's children.  <a href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">More...</a><br /></td></tr>
@@ -671,52 +696,58 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1b6c14ebd43208b21fe2dd9b2c69e825 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a1b6c14ebd43208b21fe2dd9b2c69e825">BoundingBoxTpl</a> ()</td></tr>
 <tr class="memdesc:a1b6c14ebd43208b21fe2dd9b2c69e825 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a1b6c14ebd43208b21fe2dd9b2c69e825">More...</a><br /></td></tr>
 <tr class="separator:a1b6c14ebd43208b21fe2dd9b2c69e825 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a11ecfce200b1e8fd3920195c757936db inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a11ecfce200b1e8fd3920195c757936db">BoundingBoxTpl</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;<a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#aaacc1e30352f82a5c944148912c855ec">minCorner</a>, const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;<a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a67c0f7975de401a2cc6e945dcf8810e6">maxCorner</a>)</td></tr>
+<tr class="memitem:a11ecfce200b1e8fd3920195c757936db inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a11ecfce200b1e8fd3920195c757936db">BoundingBoxTpl</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;<a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#aaacc1e30352f82a5c944148912c855ec">minCorner</a>, const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;<a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a67c0f7975de401a2cc6e945dcf8810e6">maxCorner</a>)</td></tr>
 <tr class="memdesc:a11ecfce200b1e8fd3920195c757936db inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor from two vectors (lower min. and upper max. corners)  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a11ecfce200b1e8fd3920195c757936db">More...</a><br /></td></tr>
 <tr class="separator:a11ecfce200b1e8fd3920195c757936db inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a324bcccb12ba94093c9db733550092d5 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; PointCoordinateType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a324bcccb12ba94093c9db733550092d5">operator+</a> (const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; PointCoordinateType &gt; &amp;bbox) const</td></tr>
+<tr class="memitem:a324bcccb12ba94093c9db733550092d5 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a324bcccb12ba94093c9db733550092d5">operator+</a> (const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;bbox) const</td></tr>
 <tr class="memdesc:a324bcccb12ba94093c9db733550092d5 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the 'sum' of this bounding-box and another one.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a324bcccb12ba94093c9db733550092d5">More...</a><br /></td></tr>
 <tr class="separator:a324bcccb12ba94093c9db733550092d5 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1b0f7270cf4ae58a6c60391367fdf6d inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; PointCoordinateType &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ac1b0f7270cf4ae58a6c60391367fdf6d">operator+=</a> (const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; PointCoordinateType &gt; &amp;bbox)</td></tr>
+<tr class="memitem:ac1b0f7270cf4ae58a6c60391367fdf6d inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ac1b0f7270cf4ae58a6c60391367fdf6d">operator+=</a> (const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;bbox)</td></tr>
 <tr class="memdesc:ac1b0f7270cf4ae58a6c60391367fdf6d inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">In place 'sum' of this bounding-box with another one.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#ac1b0f7270cf4ae58a6c60391367fdf6d">More...</a><br /></td></tr>
 <tr class="separator:ac1b0f7270cf4ae58a6c60391367fdf6d inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a919d5af37af0d3b8ff243b26f6b8645c inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; PointCoordinateType &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a919d5af37af0d3b8ff243b26f6b8645c">operator*=</a> (PointCoordinateType scaleFactor)</td></tr>
-<tr class="memdesc:a919d5af37af0d3b8ff243b26f6b8645c inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scales the bounding box.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a919d5af37af0d3b8ff243b26f6b8645c">More...</a><br /></td></tr>
-<tr class="separator:a919d5af37af0d3b8ff243b26f6b8645c inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7ba706318effc6fdbdeb776c11ff714 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ac7ba706318effc6fdbdeb776c11ff714">operator+=</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;V)</td></tr>
+<tr class="memdesc:ac7ba706318effc6fdbdeb776c11ff714 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shifts the bounding box with a vector.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#ac7ba706318effc6fdbdeb776c11ff714">More...</a><br /></td></tr>
+<tr class="separator:ac7ba706318effc6fdbdeb776c11ff714 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc0946f32275a917b2597078033a4ce8 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#acc0946f32275a917b2597078033a4ce8">operator-=</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;V)</td></tr>
+<tr class="memdesc:acc0946f32275a917b2597078033a4ce8 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shifts the bounding box with a vector.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#acc0946f32275a917b2597078033a4ce8">More...</a><br /></td></tr>
+<tr class="separator:acc0946f32275a917b2597078033a4ce8 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab264f36a033731915da5e8da78ef0d33 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ab264f36a033731915da5e8da78ef0d33">operator*=</a> (const <a class="el" href="classcloudViewer_1_1SquareMatrixTpl.html">SquareMatrixTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;mat)</td></tr>
+<tr class="memdesc:ab264f36a033731915da5e8da78ef0d33 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotates the bounding box.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#ab264f36a033731915da5e8da78ef0d33">More...</a><br /></td></tr>
+<tr class="separator:ab264f36a033731915da5e8da78ef0d33 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d56a51562454dc3bc10180c6cc5e7ee inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a9d56a51562454dc3bc10180c6cc5e7ee">clear</a> ()</td></tr>
 <tr class="memdesc:a9d56a51562454dc3bc10180c6cc5e7ee inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the bounding box.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a9d56a51562454dc3bc10180c6cc5e7ee">More...</a><br /></td></tr>
 <tr class="separator:a9d56a51562454dc3bc10180c6cc5e7ee inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afab9103ed8446816839045941182103e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#afab9103ed8446816839045941182103e">add</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;P)</td></tr>
+<tr class="memitem:afab9103ed8446816839045941182103e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#afab9103ed8446816839045941182103e">add</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;P)</td></tr>
 <tr class="memdesc:afab9103ed8446816839045941182103e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">'Enlarges' the bounding box with a point  <a href="classcloudViewer_1_1BoundingBoxTpl.html#afab9103ed8446816839045941182103e">More...</a><br /></td></tr>
 <tr class="separator:afab9103ed8446816839045941182103e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaacc1e30352f82a5c944148912c855ec inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#aaacc1e30352f82a5c944148912c855ec">minCorner</a> () const</td></tr>
+<tr class="memitem:aaacc1e30352f82a5c944148912c855ec inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#aaacc1e30352f82a5c944148912c855ec">minCorner</a> () const</td></tr>
 <tr class="memdesc:aaacc1e30352f82a5c944148912c855ec inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns min corner (const)  <a href="classcloudViewer_1_1BoundingBoxTpl.html#aaacc1e30352f82a5c944148912c855ec">More...</a><br /></td></tr>
 <tr class="separator:aaacc1e30352f82a5c944148912c855ec inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ef208e33d28b7fbfb3cbb0d76c86b49 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a1ef208e33d28b7fbfb3cbb0d76c86b49">minCorner</a> ()</td></tr>
+<tr class="memitem:a1ef208e33d28b7fbfb3cbb0d76c86b49 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a1ef208e33d28b7fbfb3cbb0d76c86b49">minCorner</a> ()</td></tr>
 <tr class="memdesc:a1ef208e33d28b7fbfb3cbb0d76c86b49 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns min corner.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a1ef208e33d28b7fbfb3cbb0d76c86b49">More...</a><br /></td></tr>
 <tr class="separator:a1ef208e33d28b7fbfb3cbb0d76c86b49 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67c0f7975de401a2cc6e945dcf8810e6 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a67c0f7975de401a2cc6e945dcf8810e6">maxCorner</a> () const</td></tr>
+<tr class="memitem:a67c0f7975de401a2cc6e945dcf8810e6 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a67c0f7975de401a2cc6e945dcf8810e6">maxCorner</a> () const</td></tr>
 <tr class="memdesc:a67c0f7975de401a2cc6e945dcf8810e6 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns max corner (const)  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a67c0f7975de401a2cc6e945dcf8810e6">More...</a><br /></td></tr>
 <tr class="separator:a67c0f7975de401a2cc6e945dcf8810e6 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae1d9ec9571a319fd69d0d92f2d00f142 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ae1d9ec9571a319fd69d0d92f2d00f142">maxCorner</a> ()</td></tr>
+<tr class="memitem:ae1d9ec9571a319fd69d0d92f2d00f142 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ae1d9ec9571a319fd69d0d92f2d00f142">maxCorner</a> ()</td></tr>
 <tr class="memdesc:ae1d9ec9571a319fd69d0d92f2d00f142 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns max corner.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#ae1d9ec9571a319fd69d0d92f2d00f142">More...</a><br /></td></tr>
 <tr class="separator:ae1d9ec9571a319fd69d0d92f2d00f142 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b4197a19a89e56536d7780c7fb14cbd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a3b4197a19a89e56536d7780c7fb14cbd">getCenter</a> () const</td></tr>
+<tr class="memitem:a3b4197a19a89e56536d7780c7fb14cbd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a3b4197a19a89e56536d7780c7fb14cbd">getCenter</a> () const</td></tr>
 <tr class="memdesc:a3b4197a19a89e56536d7780c7fb14cbd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns center.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a3b4197a19a89e56536d7780c7fb14cbd">More...</a><br /></td></tr>
 <tr class="separator:a3b4197a19a89e56536d7780c7fb14cbd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1195a4ec19ff8782fc3da95cdbfb5a84 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a1195a4ec19ff8782fc3da95cdbfb5a84">getDiagVec</a> () const</td></tr>
+<tr class="memitem:a1195a4ec19ff8782fc3da95cdbfb5a84 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a1195a4ec19ff8782fc3da95cdbfb5a84">getDiagVec</a> () const</td></tr>
 <tr class="memdesc:a1195a4ec19ff8782fc3da95cdbfb5a84 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns diagonal vector.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a1195a4ec19ff8782fc3da95cdbfb5a84">More...</a><br /></td></tr>
 <tr class="separator:a1195a4ec19ff8782fc3da95cdbfb5a84 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a68eec2164cc1d0363fd25b9108c2475e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a68eec2164cc1d0363fd25b9108c2475e">getDiagNorm</a> () const</td></tr>
+<tr class="memitem:a68eec2164cc1d0363fd25b9108c2475e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a68eec2164cc1d0363fd25b9108c2475e">getDiagNorm</a> () const</td></tr>
 <tr class="memdesc:a68eec2164cc1d0363fd25b9108c2475e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns diagonal length.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a68eec2164cc1d0363fd25b9108c2475e">More...</a><br /></td></tr>
 <tr class="separator:a68eec2164cc1d0363fd25b9108c2475e inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b9d526c372382149bede345eda0e4dd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a1b9d526c372382149bede345eda0e4dd">getDiagNormd</a> () const</td></tr>
 <tr class="memdesc:a1b9d526c372382149bede345eda0e4dd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns diagonal length (double precision)  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a1b9d526c372382149bede345eda0e4dd">More...</a><br /></td></tr>
 <tr class="separator:a1b9d526c372382149bede345eda0e4dd inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6c6e89a6f248aaff613f8c22a3891b91 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a6c6e89a6f248aaff613f8c22a3891b91">getMinBoxDim</a> () const</td></tr>
+<tr class="memitem:a6c6e89a6f248aaff613f8c22a3891b91 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a6c6e89a6f248aaff613f8c22a3891b91">getMinBoxDim</a> () const</td></tr>
 <tr class="memdesc:a6c6e89a6f248aaff613f8c22a3891b91 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns minimal box dimension.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a6c6e89a6f248aaff613f8c22a3891b91">More...</a><br /></td></tr>
 <tr class="separator:a6c6e89a6f248aaff613f8c22a3891b91 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c4a36a84e06981c453523df211c9969 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a9c4a36a84e06981c453523df211c9969">getMaxBoxDim</a> () const</td></tr>
+<tr class="memitem:a9c4a36a84e06981c453523df211c9969 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a9c4a36a84e06981c453523df211c9969">getMaxBoxDim</a> () const</td></tr>
 <tr class="memdesc:a9c4a36a84e06981c453523df211c9969 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns maximal box dimension.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a9c4a36a84e06981c453523df211c9969">More...</a><br /></td></tr>
 <tr class="separator:a9c4a36a84e06981c453523df211c9969 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a0bd124483e9a105f3ad0ad530ab31d inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a8a0bd124483e9a105f3ad0ad530ab31d">computeVolume</a> () const</td></tr>
@@ -728,16 +759,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae42ccda2daa6b8891fb33eb06948daa2 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">isValid</a> () const</td></tr>
 <tr class="memdesc:ae42ccda2daa6b8891fb33eb06948daa2 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether bounding box is valid or not.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">More...</a><br /></td></tr>
 <tr class="separator:ae42ccda2daa6b8891fb33eb06948daa2 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57576c178ddaa791191a656ef7273cc7 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a57576c178ddaa791191a656ef7273cc7">minDistTo</a> (const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; PointCoordinateType &gt; &amp;bbox) const</td></tr>
+<tr class="memitem:a57576c178ddaa791191a656ef7273cc7 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a57576c178ddaa791191a656ef7273cc7">minDistTo</a> (const <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">BoundingBoxTpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;bbox) const</td></tr>
 <tr class="separator:a57576c178ddaa791191a656ef7273cc7 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53246b05ca20449b1ef45d4f0489bf7b inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a53246b05ca20449b1ef45d4f0489bf7b">contains</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt; &amp;P) const</td></tr>
+<tr class="memitem:a53246b05ca20449b1ef45d4f0489bf7b inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a53246b05ca20449b1ef45d4f0489bf7b">contains</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt; &amp;P) const</td></tr>
 <tr class="memdesc:a53246b05ca20449b1ef45d4f0489bf7b inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether a points is inside the box or not.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a53246b05ca20449b1ef45d4f0489bf7b">More...</a><br /></td></tr>
 <tr class="separator:a53246b05ca20449b1ef45d4f0489bf7b inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7d22d2fd594117d6b113b3e8987e2d0 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#aa7d22d2fd594117d6b113b3e8987e2d0">containsEigen</a> (const Eigen::Vector3d &amp;<a class="el" href="structpoint.html">point</a>) const</td></tr>
 <tr class="separator:aa7d22d2fd594117d6b113b3e8987e2d0 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a522772f206c8284d53a7e91264ff6eda inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a522772f206c8284d53a7e91264ff6eda">GetPointIndicesWithinBoundingBox</a> (const std::vector&lt; Eigen::Vector3d &gt; &amp;<a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>) const</td></tr>
 <tr class="separator:a522772f206c8284d53a7e91264ff6eda inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42fab5cad9ba82c6daaaa34810c83782 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a42fab5cad9ba82c6daaaa34810c83782">GetPointIndicesWithinBoundingBox</a> (const std::vector&lt; <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt;&gt; &amp;<a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>) const</td></tr>
+<tr class="memitem:a42fab5cad9ba82c6daaaa34810c83782 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a42fab5cad9ba82c6daaaa34810c83782">GetPointIndicesWithinBoundingBox</a> (const std::vector&lt; <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt;&gt; &amp;<a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>) const</td></tr>
 <tr class="separator:a42fab5cad9ba82c6daaaa34810c83782 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad97bf93ac58ed722537216bb970e25b5 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ad97bf93ac58ed722537216bb970e25b5">addEigen</a> (const Eigen::Vector3d &amp;<a class="el" href="structpoint.html">point</a>)</td></tr>
 <tr class="separator:ad97bf93ac58ed722537216bb970e25b5 inherit pub_methods_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1038,10 +1069,10 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:ab0b34398b20dff4289f3b687f856e7de inherit pro_attribs_classccDrawableObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">The stack of pushed display states.  <a href="classccDrawableObject.html#ab0b34398b20dff4289f3b687f856e7de">More...</a><br /></td></tr>
 <tr class="separator:ab0b34398b20dff4289f3b687f856e7de inherit pro_attribs_classccDrawableObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classcloudViewer_1_1BoundingBoxTpl')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;</a></td></tr>
-<tr class="memitem:a31d1c6b5341218c603a4eddb195ef3e5 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a31d1c6b5341218c603a4eddb195ef3e5">m_bbMin</a></td></tr>
+<tr class="memitem:a31d1c6b5341218c603a4eddb195ef3e5 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a31d1c6b5341218c603a4eddb195ef3e5">m_bbMin</a></td></tr>
 <tr class="memdesc:a31d1c6b5341218c603a4eddb195ef3e5 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lower min. corner.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#a31d1c6b5341218c603a4eddb195ef3e5">More...</a><br /></td></tr>
 <tr class="separator:a31d1c6b5341218c603a4eddb195ef3e5 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbca2a3ad0241275ea12ad5e3b7a7c27 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; PointCoordinateType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#abbca2a3ad0241275ea12ad5e3b7a7c27">m_bbMax</a></td></tr>
+<tr class="memitem:abbca2a3ad0241275ea12ad5e3b7a7c27 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#abbca2a3ad0241275ea12ad5e3b7a7c27">m_bbMax</a></td></tr>
 <tr class="memdesc:abbca2a3ad0241275ea12ad5e3b7a7c27 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Upper max. corner.  <a href="classcloudViewer_1_1BoundingBoxTpl.html#abbca2a3ad0241275ea12ad5e3b7a7c27">More...</a><br /></td></tr>
 <tr class="separator:abbca2a3ad0241275ea12ad5e3b7a7c27 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2401e7560eb150ead90203c3f9e7f6b2 inherit pro_attribs_classcloudViewer_1_1BoundingBoxTpl"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#a79fe6c91c892a9b89d60efd345c3808b">CCVector3d</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a2401e7560eb150ead90203c3f9e7f6b2">color_</a></td></tr>
@@ -1082,7 +1113,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Default constructor. </p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00029">29</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00028">28</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1128,7 +1159,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Constructor from two vectors (lower min. and upper max. corners) </p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00032">32</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00031">31</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1181,7 +1212,7 @@ Additional Inherited Members</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00042">42</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00041">41</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1221,7 +1252,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Constructor from two vectors (lower min. and upper max. corners) </p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00049">49</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00048">48</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1312,8 +1343,40 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a1933d92a8644a3d8ee78141f7a31e7c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1933d92a8644a3d8ee78141f7a31e7c7">&#9670;&nbsp;</a></span>draw()</h2>
+<a id="a1696087eee3c37da7d676ea003bf4cf6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1696087eee3c37da7d676ea003bf4cf6">&#9670;&nbsp;</a></span>draw() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ccBBox::draw </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="ecvDrawContext_8h.html#a4104a00cf2edb8142c6fbadcbaac47ff">CC_DRAW_CONTEXT</a> &amp;&#160;</td>
+          <td class="paramname"><em>context</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Draws entity and its children. </p>
+
+<p>Implements <a class="el" href="classccDrawableObject.html#ad113b092ba5b4ce31882e189d131bc65">ccDrawableObject</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ccBBox_8cpp_source.html#l00018">define_ccBBox()</a>.</p>
+
+</div>
+</div>
+<a id="a5a51cde4f4964ac6bde8f484a17d065f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a51cde4f4964ac6bde8f484a17d065f">&#9670;&nbsp;</a></span>draw() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1333,7 +1396,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td></td>
           <td>)</td>
-          <td></td><td> const</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1346,8 +1409,6 @@ Additional Inherited Members</h2></td></tr>
   </table>
   </dd>
 </dl>
-
-<p class="reference">Referenced by <a class="el" href="ccBBox_8cpp_source.html#l00018">define_ccBBox()</a>.</p>
 
 </div>
 </div>
@@ -1378,7 +1439,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a3817540ce25b70106566ac760c0a2493">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00092">92</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00091">91</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="ViewControl_8h_source.html#l00135">cloudViewer::visualization::ViewControl::FitInGeometry()</a>.</p>
 
@@ -1430,7 +1491,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a47f925405702d191a40e3a334ffca224">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00088">88</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00087">87</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">References <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, and <a class="el" href="BoundingBox_8h_source.html#l00164">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getCenter()</a>.</p>
 
@@ -1465,9 +1526,9 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classccObject.html#ab009e396b461c0ff119bad3740a37b55">ccObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00063">63</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00062">62</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
-<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00151">CV_TYPES::BBOX</a>.</p>
+<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00154">CV_TYPES::BBOX</a>.</p>
 
 </div>
 </div>
@@ -1496,7 +1557,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Get the extent/length of the bounding box in x, y, and z dimension. </p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00145">145</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00147">147</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">References <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, and <a class="el" href="BoundingBox_8h_source.html#l00169">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getDiagVec()</a>.</p>
 
@@ -1529,7 +1590,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Returns the half extent of the bounding box. </p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00150">150</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00152">152</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1560,7 +1621,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#aab67eedc63af6244ea26b80c65059c36">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00085">85</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00084">84</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">References <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>.</p>
 
@@ -1578,7 +1639,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccBBox::GetMaxExtent </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccBBox::GetMaxExtent </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1592,7 +1653,7 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 <p>Returns the maximum extent, i.e. the maximum of X, Y and Z axis' extents. </p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00154">154</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00156">156</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="ViewControl_8cpp_source.html#l00173">cloudViewer::visualization::ViewControl::ConvertFromPinholeCameraParameters()</a>, <a class="el" href="ViewControl_8cpp_source.html#l00247">cloudViewer::visualization::ViewControl::SetProjectionParameters()</a>, and <a class="el" href="ViewControl_8cpp_source.html#l00038">cloudViewer::visualization::ViewControl::SetViewMatrices()</a>.</p>
 
@@ -1625,7 +1686,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#ac1c54eabe0ac743a6c6b955cc3b5a6e0">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00082">82</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00081">81</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">References <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>.</p>
 
@@ -1655,8 +1716,6 @@ Additional Inherited Members</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Returns an oriented bounding box of the geometry. </p>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">ccHObject</a>.</p>
 
@@ -1697,7 +1756,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a19931028cc0a393a8b2de2ca548b3a22">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00065">65</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00064">64</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1745,7 +1804,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccHObject.html#a96bed4c10cf153d6ef0d3dd4838a319f">ccHObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00073">73</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00072">72</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 <p class="reference">References <a class="el" href="BoundingBox_8h_source.html#l00185">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getMaxBoxDim()</a>, and <a class="el" href="BoundingBox_8h_source.html#l00203">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::isValid()</a>.</p>
 
@@ -1780,7 +1839,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classccSerializableObject.html#a3691493492dbbcdbea0f0c6a1300b151">ccSerializableObject</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00061">61</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00060">60</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -1843,14 +1902,10 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Rotates the bounding box. </p>
-
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ab264f36a033731915da5e8da78ef0d33">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;</a>.</p>
 
 </div>
 </div>
@@ -1909,10 +1964,14 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Scales the bounding box. </p>
+
+<p>Reimplemented from <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#a919d5af37af0d3b8ff243b26f6b8645c">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;</a>.</p>
 
 </div>
 </div>
@@ -1953,14 +2012,10 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Shifts the bounding box with a vector. </p>
-
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#ac7ba706318effc6fdbdeb776c11ff714">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;</a>.</p>
 
 </div>
 </div>
@@ -2001,14 +2056,10 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Shifts the bounding box with a vector. </p>
-
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1BoundingBoxTpl.html#acc0946f32275a917b2597078033a4ce8">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;</a>.</p>
 
 </div>
 </div>
@@ -2148,7 +2199,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00133">133</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00135">135</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -2176,7 +2227,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00130">130</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvBBox_8h_source.html#l00132">132</a> of file <a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a>.</p>
 
 </div>
 </div>
@@ -2258,7 +2309,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_db/include/<a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="ecvBBox_8h_source.html">ecvBBox.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -2266,7 +2317,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classccBBox.html">ccBBox</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,0 +1,6 @@
+<map id="controldef" name="controldef">
+<area shape="rect" id="node1" title=" " alt="" coords="71,184,159,211"/>
+<area shape="rect" id="node2" href="$structworkspacedef.html" title=" " alt="" coords="58,95,171,121"/>
+<area shape="rect" id="node3" href="$structedegreedef.html" title=" " alt="" coords="5,5,101,32"/>
+<area shape="rect" id="node4" href="$structvedegreedef.html" title=" " alt="" coords="125,5,229,32"/>
+</map>

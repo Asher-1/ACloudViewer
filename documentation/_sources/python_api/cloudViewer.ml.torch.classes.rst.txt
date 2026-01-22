@@ -1,0 +1,16 @@
+cloudViewer.ml.torch.classes
+============================
+
+.. currentmodule:: cloudViewer.ml.torch.classes
+
+**Classes**
+
+.. autosummary::
+
+    RaggedTensor
+
+
+.. toctree::
+    :hidden:
+
+    RaggedTensor <cloudViewer.ml.torch.classes.RaggedTensor>

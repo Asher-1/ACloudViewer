@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: /root/ACloudViewer/libs/eCV_db/include/ecvGenericPointCloud.h Source File</title>
+<title>ACloudViewer: /root/ACloudViewer/libs/CV_db/include/ecvGenericPointCloud.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -126,7 +126,7 @@ $(document).ready(function(){initNavTree('ecvGenericPointCloud_8h_source.html','
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="ecvGenericPointCloud_8h.html#a89802a94a3bd3bcf4347c9bfb439bf59">   36</a></span>&#160;<span class="preprocessor">#define CC_DEFAULT_CLOUD_SHININESS 50.0f</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html">   45</a></span>&#160;<span class="keyword">class </span><a class="code" href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a> <a class="code" href="classccGenericPointCloud.html">ccGenericPointCloud</a></div>
+<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html">   45</a></span>&#160;<span class="keyword">class </span><a class="code" href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a> <a class="code" href="classccGenericPointCloud.html">ccGenericPointCloud</a></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    : <span class="keyword">public</span> <a class="code" href="classccShiftedObject.html">ccShiftedObject</a>,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      <span class="keyword">public</span> <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">cloudViewer::GenericIndexedCloudPersist</a> {</div>
 <div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html#abe123dbdbe8e0d1e3c864a2534a8ed69">   48</a></span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classccMesh.html">ccMesh</a>;</div>
@@ -254,9 +254,9 @@ $(document).ready(function(){initNavTree('ecvGenericPointCloud_8h_source.html','
 <div class="line"><a name="l00254"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html#a75913b7dfdad92a08c78be8980b5a113">  254</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccGenericPointCloud.html#a75913b7dfdad92a08c78be8980b5a113">removePoints</a>(<span class="keywordtype">size_t</span> index) = 0;</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160; </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
-<div class="line"><a name="l00263"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html#a0c58718a0a55e5d3cf29c76efadac293">  263</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccGenericPointCloud.html#a0c58718a0a55e5d3cf29c76efadac293">scale</a>(PointCoordinateType fx,</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                       PointCoordinateType fy,</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                       PointCoordinateType fz,</div>
+<div class="line"><a name="l00263"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html#a0c58718a0a55e5d3cf29c76efadac293">  263</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccGenericPointCloud.html#a0c58718a0a55e5d3cf29c76efadac293">scale</a>(<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> fx,</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                       <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> fy,</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                       <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> fz,</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                       <a class="code" href="classVector3Tpl.html">CCVector3</a> center = <a class="code" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>(0, 0, 0)) = 0;</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="comment">// inherited from ccSerializableObject</span></div>
@@ -301,11 +301,13 @@ $(document).ready(function(){initNavTree('ecvGenericPointCloud_8h_source.html','
 <div class="line"><a name="l00321"></a><span class="lineno"><a class="line" href="classccGenericPointCloud.html#a501584d5f2dad906a3253305e35edc71">  321</a></span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> <a class="code" href="classccGenericPointCloud.html#a501584d5f2dad906a3253305e35edc71">m_pointSize</a>;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;};</div>
 <div class="ttc" id="aCVGeom_8h_html_aba743094ac3c5f78d2814b141438015c"><div class="ttname"><a href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a></div><div class="ttdeci">Vector3Tpl&lt; PointCoordinateType &gt; CCVector3</div><div class="ttdoc">Default 3D Vector.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00798">CVGeom.h:798</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aclassVector2Tpl_html"><div class="ttname"><a href="classVector2Tpl.html">Vector2Tpl&lt; double &gt;</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
-<div class="ttc" id="aclassccBBox_html"><div class="ttname"><a href="classccBBox.html">ccBBox</a></div><div class="ttdoc">Bounding box structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBBox_8h_source.html#l00025">ecvBBox.h:26</a></div></div>
+<div class="ttc" id="aclassccBBox_html"><div class="ttname"><a href="classccBBox.html">ccBBox</a></div><div class="ttdoc">Bounding box structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBBox_8h_source.html#l00025">ecvBBox.h:25</a></div></div>
 <div class="ttc" id="aclassccGLMatrix_html"><div class="ttname"><a href="classccGLMatrix.html">ccGLMatrix</a></div><div class="ttdoc">Float version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00019">ecvGLMatrix.h:19</a></div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html"><div class="ttname"><a href="classccGenericPointCloud.html">ccGenericPointCloud</a></div><div class="ttdoc">A 3D cloud interface with associated features (color, normals, octree, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvGenericPointCloud_8h_source.html#l00045">ecvGenericPointCloud.h:47</a></div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html_a0c58718a0a55e5d3cf29c76efadac293"><div class="ttname"><a href="classccGenericPointCloud.html#a0c58718a0a55e5d3cf29c76efadac293">ccGenericPointCloud::scale</a></div><div class="ttdeci">virtual void scale(PointCoordinateType fx, PointCoordinateType fy, PointCoordinateType fz, CCVector3 center=CCVector3(0, 0, 0))=0</div><div class="ttdoc">Multiplies all coordinates by constant factors (one per dimension)</div></div>
@@ -364,7 +366,6 @@ $(document).ready(function(){initNavTree('ecvGenericPointCloud_8h_source.html','
 <div class="ttc" id="aclasscloudViewer_1_1SquareMatrixTpl_html"><div class="ttname"><a href="classcloudViewer_1_1SquareMatrixTpl.html">cloudViewer::SquareMatrixTpl&lt; double &gt;</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
 <div class="ttc" id="aclassecvOrientedBBox_html"><div class="ttname"><a href="classecvOrientedBBox.html">ecvOrientedBBox</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvOrientedBBox_8h_source.html#l00029">ecvOrientedBBox.h:30</a></div></div>
-<div class="ttc" id="aeCV__db_8h_html_a9a6d6d5da9760a0b3de8ac5d783f93d0"><div class="ttname"><a href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a></div><div class="ttdeci">#define ECV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="eCV__db_8h_source.html#l00015">eCV_db.h:15</a></div></div>
 <div class="ttc" id="aecvAdvancedTypes_8h_html"><div class="ttname"><a href="ecvAdvancedTypes_8h.html">ecvAdvancedTypes.h</a></div></div>
 <div class="ttc" id="aecvBBox_8h_html"><div class="ttname"><a href="ecvBBox_8h.html">ecvBBox.h</a></div></div>
 <div class="ttc" id="aecvBasicTypes_8h_html_aa8841a9497c5acbcc5aa3f25a544fa5d"><div class="ttname"><a href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a></div><div class="ttdeci">unsigned int CompressedNormType</div><div class="ttdoc">Compressed normals type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBasicTypes_8h_source.html#l00016">ecvBasicTypes.h:16</a></div></div>
@@ -379,8 +380,8 @@ $(document).ready(function(){initNavTree('ecvGenericPointCloud_8h_source.html','
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_c4299987a504bc66471641292258c6d3.html">eCV_db</a></li><li class="navelem"><a class="el" href="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html">include</a></li><li class="navelem"><a class="el" href="ecvGenericPointCloud_8h.html">ecvGenericPointCloud.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvGenericPointCloud_8h.html">ecvGenericPointCloud.h</a></li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

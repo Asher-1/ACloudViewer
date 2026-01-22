@@ -356,7 +356,7 @@ $(document).ready(function(){initNavTree('NeighborhoodFeature_8cpp_source.html',
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                <span class="keywordflow">if</span> (N) {</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                    <span class="comment">// force +Z</span></div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                    <a class="code" href="classVector3Tpl.html">CCVector3</a> Np = (N-&gt;<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> &lt; 0 ? -<a class="code" href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a> * *N : *N);</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                    PointCoordinateType dip_deg, dipDir_deg;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dip_deg, dipDir_deg;</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                    <a class="code" href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">ccNormalVectors::ConvertNormalToDipAndDipDir</a>(Np, dip_deg,</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                                                                 dipDir_deg);</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                    outputValue = (<a class="code" href="structmasc_1_1NeighborhoodFeature.html#a7472b183efaf296d2a4a2c31b79428c1">type</a> == <a class="code" href="structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ab19100167834ebcaaddaf320c17b5b31">Dip</a> ? dip_deg : dipDir_deg);</div>
@@ -389,7 +389,7 @@ $(document).ready(function(){initNavTree('NeighborhoodFeature_8cpp_source.html',
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ae670766671acb6a54074b076c59fa314">Zmax</a>:</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840aa49b0d4fae810e70b7f93a350b055f83">Zmin</a>:</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;            <span class="keywordflow">if</span> (kNN &gt;= 2) {</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                PointCoordinateType minZ, maxZ;</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minZ, maxZ;</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                minZ = maxZ = pointsInNeighbourhood[0].point-&gt;z;</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 1; i &lt; kNN; ++i) {</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                    <span class="keywordflow">if</span> (minZ &gt; pointsInNeighbourhood[i].<a class="code" href="structpoint.html">point</a>-&gt;z)</div>
@@ -441,6 +441,7 @@ $(document).ready(function(){initNavTree('NeighborhoodFeature_8cpp_source.html',
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;}</div>
 <div class="ttc" id="aCVConst_8h_html_a42350ac42d88ac01bd50195c36f27789"><div class="ttname"><a href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a></div><div class="ttdeci">constexpr PointCoordinateType PC_ONE</div><div class="ttdoc">'1' as a PointCoordinateType value</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00067">CVConst.h:67</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aDgmOctreeReferenceCloud_8h_html"><div class="ttname"><a href="DgmOctreeReferenceCloud_8h.html">DgmOctreeReferenceCloud.h</a></div></div>
 <div class="ttc" id="aJacobi_8h_html"><div class="ttname"><a href="Jacobi_8h.html">Jacobi.h</a></div></div>
 <div class="ttc" id="aNeighborhoodFeature_8h_html"><div class="ttname"><a href="NeighborhoodFeature_8h.html">NeighborhoodFeature.h</a></div></div>
@@ -531,7 +532,7 @@ $(document).ready(function(){initNavTree('NeighborhoodFeature_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="NeighborhoodFeature_8cpp.html">NeighborhoodFeature.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:05 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

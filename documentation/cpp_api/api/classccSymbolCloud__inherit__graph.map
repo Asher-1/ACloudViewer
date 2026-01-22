@@ -1,0 +1,16 @@
+<map id="ccSymbolCloud" name="ccSymbolCloud">
+<area shape="rect" id="node1" title=" " alt="" coords="403,595,525,621"/>
+<area shape="rect" id="node2" href="$classccPointCloud.html" title="A 3D cloud and its associated features (color, normals, scalar fields, etc.)" alt="" coords="411,519,517,545"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="364,428,564,469"/>
+<area shape="rect" id="node4" href="$classccGenericPointCloud.html" title="A 3D cloud interface with associated features (color, normals, octree, etc.)" alt="" coords="277,339,433,365"/>
+<area shape="rect" id="node5" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="157,255,280,282"/>
+<area shape="rect" id="node6" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="172,165,260,191"/>
+<area shape="rect" id="node7" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,81,122,108"/>
+<area shape="rect" id="node8" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" id="node9" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,81,286,108"/>
+<area shape="rect" id="node10" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="304,248,515,289"/>
+<area shape="rect" id="node11" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="304,157,515,199"/>
+<area shape="rect" id="node12" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="311,81,508,108"/>
+<area shape="rect" id="node13" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="457,339,695,365"/>
+<area shape="rect" id="node14" title=" " alt="" coords="557,255,595,282"/>
+</map>

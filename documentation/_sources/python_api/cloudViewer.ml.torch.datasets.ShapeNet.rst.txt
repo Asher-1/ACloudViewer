@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.ShapeNet
+--------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: ShapeNet
+    :members:
+    :undoc-members:

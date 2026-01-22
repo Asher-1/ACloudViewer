@@ -1,0 +1,6 @@
+<map id="cloudViewer::data::SampleFountainRGBDImages" name="cloudViewer::data::SampleFountainRGBDImages">
+<area shape="rect" id="node1" title="Data class for SampleFountainRGBDImages contains a sample set of 33 color and depth images from the F..." alt="" coords="5,291,219,332"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1data_1_1DownloadDataset.html" title="Dataset class with one or more downloaded file." alt="" coords="39,200,185,241"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1data_1_1Dataset.html" title="Base CloudViewer dataset class." alt="" coords="39,109,185,151"/>
+<area shape="rect" id="node4" title=" " alt="" coords="83,5,141,32"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="E57ScanHeader" name="E57ScanHeader">
+<area shape="rect" id="node1" title="E57 scan useful header information (minimal set for ACloudViewer only ;)" alt="" coords="135,199,259,225"/>
+<area shape="rect" id="node2" href="$classIntensityLimits.html" title=" " alt="" coords="5,109,124,136"/>
+<area shape="rect" id="node3" href="$classColorLimits.html" title=" " alt="" coords="149,109,245,136"/>
+<area shape="rect" id="node4" href="$classPointStandardizedFieldsAvailable.html" title=" " alt="" coords="269,109,508,136"/>
+<area shape="rect" id="node5" title=" " alt="" coords="259,5,334,32"/>
+<area shape="rect" id="node6" title=" " alt="" coords="449,5,515,32"/>
+</map>

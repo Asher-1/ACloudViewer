@@ -1,0 +1,6 @@
+<map id="cloudViewer::FastMarching" name="cloudViewer::FastMarching">
+<area shape="rect" id="node1" title="Fast Marching algorithm (front propagation)" alt="" coords="5,56,201,83"/>
+<area shape="rect" id="node2" href="$classFastMarchingForFacetExtraction.html" title="Fast Marching algorithm for planar facets extraction (qFacets plugin)" alt="" coords="257,5,485,32"/>
+<area shape="rect" id="node3" href="$classccFastMarchingForNormsDirection.html" title="Fast Marching algorithm for normals direction resolution." alt="" coords="249,56,493,83"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1FastMarchingForPropagation.html" title="Fast Marching algorithm for surface front propagation." alt="" coords="273,107,469,149"/>
+</map>

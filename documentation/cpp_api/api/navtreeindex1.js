@@ -1,9 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"BinaryEW_8h.html":[4,0,1,0,0,1,6],
-"BinaryEW_8h.html#a20f1270704949f6d20448a1984ae59a4":[4,0,1,0,0,1,6,2],
-"BinaryEW_8h.html#a2a5fea461632c9cb4fe1fbbf52bd6fb7":[4,0,1,0,0,1,6,1],
-"BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132":[4,0,1,0,0,1,6,0],
 "BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132a086cb8308e5a36e7c4ed1f8873ad801f":[4,0,1,0,0,1,6,0,9],
 "BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132a103aa83df42877d5f9baeafdbf620b55":[4,0,1,0,0,1,6,0,6],
 "BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132a3718b5ecf60aa0dba49e150e96cb1fc3":[4,0,1,0,0,1,6,0,13],
@@ -39,9 +35,9 @@ var NAVTREEINDEX1 =
 "BitmapWindowSystem_8h.html":[4,0,1,0,8,1,3],
 "BitmapWindowSystem_8h_source.html":[4,0,1,0,8,1,3],
 "BlasWrapper_8h.html":[4,0,1,0,0,2,6],
-"BlasWrapper_8h.html#a1055cdd9f60f86a53736933b8037075f":[4,0,1,0,0,2,6,1],
-"BlasWrapper_8h.html#a32ad74d3ea26f42404fadb56911f734a":[4,0,1,0,0,2,6,0],
-"BlasWrapper_8h.html#a6ec4adb3a32f13900b741a010d2d7731":[4,0,1,0,0,2,6,2],
+"BlasWrapper_8h.html#a70e9b13291bb7bc628ee044841998b14":[4,0,1,0,0,2,6,0],
+"BlasWrapper_8h.html#ac1df2c691f6d8e8f691c130b228bde06":[4,0,1,0,0,2,6,2],
+"BlasWrapper_8h.html#ac8c9ca9d46ed147b414d69774044e6aa":[4,0,1,0,0,2,6,1],
 "BlasWrapper_8h_source.html":[4,0,1,0,0,2,6],
 "BlobNodeImpl_8cpp.html":[4,0,2,0,0,4,0,0,2,0],
 "BlobNodeImpl_8cpp_source.html":[4,0,2,0,0,4,0,0,2,0],
@@ -249,5 +245,9 @@ var NAVTREEINDEX1 =
 "CVGeom_8h_source.html":[4,0,0,0,13],
 "CVKdTree_8h.html":[4,0,0,0,14],
 "CVKdTree_8h_source.html":[4,0,0,0,14],
-"CVLog_8h.html":[4,0,0,0,15]
+"CVLog_8h.html":[4,0,0,0,15],
+"CVLog_8h_source.html":[4,0,0,0,15],
+"CVMath_8h.html":[4,0,0,0,16],
+"CVMath_8h.html#a367777efc10c85e627658ee2ca1fa402":[4,0,0,0,16,11],
+"CVMath_8h.html#a40c4286c80bddd2f6f96f6d5f00137d8":[4,0,0,0,16,4]
 };

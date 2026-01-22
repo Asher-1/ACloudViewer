@@ -1,0 +1,7 @@
+<map id="BundlerCamera" name="BundlerCamera">
+<area shape="rect" id="node1" title="Bundler camera." alt="" coords="39,336,161,363"/>
+<area shape="rect" id="node2" href="$classccGLMatrixd.html" title="Double version of ccGLMatrixTpl." alt="" coords="49,247,151,273"/>
+<area shape="rect" id="node3" href="$classccGLMatrixTpl.html" title=" " alt="" coords="5,171,195,197"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="17,5,172,32"/>
+<area shape="rect" id="node5" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="117,81,270,108"/>
+</map>

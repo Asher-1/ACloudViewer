@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.voxelize
+---------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: voxelize

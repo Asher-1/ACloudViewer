@@ -139,7 +139,7 @@ $(document).ready(function(){initNavTree('RegistrationTools_8h_source.html','');
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                                      <a class="code" href="structcloudViewer_1_1PointProjectionTools_1_1Transformation.html">ScaledTransformation</a>&amp; trans,</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                                      <span class="keywordtype">bool</span> adjustScale = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                                      <a class="code" href="classcloudViewer_1_1ScalarField.html">ScalarField</a>* coupleWeights = <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                                      PointCoordinateType aPrioriScale = 1.0f,</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                                      <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> aPrioriScale = 1.0f,</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                                      <a class="code" href="classVector3Tpl.html">CCVector3</a>* Gp = <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                                      <a class="code" href="classVector3Tpl.html">CCVector3</a>* Gx = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;};</div>
@@ -248,7 +248,7 @@ $(document).ready(function(){initNavTree('RegistrationTools_8h_source.html','');
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                               <a class="code" href="structcloudViewer_1_1PointProjectionTools_1_1Transformation.html">ScaledTransformation</a>&amp; transform,</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                               ScalarType delta,</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                               ScalarType beta,</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                               PointCoordinateType overlap,</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                               <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> overlap,</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                               <span class="keywordtype">unsigned</span> nbBases,</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                               <span class="keywordtype">unsigned</span> nbTries,</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                               <a class="code" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a>* progressCb = <span class="keyword">nullptr</span>,</div>
@@ -275,7 +275,7 @@ $(document).ready(function(){initNavTree('RegistrationTools_8h_source.html','');
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160; </div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160; </div>
 <div class="line"><a name="l00302"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1FPCSRegistrationTools.html#af656b5e7b6982ddb1e24ed2cc98f9ed0">  302</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1FPCSRegistrationTools.html#af656b5e7b6982ddb1e24ed2cc98f9ed0">FindBase</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a>* cloud,</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                         PointCoordinateType overlap,</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                         <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> overlap,</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                         <span class="keywordtype">unsigned</span> nbTries,</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                         <a class="code" href="structcloudViewer_1_1FPCSRegistrationTools_1_1Base.html">Base</a>&amp; base);</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160; </div>
@@ -297,8 +297,8 @@ $(document).ready(function(){initNavTree('RegistrationTools_8h_source.html','');
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;                                   <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; p2,</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;                                   <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; p3,</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;                                   <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; inter,</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                                   PointCoordinateType&amp; lambda,</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                                   PointCoordinateType&amp; mu);</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                                   <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&amp; lambda,</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                                   <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&amp; mu);</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160; </div>
 <div class="line"><a name="l00372"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1FPCSRegistrationTools.html#a73af396341ade86d2fa848d01127b85b">  372</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1FPCSRegistrationTools.html#a73af396341ade86d2fa848d01127b85b">FilterCandidates</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a>* modelCloud,</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;                                 <a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a>* dataCloud,</div>
@@ -310,6 +310,7 @@ $(document).ready(function(){initNavTree('RegistrationTools_8h_source.html','');
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160; </div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aCVCoreLibWin_8h_html_a1dafbf7307681e0ae43ca1905b2d2e5c"><div class="ttname"><a href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a></div><div class="ttdeci">#define CV_CORE_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CVCoreLibWin_8h_source.html#l00015">CVCoreLibWin.h:15</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aPointProjectionTools_8h_html"><div class="ttname"><a href="PointProjectionTools_8h.html">PointProjectionTools.h</a></div></div>
 <div class="ttc" id="aSmallVector_8cpp_html_ab385e5bea03d0c55b5efca299f25532e"><div class="ttname"><a href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a></div><div class="ttdeci">void * X</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00045">SmallVector.cpp:45</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
@@ -373,7 +374,7 @@ $(document).ready(function(){initNavTree('RegistrationTools_8h_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="RegistrationTools_8h.html">RegistrationTools.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

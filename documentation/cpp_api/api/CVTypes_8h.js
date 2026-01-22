@@ -49,7 +49,9 @@ var CVTypes_8h =
     [ "CC_TRANS_BUFFER_BIT", "CVTypes_8h.html#aa68db61c371404a8ca706fe5f6884202", null ],
     [ "CC_VIEWPORT_BIT", "CVTypes_8h.html#a4b015ad2fc5fe6ce3a91152838177767", null ],
     [ "CC_VOXEL_GRID_BIT", "CVTypes_8h.html#aa605b2ee961b150d8b5c564b97c52961", null ],
+    [ "CVCORELIB_CVTYPES_H", "CVTypes_8h.html#a1c596f45af5e290ac4f2b6dbced26b0c", null ],
     [ "CV_CLASS_ENUM", "CVTypes_8h.html#aa66963602203f53f35f21154b8631813", null ],
+    [ "PointCoordinateType", "CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d", null ],
     [ "CV_OBJECT_FLAG", "CVTypes_8h.html#ab44735604363fefd31297bd70f6c5073", [
       [ "CC_ENABLED", "CVTypes_8h.html#ab44735604363fefd31297bd70f6c5073a6a63314681cb340ce1d0750c99ca20e1", null ],
       [ "CC_LOCKED", "CVTypes_8h.html#ab44735604363fefd31297bd70f6c5073abc9439f8d16759705d7b9978a4720be0", null ]

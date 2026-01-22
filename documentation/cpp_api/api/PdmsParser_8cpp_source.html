@@ -297,7 +297,7 @@ $(document).ready(function(){initNavTree('PdmsParser_8cpp_source.html',''); init
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    }</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;}</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
-<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="classPdmsLexer.html#a4d5f74d564126557bc5257d9ceadd25b">  213</a></span>&#160;PointCoordinateType <a class="code" href="classPdmsLexer.html#a4d5f74d564126557bc5257d9ceadd25b">PdmsLexer::valueFromBuffer</a>() {</div>
+<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="classPdmsLexer.html#a4d5f74d564126557bc5257d9ceadd25b">  213</a></span>&#160;<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="classPdmsLexer.html#a4d5f74d564126557bc5257d9ceadd25b">PdmsLexer::valueFromBuffer</a>() {</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    <span class="keywordtype">size_t</span> index = strlen(<a class="code" href="classPdmsLexer.html#a28e936e45f4b18b32120cbd84de3b608">tokenBuffer</a>);</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = 0;</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    <span class="keywordflow">while</span> (index &gt; 0)  <span class="comment">// go back until we meet a number symbol</span></div>
@@ -321,8 +321,8 @@ $(document).ready(function(){initNavTree('PdmsParser_8cpp_source.html',''); init
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classPdmsLexer.html#a28e936e45f4b18b32120cbd84de3b608">tokenBuffer</a>[index] == <span class="charliteral">&#39;,&#39;</span>) <a class="code" href="classPdmsLexer.html#a28e936e45f4b18b32120cbd84de3b608">tokenBuffer</a>[index] = <span class="charliteral">&#39;.&#39;</span>;</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <span class="comment">// convert value</span></div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    PointCoordinateType value =</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keyword">static_cast&lt;</span>PointCoordinateType<span class="keyword">&gt;</span>(atof(<a class="code" href="classPdmsLexer.html#a28e936e45f4b18b32120cbd84de3b608">tokenBuffer</a>));</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> value =</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(atof(<a class="code" href="classPdmsLexer.html#a28e936e45f4b18b32120cbd84de3b608">tokenBuffer</a>));</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <span class="keywordflow">return</span> value;</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;}</div>
@@ -684,6 +684,7 @@ $(document).ready(function(){initNavTree('PdmsParser_8cpp_source.html',''); init
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;    }</div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>;</div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;}</div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aPdmsParser_8cpp_html_aa5e0110c0ccb3db7e7aa55a75ad454d4"><div class="ttname"><a href="PdmsParser_8cpp.html#aa5e0110c0ccb3db7e7aa55a75ad454d4">upperStr</a></div><div class="ttdeci">void upperStr(char *s)</div><div class="ttdef"><b>Definition:</b> <a href="PdmsParser_8cpp_source.html#l00018">PdmsParser.cpp:18</a></div></div>
 <div class="ttc" id="aPdmsParser_8h_html"><div class="ttname"><a href="PdmsParser_8h.html">PdmsParser.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
@@ -815,7 +816,7 @@ $(document).ready(function(){initNavTree('PdmsParser_8cpp_source.html',''); init
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aaf555c0043c6cafd54cc8eb584a4b84cb"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aaf555c0043c6cafd54cc8eb584a4b84cb">PdmsTools::PDMS_XLENGTH</a></div><div class="ttdeci">@ PDMS_XLENGTH</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00095">PdmsTools.h:95</a></div></div>
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aaf9de9278413c67dd2d57df5ce053e761"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aaf9de9278413c67dd2d57df5ce053e761">PdmsTools::PDMS_ANGLE</a></div><div class="ttdeci">@ PDMS_ANGLE</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00098">PdmsTools.h:98</a></div></div>
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aafe0c96c15f1939b2a61e4d692f826f0f"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aafe0c96c15f1939b2a61e4d692f826f0f">PdmsTools::PDMS_UNKNOWN</a></div><div class="ttdeci">@ PDMS_UNKNOWN</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00029">PdmsTools.h:29</a></div></div>
-<div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00707">QtCompat.h:707</a></div></div>
+<div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
 <div class="ttc" id="astructToken_html"><div class="ttname"><a href="structToken.html">Token</a></div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l17832">sqlite3.c:17832</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -823,7 +824,7 @@ $(document).ready(function(){initNavTree('PdmsParser_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_ecc24ebe7d89572f9933707fe88b528d.html">qCoreIO</a></li><li class="navelem"><a class="el" href="dir_2a139ce821a92c61dda917a8bd29b4ab.html">src</a></li><li class="navelem"><a class="el" href="dir_934b9f4fd228aae511ffbf78cc10a18d.html">PDMS</a></li><li class="navelem"><a class="el" href="PdmsParser_8cpp.html">PdmsParser.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:04 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,0 +1,10 @@
+<map id="ccDrawableObject" name="ccDrawableObject">
+<area shape="rect" id="node1" title="Generic interface for (3D) drawable entities." alt="" coords="159,349,299,376"/>
+<area shape="rect" id="node2" href="$classVector3Tpl.html" title=" " alt="" coords="71,260,236,287"/>
+<area shape="rect" id="node3" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="5,81,149,108"/>
+<area shape="rect" id="node4" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="78,171,229,197"/>
+<area shape="rect" id="node5" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="277,260,371,287"/>
+<area shape="rect" id="node6" href="$classccGLMatrixTpl.html" title=" " alt="" coords="253,171,427,197"/>
+<area shape="rect" id="node7" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="239,5,393,32"/>
+<area shape="rect" id="node8" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="338,81,491,108"/>
+</map>

@@ -87,7 +87,6 @@ $(document).ready(function(){initNavTree('classPlyFilter.html',''); initResizabl
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="classPlyFilter-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">PlyFilter Class Reference</div>  </div>
@@ -102,26 +101,34 @@ $(document).ready(function(){initNavTree('classPlyFilter.html',''); initResizabl
 Inheritance diagram for PlyFilter:</div>
 <div class="dyncontent">
 <div class="center"><img src="classPlyFilter__inherit__graph.png" border="0" usemap="#aPlyFilter_inherit__map" alt="Inheritance graph"/></div>
+<map name="aPlyFilter_inherit__map" id="aPlyFilter_inherit__map">
+<area shape="rect" title="Stanford PLY file I/O filter." alt="" coords="14,80,89,107"/>
+<area shape="rect" href="classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for PlyFilter:</div>
 <div class="dyncontent">
 <div class="center"><img src="classPlyFilter__coll__graph.png" border="0" usemap="#aPlyFilter_coll__map" alt="Collaboration graph"/></div>
+<map name="aPlyFilter_coll__map" id="aPlyFilter_coll__map">
+<area shape="rect" title="Stanford PLY file I/O filter." alt="" coords="14,80,89,107"/>
+<area shape="rect" href="classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a8822b3ddc55e825cc9149f6e1ea77965"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#a8822b3ddc55e825cc9149f6e1ea77965">PlyFilter</a> ()</td></tr>
 <tr class="separator:a8822b3ddc55e825cc9149f6e1ea77965"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a19845a9c0eb132430c3f376771be2678"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#a19845a9c0eb132430c3f376771be2678">loadFile</a> (const QString &amp;filename, <a class="el" href="classccHObject.html">ccHObject</a> &amp;container, <a class="el" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a> &amp;parameters) override</td></tr>
-<tr class="memdesc:a19845a9c0eb132430c3f376771be2678"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads one or more entities from a file.  <a href="classPlyFilter.html#a19845a9c0eb132430c3f376771be2678">More...</a><br /></td></tr>
-<tr class="separator:a19845a9c0eb132430c3f376771be2678"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a99ed19cb7abcf852e2597132f5c61726"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#a99ed19cb7abcf852e2597132f5c61726">canSave</a> (<a class="el" href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a> <a class="el" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>, bool &amp;multiple, bool &amp;exclusive) const override</td></tr>
-<tr class="memdesc:a99ed19cb7abcf852e2597132f5c61726"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether this I/O filter can save the specified type of entity.  <a href="classPlyFilter.html#a99ed19cb7abcf852e2597132f5c61726">More...</a><br /></td></tr>
-<tr class="separator:a99ed19cb7abcf852e2597132f5c61726"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f7ea2a8c6b120c6f65518e6542b0b1e"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#a5f7ea2a8c6b120c6f65518e6542b0b1e">saveToFile</a> (<a class="el" href="classccHObject.html">ccHObject</a> *entity, const QString &amp;filename, const <a class="el" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a> &amp;parameters) override</td></tr>
-<tr class="memdesc:a5f7ea2a8c6b120c6f65518e6542b0b1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves an entity (or a group of) to a file.  <a href="classPlyFilter.html#a5f7ea2a8c6b120c6f65518e6542b0b1e">More...</a><br /></td></tr>
-<tr class="separator:a5f7ea2a8c6b120c6f65518e6542b0b1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae14f8be2d58a81cbe263db8735a8a427"><td class="memItemLeft" align="right" valign="top"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#ae14f8be2d58a81cbe263db8735a8a427">loadFile</a> (const QString &amp;filename, <a class="el" href="classccHObject.html">ccHObject</a> &amp;container, <a class="el" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a> &amp;parameters) override</td></tr>
+<tr class="memdesc:ae14f8be2d58a81cbe263db8735a8a427"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads one or more entities from a file.  <a href="classPlyFilter.html#ae14f8be2d58a81cbe263db8735a8a427">More...</a><br /></td></tr>
+<tr class="separator:ae14f8be2d58a81cbe263db8735a8a427"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ecaf63e7967e96b25c73d7fca003f2a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#a9ecaf63e7967e96b25c73d7fca003f2a">canSave</a> (<a class="el" href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a> <a class="el" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>, bool &amp;multiple, bool &amp;exclusive) const override</td></tr>
+<tr class="memdesc:a9ecaf63e7967e96b25c73d7fca003f2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether this I/O filter can save the specified type of entity.  <a href="classPlyFilter.html#a9ecaf63e7967e96b25c73d7fca003f2a">More...</a><br /></td></tr>
+<tr class="separator:a9ecaf63e7967e96b25c73d7fca003f2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8dd0f4c36d18e5d08ca83525412e281"><td class="memItemLeft" align="right" valign="top"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#aa8dd0f4c36d18e5d08ca83525412e281">saveToFile</a> (<a class="el" href="classccHObject.html">ccHObject</a> *entity, const QString &amp;filename, const <a class="el" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a> &amp;parameters) override</td></tr>
+<tr class="memdesc:aa8dd0f4c36d18e5d08ca83525412e281"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves an entity (or a group of) to a file.  <a href="classPlyFilter.html#aa8dd0f4c36d18e5d08ca83525412e281">More...</a><br /></td></tr>
+<tr class="separator:aa8dd0f4c36d18e5d08ca83525412e281"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a747e7c90aa2493c7e5645e2f9b275945"><td class="memItemLeft" align="right" valign="top"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#a747e7c90aa2493c7e5645e2f9b275945">loadFile</a> (const QString &amp;filename, const QString &amp;textureFilename, <a class="el" href="classccHObject.html">ccHObject</a> &amp;container, <a class="el" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a> &amp;parameters)</td></tr>
 <tr class="memdesc:a747e7c90aa2493c7e5645e2f9b275945"><td class="mdescLeft">&#160;</td><td class="mdescRight">Custom loading method.  <a href="classPlyFilter.html#a747e7c90aa2493c7e5645e2f9b275945">More...</a><br /></td></tr>
 <tr class="separator:a747e7c90aa2493c7e5645e2f9b275945"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -190,21 +197,6 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memdesc:aa2cfe0d57ebb3b281e4a2090752d15e9 inherit pub_static_methods_classFileIOFilter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unregisters all filters.  <a href="classFileIOFilter.html#aa2cfe0d57ebb3b281e4a2090752d15e9">More...</a><br /></td></tr>
 <tr class="separator:aa2cfe0d57ebb3b281e4a2090752d15e9 inherit pub_static_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
-Protected Member Functions</h2></td></tr>
-<tr class="memitem:ac617ef0a4d8a2aa10e0931a2a2c318f1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPlyFilter.html#ac617ef0a4d8a2aa10e0931a2a2c318f1">saveToFile</a> (<a class="el" href="classccHObject.html">ccHObject</a> *entity, QString filename, e_ply_storage_mode storageType)</td></tr>
-<tr class="memdesc:ac617ef0a4d8a2aa10e0931a2a2c318f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Internal method.  <a href="classPlyFilter.html#ac617ef0a4d8a2aa10e0931a2a2c318f1">More...</a><br /></td></tr>
-<tr class="separator:ac617ef0a4d8a2aa10e0931a2a2c318f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_methods_classFileIOFilter"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classFileIOFilter')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classFileIOFilter.html">FileIOFilter</a></td></tr>
-<tr class="memitem:ad68b81c1827961330fcc38e7a0b485f0 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#ad68b81c1827961330fcc38e7a0b485f0">FileIOFilter</a> (const <a class="el" href="structFileIOFilter_1_1FilterInfo.html">FilterInfo</a> &amp;info)</td></tr>
-<tr class="separator:ad68b81c1827961330fcc38e7a0b485f0 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1650299186937e8741f3a0c4e79459b4 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#a1650299186937e8741f3a0c4e79459b4">setImportExtensions</a> (const QStringList &amp;extensions)</td></tr>
-<tr class="separator:a1650299186937e8741f3a0c4e79459b4 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a79488da3458161c711d3287401bab965 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#a79488da3458161c711d3287401bab965">setImportFileFilterStrings</a> (const QStringList &amp;filterStrings)</td></tr>
-<tr class="separator:a79488da3458161c711d3287401bab965 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad785a3ba3af0d0be8a35c943f9a46823 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#ad785a3ba3af0d0be8a35c943f9a46823">setExportFileFilterStrings</a> (const QStringList &amp;filterStrings)</td></tr>
-<tr class="separator:ad785a3ba3af0d0be8a35c943f9a46823 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classFileIOFilter"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classFileIOFilter')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classFileIOFilter.html">FileIOFilter</a></td></tr>
@@ -224,6 +216,15 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:ae33d9f93a703f9b810ff90c8dafa6688 inherit pub_types_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#ae33d9f93a703f9b810ff90c8dafa6688">FilterContainer</a> = std::vector&lt; <a class="el" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a> &gt;</td></tr>
 <tr class="memdesc:ae33d9f93a703f9b810ff90c8dafa6688 inherit pub_types_classFileIOFilter"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type of a I/O filters container.  <a href="classFileIOFilter.html#ae33d9f93a703f9b810ff90c8dafa6688">More...</a><br /></td></tr>
 <tr class="separator:ae33d9f93a703f9b810ff90c8dafa6688 inherit pub_types_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_methods_classFileIOFilter"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classFileIOFilter')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classFileIOFilter.html">FileIOFilter</a></td></tr>
+<tr class="memitem:ad68b81c1827961330fcc38e7a0b485f0 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#ad68b81c1827961330fcc38e7a0b485f0">FileIOFilter</a> (const <a class="el" href="structFileIOFilter_1_1FilterInfo.html">FilterInfo</a> &amp;info)</td></tr>
+<tr class="separator:ad68b81c1827961330fcc38e7a0b485f0 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1650299186937e8741f3a0c4e79459b4 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#a1650299186937e8741f3a0c4e79459b4">setImportExtensions</a> (const QStringList &amp;extensions)</td></tr>
+<tr class="separator:a1650299186937e8741f3a0c4e79459b4 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79488da3458161c711d3287401bab965 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#a79488da3458161c711d3287401bab965">setImportFileFilterStrings</a> (const QStringList &amp;filterStrings)</td></tr>
+<tr class="separator:a79488da3458161c711d3287401bab965 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad785a3ba3af0d0be8a35c943f9a46823 inherit pro_methods_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#ad785a3ba3af0d0be8a35c943f9a46823">setExportFileFilterStrings</a> (const QStringList &amp;filterStrings)</td></tr>
+<tr class="separator:ad785a3ba3af0d0be8a35c943f9a46823 inherit pro_methods_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_static_attribs_classFileIOFilter"><td colspan="2" onclick="javascript:toggleInherit('pro_static_attribs_classFileIOFilter')"><img src="closed.png" alt="-"/>&#160;Static Protected Attributes inherited from <a class="el" href="classFileIOFilter.html">FileIOFilter</a></td></tr>
 <tr class="memitem:a056c88c7d5d4c012ca3daf0c515675c9 inherit pro_static_attribs_classFileIOFilter"><td class="memItemLeft" align="right" valign="top">static constexpr float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">DEFAULT_PRIORITY</a> = 25.0f</td></tr>
 <tr class="separator:a056c88c7d5d4c012ca3daf0c515675c9 inherit pro_static_attribs_classFileIOFilter"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -231,7 +232,7 @@ Additional Inherited Members</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Stanford PLY file I/O filter. </p>
 
-<p class="definition">Definition at line <a class="el" href="PlyFilter_8h_source.html#l00047">47</a> of file <a class="el" href="PlyFilter_8h_source.html">PlyFilter.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PlyFilter_8h_source.html#l00046">46</a> of file <a class="el" href="PlyFilter_8h_source.html">PlyFilter.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a8822b3ddc55e825cc9149f6e1ea77965"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8822b3ddc55e825cc9149f6e1ea77965">&#9670;&nbsp;</a></span>PlyFilter()</h2>
@@ -251,8 +252,8 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a99ed19cb7abcf852e2597132f5c61726"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a99ed19cb7abcf852e2597132f5c61726">&#9670;&nbsp;</a></span>canSave()</h2>
+<a id="a9ecaf63e7967e96b25c73d7fca003f2a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9ecaf63e7967e96b25c73d7fca003f2a">&#9670;&nbsp;</a></span>canSave()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -261,7 +262,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual bool PlyFilter::canSave </td>
+          <td class="memname">bool PlyFilter::canSave </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a>&#160;</td>
           <td class="paramname"><em>type</em>, </td>
@@ -306,8 +307,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a19845a9c0eb132430c3f376771be2678"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a19845a9c0eb132430c3f376771be2678">&#9670;&nbsp;</a></span>loadFile() <span class="overload">[1/2]</span></h2>
+<a id="ae14f8be2d58a81cbe263db8735a8a427"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae14f8be2d58a81cbe263db8735a8a427">&#9670;&nbsp;</a></span>loadFile() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -316,7 +317,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> PlyFilter::loadFile </td>
+          <td class="memname"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> PlyFilter::loadFile </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>filename</em>, </td>
@@ -403,8 +404,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a5f7ea2a8c6b120c6f65518e6542b0b1e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f7ea2a8c6b120c6f65518e6542b0b1e">&#9670;&nbsp;</a></span>saveToFile() <span class="overload">[1/2]</span></h2>
+<a id="aa8dd0f4c36d18e5d08ca83525412e281"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8dd0f4c36d18e5d08ca83525412e281">&#9670;&nbsp;</a></span>saveToFile()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -413,7 +414,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> PlyFilter::saveToFile </td>
+          <td class="memname"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> PlyFilter::saveToFile </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classccHObject.html">ccHObject</a> *&#160;</td>
           <td class="paramname"><em>entity</em>, </td>
@@ -458,50 +459,6 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="ac617ef0a4d8a2aa10e0931a2a2c318f1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac617ef0a4d8a2aa10e0931a2a2c318f1">&#9670;&nbsp;</a></span>saveToFile() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> PlyFilter::saveToFile </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classccHObject.html">ccHObject</a> *&#160;</td>
-          <td class="paramname"><em>entity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">QString&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">e_ply_storage_mode&#160;</td>
-          <td class="paramname"><em>storageType</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Internal method. </p>
-
-</div>
-</div>
 <a id="ac10e77a9f253f787e3aea5ee3ff8573f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac10e77a9f253f787e3aea5ee3ff8573f">&#9670;&nbsp;</a></span>SetDefaultOutputFormat()</h2>
 
@@ -529,7 +486,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_io/include/<a class="el" href="PlyFilter_8h_source.html">PlyFilter.h</a></li>
+<li>/root/ACloudViewer/libs/CV_io/include/<a class="el" href="PlyFilter_8h_source.html">PlyFilter.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -537,7 +494,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classPlyFilter.html">PlyFilter</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

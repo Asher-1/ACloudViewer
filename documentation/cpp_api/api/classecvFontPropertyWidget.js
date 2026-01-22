@@ -22,6 +22,7 @@ var classecvFontPropertyWidget =
     [ "isBold", "classecvFontPropertyWidget.html#a2d2f3258cb922435bf265317bb404730", null ],
     [ "isItalic", "classecvFontPropertyWidget.html#a7e0904d6cf7d82487e46f0ddc12e2bd7", null ],
     [ "italicChanged", "classecvFontPropertyWidget.html#a714c7c97bd4ccf3d44f26ed65773ce15", null ],
+    [ "resizeEvent", "classecvFontPropertyWidget.html#a0cc4fe4ee3b53b2df0cafb93f7e7ba38", null ],
     [ "setBold", "classecvFontPropertyWidget.html#af19075b037a5457ac6a1d885a5f8bb2c", null ],
     [ "setColorPickerVisible", "classecvFontPropertyWidget.html#a033ed874f674e7035ef2970da5b8874d", null ],
     [ "setControlsEnabled", "classecvFontPropertyWidget.html#a755b5d927b6ab168f9b73b6d4a0f91a5", null ],

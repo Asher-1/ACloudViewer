@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.models.SparseConvUnet
+------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+.. autoclass:: SparseConvUnet
+    :members:
+    :undoc-members:

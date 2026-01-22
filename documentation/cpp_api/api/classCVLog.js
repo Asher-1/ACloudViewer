@@ -1,10 +1,10 @@
 var classCVLog =
 [
     [ "MessageLevelFlags", "classCVLog.html#a9ec2d345e360523551943fdba3378780", [
-      [ "LOG_STANDARD", "classCVLog.html#a9ec2d345e360523551943fdba3378780aa3a315b136baf1b03532047b0f766c09", null ],
       [ "LOG_VERBOSE", "classCVLog.html#a9ec2d345e360523551943fdba3378780ae949015bd273d182622cf21494bfadc1", null ],
-      [ "LOG_WARNING", "classCVLog.html#a9ec2d345e360523551943fdba3378780af21e58e19173e7df5c6fd188e0aa3ca6", null ],
+      [ "LOG_STANDARD", "classCVLog.html#a9ec2d345e360523551943fdba3378780aa3a315b136baf1b03532047b0f766c09", null ],
       [ "LOG_IMPORTANT", "classCVLog.html#a9ec2d345e360523551943fdba3378780a39ce22d93883faa5f80356b4bbd2c6d6", null ],
+      [ "LOG_WARNING", "classCVLog.html#a9ec2d345e360523551943fdba3378780af21e58e19173e7df5c6fd188e0aa3ca6", null ],
       [ "LOG_ERROR", "classCVLog.html#a9ec2d345e360523551943fdba3378780af38f34287b5dd6b9d18965113f5331f3", null ],
       [ "DEBUG_FLAG", "classCVLog.html#a9ec2d345e360523551943fdba3378780adbe156a47218b1804663d54e5d5a513e", null ]
     ] ],
@@ -25,7 +25,9 @@ var classCVLog =
     [ "PrintVerbose", "classCVLog.html#aa6e9e5f0b0ff4a2c2940185f043cadfb", null ],
     [ "PrintVerbose", "classCVLog.html#ac9c1fc6d9da24243c5253725724a0c1d", null ],
     [ "RegisterInstance", "classCVLog.html#ada39d05be58b1924de534b79a5867170", null ],
+    [ "SetVerbosityLevel", "classCVLog.html#af20a151f1eeaa62ffe6dc20784e2b4e0", null ],
     [ "TheInstance", "classCVLog.html#adb59a14c5d71ef63182ae29133199b0b", null ],
+    [ "VerbosityLevel", "classCVLog.html#ab7d4835ba3f3ea79a5f2a7d48aaecb5c", null ],
     [ "Warning", "classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789", null ],
     [ "Warning", "classCVLog.html#af97e3460a2850fd59329bbbeb2157cbd", null ],
     [ "WarningDebug", "classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48", null ],

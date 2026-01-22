@@ -1,33 +1,83 @@
-Pipelines Examples
-==================
+Pipelines
+---------
 
-Python examples for processing pipelines.
+colored_icp_registration.py
+```````````````````````````
 
-Registration Examples
----------------------
+.. literalinclude:: colored_icp_registration.py
+   :language: python
+   :linenos:
 
-.. toctree::
-   :maxdepth: 1
-   
-   ../../tutorial/pipelines/icp_registration
-   ../../tutorial/pipelines/colored_pointcloud_registration
-   ../../tutorial/pipelines/global_registration
-   ../../tutorial/pipelines/multiway_registration
-   ../../tutorial/pipelines/robust_kernels
 
-RGBD Examples
--------------
+doppler_icp_registration.py
+```````````````````````````
 
-.. toctree::
-   :maxdepth: 1
-   
-   ../../tutorial/pipelines/rgbd_integration
-   ../../tutorial/pipelines/rgbd_odometry
-   ../../tutorial/pipelines/color_map_optimization
+.. literalinclude:: doppler_icp_registration.py
+   :language: python
+   :linenos:
 
-See Also
---------
 
-- :doc:`../../tutorial/pipelines/index` - Pipelines Tutorials
-- :doc:`../../python_api/cloudViewer.pipelines` - Pipelines API Reference
+icp_registration.py
+```````````````````
+
+.. literalinclude:: icp_registration.py
+   :language: python
+   :linenos:
+
+
+multiway_registration.py
+````````````````````````
+
+.. literalinclude:: multiway_registration.py
+   :language: python
+   :linenos:
+
+
+pose_graph_optimization.py
+``````````````````````````
+
+.. literalinclude:: pose_graph_optimization.py
+   :language: python
+   :linenos:
+
+
+registration_fgr.py
+```````````````````
+
+.. literalinclude:: registration_fgr.py
+   :language: python
+   :linenos:
+
+
+registration_ransac.py
+``````````````````````
+
+.. literalinclude:: registration_ransac.py
+   :language: python
+   :linenos:
+
+
+rgbd_integration_uniform.py
+```````````````````````````
+
+.. literalinclude:: rgbd_integration_uniform.py
+   :language: python
+   :linenos:
+
+
+rgbd_odometry.py
+````````````````
+
+.. literalinclude:: rgbd_odometry.py
+   :language: python
+   :linenos:
+
+
+robust_icp.py
+`````````````
+
+.. literalinclude:: robust_icp.py
+   :language: python
+   :linenos:
+
 

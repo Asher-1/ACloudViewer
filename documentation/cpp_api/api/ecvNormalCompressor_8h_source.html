@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: /root/ACloudViewer/libs/eCV_db/include/ecvNormalCompressor.h Source File</title>
+<title>ACloudViewer: /root/ACloudViewer/libs/CV_db/include/ecvNormalCompressor.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -97,12 +97,12 @@ $(document).ready(function(){initNavTree('ecvNormalCompressor_8h_source.html',''
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="eCV__db_8h.html">eCV_db.h</a>&quot;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CV__db_8h.html">CV_db.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// Local</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvBasicTypes_8h.html">ecvBasicTypes.h</a>&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html">   16</a></span>&#160;<span class="keyword">class </span><a class="code" href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a> <a class="code" href="classccNormalCompressor.html">ccNormalCompressor</a> {</div>
+<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html">   16</a></span>&#160;<span class="keyword">class </span><a class="code" href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a> <a class="code" href="classccNormalCompressor.html">ccNormalCompressor</a> {</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html#a14610a73f11825b855307b02cb59b61b">   21</a></span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> QUANTIZE_LEVEL =</div>
@@ -112,20 +112,21 @@ $(document).ready(function(){initNavTree('ecvNormalCompressor_8h_source.html',''
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            (1 &lt;&lt; (QUANTIZE_LEVEL * 2 + 3)) - 1;</div>
 <div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html#a17dc6d1fd297fd3d7486f83a367f8a1c">   28</a></span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">unsigned</span> NULL_NORM_CODE = MAX_VALID_NORM_CODE + 1;</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html#adbe318bcd1901d9f204e0c01b1f24378">   31</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <a class="code" href="classccNormalCompressor.html#adbe318bcd1901d9f204e0c01b1f24378">Compress</a>(<span class="keyword">const</span> PointCoordinateType N[3]);</div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html#adbe318bcd1901d9f204e0c01b1f24378">   31</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <a class="code" href="classccNormalCompressor.html#adbe318bcd1901d9f204e0c01b1f24378">Compress</a>(<span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> N[3]);</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html#af11f4a89567e20b6c19d8452c5375b03">   34</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classccNormalCompressor.html#af11f4a89567e20b6c19d8452c5375b03">Decompress</a>(<span class="keywordtype">unsigned</span> index,</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                           PointCoordinateType N[3],</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                           <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> N[3],</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                           <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> level = QUANTIZE_LEVEL);</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classccNormalCompressor.html#a5345722e1c87cce4585d8c3981b1f1ce">   39</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classccNormalCompressor.html#a5345722e1c87cce4585d8c3981b1f1ce">InvertNormal</a>(<a class="code" href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a> &amp;code);</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;};</div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCV__db_8h_html"><div class="ttname"><a href="CV__db_8h.html">CV_db.h</a></div></div>
+<div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aclassccNormalCompressor_html"><div class="ttname"><a href="classccNormalCompressor.html">ccNormalCompressor</a></div><div class="ttdoc">Normal compressor.</div><div class="ttdef"><b>Definition:</b> <a href="ecvNormalCompressor_8h_source.html#l00016">ecvNormalCompressor.h:16</a></div></div>
 <div class="ttc" id="aclassccNormalCompressor_html_a5345722e1c87cce4585d8c3981b1f1ce"><div class="ttname"><a href="classccNormalCompressor.html#a5345722e1c87cce4585d8c3981b1f1ce">ccNormalCompressor::InvertNormal</a></div><div class="ttdeci">static void InvertNormal(CompressedNormType &amp;code)</div><div class="ttdoc">Inverts a (compressed) normal.</div></div>
 <div class="ttc" id="aclassccNormalCompressor_html_adbe318bcd1901d9f204e0c01b1f24378"><div class="ttname"><a href="classccNormalCompressor.html#adbe318bcd1901d9f204e0c01b1f24378">ccNormalCompressor::Compress</a></div><div class="ttdeci">static unsigned Compress(const PointCoordinateType N[3])</div><div class="ttdoc">Compression algorithm.</div></div>
 <div class="ttc" id="aclassccNormalCompressor_html_af11f4a89567e20b6c19d8452c5375b03"><div class="ttname"><a href="classccNormalCompressor.html#af11f4a89567e20b6c19d8452c5375b03">ccNormalCompressor::Decompress</a></div><div class="ttdeci">static void Decompress(unsigned index, PointCoordinateType N[3], unsigned char level=QUANTIZE_LEVEL)</div><div class="ttdoc">Decompression algorithm.</div></div>
-<div class="ttc" id="aeCV__db_8h_html"><div class="ttname"><a href="eCV__db_8h.html">eCV_db.h</a></div></div>
-<div class="ttc" id="aeCV__db_8h_html_a9a6d6d5da9760a0b3de8ac5d783f93d0"><div class="ttname"><a href="eCV__db_8h.html#a9a6d6d5da9760a0b3de8ac5d783f93d0">ECV_DB_LIB_API</a></div><div class="ttdeci">#define ECV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="eCV__db_8h_source.html#l00015">eCV_db.h:15</a></div></div>
 <div class="ttc" id="aecvBasicTypes_8h_html"><div class="ttname"><a href="ecvBasicTypes_8h.html">ecvBasicTypes.h</a></div></div>
 <div class="ttc" id="aecvBasicTypes_8h_html_aa8841a9497c5acbcc5aa3f25a544fa5d"><div class="ttname"><a href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a></div><div class="ttdeci">unsigned int CompressedNormType</div><div class="ttdoc">Compressed normals type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBasicTypes_8h_source.html#l00016">ecvBasicTypes.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -133,8 +134,8 @@ $(document).ready(function(){initNavTree('ecvNormalCompressor_8h_source.html',''
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_c4299987a504bc66471641292258c6d3.html">eCV_db</a></li><li class="navelem"><a class="el" href="dir_f5ce86466c8b9c7eeb3c23bd8ac82242.html">include</a></li><li class="navelem"><a class="el" href="ecvNormalCompressor_8h.html">ecvNormalCompressor.h</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:25:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvNormalCompressor_8h.html">ecvNormalCompressor.h</a></li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -101,6 +101,16 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1Neighbourhood.html
 Collaboration diagram for cloudViewer::Neighbourhood:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1Neighbourhood__coll__graph.png" border="0" usemap="#acloudViewer_1_1Neighbourhood_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1Neighbourhood_coll__map" id="acloudViewer_1_1Neighbourhood_coll__map">
+<area shape="rect" title=" " alt="" coords="1195,87,1404,114"/>
+<area shape="rect" href="classTuple3Tpl.html" title=" " alt="" coords="616,5,775,47"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="32,58,176,85"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="804,80,1015,121"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="406,109,557,135"/>
+<area shape="rect" href="classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="804,145,1015,187"/>
+<area shape="rect" href="classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="376,160,587,201"/>
+<area shape="rect" href="classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="5,167,203,194"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -159,13 +169,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa6be4c6572887942f088df53a2ebafa9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#aa6be4c6572887942f088df53a2ebafa9">associatedCloud</a> () const</td></tr>
 <tr class="memdesc:aa6be4c6572887942f088df53a2ebafa9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns associated cloud.  <a href="classcloudViewer_1_1Neighbourhood.html#aa6be4c6572887942f088df53a2ebafa9">More...</a><br /></td></tr>
 <tr class="separator:aa6be4c6572887942f088df53a2ebafa9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1caa527e6c012929046836b88ea7761"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#ab1caa527e6c012929046836b88ea7761">triangulateOnPlane</a> (bool duplicateVertices, PointCoordinateType maxEdgeLength, std::string &amp;outputErrorStr)</td></tr>
+<tr class="memitem:ab1caa527e6c012929046836b88ea7761"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#ab1caa527e6c012929046836b88ea7761">triangulateOnPlane</a> (bool duplicateVertices, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> maxEdgeLength, std::string &amp;outputErrorStr)</td></tr>
 <tr class="memdesc:ab1caa527e6c012929046836b88ea7761"><td class="mdescLeft">&#160;</td><td class="mdescRight">Applies 2D Delaunay triangulation.  <a href="classcloudViewer_1_1Neighbourhood.html#ab1caa527e6c012929046836b88ea7761">More...</a><br /></td></tr>
 <tr class="separator:ab1caa527e6c012929046836b88ea7761"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a022d6c91ec1cdb279b59979aa2cc93ff"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a022d6c91ec1cdb279b59979aa2cc93ff">triangulateFromQuadric</a> (unsigned stepsX, unsigned stepsY)</td></tr>
 <tr class="separator:a022d6c91ec1cdb279b59979aa2cc93ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a510c73d2970acd3acd60c73d0d01176f"><td class="memTemplParams" colspan="2">template&lt;class Vec2D &gt; </td></tr>
-<tr class="memitem:a510c73d2970acd3acd60c73d0d01176f"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a510c73d2970acd3acd60c73d0d01176f">projectPointsOn2DPlane</a> (std::vector&lt; Vec2D &gt; &amp;points2D, const PointCoordinateType *planeEquation=nullptr, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *O=nullptr, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *<a class="el" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>=nullptr, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *Y=nullptr, <a class="el" href="classcloudViewer_1_1Neighbourhood.html#aa8d744378cad984e49b0d0d331f59da5">InputVectorsUsage</a> vectorsUsage=<a class="el" href="classcloudViewer_1_1Neighbourhood.html#aa8d744378cad984e49b0d0d331f59da5a90090e6755ffb0fdbab51d1644481b7b">None</a>)</td></tr>
+<tr class="memitem:a510c73d2970acd3acd60c73d0d01176f"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a510c73d2970acd3acd60c73d0d01176f">projectPointsOn2DPlane</a> (std::vector&lt; Vec2D &gt; &amp;points2D, const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *planeEquation=nullptr, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *O=nullptr, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *<a class="el" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>=nullptr, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *Y=nullptr, <a class="el" href="classcloudViewer_1_1Neighbourhood.html#aa8d744378cad984e49b0d0d331f59da5">InputVectorsUsage</a> vectorsUsage=<a class="el" href="classcloudViewer_1_1Neighbourhood.html#aa8d744378cad984e49b0d0d331f59da5a90090e6755ffb0fdbab51d1644481b7b">None</a>)</td></tr>
 <tr class="memdesc:a510c73d2970acd3acd60c73d0d01176f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Projects points on the best fitting LS plane.  <a href="classcloudViewer_1_1Neighbourhood.html#a510c73d2970acd3acd60c73d0d01176f">More...</a><br /></td></tr>
 <tr class="separator:a510c73d2970acd3acd60c73d0d01176f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35eea344b095f4bbc379ae46ff63a0a6"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a35eea344b095f4bbc379ae46ff63a0a6">computeFeature</a> (<a class="el" href="classcloudViewer_1_1Neighbourhood.html#a7615f7d803eda6d6bf238c5f4d80190a">GeomFeature</a> feature)</td></tr>
@@ -184,10 +194,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:abb0f5ad3baafcb53befb83cbbe070cfc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#abb0f5ad3baafcb53befb83cbbe070cfc">setGravityCenter</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;G)</td></tr>
 <tr class="memdesc:abb0f5ad3baafcb53befb83cbbe070cfc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets gravity center.  <a href="classcloudViewer_1_1Neighbourhood.html#abb0f5ad3baafcb53befb83cbbe070cfc">More...</a><br /></td></tr>
 <tr class="separator:abb0f5ad3baafcb53befb83cbbe070cfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a37efa2e416c5914854c19d62d165f36b"><td class="memItemLeft" align="right" valign="top">const PointCoordinateType *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a37efa2e416c5914854c19d62d165f36b">getLSPlane</a> ()</td></tr>
+<tr class="memitem:a37efa2e416c5914854c19d62d165f36b"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a37efa2e416c5914854c19d62d165f36b">getLSPlane</a> ()</td></tr>
 <tr class="memdesc:a37efa2e416c5914854c19d62d165f36b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns best interpolating plane equation (Least-square)  <a href="classcloudViewer_1_1Neighbourhood.html#a37efa2e416c5914854c19d62d165f36b">More...</a><br /></td></tr>
 <tr class="separator:a37efa2e416c5914854c19d62d165f36b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe314cca0be8b991dcd6c75aa1900418"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#abe314cca0be8b991dcd6c75aa1900418">setLSPlane</a> (const PointCoordinateType eq[4], const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;<a class="el" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;Y, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N)</td></tr>
+<tr class="memitem:abe314cca0be8b991dcd6c75aa1900418"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#abe314cca0be8b991dcd6c75aa1900418">setLSPlane</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> eq[4], const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;<a class="el" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;Y, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N)</td></tr>
 <tr class="memdesc:abe314cca0be8b991dcd6c75aa1900418"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the best interpolating plane equation (Least-square)  <a href="classcloudViewer_1_1Neighbourhood.html#abe314cca0be8b991dcd6c75aa1900418">More...</a><br /></td></tr>
 <tr class="separator:abe314cca0be8b991dcd6c75aa1900418"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4940f39a862ce2b42353a1cb870ac44f"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a4940f39a862ce2b42353a1cb870ac44f">getLSPlaneX</a> ()</td></tr>
@@ -199,7 +209,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0cf1f664a3fc3d5913e85e0a5681846d"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a0cf1f664a3fc3d5913e85e0a5681846d">getLSPlaneNormal</a> ()</td></tr>
 <tr class="memdesc:a0cf1f664a3fc3d5913e85e0a5681846d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns best interpolating plane (Least-square) normal vector.  <a href="classcloudViewer_1_1Neighbourhood.html#a0cf1f664a3fc3d5913e85e0a5681846d">More...</a><br /></td></tr>
 <tr class="separator:a0cf1f664a3fc3d5913e85e0a5681846d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae504249e438172dd7577e07ac0085ceb"><td class="memItemLeft" align="right" valign="top">const PointCoordinateType *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#ae504249e438172dd7577e07ac0085ceb">getQuadric</a> (<a class="el" href="CVGeom_8h.html#a4d7377727f42b7d0397562f8c427f656">Tuple3ub</a> *dims=nullptr)</td></tr>
+<tr class="memitem:ae504249e438172dd7577e07ac0085ceb"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#ae504249e438172dd7577e07ac0085ceb">getQuadric</a> (<a class="el" href="CVGeom_8h.html#a4d7377727f42b7d0397562f8c427f656">Tuple3ub</a> *dims=nullptr)</td></tr>
 <tr class="memdesc:ae504249e438172dd7577e07ac0085ceb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the best interpolating 2.5D quadric.  <a href="classcloudViewer_1_1Neighbourhood.html#ae504249e438172dd7577e07ac0085ceb">More...</a><br /></td></tr>
 <tr class="separator:ae504249e438172dd7577e07ac0085ceb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba297e7b20b3820b649eba5f6c92a4d9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#aba297e7b20b3820b649eba5f6c92a4d9">compute3DQuadric</a> (double quadricEquation[10])</td></tr>
@@ -208,7 +218,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3de02e167d9726263d3b348394d18455"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a3de02e167d9726263d3b348394d18455">computeCovarianceMatrix</a> ()</td></tr>
 <tr class="memdesc:a3de02e167d9726263d3b348394d18455"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the covariance matrix.  <a href="classcloudViewer_1_1Neighbourhood.html#a3de02e167d9726263d3b348394d18455">More...</a><br /></td></tr>
 <tr class="separator:a3de02e167d9726263d3b348394d18455"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a21459ce00f7ac8d4577a52cf531d6dae"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a21459ce00f7ac8d4577a52cf531d6dae">computeLargestRadius</a> ()</td></tr>
+<tr class="memitem:a21459ce00f7ac8d4577a52cf531d6dae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a21459ce00f7ac8d4577a52cf531d6dae">computeLargestRadius</a> ()</td></tr>
 <tr class="separator:a21459ce00f7ac8d4577a52cf531d6dae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
@@ -234,13 +244,13 @@ Protected Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a6399e5885007eef5be856a29a7879032"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a6399e5885007eef5be856a29a7879032">m_quadricEquation</a> [6]</td></tr>
+<tr class="memitem:a6399e5885007eef5be856a29a7879032"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a6399e5885007eef5be856a29a7879032">m_quadricEquation</a> [6]</td></tr>
 <tr class="memdesc:a6399e5885007eef5be856a29a7879032"><td class="mdescLeft">&#160;</td><td class="mdescRight">2.5D Quadric equation  <a href="classcloudViewer_1_1Neighbourhood.html#a6399e5885007eef5be856a29a7879032">More...</a><br /></td></tr>
 <tr class="separator:a6399e5885007eef5be856a29a7879032"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada9a9e1a0a760daa67988b43e9303a63"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#a4d7377727f42b7d0397562f8c427f656">Tuple3ub</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#ada9a9e1a0a760daa67988b43e9303a63">m_quadricEquationDirections</a></td></tr>
 <tr class="memdesc:ada9a9e1a0a760daa67988b43e9303a63"><td class="mdescLeft">&#160;</td><td class="mdescRight">2.5D Quadric equation dimensions  <a href="classcloudViewer_1_1Neighbourhood.html#ada9a9e1a0a760daa67988b43e9303a63">More...</a><br /></td></tr>
 <tr class="separator:ada9a9e1a0a760daa67988b43e9303a63"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9ee0bb455c4915652fe88dec06a50e3"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#af9ee0bb455c4915652fe88dec06a50e3">m_lsPlaneEquation</a> [4]</td></tr>
+<tr class="memitem:af9ee0bb455c4915652fe88dec06a50e3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#af9ee0bb455c4915652fe88dec06a50e3">m_lsPlaneEquation</a> [4]</td></tr>
 <tr class="memdesc:af9ee0bb455c4915652fe88dec06a50e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Least-square best fitting plane parameters.  <a href="classcloudViewer_1_1Neighbourhood.html#af9ee0bb455c4915652fe88dec06a50e3">More...</a><br /></td></tr>
 <tr class="separator:af9ee0bb455c4915652fe88dec06a50e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44ed222ef95cf7ad5bd6d963e2979170"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Neighbourhood.html#a44ed222ef95cf7ad5bd6d963e2979170">m_lsPlaneVectors</a> [3]</td></tr>
@@ -595,7 +605,7 @@ clouds", Hackel et al, 2016 PCA1 and PCA2 are defined in "3D terrestrial lidar d
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType cloudViewer::Neighbourhood::computeLargestRadius </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::Neighbourhood::computeLargestRadius </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -751,7 +761,7 @@ clouds", Hackel et al, 2016 PCA1 and PCA2 are defined in "3D terrestrial lidar d
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const PointCoordinateType* cloudViewer::Neighbourhood::getLSPlane </td>
+          <td class="memname">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>* cloudViewer::Neighbourhood::getLSPlane </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -837,7 +847,7 @@ clouds", Hackel et al, 2016 PCA1 and PCA2 are defined in "3D terrestrial lidar d
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const PointCoordinateType* cloudViewer::Neighbourhood::getQuadric </td>
+          <td class="memname">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>* cloudViewer::Neighbourhood::getQuadric </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="CVGeom_8h.html#a4d7377727f42b7d0397562f8c427f656">Tuple3ub</a> *&#160;</td>
           <td class="paramname"><em>dims</em> = <code>nullptr</code></td><td>)</td>
@@ -872,7 +882,7 @@ template&lt;class Vec2D &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const PointCoordinateType *&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *&#160;</td>
           <td class="paramname"><em>planeEquation</em> = <code>nullptr</code>, </td>
         </tr>
         <tr>
@@ -994,7 +1004,7 @@ template&lt;class Vec2D &gt; </div>
         <tr>
           <td class="memname">void cloudViewer::Neighbourhood::setLSPlane </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>eq</em>[4], </td>
         </tr>
         <tr>
@@ -1080,7 +1090,7 @@ template&lt;class Vec2D &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>maxEdgeLength</em>, </td>
         </tr>
         <tr>
@@ -1245,7 +1255,7 @@ template&lt;class Vec2D &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType cloudViewer::Neighbourhood::m_lsPlaneEquation[4]</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::Neighbourhood::m_lsPlaneEquation[4]</td>
         </tr>
       </table>
   </td>
@@ -1299,7 +1309,7 @@ template&lt;class Vec2D &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType cloudViewer::Neighbourhood::m_quadricEquation[6]</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cloudViewer::Neighbourhood::m_quadricEquation[6]</td>
         </tr>
       </table>
   </td>
@@ -1378,7 +1388,7 @@ template&lt;class Vec2D &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1Neighbourhood.html">Neighbourhood</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

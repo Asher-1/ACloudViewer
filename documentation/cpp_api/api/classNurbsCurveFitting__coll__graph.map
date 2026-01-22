@@ -1,0 +1,9 @@
+<map id="NurbsCurveFitting" name="NurbsCurveFitting">
+<area shape="rect" id="node1" title="Greedy Triangulation." alt="" coords="192,184,331,211"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="119,95,241,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" id="node5" href="$classNurbsCurveFittingDlg.html" title=" " alt="" coords="265,95,426,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="301,5,376,32"/>
+<area shape="rect" id="node7" title=" " alt="" coords="401,5,583,32"/>
+</map>

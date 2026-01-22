@@ -16,8 +16,7 @@ This section covers point cloud processing pipelines including registration, int
    color_map_optimization
    robust_kernels
 
-See Also
---------
+.. seealso::
 
-- :doc:`../geometry/index` - Geometric data structures
-- :doc:`../../python_api/cloudViewer.pipelines` - Pipelines API
+   - :doc:`../geometry/index` - Geometric data structures
+   - :doc:`../../python_api/cloudViewer.pipelines` - Pipelines API

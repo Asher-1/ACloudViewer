@@ -140,8 +140,6 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1t_1_1geometry_1_1TensorMap.html">TensorMap</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcloudViewer_1_1t_1_1geometry_1_1TupleEdgeHash.html">TupleEdgeHash</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html">TriangleMesh</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A triangle mesh contains vertices and triangles.  <a href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -188,9 +186,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a3e740f2de95f85505e67f70cd7e2089e"><td class="memTemplItemLeft" align="right" valign="top">static <a class="el" href="classEdge.html">Edge</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#a3e740f2de95f85505e67f70cd7e2089e">GetOrderedEdge</a> (T vidx0, T vidx1)</td></tr>
 <tr class="memdesc:a3e740f2de95f85505e67f70cd7e2089e"><td class="mdescLeft">&#160;</td><td class="mdescRight">brief Helper function to get an edge with ordered vertex indices.  <a href="namespacecloudViewer_1_1t_1_1geometry.html#a3e740f2de95f85505e67f70cd7e2089e">More...</a><br /></td></tr>
 <tr class="separator:a3e740f2de95f85505e67f70cd7e2089e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ae09c633c6cd51a18c5660bce69c76a"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a8ae09c633c6cd51a18c5660bce69c76a"><td class="memTemplItemLeft" align="right" valign="top">static std::unordered_map&lt; <a class="el" href="classEdge.html">Edge</a>&lt; T &gt;, std::vector&lt; size_t &gt;, <a class="el" href="structcloudViewer_1_1t_1_1geometry_1_1TupleEdgeHash.html">TupleEdgeHash</a> &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#a8ae09c633c6cd51a18c5660bce69c76a">GetEdgeToTrianglesMap</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;tris_cpu)</td></tr>
-<tr class="separator:a8ae09c633c6cd51a18c5660bce69c76a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c8ef89ea013b8561387655b7916dd0f"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a7c8ef89ea013b8561387655b7916dd0f"><td class="memTemplItemLeft" align="right" valign="top">static std::unordered_map&lt; <a class="el" href="classEdge.html">Edge</a>&lt; T &gt;, std::vector&lt; size_t &gt;, <a class="el" href="structcloudViewer_1_1utility_1_1hash__tuple.html">utility::hash_tuple</a>&lt; <a class="el" href="classEdge.html">Edge</a>&lt; T &gt; &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#a7c8ef89ea013b8561387655b7916dd0f">GetEdgeToTrianglesMap</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;tris_cpu)</td></tr>
+<tr class="separator:a7c8ef89ea013b8561387655b7916dd0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01bf328b10637c129f03e1ea22e989f2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#a01bf328b10637c129f03e1ea22e989f2">CheckDepthTensor</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;depth)</td></tr>
 <tr class="separator:a01bf328b10637c129f03e1ea22e989f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad950ecc038c70b337212fd6799b9b6a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ad950ecc038c70b337212fd6799b9b6a7">CheckColorTensor</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;<a class="el" href="TriangleMeshBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>)</td></tr>
@@ -330,7 +328,7 @@ Functions</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="VoxelBlockGrid_8cpp_source.html#l00023">23</a> of file <a class="el" href="VoxelBlockGrid_8cpp_source.html">VoxelBlockGrid.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="Tensor_8cpp_source.html#l00874">cloudViewer::core::Tensor::IndexGet()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="Tensor_8cpp_source.html#l00708">cloudViewer::core::Tensor::To()</a>, and <a class="el" href="Tensor_8cpp_source.html#l00690">cloudViewer::core::Tensor::View()</a>.</p>
+<p class="reference">References <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="Tensor_8cpp_source.html#l00905">cloudViewer::core::Tensor::IndexGet()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>, and <a class="el" href="Tensor_8cpp_source.html#l00721">cloudViewer::core::Tensor::View()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VoxelBlockGrid_8cpp_source.html#l00405">cloudViewer::t::geometry::VoxelBlockGrid::ExtractPointCloud()</a>, and <a class="el" href="VoxelBlockGrid_8cpp_source.html#l00437">cloudViewer::t::geometry::VoxelBlockGrid::ExtractTriangleMesh()</a>.</p>
 
@@ -537,9 +535,9 @@ Functions</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="Metrics_8cpp_source.html#l00016">16</a> of file <a class="el" href="Metrics_8cpp_source.html">Metrics.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ab42101ff5315fcf76f154ebae99f2c1bab88c082921979bce0dfd61d8cba619d7">ChamferDistance</a>, <a class="el" href="Dtype_8cpp_source.html#l00042">cloudViewer::core::Float32</a>, <a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ab42101ff5315fcf76f154ebae99f2c1ba3a9bb7bf490783f21a941e4878d12c49">FScore</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8cpp_source.html#l01404">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ab42101ff5315fcf76f154ebae99f2c1bac76843261dd6e8c075cdf7237eb8d952">HausdorffDistance</a>, <a class="el" href="Tensor_8h_source.html#l00618">cloudViewer::core::Tensor::Item()</a>, <a class="el" href="Tensor_8cpp_source.html#l01244">cloudViewer::core::Tensor::Max()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="Tensor_8h_source.html#l01170">cloudViewer::core::Tensor::NumElements()</a>, <a class="el" href="SurfaceTrimmer_8cpp_source.html#l00047">params</a>, and <a class="el" href="Tensor_8cpp_source.html#l00640">cloudViewer::core::Tensor::Reshape()</a>.</p>
+<p class="reference">References <a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ab42101ff5315fcf76f154ebae99f2c1bab88c082921979bce0dfd61d8cba619d7">ChamferDistance</a>, <a class="el" href="Dtype_8cpp_source.html#l00042">cloudViewer::core::Float32</a>, <a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ab42101ff5315fcf76f154ebae99f2c1ba3a9bb7bf490783f21a941e4878d12c49">FScore</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html#ab42101ff5315fcf76f154ebae99f2c1bac76843261dd6e8c075cdf7237eb8d952">HausdorffDistance</a>, <a class="el" href="Tensor_8h_source.html#l00618">cloudViewer::core::Tensor::Item()</a>, <a class="el" href="Tensor_8cpp_source.html#l01275">cloudViewer::core::Tensor::Max()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="Tensor_8h_source.html#l01170">cloudViewer::core::Tensor::NumElements()</a>, <a class="el" href="SurfaceTrimmer_8cpp_source.html#l00047">params</a>, and <a class="el" href="Tensor_8cpp_source.html#l00671">cloudViewer::core::Tensor::Reshape()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html#l01356">cloudViewer::t::geometry::PointCloud::ComputeMetrics()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l01900">cloudViewer::t::geometry::TriangleMesh::ComputeMetrics()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html#l01332">cloudViewer::t::geometry::PointCloud::ComputeMetrics()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l01894">cloudViewer::t::geometry::TriangleMesh::ComputeMetrics()</a>.</p>
 
 </div>
 </div>
@@ -567,11 +565,11 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l00314">314</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l00316">316</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="TriangleMeshImpl_8h_source.html#l00116">cloudViewer::t::geometry::kernel::trianglemesh::ComputeTriangleAreasCPU()</a>, <a class="el" href="Tensor_8cpp_source.html#l00741">cloudViewer::core::Tensor::Contiguous()</a>, <a class="el" href="CUDAUtils_8h_source.html#l00049">CUDA_CALL</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00721">cloudViewer::t::geometry::TriangleMesh::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00174">cloudViewer::t::geometry::TriangleMesh::GetTriangleIndices()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00148">cloudViewer::t::geometry::TriangleMesh::GetVertexPositions()</a>, <a class="el" href="Device_8h_source.html#l00095">cloudViewer::core::IsDevice::IsCPU()</a>, <a class="el" href="Device_8h_source.html#l00099">cloudViewer::core::IsDevice::IsCUDA()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>.</p>
+<p class="reference">References <a class="el" href="TriangleMeshImpl_8h_source.html#l00116">cloudViewer::t::geometry::kernel::trianglemesh::ComputeTriangleAreasCPU()</a>, <a class="el" href="Tensor_8cpp_source.html#l00772">cloudViewer::core::Tensor::Contiguous()</a>, <a class="el" href="CUDAUtils_8h_source.html#l00049">CUDA_CALL</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00721">cloudViewer::t::geometry::TriangleMesh::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00174">cloudViewer::t::geometry::TriangleMesh::GetTriangleIndices()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00148">cloudViewer::t::geometry::TriangleMesh::GetVertexPositions()</a>, <a class="el" href="Device_8h_source.html#l00095">cloudViewer::core::IsDevice::IsCPU()</a>, <a class="el" href="Device_8h_source.html#l00099">cloudViewer::core::IsDevice::IsCUDA()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="TriangleMesh_8cpp_source.html#l00333">cloudViewer::t::geometry::TriangleMesh::ComputeTriangleAreas()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l00359">cloudViewer::t::geometry::TriangleMesh::GetSurfaceArea()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="TriangleMesh_8cpp_source.html#l00335">cloudViewer::t::geometry::TriangleMesh::ComputeTriangleAreas()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l00361">cloudViewer::t::geometry::TriangleMesh::GetSurfaceArea()</a>.</p>
 
 </div>
 </div>
@@ -672,7 +670,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01151">1151</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01153">1153</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00159">cloudViewer::t::geometry::TriangleMesh::GetTriangleAttr()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00133">cloudViewer::t::geometry::TriangleMesh::GetVertexAttr()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00343">cloudViewer::t::geometry::TriangleMesh::HasTriangleAttr()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00353">cloudViewer::t::geometry::TriangleMesh::HasTriangleIndices()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00314">cloudViewer::t::geometry::TriangleMesh::HasVertexAttr()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00323">cloudViewer::t::geometry::TriangleMesh::HasVertexPositions()</a>, <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00285">cloudViewer::t::geometry::TriangleMesh::SetTriangleAttr()</a>, and <a class="el" href="t_2geometry_2TriangleMesh_8h_source.html#l00254">cloudViewer::t::geometry::TriangleMesh::SetVertexAttr()</a>.</p>
 
@@ -744,14 +742,14 @@ Functions</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html#l00872">872</a> of file <a class="el" href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html">PointCloud.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Tensor_8cpp_source.html#l01086">cloudViewer::core::Tensor::Add_()</a>, <a class="el" href="Tensor_8cpp_source.html#l01843">cloudViewer::core::Tensor::AllClose()</a>, <a class="el" href="Image_8cpp_source.html#l00417">cloudViewer::t::geometry::Image::ClipTransform()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="cloudViewer_2t_2geometry_2Image_8h_source.html#l00087">cloudViewer::t::geometry::Image::GetCols()</a>, <a class="el" href="Tensor_8cpp_source.html#l01404">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="cloudViewer_2t_2geometry_2Image_8h_source.html#l00084">cloudViewer::t::geometry::Image::GetRows()</a>, <a class="el" href="Tensor_8cpp_source.html#l01930">cloudViewer::core::Tensor::Inverse()</a>, <a class="el" href="Device_8h_source.html#l00099">cloudViewer::core::IsDevice::IsCUDA()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="Tensor_8cpp_source.html#l01867">cloudViewer::core::Tensor::Matmul()</a>, <a class="el" href="TensorKey_8h_source.html#l00020">cloudViewer::core::None</a>, <a class="el" href="t_2geometry_2PointCloud_8h_source.html#l00192">cloudViewer::t::geometry::PointCloud::SetPointColors()</a>, and <a class="el" href="TriangleMeshBuffers_8cpp_source.html#l00166">stride</a>.</p>
+<p class="reference">References <a class="el" href="Tensor_8cpp_source.html#l01117">cloudViewer::core::Tensor::Add_()</a>, <a class="el" href="Tensor_8cpp_source.html#l01895">cloudViewer::core::Tensor::AllClose()</a>, <a class="el" href="Image_8cpp_source.html#l00417">cloudViewer::t::geometry::Image::ClipTransform()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="cloudViewer_2t_2geometry_2Image_8h_source.html#l00087">cloudViewer::t::geometry::Image::GetCols()</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="cloudViewer_2t_2geometry_2Image_8h_source.html#l00084">cloudViewer::t::geometry::Image::GetRows()</a>, <a class="el" href="Tensor_8cpp_source.html#l01982">cloudViewer::core::Tensor::Inverse()</a>, <a class="el" href="Device_8h_source.html#l00099">cloudViewer::core::IsDevice::IsCUDA()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="Tensor_8cpp_source.html#l01919">cloudViewer::core::Tensor::Matmul()</a>, <a class="el" href="TensorKey_8h_source.html#l00020">cloudViewer::core::None</a>, <a class="el" href="t_2geometry_2PointCloud_8h_source.html#l00192">cloudViewer::t::geometry::PointCloud::SetPointColors()</a>, and <a class="el" href="TriangleMeshBuffers_8cpp_source.html#l00166">stride</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html#l00956">cloudViewer::t::geometry::PointCloud::CreateFromDepthImage()</a>, and <a class="el" href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html#l00986">cloudViewer::t::geometry::PointCloud::CreateFromRGBDImage()</a>.</p>
 
 </div>
 </div>
-<a id="a8ae09c633c6cd51a18c5660bce69c76a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8ae09c633c6cd51a18c5660bce69c76a">&#9670;&nbsp;</a></span>GetEdgeToTrianglesMap()</h2>
+<a id="a7c8ef89ea013b8561387655b7916dd0f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7c8ef89ea013b8561387655b7916dd0f">&#9670;&nbsp;</a></span>GetEdgeToTrianglesMap()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -762,7 +760,7 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static std::unordered_map&lt;<a class="el" href="classEdge.html">Edge</a>&lt;T&gt;, std::vector&lt;size_t&gt;, <a class="el" href="structcloudViewer_1_1t_1_1geometry_1_1TupleEdgeHash.html">TupleEdgeHash</a>&gt; cloudViewer::t::geometry::GetEdgeToTrianglesMap </td>
+          <td class="memname">static std::unordered_map&lt;<a class="el" href="classEdge.html">Edge</a>&lt;T&gt;, std::vector&lt;size_t&gt;, <a class="el" href="structcloudViewer_1_1utility_1_1hash__tuple.html">utility::hash_tuple</a>&lt;<a class="el" href="classEdge.html">Edge</a>&lt;T&gt; &gt; &gt; cloudViewer::t::geometry::GetEdgeToTrianglesMap </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;&#160;</td>
           <td class="paramname"><em>tris_cpu</em></td><td>)</td>
@@ -776,9 +774,9 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01687">1687</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01680">1680</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l01670">GetOrderedEdge()</a>.</p>
+<p class="reference">References <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l01672">GetOrderedEdge()</a>.</p>
 
 </div>
 </div>
@@ -820,9 +818,9 @@ template&lt;typename T &gt; </div>
 
 <p>brief Helper function to get an edge with ordered vertex indices. </p>
 
-<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01670">1670</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01672">1672</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="TriangleMesh_8cpp_source.html#l01687">GetEdgeToTrianglesMap()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="TriangleMesh_8cpp_source.html#l01680">GetEdgeToTrianglesMap()</a>.</p>
 
 </div>
 </div>
@@ -889,7 +887,7 @@ template&lt;typename T , typename std::enable_if&lt; std::is_integral&lt; T &gt;
 <p>brief Static negative checker for signed integer types </p>
 <p>brief Overloaded static negative checker for unsigned integer types. It unconditionally returns false, but we need it for template functions. </p>
 
-<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01230">1230</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01232">1232</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
 
 </div>
 </div>
@@ -936,7 +934,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01130">1130</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TriangleMesh_8cpp_source.html#l01132">1132</a> of file <a class="el" href="TriangleMesh_8cpp_source.html">TriangleMesh.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="ParallelScan_8h_source.html#l00066">cloudViewer::utility::InclusivePrefixSum()</a>.</p>
 
@@ -948,7 +946,7 @@ template&lt;typename T &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1t.html">t</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1t_1_1geometry.html">geometry</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:28 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

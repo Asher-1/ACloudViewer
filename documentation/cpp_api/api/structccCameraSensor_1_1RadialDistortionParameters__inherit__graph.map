@@ -1,0 +1,5 @@
+<map id="ccCameraSensor::RadialDistortionParameters" name="ccCameraSensor::RadialDistortionParameters">
+<area shape="rect" id="node1" title="Simple radial distortion model." alt="" coords="5,95,249,136"/>
+<area shape="rect" id="node3" href="$structccCameraSensor_1_1ExtendedRadialDistortionParameters.html" title="Extended radial distortion model." alt="" coords="27,184,228,225"/>
+<area shape="rect" id="node2" href="$structccCameraSensor_1_1LensDistortionParameters.html" title="Lens distortion parameters (interface)" alt="" coords="11,5,244,47"/>
+</map>

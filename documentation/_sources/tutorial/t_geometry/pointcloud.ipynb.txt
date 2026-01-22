@@ -2,14 +2,28 @@
  "cells": [
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 1,
    "metadata": {
     "ExecuteTime": {
      "end_time": "2022-12-09T15:53:09.502685Z",
      "start_time": "2022-12-09T15:53:08.653426Z"
+    },
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:34.490755Z",
+     "iopub.status.busy": "2026-01-22T14:04:34.490562Z",
+     "iopub.status.idle": "2026-01-22T14:04:36.142454Z",
+     "shell.execute_reply": "2026-01-22T14:04:36.141799Z"
     }
    },
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Using external CloudViewer-ML in /root/CloudViewer-ML\n"
+     ]
+    }
+   ],
    "source": [
     "import cloudViewer as cv3d\n",
     "import cloudViewer.core as o3c\n",
@@ -39,14 +53,43 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 2,
    "metadata": {
     "ExecuteTime": {
      "end_time": "2022-12-09T15:53:09.507147Z",
      "start_time": "2022-12-09T15:53:09.503719Z"
+    },
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:36.145428Z",
+     "iopub.status.busy": "2026-01-22T14:04:36.144943Z",
+     "iopub.status.idle": "2026-01-22T14:04:36.151365Z",
+     "shell.execute_reply": "2026-01-22T14:04:36.150660Z"
     }
    },
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "PointCloud on CPU:0 [0 points].\n",
+      "Attributes: None. \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float32)].\n",
+      "Attributes: None. \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float64)].\n",
+      "Attributes: None. \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float32)].\n",
+      "Attributes: None. \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float64)].\n",
+      "Attributes: None. \n",
+      "\n",
+      "Error creation. The point cloud must have shape of (N, 3).\n"
+     ]
+    }
+   ],
    "source": [
     "# Create a empty point cloud on CPU.\n",
     "pcd = cv3d.t.geometry.PointCloud()\n",
@@ -92,14 +135,29 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 3,
    "metadata": {
     "ExecuteTime": {
      "end_time": "2022-12-09T15:53:15.378492Z",
      "start_time": "2022-12-09T15:53:15.375715Z"
+    },
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:36.154200Z",
+     "iopub.status.busy": "2026-01-22T14:04:36.153697Z",
+     "iopub.status.idle": "2026-01-22T14:04:36.158485Z",
+     "shell.execute_reply": "2026-01-22T14:04:36.157817Z"
     }
    },
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "PointCloud on CPU:0 [2 points (Float32)].\n",
+      "Attributes: normals (dtype = Float32, shape = {2, 3}), labels (dtype = Int64, shape = {2}).\n"
+     ]
+    }
+   ],
    "source": [
     "map_to_tensors = {}\n",
     "\n",
@@ -125,14 +183,41 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 4,
    "metadata": {
     "ExecuteTime": {
      "end_time": "2022-12-09T15:53:24.681751Z",
      "start_time": "2022-12-09T15:53:24.678427Z"
+    },
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:36.161089Z",
+     "iopub.status.busy": "2026-01-22T14:04:36.160636Z",
+     "iopub.status.idle": "2026-01-22T14:04:36.167470Z",
+     "shell.execute_reply": "2026-01-22T14:04:36.166789Z"
     }
    },
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "PointCloud on CPU:0 [2 points (Float32)].\n",
+      "Attributes: labels (dtype = Int64, shape = {2}), colors (dtype = Float32, shape = {2, 3}), normals (dtype = Float32, shape = {2, 3}). \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float32)].\n",
+      "Attributes: labels (dtype = Int64, shape = {2}), colors (dtype = Float32, shape = {2, 3}), normals (dtype = Float32, shape = {2, 3}), intensity (dtype = Float64, shape = {2}). \n",
+      "\n",
+      "posisions: \n",
+      "[[0 0 0],\n",
+      " [1 1 1]]\n",
+      "Tensor[shape={2, 3}, stride={3, 1}, Float32, CPU:0, 0x55ad1946a1d0] \n",
+      "\n",
+      "labels: \n",
+      "[0 1]\n",
+      "Tensor[shape={2}, stride={1}, Int64, CPU:0, 0x55ad194ecf90] \n"
+     ]
+    }
+   ],
    "source": [
     "pcd = cv3d.t.geometry.PointCloud(o3c.Tensor([[0, 0, 0], [1, 1, 1]],\n",
     "                                            o3c.float32))\n",
@@ -166,9 +251,31 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
+   "execution_count": 5,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:36.169975Z",
+     "iopub.status.busy": "2026-01-22T14:04:36.169766Z",
+     "iopub.status.idle": "2026-01-22T14:04:36.287003Z",
+     "shell.execute_reply": "2026-01-22T14:04:36.286309Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ccPointCloud with 2 points. \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float32)].\n",
+      "Attributes: colors (dtype = Float32, shape = {2, 3}), normals (dtype = Float32, shape = {2, 3}). \n",
+      "\n",
+      "PointCloud on CPU:0 [2 points (Float64)].\n",
+      "Attributes: colors (dtype = Float64, shape = {2, 3}), normals (dtype = Float64, shape = {2, 3}). \n",
+      "\n"
+     ]
+    }
+   ],
    "source": [
     "legacy_pcd = pcd.to_legacy()\n",
     "print(legacy_pcd, \"\\n\")\n",
@@ -190,9 +297,56 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
+   "execution_count": 6,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-22T14:04:36.289660Z",
+     "iopub.status.busy": "2026-01-22T14:04:36.289233Z",
+     "iopub.status.idle": "2026-01-22T14:04:37.146982Z",
+     "shell.execute_reply": "2026-01-22T14:04:37.146074Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Load a ply point cloud, print it, and render it\n",
+      "[CloudViewer INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply\n",
+      "[CloudViewer INFO] Downloaded to /root/cloudViewer_data/download/PLYPointCloud/fragment.ply\n",
+      "\u001b[1;33m[CloudViewer WARNING] Destination is a directory: /root/cloudViewer_data/extract/PLYPointCloud\u001b[0;m\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "PointCloud on CPU:0 [196133 points (Float32)].\n",
+      "Attributes: curvature (dtype = Float32, shape = {196133, 1}), normals (dtype = Float32, shape = {196133, 3}), colors (dtype = UInt8, shape = {196133, 3}).\n",
+      "\u001b[1;33m[CloudViewer WARNING] GLFW Error: X11: The DISPLAY environment variable is missing\u001b[0;m\n",
+      "\u001b[1;33m[CloudViewer WARNING] GLFW initialized for headless rendering.\u001b[0;m\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[1;33m[CloudViewer WARNING] Failed to initialize GLEW: Missing GL version (1)\u001b[0;m\n"
+     ]
+    },
+    {
+     "ename": "AttributeError",
+     "evalue": "'NoneType' object has no attribute 'point_show_normal'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mAttributeError\u001b[0m                            Traceback (most recent call last)",
+      "Cell \u001b[0;32mIn[6], line 5\u001b[0m\n\u001b[1;32m      3\u001b[0m pcd \u001b[38;5;241m=\u001b[39m cv3d\u001b[38;5;241m.\u001b[39mt\u001b[38;5;241m.\u001b[39mio\u001b[38;5;241m.\u001b[39mread_point_cloud(ply_point_cloud\u001b[38;5;241m.\u001b[39mpath)\n\u001b[1;32m      4\u001b[0m \u001b[38;5;28mprint\u001b[39m(pcd)\n\u001b[0;32m----> 5\u001b[0m \u001b[43mcv3d\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mvisualization\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mdraw_geometries\u001b[49m\u001b[43m(\u001b[49m\u001b[43m[\u001b[49m\u001b[43mpcd\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mto_legacy\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\u001b[43m]\u001b[49m\u001b[43m,\u001b[49m\n\u001b[1;32m      6\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mzoom\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[38;5;241;43m0.3412\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[1;32m      7\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mfront\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43m[\u001b[49m\u001b[38;5;241;43m0.4257\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.2125\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.8795\u001b[39;49m\u001b[43m]\u001b[49m\u001b[43m,\u001b[49m\n\u001b[1;32m      8\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mlookat\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43m[\u001b[49m\u001b[38;5;241;43m2.6172\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m2.0475\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m1.532\u001b[39;49m\u001b[43m]\u001b[49m\u001b[43m,\u001b[49m\n\u001b[1;32m      9\u001b[0m \u001b[43m                                   \u001b[49m\u001b[43mup\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[43m[\u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.0694\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m-\u001b[39;49m\u001b[38;5;241;43m0.9768\u001b[39;49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m0.2024\u001b[39;49m\u001b[43m]\u001b[49m\u001b[43m)\u001b[49m\n",
+      "File \u001b[0;32m~/ACloudViewer/docs/source/tutorial/t_geometry/../cloudViewer_tutorial.py:40\u001b[0m, in \u001b[0;36mjupyter_draw_geometries\u001b[0;34m(geoms, window_name, width, height, left, top, point_show_normal, mesh_show_wireframe, mesh_show_back_face, lookat, up, front, zoom)\u001b[0m\n\u001b[1;32m     31\u001b[0m vis \u001b[38;5;241m=\u001b[39m cv3d\u001b[38;5;241m.\u001b[39mvisualization\u001b[38;5;241m.\u001b[39mVisualizer()\n\u001b[1;32m     32\u001b[0m vis\u001b[38;5;241m.\u001b[39mcreate_window(\n\u001b[1;32m     33\u001b[0m     window_name\u001b[38;5;241m=\u001b[39mwindow_name,\n\u001b[1;32m     34\u001b[0m     width\u001b[38;5;241m=\u001b[39mwidth,\n\u001b[0;32m   (...)\u001b[0m\n\u001b[1;32m     38\u001b[0m     visible\u001b[38;5;241m=\u001b[39m\u001b[38;5;28;01mTrue\u001b[39;00m,  \u001b[38;5;66;03m# If false, capture_screen_float_buffer() won't work.\u001b[39;00m\n\u001b[1;32m     39\u001b[0m )\n\u001b[0;32m---> 40\u001b[0m \u001b[43mvis\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_render_option\u001b[49m\u001b[43m(\u001b[49m\u001b[43m)\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mpoint_show_normal\u001b[49m \u001b[38;5;241m=\u001b[39m point_show_normal\n\u001b[1;32m     41\u001b[0m vis\u001b[38;5;241m.\u001b[39mget_render_option()\u001b[38;5;241m.\u001b[39mmesh_show_wireframe \u001b[38;5;241m=\u001b[39m mesh_show_wireframe\n\u001b[1;32m     42\u001b[0m vis\u001b[38;5;241m.\u001b[39mget_render_option()\u001b[38;5;241m.\u001b[39mmesh_show_back_face \u001b[38;5;241m=\u001b[39m mesh_show_back_face\n",
+      "\u001b[0;31mAttributeError\u001b[0m: 'NoneType' object has no attribute 'point_show_normal'"
+     ]
+    }
+   ],
    "source": [
     "print(\"Load a ply point cloud, print it, and render it\")\n",
     "ply_point_cloud = cv3d.data.PLYPointCloud()\n",
@@ -825,7 +979,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.9.13"
+   "version": "3.10.12"
   },
   "vscode": {
    "interpreter": {

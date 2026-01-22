@@ -104,11 +104,33 @@ $(document).ready(function(){initNavTree('classcc2DLabel.html',''); initResizabl
 Inheritance diagram for cc2DLabel:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcc2DLabel__inherit__graph.png" border="0" usemap="#acc2DLabel_inherit__map" alt="Inheritance graph"/></div>
+<map name="acc2DLabel_inherit__map" id="acc2DLabel_inherit__map">
+<area shape="rect" title="2D label (typically attached to points)" alt="" coords="163,229,253,256"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="105,155,193,181"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,80,122,107"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,80,286,107"/>
+<area shape="rect" href="classccInteractor.html" title="Interactor interface (entity that can be dragged or clicked in a 3D view)" alt="" coords="217,155,316,181"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for cc2DLabel:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcc2DLabel__coll__graph.png" border="0" usemap="#acc2DLabel_coll__map" alt="Collaboration graph"/></div>
+<map name="acc2DLabel_coll__map" id="acc2DLabel_coll__map">
+<area shape="rect" title="2D label (typically attached to points)" alt="" coords="167,513,256,540"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="63,437,151,464"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="5,132,84,159"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="27,5,182,32"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title=" " alt="" coords="83,183,257,209"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="143,81,296,108"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="249,361,389,388"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="238,272,403,299"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="329,81,473,108"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="348,183,499,209"/>
+<area shape="rect" href="classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="119,272,213,299"/>
+<area shape="rect" href="classccInteractor.html" title="Interactor interface (entity that can be dragged or clicked in a 3D view)" alt="" coords="266,437,365,464"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -243,7 +265,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a3817540ce25b70106566ac760c0a2493 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an axis-aligned bounding box of the geometry.  <a href="classccHObject.html#a3817540ce25b70106566ac760c0a2493">More...</a><br /></td></tr>
 <tr class="separator:a3817540ce25b70106566ac760c0a2493 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classecvOrientedBBox.html">ecvOrientedBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">GetOrientedBoundingBox</a> () const</td></tr>
-<tr class="memdesc:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an oriented bounding box of the geometry.  <a href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">More...</a><br /></td></tr>
 <tr class="separator:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad45ba56d6d3ba8398a15886292fd1bce inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccHObject.html">ccHObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#ad45ba56d6d3ba8398a15886292fd1bce">Transform</a> (const Eigen::Matrix4d &amp;transformation)</td></tr>
 <tr class="memdesc:ad45ba56d6d3ba8398a15886292fd1bce inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply transformation (4x4 matrix) to the geometry coordinates.  <a href="classccHObject.html#ad45ba56d6d3ba8398a15886292fd1bce">More...</a><br /></td></tr>
@@ -364,7 +385,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aea53c4efc95be608547a555bf40f795e inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a7d28a89dc197e089208b6b43648b50b7">setPointSizeRecursive</a> (int pSize)</td></tr>
 <tr class="separator:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (PointCoordinateType <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
+<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
 <tr class="separator:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccBBox.html">ccBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">getBB_recursive</a> (bool withGLFeatures=false, bool onlyEnabledChildren=true)</td></tr>
 <tr class="memdesc:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the bounding-box of this entity and it's children.  <a href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">More...</a><br /></td></tr>
@@ -1530,7 +1551,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecv2DLabel_8h_source.html#l00030">30</a> of file <a class="el" href="ecv2DLabel_8h_source.html">ecv2DLabel.h</a>.</p>
 
-<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00137">CV_TYPES::LABEL_2D</a>.</p>
+<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00140">CV_TYPES::LABEL_2D</a>.</p>
 
 </div>
 </div>
@@ -2802,7 +2823,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_db/include/<a class="el" href="ecv2DLabel_8h_source.html">ecv2DLabel.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="ecv2DLabel_8h_source.html">ecv2DLabel.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -2810,7 +2831,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classcc2DLabel.html">cc2DLabel</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,0 +1,8 @@
+<map id="PdmsTools::PdmsObjects::GroupElement" name="PdmsTools::PdmsObjects::GroupElement">
+<area shape="rect" id="node1" title="Group of elements." alt="" coords="176,411,360,452"/>
+<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsObjects_1_1GenericItem.html" title="Generic item." alt="" coords="19,298,203,339"/>
+<area shape="rect" id="node3" href="$classVector3Tpl.html" title=" " alt="" coords="5,171,216,212"/>
+<area shape="rect" id="node4" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="33,5,177,32"/>
+<area shape="rect" id="node5" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="127,81,278,108"/>
+<area shape="rect" id="node6" href="$structToken.html" title=" " alt="" coords="396,305,455,332"/>
+</map>

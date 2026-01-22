@@ -367,7 +367,7 @@ var classecvDisplayTools =
     [ "SetupProjectiveViewport", "classecvDisplayTools.html#a7ff1d351eae139322341190eb8660a67", null ],
     [ "SetUseVbos", "classecvDisplayTools.html#ae438ce07777157a277917f857a36713b", null ],
     [ "setUseVbos", "classecvDisplayTools.html#ac2ea001450992a58f5d84884aaa21a97", null ],
-    [ "SetView", "classecvDisplayTools.html#a85d2746bc8d278f2e93502b512f049b4", null ],
+    [ "SetView", "classecvDisplayTools.html#aa18882189b1fe40d7413f67c7716d83f", null ],
     [ "SetView", "classecvDisplayTools.html#a8337aeadb1a73ab66323f610bdb24514", null ],
     [ "SetViewAxesGridProperties", "classecvDisplayTools.html#aae3453677abdce84f0468f25f3919971", null ],
     [ "setViewAxesGridProperties", "classecvDisplayTools.html#a4bf4a29a49b5a80d624592ebde8d03db", null ],

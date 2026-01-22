@@ -14,6 +14,8 @@ var structecvGui_1_1ParamStruct =
     [ "autoComputeOctree", "structecvGui_1_1ParamStruct.html#a3c019ff3269141f124211847624dcbe0", null ],
     [ "backgroundCol", "structecvGui_1_1ParamStruct.html#a1e53fdc4b636ef25f35521333617e737", null ],
     [ "bbDefaultCol", "structecvGui_1_1ParamStruct.html#a8da83693f9a33b9e080d5362b2b27bd7", null ],
+    [ "bbLineWidth", "structecvGui_1_1ParamStruct.html#aa6e814e4b32b44ee46a7fca8b33e3f5b", null ],
+    [ "bbOpacity", "structecvGui_1_1ParamStruct.html#a3135bf2066696b5559f66679bfcd32e0", null ],
     [ "colorScaleRampWidth", "structecvGui_1_1ParamStruct.html#a90508ed82d4840ce30a038c0cbf35748", null ],
     [ "colorScaleShaderSupported", "structecvGui_1_1ParamStruct.html#aa6397f013c1881a801ccf1ade0d4af9a", null ],
     [ "colorScaleShowHistogram", "structecvGui_1_1ParamStruct.html#af5949ca1aeb63ab06fb34a9f24f26e7c", null ],
@@ -40,6 +42,7 @@ var structecvGui_1_1ParamStruct =
     [ "minLoDCloudSize", "structecvGui_1_1ParamStruct.html#a55ec6eb07ef88bf152a2904e6bd03bde", null ],
     [ "minLoDMeshSize", "structecvGui_1_1ParamStruct.html#aadd8f9801a38e46d4b95c48b7377f9a9", null ],
     [ "pointsDefaultCol", "structecvGui_1_1ParamStruct.html#af28395e4318b6ce27c502b2f1e7efcef", null ],
+    [ "showBBOnSelected", "structecvGui_1_1ParamStruct.html#ac4a77827f963b697965ddf201215ccf5", null ],
     [ "textDefaultCol", "structecvGui_1_1ParamStruct.html#a4b88846c6ae388caf1ac9d24d5e8a48f", null ],
     [ "useVBOs", "structecvGui_1_1ParamStruct.html#adc36c8f1f51d107dc788f7a5b75a0005", null ],
     [ "zoomSpeed", "structecvGui_1_1ParamStruct.html#ae8c5f327d85c689b487af850315a54ff", null ]

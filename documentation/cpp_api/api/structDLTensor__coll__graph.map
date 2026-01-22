@@ -1,0 +1,10 @@
+<map id="DLTensor" name="DLTensor">
+<area shape="rect" id="node1" title="Plain C Tensor object, does not manage memory." alt="" coords="204,213,284,240"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,109,80,136"/>
+<area shape="rect" id="node3" href="$structDLDevice.html" title="A Device for Tensor and operator." alt="" coords="202,109,286,136"/>
+<area shape="rect" id="node4" title=" " alt="" coords="144,5,211,32"/>
+<area shape="rect" id="node5" href="$structDLDataType.html" title="The data type the tensor can hold. The data type is assumed to follow the native endian&#45;ness...." alt="" coords="310,109,410,136"/>
+<area shape="rect" id="node6" title=" " alt="" coords="297,5,372,32"/>
+<area shape="rect" id="node7" title=" " alt="" coords="396,5,463,32"/>
+<area shape="rect" id="node8" title=" " alt="" coords="435,109,501,136"/>
+</map>

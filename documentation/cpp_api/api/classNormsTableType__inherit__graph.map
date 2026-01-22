@@ -1,0 +1,12 @@
+<map id="NormsTableType" name="NormsTableType">
+<area shape="rect" id="node1" title="Array of (uncompressed) 3D normals (Nx,Ny,Nz)" alt="" coords="192,443,321,469"/>
+<area shape="rect" id="node2" href="$classccArray.html" title=" " alt="" coords="161,352,352,393"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,241,193,267"/>
+<area shape="rect" id="node4" href="$classCCShareable.html" title=" " alt="" coords="176,157,281,184"/>
+<area shape="rect" id="node9" href="$classccArray.html" title="Shareable array that can be properly inserted in the DB tree." alt="" coords="269,233,487,275"/>
+<area shape="rect" id="node5" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="481,157,569,184"/>
+<area shape="rect" id="node6" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="393,81,472,108"/>
+<area shape="rect" id="node7" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="355,5,510,32"/>
+<area shape="rect" id="node8" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="496,81,636,108"/>
+<area shape="rect" id="node10" title=" " alt="" coords="305,157,456,184"/>
+</map>

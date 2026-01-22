@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.dataloaders.get_sampler
+--------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.dataloaders
+
+.. autofunction:: get_sampler

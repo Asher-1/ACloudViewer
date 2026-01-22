@@ -171,32 +171,32 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:acab8d50b96407c10894d4a5c9a0279ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87b6aac163c4d1f0bbffa43920971a79"><td class="memItemLeft" align="right" valign="top">static std::vector&lt; <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a87b6aac163c4d1f0bbffa43920971a79">GetNormalsPtr</a> ()</td></tr>
 <tr class="separator:a87b6aac163c4d1f0bbffa43920971a79"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf6988b9e1a9e33f2b2a593f90497b2d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#adf6988b9e1a9e33f2b2a593f90497b2d">GetNormIndex</a> (const PointCoordinateType N[])</td></tr>
+<tr class="memitem:adf6988b9e1a9e33f2b2a593f90497b2d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#adf6988b9e1a9e33f2b2a593f90497b2d">GetNormIndex</a> (const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> N[])</td></tr>
 <tr class="memdesc:adf6988b9e1a9e33f2b2a593f90497b2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the compressed index corresponding to a normal vector.  <a href="classccNormalVectors.html#adf6988b9e1a9e33f2b2a593f90497b2d">More...</a><br /></td></tr>
 <tr class="separator:adf6988b9e1a9e33f2b2a593f90497b2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a421c28de8cfc190636abae6db3766ba4"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a421c28de8cfc190636abae6db3766ba4">GetNormIndex</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N)</td></tr>
 <tr class="memdesc:a421c28de8cfc190636abae6db3766ba4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the compressed index corresponding to a normal vector (shortcut)  <a href="classccNormalVectors.html#a421c28de8cfc190636abae6db3766ba4">More...</a><br /></td></tr>
 <tr class="separator:a421c28de8cfc190636abae6db3766ba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae95d827e89479aced30de23d8b76d6a1"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#ae95d827e89479aced30de23d8b76d6a1">ComputeCloudNormals</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *cloud, <a class="el" href="classNormsIndexesTableType.html">NormsIndexesTableType</a> &amp;theNormsCodes, <a class="el" href="CVConst_8h.html#a647348757b06823416b04309a5482353">CV_LOCAL_MODEL_TYPES</a> localModel, PointCoordinateType localRadius, <a class="el" href="classccNormalVectors.html#ab99abf55c3f6af3146d9ab8bc224dd41">Orientation</a> preferredOrientation=<a class="el" href="classccNormalVectors.html#ab99abf55c3f6af3146d9ab8bc224dd41af00ca5bed565162ca740d758fc6043da">UNDEFINED</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memitem:ae95d827e89479aced30de23d8b76d6a1"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#ae95d827e89479aced30de23d8b76d6a1">ComputeCloudNormals</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *cloud, <a class="el" href="classNormsIndexesTableType.html">NormsIndexesTableType</a> &amp;theNormsCodes, <a class="el" href="CVConst_8h.html#a647348757b06823416b04309a5482353">CV_LOCAL_MODEL_TYPES</a> localModel, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> localRadius, <a class="el" href="classccNormalVectors.html#ab99abf55c3f6af3146d9ab8bc224dd41">Orientation</a> preferredOrientation=<a class="el" href="classccNormalVectors.html#ab99abf55c3f6af3146d9ab8bc224dd41af00ca5bed565162ca740d758fc6043da">UNDEFINED</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a> *inputOctree=nullptr)</td></tr>
 <tr class="memdesc:ae95d827e89479aced30de23d8b76d6a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes normal at each point of a given cloud.  <a href="classccNormalVectors.html#ae95d827e89479aced30de23d8b76d6a1">More...</a><br /></td></tr>
 <tr class="separator:ae95d827e89479aced30de23d8b76d6a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab3dbe7243ec1d94aa49c335ec147321"><td class="memItemLeft" align="right" valign="top">static PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#aab3dbe7243ec1d94aa49c335ec147321">GuessNaiveRadius</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *cloud)</td></tr>
+<tr class="memitem:aab3dbe7243ec1d94aa49c335ec147321"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#aab3dbe7243ec1d94aa49c335ec147321">GuessNaiveRadius</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *cloud)</td></tr>
 <tr class="separator:aab3dbe7243ec1d94aa49c335ec147321"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14a7ce164a72bab83dfd57c3a13ecdbc"><td class="memItemLeft" align="right" valign="top">static PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a14a7ce164a72bab83dfd57c3a13ecdbc">GuessBestRadius</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *cloud, <a class="el" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a> *cloudOctree=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memitem:a14a7ce164a72bab83dfd57c3a13ecdbc"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a14a7ce164a72bab83dfd57c3a13ecdbc">GuessBestRadius</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *cloud, <a class="el" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a> *cloudOctree=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
 <tr class="separator:a14a7ce164a72bab83dfd57c3a13ecdbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a3ed69d23051a8dc5097cf5fc52aac6"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a2a3ed69d23051a8dc5097cf5fc52aac6">UpdateNormalOrientations</a> (<a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *theCloud, <a class="el" href="classNormsIndexesTableType.html">NormsIndexesTableType</a> &amp;theNormsCodes, <a class="el" href="classccNormalVectors.html#ab99abf55c3f6af3146d9ab8bc224dd41">Orientation</a> preferredOrientation)</td></tr>
 <tr class="memdesc:a2a3ed69d23051a8dc5097cf5fc52aac6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates normals orientation based on a preferred orientation.  <a href="classccNormalVectors.html#a2a3ed69d23051a8dc5097cf5fc52aac6">More...</a><br /></td></tr>
 <tr class="separator:a2a3ed69d23051a8dc5097cf5fc52aac6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5abe99624c9c364c5aa8c26700380fa6"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a5abe99624c9c364c5aa8c26700380fa6">ConvertNormalToStrikeAndDip</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N, PointCoordinateType &amp;strike_deg, PointCoordinateType &amp;dip_deg)</td></tr>
+<tr class="memitem:a5abe99624c9c364c5aa8c26700380fa6"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a5abe99624c9c364c5aa8c26700380fa6">ConvertNormalToStrikeAndDip</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;strike_deg, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;dip_deg)</td></tr>
 <tr class="separator:a5abe99624c9c364c5aa8c26700380fa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6dadf6f07315f15899d092baf0a9fcd9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">ConvertNormalToDipAndDipDir</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N, PointCoordinateType &amp;dip_deg, PointCoordinateType &amp;dipDir_deg)</td></tr>
+<tr class="memitem:a6dadf6f07315f15899d092baf0a9fcd9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">ConvertNormalToDipAndDipDir</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;dip_deg, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;dipDir_deg)</td></tr>
 <tr class="memdesc:a6dadf6f07315f15899d092baf0a9fcd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a normal vector to geological 'dip direction &amp; dip' parameters.  <a href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">More...</a><br /></td></tr>
 <tr class="separator:a6dadf6f07315f15899d092baf0a9fcd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1678a489db80df681a3be7803eb4f361"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a1678a489db80df681a3be7803eb4f361">ConvertDipAndDipDirToNormal</a> (PointCoordinateType dip_deg, PointCoordinateType dipDir_deg, bool upward=true)</td></tr>
+<tr class="memitem:a1678a489db80df681a3be7803eb4f361"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a1678a489db80df681a3be7803eb4f361">ConvertDipAndDipDirToNormal</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dip_deg, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dipDir_deg, bool upward=true)</td></tr>
 <tr class="separator:a1678a489db80df681a3be7803eb4f361"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2eacbd82e14efbe253ae7ce4ffb8b35"><td class="memItemLeft" align="right" valign="top">static QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#aa2eacbd82e14efbe253ae7ce4ffb8b35">ConvertStrikeAndDipToString</a> (double &amp;strike_deg, double &amp;dip_deg)</td></tr>
 <tr class="separator:aa2eacbd82e14efbe253ae7ce4ffb8b35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3f253307311c301934dd7b5bf88fa8ca"><td class="memItemLeft" align="right" valign="top">static QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a3f253307311c301934dd7b5bf88fa8ca">ConvertDipAndDipDirToString</a> (PointCoordinateType dip_deg, PointCoordinateType dipDir_deg)</td></tr>
+<tr class="memitem:a3f253307311c301934dd7b5bf88fa8ca"><td class="memItemLeft" align="right" valign="top">static QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a3f253307311c301934dd7b5bf88fa8ca">ConvertDipAndDipDirToString</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dip_deg, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dipDir_deg)</td></tr>
 <tr class="memdesc:a3f253307311c301934dd7b5bf88fa8ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts geological 'dip direction &amp; dip' parameters to a string.  <a href="classccNormalVectors.html#a3f253307311c301934dd7b5bf88fa8ca">More...</a><br /></td></tr>
 <tr class="separator:a3f253307311c301934dd7b5bf88fa8ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76b626b7e07e5e1ed8da235a9c4ba58a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccNormalVectors.html#a76b626b7e07e5e1ed8da235a9c4ba58a">ConvertNormalToHSV</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N, float &amp;H, float &amp;S, float &amp;V)</td></tr>
@@ -385,7 +385,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>localRadius</em>, </td>
         </tr>
         <tr>
@@ -702,13 +702,13 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> ccNormalVectors::ConvertDipAndDipDirToNormal </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>dip_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>dipDir_deg</em>, </td>
         </tr>
         <tr>
@@ -755,13 +755,13 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">static QString ccNormalVectors::ConvertDipAndDipDirToString </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>dip_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>dipDir_deg</em>&#160;</td>
         </tr>
         <tr>
@@ -810,13 +810,13 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;&#160;</td>
           <td class="paramname"><em>dip_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;&#160;</td>
           <td class="paramname"><em>dipDir_deg</em>&#160;</td>
         </tr>
         <tr>
@@ -958,13 +958,13 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;&#160;</td>
           <td class="paramname"><em>strike_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;&#160;</td>
           <td class="paramname"><em>dip_deg</em>&#160;</td>
         </tr>
         <tr>
@@ -1373,7 +1373,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">static <a class="el" href="ecvBasicTypes_8h.html#aa8841a9497c5acbcc5aa3f25a544fa5d">CompressedNormType</a> ccNormalVectors::GetNormIndex </td>
           <td>(</td>
-          <td class="paramtype">const PointCoordinateType&#160;</td>
+          <td class="paramtype">const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>N</em>[]</td><td>)</td>
           <td></td>
         </tr>
@@ -1461,7 +1461,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static PointCoordinateType ccNormalVectors::GuessBestRadius </td>
+          <td class="memname">static <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccNormalVectors::GuessBestRadius </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -1512,7 +1512,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static PointCoordinateType ccNormalVectors::GuessNaiveRadius </td>
+          <td class="memname">static <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccNormalVectors::GuessNaiveRadius </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classccGenericPointCloud.html">ccGenericPointCloud</a> *&#160;</td>
           <td class="paramname"><em>cloud</em></td><td>)</td>
@@ -1702,7 +1702,7 @@ Protected Attributes</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_db/include/<a class="el" href="ecvNormalVectors_8h_source.html">ecvNormalVectors.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="ecvNormalVectors_8h_source.html">ecvNormalVectors.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1710,7 +1710,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classccNormalVectors.html">ccNormalVectors</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

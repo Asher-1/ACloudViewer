@@ -1,0 +1,6 @@
+cloudViewer.visualization.tensorboard_plugin.summary.makedirs
+-------------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.tensorboard_plugin.summary
+
+.. autofunction:: makedirs

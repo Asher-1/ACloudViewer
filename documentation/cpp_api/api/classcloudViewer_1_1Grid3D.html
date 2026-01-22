@@ -104,11 +104,25 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1Grid3D.html',''); 
 Inheritance diagram for cloudViewer::Grid3D&lt; Type &gt;:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1Grid3D__inherit__graph.png" border="0" usemap="#acloudViewer_1_1Grid3D_3_01Type_01_4_inherit__map" alt="Inheritance graph"/></div>
+<map name="acloudViewer_1_1Grid3D_3_01Type_01_4_inherit__map" id="acloudViewer_1_1Grid3D_3_01Type_01_4_inherit__map">
+<area shape="rect" title="Simple 3D grid structure." alt="" coords="142,5,297,47"/>
+<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="54,109,209,151"/>
+<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="259,109,414,151"/>
+<area shape="rect" href="classcloudViewer_1_1ChamferDistanceTransform.html" title="Class to compute a Chamfer distance field on a 3D grid." alt="" coords="5,200,228,241"/>
+<area shape="rect" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html" title=" " alt="" coords="252,200,448,241"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for cloudViewer::Grid3D&lt; Type &gt;:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1Grid3D__coll__graph.png" border="0" usemap="#acloudViewer_1_1Grid3D_3_01Type_01_4_coll__map" alt="Collaboration graph"/></div>
+<map name="acloudViewer_1_1Grid3D_3_01Type_01_4_coll__map" id="acloudViewer_1_1Grid3D_3_01Type_01_4_coll__map">
+<area shape="rect" title="Simple 3D grid structure." alt="" coords="117,243,272,284"/>
+<area shape="rect" title=" " alt="" coords="5,102,80,129"/>
+<area shape="rect" href="classTuple3Tpl.html" title=" " alt="" coords="110,95,269,136"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="117,5,261,32"/>
+<area shape="rect" title=" " alt="" coords="293,102,360,129"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -141,16 +155,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae6e1293c527d181a5216a3346c750f12"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#ae6e1293c527d181a5216a3346c750f12">init</a> (unsigned di, unsigned dj, unsigned dk, unsigned margin, <a class="el" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a> defaultCellValue=0)</td></tr>
 <tr class="memdesc:ae6e1293c527d181a5216a3346c750f12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the grid.  <a href="classcloudViewer_1_1Grid3D.html#ae6e1293c527d181a5216a3346c750f12">More...</a><br /></td></tr>
 <tr class="separator:ae6e1293c527d181a5216a3346c750f12"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a683eaa8dbe3f62601348a54e5de01e9e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#a59c62b833cbee82712058d3f018ecc66">Tuple3i</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a683eaa8dbe3f62601348a54e5de01e9e">computeCellPos</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, PointCoordinateType cellSize) const</td></tr>
+<tr class="memitem:a683eaa8dbe3f62601348a54e5de01e9e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVGeom_8h.html#a59c62b833cbee82712058d3f018ecc66">Tuple3i</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a683eaa8dbe3f62601348a54e5de01e9e">computeCellPos</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cellSize) const</td></tr>
 <tr class="memdesc:a683eaa8dbe3f62601348a54e5de01e9e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the (grid) cell position that contains a given point.  <a href="classcloudViewer_1_1Grid3D.html#a683eaa8dbe3f62601348a54e5de01e9e">More...</a><br /></td></tr>
 <tr class="separator:a683eaa8dbe3f62601348a54e5de01e9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a26149a6b1140fff3dbc2bab5cbbc1727"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a26149a6b1140fff3dbc2bab5cbbc1727">intersectWith</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *mesh, PointCoordinateType cellLength, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a> intersectValue=0, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memitem:a26149a6b1140fff3dbc2bab5cbbc1727"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a26149a6b1140fff3dbc2bab5cbbc1727">intersectWith</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *mesh, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cellLength, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a> intersectValue=0, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
 <tr class="memdesc:a26149a6b1140fff3dbc2bab5cbbc1727"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersects this grid with a mesh.  <a href="classcloudViewer_1_1Grid3D.html#a26149a6b1140fff3dbc2bab5cbbc1727">More...</a><br /></td></tr>
 <tr class="separator:a26149a6b1140fff3dbc2bab5cbbc1727"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a584a3d58ecda61797800ac1362dfafd1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a584a3d58ecda61797800ac1362dfafd1">intersectWith</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *mesh, PointCoordinateType cellLength, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="classcloudViewer_1_1Grid3D.html#a2be9c37db7a2711c48ceeb4913144d3e">genericCellTriIntersectionAction</a> action, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memitem:a584a3d58ecda61797800ac1362dfafd1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a584a3d58ecda61797800ac1362dfafd1">intersectWith</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">GenericIndexedMesh</a> *mesh, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cellLength, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="classcloudViewer_1_1Grid3D.html#a2be9c37db7a2711c48ceeb4913144d3e">genericCellTriIntersectionAction</a> action, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
 <tr class="memdesc:a584a3d58ecda61797800ac1362dfafd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersects this grid with a mesh (generic form)  <a href="classcloudViewer_1_1Grid3D.html#a584a3d58ecda61797800ac1362dfafd1">More...</a><br /></td></tr>
 <tr class="separator:a584a3d58ecda61797800ac1362dfafd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbd98b40abb2415f6ae12b3b5f1322bc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#acbd98b40abb2415f6ae12b3b5f1322bc">intersectWith</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *cloud, PointCoordinateType cellLength, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a> intersectValue=0, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memitem:acbd98b40abb2415f6ae12b3b5f1322bc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#acbd98b40abb2415f6ae12b3b5f1322bc">intersectWith</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> cellLength, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;gridMinCorner, <a class="el" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a> intersectValue=0, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
 <tr class="memdesc:acbd98b40abb2415f6ae12b3b5f1322bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersects this grid with a cloud.  <a href="classcloudViewer_1_1Grid3D.html#acbd98b40abb2415f6ae12b3b5f1322bc">More...</a><br /></td></tr>
 <tr class="separator:acbd98b40abb2415f6ae12b3b5f1322bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d390f3c2ea8859d90e688ce3e934464"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1Grid3D.html#a9d390f3c2ea8859d90e688ce3e934464">setValue</a> (int i, int j, int k, <a class="el" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a> value)</td></tr>
@@ -358,7 +372,7 @@ template&lt;class Type &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>cellSize</em>&#160;</td>
         </tr>
         <tr>
@@ -778,7 +792,7 @@ template&lt;class Type &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>cellLength</em>, </td>
         </tr>
         <tr>
@@ -840,7 +854,7 @@ template&lt;class Type &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>cellLength</em>, </td>
         </tr>
         <tr>
@@ -902,7 +916,7 @@ template&lt;class Type &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>cellLength</em>, </td>
         </tr>
         <tr>
@@ -1467,7 +1481,7 @@ template&lt;class Type &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1Grid3D.html">Grid3D</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

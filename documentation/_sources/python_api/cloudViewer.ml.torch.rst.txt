@@ -1,0 +1,32 @@
+cloudViewer.ml.torch
+====================
+
+.. currentmodule:: cloudViewer.ml.torch
+
+**Modules**
+
+.. autosummary::
+
+    classes
+    dataloaders
+    datasets
+    layers
+    models
+    modules
+    ops
+    pipelines
+    vis
+
+
+.. toctree::
+    :hidden:
+
+    classes <cloudViewer.ml.torch.classes>
+    dataloaders <cloudViewer.ml.torch.dataloaders>
+    datasets <cloudViewer.ml.torch.datasets>
+    layers <cloudViewer.ml.torch.layers>
+    models <cloudViewer.ml.torch.models>
+    modules <cloudViewer.ml.torch.modules>
+    ops <cloudViewer.ml.torch.ops>
+    pipelines <cloudViewer.ml.torch.pipelines>
+    vis <cloudViewer.ml.torch.vis>

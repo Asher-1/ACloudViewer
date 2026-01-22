@@ -1,0 +1,4 @@
+<map id="flann::cuda::kd_tree_builder_detail::SetLeftAndRightAndAABB" name="flann::cuda::kd_tree_builder_detail::SetLeftAndRightAndAABB">
+<area shape="rect" id="node1" title="used to update the left/right pointers and aabb infos after the node splits" alt="" coords="5,109,201,165"/>
+<area shape="rect" id="node2" href="$structflann_1_1cuda_1_1kd__tree__builder__detail_1_1SplitInfo.html" title=" " alt="" coords="13,5,193,47"/>
+</map>

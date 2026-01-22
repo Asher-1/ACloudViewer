@@ -1,0 +1,6 @@
+<map id="ecvGenericVisualizer" name="ecvGenericVisualizer">
+<area shape="rect" id="node1" title="Generic visualizer interface." alt="" coords="115,80,273,107"/>
+<area shape="rect" id="node3" href="$classecvGenericVisualizer2D.html" title="Generic visualizer 2D interface." alt="" coords="5,155,183,181"/>
+<area shape="rect" id="node4" href="$classecvGenericVisualizer3D.html" title="Generic visualizer 3D interface." alt="" coords="207,155,384,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="157,5,231,32"/>
+</map>

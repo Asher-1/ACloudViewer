@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.models.RandLANet
+-------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+.. autoclass:: RandLANet
+    :members:
+    :undoc-members:

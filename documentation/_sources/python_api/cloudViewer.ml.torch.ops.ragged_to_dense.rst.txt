@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.ragged_to_dense
+----------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: ragged_to_dense

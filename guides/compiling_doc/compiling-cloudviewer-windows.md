@@ -33,7 +33,8 @@ conda activate cloudViewer
 ../scripts/setup_conda_env.ps1
 
 cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
-    -DDEVELOPER_BUILD="OFF" `
+    -DDEVELOPER_BUILD=OFF `
+    -DBUILD_UNIT_TESTS=ON `
     -DBUILD_EXAMPLES=OFF `
     -DBUILD_SHARED_LIBS=OFF `
     -DSTATIC_WINDOWS_RUNTIME=OFF `
@@ -115,6 +116,7 @@ Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Dest
 conda env create -f "$env:TEMP\conda_windows.yml"
 conda activate python3.12
 
+$env:BUILD_PYTORCH_OPS = ON
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 Install-PythonDependencies -options "with-cuda","with-torch","with-jupyter"
 
@@ -130,8 +132,15 @@ mkdir build
 cd build
 ../scripts/setup_conda_env.ps1
 
+$env:DEVELOPER_BUILD = OFF
+$env:BUILD_SHARED_LIBS = OFF
+$env:BUILD_PYTORCH_OPS = ON
+$env:BUILD_TENSORFLOW_OPS = OFF
+$env:CLOUDVIEWER_ML_ROOT = "/home/asher/develop/code/github/CloudViewer/CloudViewer-ML"
+
 cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
         -DBUILD_SHARED_LIBS=OFF `
+        -DBUILD_UNIT_TESTS=ON `
         -DDEVELOPER_BUILD=OFF `
         -DCMAKE_BUILD_TYPE=Release `
         -DUSE_SYSTEM_EIGEN3=ON `
@@ -235,3 +244,32 @@ code-block:: bash
 
 If you see an output similar to ``command not found``, you can install CUDA toolkit by following the `official documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
+
+## Test
+```powershell
+# Set environment variables
+$env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+$env:BUILD_PYTORCH_OPS = "ON"
+$env:DEVELOPER_BUILD = "OFF"
+$env:BUILD_SHARED_LIBS = "OFF"
+$env:BUILD_TENSORFLOW_OPS = "OFF"
+$env:CLOUDVIEWER_ML_ROOT = "C:\path\to\CloudViewer-ML"
+
+# Source the utility script
+. util\ci_utils.ps1
+
+# Test wheel package
+$wheelPath = Get-ChildItem build\lib\python_package\pip_package\cloudviewer*.whl | Select-Object -First 1
+if ($wheelPath) {
+    Test-Wheel -wheel_path $wheelPath.FullName
+}
+
+# Test C++ and Python
+Run-AllTests -wheel_path $wheelPath.FullName
+
+# Test C++ only
+Run-CppUnitTests
+
+# Test Python only
+Run-PythonTests -wheel_path $wheelPath.FullName
+```

@@ -1,0 +1,4 @@
+<map id="cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnNormal" name="cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnNormal">
+<area shape="rect" id="node1" title="Class to check if two aligned point clouds have similar normals." alt="" coords="5,109,224,165"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceChecker.html" title="Base class that checks if two (small) point clouds can be aligned." alt="" coords="5,5,224,61"/>
+</map>

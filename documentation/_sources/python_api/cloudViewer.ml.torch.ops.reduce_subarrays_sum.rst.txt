@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.reduce_subarrays_sum
+---------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: reduce_subarrays_sum

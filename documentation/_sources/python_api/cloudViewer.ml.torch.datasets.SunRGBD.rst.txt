@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.SunRGBD
+-------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: SunRGBD
+    :members:
+    :undoc-members:

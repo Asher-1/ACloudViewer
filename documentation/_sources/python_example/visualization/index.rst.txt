@@ -1,28 +1,243 @@
-Visualization Examples
-======================
-
-Python examples for 3D visualization.
-
-Main Tutorial
+Visualization
 -------------
 
-.. toctree::
-   :maxdepth: 1
-   
-   ../../tutorial/visualization/visualization
+add-geometry.py
+```````````````
 
-Additional Examples
--------------------
+.. literalinclude:: add-geometry.py
+   :language: python
+   :linenos:
 
-For more visualization examples, see:
 
-- `Jupyter Visualization <../../tutorial/visualization/jupyter_visualization.html>`_ - Interactive visualization in Jupyter notebooks
-- `Plotly Visualization <../../tutorial/visualization/draw_plotly.html>`_ - 3D visualization with Plotly
-- `3D Gaussian Splatting <../../tutorial/visualization/3d_gaussian_splatting.html>`_ - Advanced rendering techniques
+all-widgets.py
+``````````````
 
-See Also
---------
+.. literalinclude:: all-widgets.py
+   :language: python
+   :linenos:
 
-- :doc:`../../tutorial/visualization/index` - Visualization Tutorials
-- :doc:`../../python_api/cloudViewer.visualization` - Visualization API Reference
+
+customized_visualization.py
+```````````````````````````
+
+.. literalinclude:: customized_visualization.py
+   :language: python
+   :linenos:
+
+
+customized_visualization_key_action.py
+``````````````````````````````````````
+
+.. literalinclude:: customized_visualization_key_action.py
+   :language: python
+   :linenos:
+
+
+demo_scene.py
+`````````````
+
+.. literalinclude:: demo_scene.py
+   :language: python
+   :linenos:
+
+
+draw.py
+```````
+
+.. literalinclude:: draw.py
+   :language: python
+   :linenos:
+
+
+draw_webrtc.py
+``````````````
+
+.. literalinclude:: draw_webrtc.py
+   :language: python
+   :linenos:
+
+
+headless_rendering.py
+`````````````````````
+
+.. literalinclude:: headless_rendering.py
+   :language: python
+   :linenos:
+
+
+headless_rendering_in_filament.py
+`````````````````````````````````
+
+.. literalinclude:: headless_rendering_in_filament.py
+   :language: python
+   :linenos:
+
+
+interactive_visualization.py
+````````````````````````````
+
+.. literalinclude:: interactive_visualization.py
+   :language: python
+   :linenos:
+
+
+line-width.py
+`````````````
+
+.. literalinclude:: line-width.py
+   :language: python
+   :linenos:
+
+
+load_save_viewpoint.py
+``````````````````````
+
+.. literalinclude:: load_save_viewpoint.py
+   :language: python
+   :linenos:
+
+
+mitsuba_material_estimation.py
+``````````````````````````````
+
+.. literalinclude:: mitsuba_material_estimation.py
+   :language: python
+   :linenos:
+
+
+mouse-and-point-coord.py
+````````````````````````
+
+.. literalinclude:: mouse-and-point-coord.py
+   :language: python
+   :linenos:
+
+
+multiple-windows.py
+```````````````````
+
+.. literalinclude:: multiple-windows.py
+   :language: python
+   :linenos:
+
+
+non-english.py
+``````````````
+
+.. literalinclude:: non-english.py
+   :language: python
+   :linenos:
+
+
+non_blocking_visualization.py
+`````````````````````````````
+
+.. literalinclude:: non_blocking_visualization.py
+   :language: python
+   :linenos:
+
+
+online_processing.py
+````````````````````
+
+.. literalinclude:: online_processing.py
+   :language: python
+   :linenos:
+
+
+remote_visualizer.py
+````````````````````
+
+.. literalinclude:: remote_visualizer.py
+   :language: python
+   :linenos:
+
+
+remove_geometry.py
+``````````````````
+
+.. literalinclude:: remove_geometry.py
+   :language: python
+   :linenos:
+
+
+render-to-image.py
+``````````````````
+
+.. literalinclude:: render-to-image.py
+   :language: python
+   :linenos:
+
+
+tensorboard_pytorch.py
+``````````````````````
+
+.. literalinclude:: tensorboard_pytorch.py
+   :language: python
+   :linenos:
+
+
+tensorboard_tensorflow.py
+`````````````````````````
+
+.. literalinclude:: tensorboard_tensorflow.py
+   :language: python
+   :linenos:
+
+
+text3d.py
+`````````
+
+.. literalinclude:: text3d.py
+   :language: python
+   :linenos:
+
+
+textured-model.py
+`````````````````
+
+.. literalinclude:: textured-model.py
+   :language: python
+   :linenos:
+
+
+textured_mesh.py
+````````````````
+
+.. literalinclude:: textured_mesh.py
+   :language: python
+   :linenos:
+
+
+to_mitsuba.py
+`````````````
+
+.. literalinclude:: to_mitsuba.py
+   :language: python
+   :linenos:
+
+
+video.py
+````````
+
+.. literalinclude:: video.py
+   :language: python
+   :linenos:
+
+
+vis-gui.py
+``````````
+
+.. literalinclude:: vis-gui.py
+   :language: python
+   :linenos:
+
+
+visualization.py
+````````````````
+
+.. literalinclude:: visualization.py
+   :language: python
+   :linenos:
+
 

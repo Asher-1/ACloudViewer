@@ -1,0 +1,9 @@
+<map id="ProjectionFilter" name="ProjectionFilter">
+<area shape="rect" id="node1" title="Projection Filter." alt="" coords="200,184,320,211"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="122,95,243,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" id="node5" href="$classProjectionFilterDlg.html" title=" " alt="" coords="267,95,410,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="297,5,372,32"/>
+<area shape="rect" id="node7" title=" " alt="" coords="397,5,561,32"/>
+</map>

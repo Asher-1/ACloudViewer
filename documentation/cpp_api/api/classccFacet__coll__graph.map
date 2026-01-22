@@ -1,0 +1,52 @@
+<map id="ccFacet" name="ccFacet">
+<area shape="rect" id="node1" title="Facet." alt="" coords="3468,380,3539,407"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="1643,875,1731,901"/>
+<area shape="rect" id="node16" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="1897,371,2019,397"/>
+<area shape="rect" id="node22" href="$classccArray.html" title=" " alt="" coords="2313,789,2550,830"/>
+<area shape="rect" id="node25" href="$classccArray.html" title="Shareable array that can be properly inserted in the DB tree." alt="" coords="1849,945,2067,986"/>
+<area shape="rect" id="node28" href="$classccArray.html" title=" " alt="" coords="2337,714,2525,755"/>
+<area shape="rect" id="node44" href="$classccArray.html" title=" " alt="" coords="2344,1039,2519,1081"/>
+<area shape="rect" id="node47" href="$classccMaterialSet.html" title="Mesh (triangle) material." alt="" coords="1903,573,2013,600"/>
+<area shape="rect" id="node49" href="$classccBBox.html" title="Bounding box structure." alt="" coords="1923,1141,1993,1168"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="387,744,465,771"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,763,160,789"/>
+<area shape="rect" id="node10" href="$classccGLMatrixTpl.html" title=" " alt="" coords="507,828,682,855"/>
+<area shape="rect" id="node11" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="209,839,363,865"/>
+<area shape="rect" id="node30" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="2378,467,2485,493"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="1308,823,1448,849"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title=" " alt="" coords="949,500,1114,527"/>
+<area shape="rect" id="node7" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="214,472,358,499"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="519,472,670,499"/>
+<area shape="rect" id="node36" href="$classVector3Tpl.html" title=" " alt="" coords="926,391,1137,433"/>
+<area shape="rect" id="node45" href="$classcloudViewer_1_1SimpleRefTriangle.html" title="A simple triangle class." alt="" coords="917,1055,1145,1081"/>
+<area shape="rect" id="node9" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="984,828,1079,855"/>
+<area shape="rect" id="node12" href="$classccPlanarEntityInterface.html" title="Interface for a planar entity." alt="" coords="3121,268,3295,295"/>
+<area shape="rect" id="node13" href="$classccPointCloud.html" title="A 3D cloud and its associated features (color, normals, scalar fields, etc.)" alt="" coords="3155,441,3261,468"/>
+<area shape="rect" id="node14" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="2768,309,2968,350"/>
+<area shape="rect" id="node15" href="$classccGenericPointCloud.html" title="A 3D cloud interface with associated features (color, normals, octree, etc.)" alt="" coords="2353,415,2509,441"/>
+<area shape="rect" id="node40" href="$classccMesh.html" title="Triangular mesh." alt="" coords="3173,796,3243,823"/>
+<area shape="rect" id="node37" href="$classccPolyline.html" title="Colored polyline." alt="" coords="3164,319,3252,345"/>
+<area shape="rect" id="node41" href="$classccGenericMesh.html" title="Generic mesh interface." alt="" coords="2371,659,2492,685"/>
+<area shape="rect" id="node17" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="1853,89,2063,130"/>
+<area shape="rect" id="node39" href="$classcloudViewer_1_1ReferenceCloud.html" title="A very simple point cloud (no point duplication)" alt="" coords="2325,109,2538,136"/>
+<area shape="rect" id="node18" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="2312,236,2551,263"/>
+<area shape="rect" id="node19" title=" " alt="" coords="1939,253,1977,280"/>
+<area shape="rect" id="node20" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="1855,170,2061,211"/>
+<area shape="rect" id="node21" href="$classNormsIndexesTableType.html" title="Array of compressed 3D normals (single index)" alt="" coords="2779,796,2957,823"/>
+<area shape="rect" id="node23" title=" " alt="" coords="1847,827,2069,869"/>
+<area shape="rect" id="node24" href="$classCCShareable.html" title=" " alt="" coords="1635,700,1740,727"/>
+<area shape="rect" id="node31" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="1867,421,2049,448"/>
+<area shape="rect" id="node26" title=" " alt="" coords="1612,1057,1763,1084"/>
+<area shape="rect" id="node27" href="$classColorsTableType.html" title="Array of RGB colors for each point." alt="" coords="2805,553,2931,580"/>
+<area shape="rect" id="node29" href="$structccPointCloud_1_1vboSet.html" title="VBO set." alt="" coords="2789,503,2947,529"/>
+<area shape="rect" id="node32" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="1867,472,2049,499"/>
+<area shape="rect" id="node33" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="1880,523,2036,549"/>
+<area shape="rect" id="node34" href="$classccPointCloudLOD.html" title="L.O.D. (Level of Detail) structure." alt="" coords="2801,375,2935,401"/>
+<area shape="rect" id="node35" href="$structccPointCloudLOD_1_1RenderParams.html" title="Parameters of the current render state." alt="" coords="2314,364,2549,391"/>
+<area shape="rect" id="node38" href="$classcloudViewer_1_1Polyline.html" title="A simple polyline class." alt="" coords="2787,189,2949,216"/>
+<area shape="rect" id="node42" href="$classcloudViewer_1_1GenericIndexedMesh.html" title="A generic mesh with index&#45;based vertex access." alt="" coords="1835,624,2081,651"/>
+<area shape="rect" id="node43" href="$classTextureCoordsContainer.html" title="Array of 2D texture coordinates." alt="" coords="2779,1037,2957,1064"/>
+<area shape="rect" id="node46" href="$classcloudViewer_1_1GenericTriangle.html" title="A generic triangle interface." alt="" coords="489,1055,700,1081"/>
+<area shape="rect" id="node48" title=" " alt="" coords="1600,566,1775,607"/>
+<area shape="rect" id="node50" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="1589,1193,1785,1220"/>
+</map>

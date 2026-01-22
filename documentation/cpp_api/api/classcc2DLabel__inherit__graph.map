@@ -1,0 +1,8 @@
+<map id="cc2DLabel" name="cc2DLabel">
+<area shape="rect" id="node1" title="2D label (typically attached to points)" alt="" coords="163,229,253,256"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="105,155,193,181"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,80,122,107"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,80,286,107"/>
+<area shape="rect" id="node6" href="$classccInteractor.html" title="Interactor interface (entity that can be dragged or clicked in a 3D view)" alt="" coords="217,155,316,181"/>
+</map>

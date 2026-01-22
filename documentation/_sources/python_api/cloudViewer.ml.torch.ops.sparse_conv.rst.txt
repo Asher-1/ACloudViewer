@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.sparse_conv
+------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: sparse_conv

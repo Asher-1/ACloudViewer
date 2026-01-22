@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.vis.Model
+------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autoclass:: Model
+    :members:
+    :undoc-members:

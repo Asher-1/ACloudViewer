@@ -120,7 +120,7 @@ $(document).ready(function(){initNavTree('ccPointCloud_8cpp_source.html',''); in
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;static_assert(std::is_same&lt;PointCoordinateType, float&gt;::value,</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;              <span class="stringliteral">&quot;PointCoordinateType is neither double or float&quot;</span>);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;static_assert(<span class="keyword">sizeof</span>(<a class="code" href="classVector3Tpl.html">CCVector3</a>) == <span class="keyword">sizeof</span>(PointCoordinateType) * 3,</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;static_assert(<span class="keyword">sizeof</span>(<a class="code" href="classVector3Tpl.html">CCVector3</a>) == <span class="keyword">sizeof</span>(<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>) * 3,</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;              <span class="stringliteral">&quot;Unexpected layout for CCVector3&quot;</span>);</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="ccPointCloud_8cpp.html#a836eb918da10240fd820e04b66815afe">   36</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccPointCloud_8cpp.html#a836eb918da10240fd820e04b66815afe">define_ccPointCloud</a>(py::module &amp;m)</div>
@@ -273,9 +273,9 @@ $(document).ready(function(){initNavTree('ccPointCloud_8cpp_source.html',''); in
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160; </div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                 <span class="keywordflow">while</span> (xs_it != nx.end())</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                 {</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                     <span class="keyword">self</span>.addNorm({xs_it-&gt;cast&lt;PointCoordinateType&gt;(),</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                                   ys_it-&gt;cast&lt;PointCoordinateType&gt;(),</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                                   zs_it-&gt;cast&lt;PointCoordinateType&gt;()});</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                     <span class="keyword">self</span>.addNorm({xs_it-&gt;cast&lt;<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&gt;(),</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                                   ys_it-&gt;cast&lt;<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&gt;(),</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                                   zs_it-&gt;cast&lt;<a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&gt;()});</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                     ++xs_it;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                     ++ys_it;</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                     ++zs_it;</div>
@@ -336,6 +336,7 @@ $(document).ready(function(){initNavTree('ccPointCloud_8cpp_source.html',''); in
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        <a class="code" href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">std::to_string</a>(<span class="keyword">self</span>.<a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>()) + <span class="stringliteral">&quot; points)&gt;&quot;</span>;</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;             });</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;}</div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="accPointCloud_8cpp_html_a836eb918da10240fd820e04b66815afe"><div class="ttname"><a href="ccPointCloud_8cpp.html#a836eb918da10240fd820e04b66815afe">define_ccPointCloud</a></div><div class="ttdeci">void define_ccPointCloud(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="ccPointCloud_8cpp_source.html#l00036">ccPointCloud.cpp:36</a></div></div>
 <div class="ttc" id="aclassColorsTableType_html"><div class="ttname"><a href="classColorsTableType.html">ColorsTableType</a></div><div class="ttdoc">Array of RGB colors for each point.</div><div class="ttdef"><b>Definition:</b> <a href="ecvAdvancedTypes_8h_source.html#l00082">ecvAdvancedTypes.h:82</a></div></div>
@@ -383,7 +384,7 @@ $(document).ready(function(){initNavTree('ccPointCloud_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="dir_dbcd8066c330fac67641cc3989022fe2.html">qcc_db</a></li><li class="navelem"><a class="el" href="ccPointCloud_8cpp.html">ccPointCloud.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

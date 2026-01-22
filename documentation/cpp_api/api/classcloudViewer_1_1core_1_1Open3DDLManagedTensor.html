@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: cloudViewer::core::Open3DDLManagedTensor Class Reference</title>
+<title>ACloudViewer: cloudViewer::core::Open3DDLManagedTensor&lt; DLMT &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -88,7 +88,7 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1core_1_1Open3DDLMa
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cloudViewer::core::Open3DDLManagedTensor Class Reference</div>  </div>
+<div class="title">cloudViewer::core::Open3DDLManagedTensor&lt; DLMT &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -97,27 +97,34 @@ $(document).ready(function(){initNavTree('classcloudViewer_1_1core_1_1Open3DDLMa
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a088ff46fd7f8c0bd718368b2b1ee57bd"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structDLManagedTensor.html">DLManagedTensor</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html#a088ff46fd7f8c0bd718368b2b1ee57bd">Create</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> &amp;o3d_tensor)</td></tr>
-<tr class="separator:a088ff46fd7f8c0bd718368b2b1ee57bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afffd766fc2d5b2c83fc60634fcacb61b"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html#afffd766fc2d5b2c83fc60634fcacb61b">Deleter</a> (<a class="el" href="structDLManagedTensor.html">DLManagedTensor</a> *arg)</td></tr>
-<tr class="separator:afffd766fc2d5b2c83fc60634fcacb61b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d9890fe33e01bd61201d3218bd72804"><td class="memItemLeft" align="right" valign="top">static DLMT *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html#a5d9890fe33e01bd61201d3218bd72804">Create</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> &amp;o3d_tensor)</td></tr>
+<tr class="separator:a5d9890fe33e01bd61201d3218bd72804"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4774ca3acf765fb4b45073cfd6f7a006"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structDLDevice.html">DLDevice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html#a4774ca3acf765fb4b45073cfd6f7a006">getDLPackDevice</a> (const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> &amp;o3d_tensor)</td></tr>
+<tr class="separator:a4774ca3acf765fb4b45073cfd6f7a006"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3bb9283a39b1d4cbb5ec3b19dd1bd48f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html#a3bb9283a39b1d4cbb5ec3b19dd1bd48f">Deleter</a> (DLMT *arg)</td></tr>
+<tr class="separator:a3bb9283a39b1d4cbb5ec3b19dd1bd48f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>CloudViewer DLPack <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> manager. </p>
+<div class="textblock"><h3>template&lt;typename DLMT&gt;<br />
+class cloudViewer::core::Open3DDLManagedTensor&lt; DLMT &gt;</h3>
 
-<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00111">111</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
+<p>CloudViewer DLPack <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> manager. </p>
+
+<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00133">133</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a088ff46fd7f8c0bd718368b2b1ee57bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a088ff46fd7f8c0bd718368b2b1ee57bd">&#9670;&nbsp;</a></span>Create()</h2>
+<a id="a5d9890fe33e01bd61201d3218bd72804"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d9890fe33e01bd61201d3218bd72804">&#9670;&nbsp;</a></span>Create()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename DLMT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="structDLManagedTensor.html">DLManagedTensor</a>* cloudViewer::core::Open3DDLManagedTensor::Create </td>
+          <td class="memname">static DLMT* <a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html">cloudViewer::core::Open3DDLManagedTensor</a>&lt; DLMT &gt;::Create </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> &amp;&#160;</td>
           <td class="paramname"><em>o3d_tensor</em></td><td>)</td>
@@ -130,27 +137,29 @@ Static Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p><code>DLManagedTensor* dmlt</code> is destroyed by calling <code>dmlt-&gt;deleter(dmlt)</code>. The destruction happens when the DLPack python object goes out of scope, and ultimately it decreases the reference count to the actual data buffer (i.e. <code>dmlt.manager_ctx-&gt;o3d_tensor_.GetBlob()</code>) by 1. </p>
+<p><code>DLManagedTensorVersioned* dmlt</code> is destroyed by calling <code>dmlt-&gt;deleter(dmlt)</code>. The destruction happens when the DLPack python object goes out of scope, and ultimately it decreases the reference count to the actual data buffer (i.e. <code>dmlt.manager_ctx-&gt;o3d_tensor_.GetBlob()</code>) by 1. </p>
 
-<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00174">174</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00181">181</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01777">cloudViewer::core::Tensor::ToDLPack()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01808">cloudViewer::core::Tensor::ToDLPack()</a>, and <a class="el" href="Tensor_8cpp_source.html#l01811">cloudViewer::core::Tensor::ToDLPackVersioned()</a>.</p>
 
 </div>
 </div>
-<a id="afffd766fc2d5b2c83fc60634fcacb61b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afffd766fc2d5b2c83fc60634fcacb61b">&#9670;&nbsp;</a></span>Deleter()</h2>
+<a id="a3bb9283a39b1d4cbb5ec3b19dd1bd48f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3bb9283a39b1d4cbb5ec3b19dd1bd48f">&#9670;&nbsp;</a></span>Deleter()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename DLMT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::core::Open3DDLManagedTensor::Deleter </td>
+          <td class="memname">static void <a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html">cloudViewer::core::Open3DDLManagedTensor</a>&lt; DLMT &gt;::Deleter </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structDLManagedTensor.html">DLManagedTensor</a> *&#160;</td>
+          <td class="paramtype">DLMT *&#160;</td>
           <td class="paramname"><em>arg</em></td><td>)</td>
           <td></td>
         </tr>
@@ -162,9 +171,39 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00180">180</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00208">208</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="DLPack_8h_source.html#l00179">DLManagedTensor::manager_ctx</a>.</p>
+</div>
+</div>
+<a id="a4774ca3acf765fb4b45073cfd6f7a006"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4774ca3acf765fb4b45073cfd6f7a006">&#9670;&nbsp;</a></span>getDLPackDevice()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename DLMT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="structDLDevice.html">DLDevice</a> <a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html">cloudViewer::core::Open3DDLManagedTensor</a>&lt; DLMT &gt;::getDLPackDevice </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> &amp;&#160;</td>
+          <td class="paramname"><em>o3d_tensor</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Tensor_8cpp_source.html#l00187">187</a> of file <a class="el" href="Tensor_8cpp_source.html">Tensor.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589a2b55387dd066c5bac646ac61543d152d">cloudViewer::core::Device::CPU</a>, <a class="el" href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589aa33b7755e5f9b504d2d038eaca4ff28d">cloudViewer::core::Device::CUDA</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Device_8h_source.html#l00061">cloudViewer::core::Device::GetID()</a>, <a class="el" href="Device_8h_source.html#l00058">cloudViewer::core::Device::GetType()</a>, <a class="el" href="DLPack_8h_source.html#l00095">kDLCPU</a>, <a class="el" href="DLPack_8h_source.html#l00097">kDLCUDA</a>, <a class="el" href="DLPack_8h_source.html#l00132">kDLOneAPI</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589a4427481c96bb7dc6b1add3207cdc622d">cloudViewer::core::Device::SYCL</a>, and <a class="el" href="Device_8cpp_source.html#l00089">cloudViewer::core::Device::ToString()</a>.</p>
 
 </div>
 </div>
@@ -177,7 +216,7 @@ Static Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1core.html">core</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1core_1_1Open3DDLManagedTensor.html">Open3DDLManagedTensor</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

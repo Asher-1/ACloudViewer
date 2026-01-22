@@ -1,0 +1,16 @@
+<map id="cloudViewer::Polyline" name="cloudViewer::Polyline">
+<area shape="rect" id="node1" title="A simple polyline class." alt="" coords="188,333,351,360"/>
+<area shape="rect" id="node6" href="$classccPolyline.html" title="Colored polyline." alt="" coords="225,408,313,435"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1ReferenceCloud.html" title="A very simple point cloud (no point duplication)" alt="" coords="163,259,376,285"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="164,169,375,211"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="164,80,375,121"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="171,5,368,32"/>
+<area shape="rect" id="node7" href="$classccCircle.html" title="Circle (as a polyline)" alt="" coords="125,483,198,509"/>
+<area shape="rect" id="node8" href="$classccPointPair.html" title=" " alt="" coords="223,483,316,509"/>
+<area shape="rect" id="node14" href="$classccTrace.html" title=" " alt="" coords="341,483,411,509"/>
+<area shape="rect" id="node9" href="$classccLineation.html" title=" " alt="" coords="5,557,101,584"/>
+<area shape="rect" id="node10" href="$classccNote.html" title=" " alt="" coords="125,557,192,584"/>
+<area shape="rect" id="node11" href="$classccPinchNode.html" title=" " alt="" coords="217,557,322,584"/>
+<area shape="rect" id="node12" href="$classccThickness.html" title=" " alt="" coords="347,557,448,584"/>
+<area shape="rect" id="node13" href="$classccTopologyRelation.html" title=" " alt="" coords="473,557,621,584"/>
+</map>

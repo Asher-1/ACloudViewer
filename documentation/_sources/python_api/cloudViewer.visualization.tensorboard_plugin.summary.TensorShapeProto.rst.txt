@@ -1,0 +1,9 @@
+cloudViewer.visualization.tensorboard_plugin.summary.TensorShapeProto
+---------------------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.tensorboard_plugin.summary
+
+.. autoclass:: TensorShapeProto
+    :members:
+    :undoc-members:
+    :inherited-members:

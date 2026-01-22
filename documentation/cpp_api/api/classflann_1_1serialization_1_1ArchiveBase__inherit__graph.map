@@ -1,0 +1,11 @@
+<map id="flann::serialization::ArchiveBase" name="flann::serialization::ArchiveBase">
+<area shape="rect" id="node1" title=" " alt="" coords="5,111,148,153"/>
+<area shape="rect" id="node2" href="$classflann_1_1serialization_1_1InputArchive.html" title=" " alt="" coords="570,11,793,53"/>
+<area shape="rect" id="node4" href="$classflann_1_1serialization_1_1OutputArchive.html" title=" " alt="" coords="564,130,799,171"/>
+<area shape="rect" id="node6" href="$classflann_1_1serialization_1_1OutputArchive.html" title=" " alt="" coords="567,207,796,249"/>
+<area shape="rect" id="node8" href="$classflann_1_1serialization_1_1InputArchive.html" title=" " alt="" coords="203,53,394,94"/>
+<area shape="rect" id="node9" href="$classflann_1_1serialization_1_1OutputArchive.html" title=" " alt="" coords="197,170,400,211"/>
+<area shape="rect" id="node3" href="$classflann_1_1serialization_1_1LoadArchive.html" title=" " alt="" coords="848,11,991,53"/>
+<area shape="rect" id="node5" href="$classflann_1_1serialization_1_1SaveArchive.html" title=" " alt="" coords="848,130,991,171"/>
+<area shape="rect" id="node7" href="$classflann_1_1serialization_1_1SizeArchive.html" title=" " alt="" coords="848,207,991,249"/>
+</map>

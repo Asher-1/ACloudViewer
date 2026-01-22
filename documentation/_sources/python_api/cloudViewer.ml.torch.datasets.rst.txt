@@ -1,0 +1,58 @@
+cloudViewer.ml.torch.datasets
+=============================
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+**Classes**
+
+.. autosummary::
+
+    Argoverse
+    Custom3D
+    Electricity3D
+    InferenceDummySplit
+    KITTI
+    Lyft
+    NuScenes
+    ParisLille3D
+    S3DIS
+    Scannet
+    SemSegRandomSampler
+    SemSegSpatiallyRegularSampler
+    Semantic3D
+    SemanticKITTI
+    ShapeNet
+    SunRGBD
+    Toronto3D
+    Waymo
+
+
+**Modules**
+
+.. autosummary::
+
+    utils
+
+
+.. toctree::
+    :hidden:
+
+    Argoverse <cloudViewer.ml.torch.datasets.Argoverse>
+    Custom3D <cloudViewer.ml.torch.datasets.Custom3D>
+    Electricity3D <cloudViewer.ml.torch.datasets.Electricity3D>
+    InferenceDummySplit <cloudViewer.ml.torch.datasets.InferenceDummySplit>
+    KITTI <cloudViewer.ml.torch.datasets.KITTI>
+    Lyft <cloudViewer.ml.torch.datasets.Lyft>
+    NuScenes <cloudViewer.ml.torch.datasets.NuScenes>
+    ParisLille3D <cloudViewer.ml.torch.datasets.ParisLille3D>
+    S3DIS <cloudViewer.ml.torch.datasets.S3DIS>
+    Scannet <cloudViewer.ml.torch.datasets.Scannet>
+    SemSegRandomSampler <cloudViewer.ml.torch.datasets.SemSegRandomSampler>
+    SemSegSpatiallyRegularSampler <cloudViewer.ml.torch.datasets.SemSegSpatiallyRegularSampler>
+    Semantic3D <cloudViewer.ml.torch.datasets.Semantic3D>
+    SemanticKITTI <cloudViewer.ml.torch.datasets.SemanticKITTI>
+    ShapeNet <cloudViewer.ml.torch.datasets.ShapeNet>
+    SunRGBD <cloudViewer.ml.torch.datasets.SunRGBD>
+    Toronto3D <cloudViewer.ml.torch.datasets.Toronto3D>
+    Waymo <cloudViewer.ml.torch.datasets.Waymo>
+    utils <cloudViewer.ml.torch.datasets.utils>

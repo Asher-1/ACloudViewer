@@ -104,11 +104,43 @@ $(document).ready(function(){initNavTree('classccGBLSensor.html',''); initResiza
 Inheritance diagram for ccGBLSensor:</div>
 <div class="dyncontent">
 <div class="center"><img src="classccGBLSensor__inherit__graph.png" border="0" usemap="#accGBLSensor_inherit__map" alt="Inheritance graph"/></div>
+<map name="accGBLSensor_inherit__map" id="accGBLSensor_inherit__map">
+<area shape="rect" title="Ground&#45;based Laser sensor." alt="" coords="96,304,203,331"/>
+<area shape="rect" href="classccSensor.html" title="Generic sensor interface." alt="" coords="109,229,189,256"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="105,155,193,181"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="43,80,122,107"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,5,160,32"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="146,80,286,107"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for ccGBLSensor:</div>
 <div class="dyncontent">
 <div class="center"><img src="classccGBLSensor__coll__graph.png" border="0" usemap="#accGBLSensor_coll__map" alt="Collaboration graph"/></div>
+<map name="accGBLSensor_coll__map" id="accGBLSensor_coll__map">
+<area shape="rect" title="Ground&#45;based Laser sensor." alt="" coords="3112,328,3219,355"/>
+<area shape="rect" href="classccSensor.html" title="Generic sensor interface." alt="" coords="2865,245,2945,272"/>
+<area shape="rect" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="1614,272,1702,299"/>
+<area shape="rect" href="classccIndexedTransformationBuffer.html" title="Indexed Transformation buffer." alt="" coords="2489,228,2713,255"/>
+<area shape="rect" href="classccBBox.html" title="Bounding box structure." alt="" coords="2091,201,2161,228"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1LineSet.html" title="LineSet define a sets of lines in 3D. A typical application is to display the point cloud corresponde..." alt="" coords="2292,346,2465,387"/>
+<area shape="rect" href="classecvOrientedBBox.html" title=" " alt="" coords="2059,404,2193,431"/>
+<area shape="rect" href="classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="387,285,465,312"/>
+<area shape="rect" href="classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,232,160,259"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title=" " alt="" coords="489,181,664,208"/>
+<area shape="rect" href="classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="209,232,363,259"/>
+<area shape="rect" href="classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="1147,172,1287,199"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="791,93,956,120"/>
+<area shape="rect" href="classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="1119,34,1315,75"/>
+<area shape="rect" href="classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="214,53,358,80"/>
+<area shape="rect" href="classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="501,53,652,80"/>
+<area shape="rect" href="classVector3Tpl.html" title=" " alt="" coords="809,11,938,37"/>
+<area shape="rect" href="classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="826,180,921,207"/>
+<area shape="rect" title=" " alt="" coords="1984,151,2268,177"/>
+<area shape="rect" href="classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="1560,168,1756,195"/>
+<area shape="rect" href="classccDepthBuffer.html" title="Sensor &quot;depth map&quot;." alt="" coords="2848,303,2963,329"/>
+<area shape="rect" href="classcloudViewer_1_1OrientedBoundingBox.html" title="A bounding box oriented along an arbitrary frame of reference." alt="" coords="1532,420,1784,447"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -199,50 +231,50 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8fe7d259eaf484d90f45d00f4a524726"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a8fe7d259eaf484d90f45d00f4a524726">computeAutoParameters</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">cloudViewer::GenericCloud</a> *theCloud)</td></tr>
 <tr class="memdesc:a8fe7d259eaf484d90f45d00f4a524726"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes angular parameters automatically (all but the angular steps!)  <a href="classccGBLSensor.html#a8fe7d259eaf484d90f45d00f4a524726">More...</a><br /></td></tr>
 <tr class="separator:a8fe7d259eaf484d90f45d00f4a524726"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7fe2f7546c72578d157ed187a11ad8cb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a7fe2f7546c72578d157ed187a11ad8cb">setPitchRange</a> (PointCoordinateType minPhi, PointCoordinateType maxPhi)</td></tr>
+<tr class="memitem:a7fe2f7546c72578d157ed187a11ad8cb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a7fe2f7546c72578d157ed187a11ad8cb">setPitchRange</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minPhi, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> maxPhi)</td></tr>
 <tr class="memdesc:a7fe2f7546c72578d157ed187a11ad8cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the pitch scanning limits.  <a href="classccGBLSensor.html#a7fe2f7546c72578d157ed187a11ad8cb">More...</a><br /></td></tr>
 <tr class="separator:a7fe2f7546c72578d157ed187a11ad8cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a221f3ea1e38c7419ffbb6973ea987f62"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a221f3ea1e38c7419ffbb6973ea987f62">getMinPitch</a> () const</td></tr>
+<tr class="memitem:a221f3ea1e38c7419ffbb6973ea987f62"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a221f3ea1e38c7419ffbb6973ea987f62">getMinPitch</a> () const</td></tr>
 <tr class="memdesc:a221f3ea1e38c7419ffbb6973ea987f62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the minimal pitch limit (in radians)  <a href="classccGBLSensor.html#a221f3ea1e38c7419ffbb6973ea987f62">More...</a><br /></td></tr>
 <tr class="separator:a221f3ea1e38c7419ffbb6973ea987f62"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af78c5f5e77b4d0c0d664ecc66d5dda67"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#af78c5f5e77b4d0c0d664ecc66d5dda67">getMaxPitch</a> () const</td></tr>
+<tr class="memitem:af78c5f5e77b4d0c0d664ecc66d5dda67"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#af78c5f5e77b4d0c0d664ecc66d5dda67">getMaxPitch</a> () const</td></tr>
 <tr class="memdesc:af78c5f5e77b4d0c0d664ecc66d5dda67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the maximal pitch limit (in radians)  <a href="classccGBLSensor.html#af78c5f5e77b4d0c0d664ecc66d5dda67">More...</a><br /></td></tr>
 <tr class="separator:af78c5f5e77b4d0c0d664ecc66d5dda67"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc27b974667467918eb9ec6c64832fdd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#afc27b974667467918eb9ec6c64832fdd">setPitchStep</a> (PointCoordinateType dPhi)</td></tr>
+<tr class="memitem:afc27b974667467918eb9ec6c64832fdd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#afc27b974667467918eb9ec6c64832fdd">setPitchStep</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dPhi)</td></tr>
 <tr class="memdesc:afc27b974667467918eb9ec6c64832fdd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the pitch step.  <a href="classccGBLSensor.html#afc27b974667467918eb9ec6c64832fdd">More...</a><br /></td></tr>
 <tr class="separator:afc27b974667467918eb9ec6c64832fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9aa1eba2f15199dfa19c81516378f62"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ac9aa1eba2f15199dfa19c81516378f62">getPitchStep</a> () const</td></tr>
+<tr class="memitem:ac9aa1eba2f15199dfa19c81516378f62"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ac9aa1eba2f15199dfa19c81516378f62">getPitchStep</a> () const</td></tr>
 <tr class="memdesc:ac9aa1eba2f15199dfa19c81516378f62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the lateral pitch step (in radians)  <a href="classccGBLSensor.html#ac9aa1eba2f15199dfa19c81516378f62">More...</a><br /></td></tr>
 <tr class="separator:ac9aa1eba2f15199dfa19c81516378f62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad6285fb9f909ab83e42d061917c0768a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ad6285fb9f909ab83e42d061917c0768a">pitchIsShifted</a> () const</td></tr>
 <tr class="separator:ad6285fb9f909ab83e42d061917c0768a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d954d41e1527c88940822d8f5b7cdb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a5d954d41e1527c88940822d8f5b7cdb2">setYawRange</a> (PointCoordinateType minTheta, PointCoordinateType maxTheta)</td></tr>
+<tr class="memitem:a5d954d41e1527c88940822d8f5b7cdb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a5d954d41e1527c88940822d8f5b7cdb2">setYawRange</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minTheta, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> maxTheta)</td></tr>
 <tr class="memdesc:a5d954d41e1527c88940822d8f5b7cdb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the yaw scanning limits.  <a href="classccGBLSensor.html#a5d954d41e1527c88940822d8f5b7cdb2">More...</a><br /></td></tr>
 <tr class="separator:a5d954d41e1527c88940822d8f5b7cdb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b10ea11bcf879185e1f9fb8f4dc4bd7"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a3b10ea11bcf879185e1f9fb8f4dc4bd7">getMinYaw</a> () const</td></tr>
+<tr class="memitem:a3b10ea11bcf879185e1f9fb8f4dc4bd7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a3b10ea11bcf879185e1f9fb8f4dc4bd7">getMinYaw</a> () const</td></tr>
 <tr class="memdesc:a3b10ea11bcf879185e1f9fb8f4dc4bd7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the minimal yaw limit (in radians)  <a href="classccGBLSensor.html#a3b10ea11bcf879185e1f9fb8f4dc4bd7">More...</a><br /></td></tr>
 <tr class="separator:a3b10ea11bcf879185e1f9fb8f4dc4bd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb036015bc11f7820a3c6a4b31d07a90"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#acb036015bc11f7820a3c6a4b31d07a90">getMaxYaw</a> () const</td></tr>
+<tr class="memitem:acb036015bc11f7820a3c6a4b31d07a90"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#acb036015bc11f7820a3c6a4b31d07a90">getMaxYaw</a> () const</td></tr>
 <tr class="memdesc:acb036015bc11f7820a3c6a4b31d07a90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the maximal yaw limit (in radians)  <a href="classccGBLSensor.html#acb036015bc11f7820a3c6a4b31d07a90">More...</a><br /></td></tr>
 <tr class="separator:acb036015bc11f7820a3c6a4b31d07a90"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acdb37676e840224e8a092de7169f2f6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#acdb37676e840224e8a092de7169f2f6b">setYawStep</a> (PointCoordinateType dTheta)</td></tr>
+<tr class="memitem:acdb37676e840224e8a092de7169f2f6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#acdb37676e840224e8a092de7169f2f6b">setYawStep</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dTheta)</td></tr>
 <tr class="memdesc:acdb37676e840224e8a092de7169f2f6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the yaw step.  <a href="classccGBLSensor.html#acdb37676e840224e8a092de7169f2f6b">More...</a><br /></td></tr>
 <tr class="separator:acdb37676e840224e8a092de7169f2f6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af7e430914d02b465af719b9fbd1097d6"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#af7e430914d02b465af719b9fbd1097d6">getYawStep</a> () const</td></tr>
+<tr class="memitem:af7e430914d02b465af719b9fbd1097d6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#af7e430914d02b465af719b9fbd1097d6">getYawStep</a> () const</td></tr>
 <tr class="memdesc:af7e430914d02b465af719b9fbd1097d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the yaw step (in radians)  <a href="classccGBLSensor.html#af7e430914d02b465af719b9fbd1097d6">More...</a><br /></td></tr>
 <tr class="separator:af7e430914d02b465af719b9fbd1097d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa089bdd9b3a2394b5688969cb623f6be"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#aa089bdd9b3a2394b5688969cb623f6be">yawIsShifted</a> () const</td></tr>
 <tr class="separator:aa089bdd9b3a2394b5688969cb623f6be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3308d1443db0f66d37db9d6cc4c1b416"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a3308d1443db0f66d37db9d6cc4c1b416">getSensorRange</a> () const</td></tr>
+<tr class="memitem:a3308d1443db0f66d37db9d6cc4c1b416"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a3308d1443db0f66d37db9d6cc4c1b416">getSensorRange</a> () const</td></tr>
 <tr class="memdesc:a3308d1443db0f66d37db9d6cc4c1b416"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the sensor max. range.  <a href="classccGBLSensor.html#a3308d1443db0f66d37db9d6cc4c1b416">More...</a><br /></td></tr>
 <tr class="separator:a3308d1443db0f66d37db9d6cc4c1b416"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac80e1e935388d6fde5a386a44753447a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ac80e1e935388d6fde5a386a44753447a">setSensorRange</a> (PointCoordinateType range)</td></tr>
+<tr class="memitem:ac80e1e935388d6fde5a386a44753447a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ac80e1e935388d6fde5a386a44753447a">setSensorRange</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> range)</td></tr>
 <tr class="memdesc:ac80e1e935388d6fde5a386a44753447a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the sensor max. range.  <a href="classccGBLSensor.html#ac80e1e935388d6fde5a386a44753447a">More...</a><br /></td></tr>
 <tr class="separator:ac80e1e935388d6fde5a386a44753447a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a773c1dcef67353385011a35295d35c4c"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a773c1dcef67353385011a35295d35c4c">getUncertainty</a> () const</td></tr>
+<tr class="memitem:a773c1dcef67353385011a35295d35c4c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a773c1dcef67353385011a35295d35c4c">getUncertainty</a> () const</td></tr>
 <tr class="memdesc:a773c1dcef67353385011a35295d35c4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the Z-buffer uncertainty on depth values.  <a href="classccGBLSensor.html#a773c1dcef67353385011a35295d35c4c">More...</a><br /></td></tr>
 <tr class="separator:a773c1dcef67353385011a35295d35c4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6fbd9537880dae7d7b84f98470707b08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a6fbd9537880dae7d7b84f98470707b08">setUncertainty</a> (PointCoordinateType u)</td></tr>
+<tr class="memitem:a6fbd9537880dae7d7b84f98470707b08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a6fbd9537880dae7d7b84f98470707b08">setUncertainty</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> u)</td></tr>
 <tr class="memdesc:a6fbd9537880dae7d7b84f98470707b08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the Z-buffer uncertainty on depth values.  <a href="classccGBLSensor.html#a6fbd9537880dae7d7b84f98470707b08">More...</a><br /></td></tr>
 <tr class="separator:a6fbd9537880dae7d7b84f98470707b08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae9eb92a15d687a525348e724dc875a6e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccGBLSensor.html#a29cad0169c3e8e03c8e56da95b01860a">ROTATION_ORDER</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ae9eb92a15d687a525348e724dc875a6e">getRotationOrder</a> () const</td></tr>
@@ -251,7 +283,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0a7b921ed96c44d9dd6509c52a1161e5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a0a7b921ed96c44d9dd6509c52a1161e5">setRotationOrder</a> (<a class="el" href="classccGBLSensor.html#a29cad0169c3e8e03c8e56da95b01860a">ROTATION_ORDER</a> rotOrder)</td></tr>
 <tr class="memdesc:a0a7b921ed96c44d9dd6509c52a1161e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the sensor internal rotations order.  <a href="classccGBLSensor.html#a0a7b921ed96c44d9dd6509c52a1161e5">More...</a><br /></td></tr>
 <tr class="separator:a0a7b921ed96c44d9dd6509c52a1161e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05558a0b1c13302477c8d310b6b8f0f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a05558a0b1c13302477c8d310b6b8f0f4">projectPoint</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;sourcePoint, <a class="el" href="CVGeom_8h.html#a54e18e357600aa77e27eb72d23778e6c">CCVector2</a> &amp;destPoint, PointCoordinateType &amp;depth, double posIndex=0) const</td></tr>
+<tr class="memitem:a05558a0b1c13302477c8d310b6b8f0f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a05558a0b1c13302477c8d310b6b8f0f4">projectPoint</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;sourcePoint, <a class="el" href="CVGeom_8h.html#a54e18e357600aa77e27eb72d23778e6c">CCVector2</a> &amp;destPoint, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;depth, double posIndex=0) const</td></tr>
 <tr class="memdesc:a05558a0b1c13302477c8d310b6b8f0f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Projects a point in the sensor world.  <a href="classccGBLSensor.html#a05558a0b1c13302477c8d310b6b8f0f4">More...</a><br /></td></tr>
 <tr class="separator:a05558a0b1c13302477c8d310b6b8f0f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac39285daf4a134d0936cd1aff77e29d7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccGBLSensor.html#a5e702e1ff6d402166398fd0e4c57f0a6">NormalGrid</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ac39285daf4a134d0936cd1aff77e29d7">projectNormals</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">cloudViewer::GenericCloud</a> *cloud, const <a class="el" href="classccGBLSensor.html#a5e702e1ff6d402166398fd0e4c57f0a6">NormalGrid</a> &amp;norms, double posIndex=0) const</td></tr>
@@ -318,10 +350,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:adf95d9a1cc0a5cfc51de4e2c89135961 inherit pub_methods_classccSensor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#adf95d9a1cc0a5cfc51de4e2c89135961">setActiveIndex</a> (double index)</td></tr>
 <tr class="memdesc:adf95d9a1cc0a5cfc51de4e2c89135961 inherit pub_methods_classccSensor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets currently active index (displayed position, etc.)  <a href="classccSensor.html#adf95d9a1cc0a5cfc51de4e2c89135961">More...</a><br /></td></tr>
 <tr class="separator:adf95d9a1cc0a5cfc51de4e2c89135961 inherit pub_methods_classccSensor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae05d2510af09fe76b0203a0b89e3b4a4 inherit pub_methods_classccSensor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#ae05d2510af09fe76b0203a0b89e3b4a4">setGraphicScale</a> (PointCoordinateType scale)</td></tr>
+<tr class="memitem:ae05d2510af09fe76b0203a0b89e3b4a4 inherit pub_methods_classccSensor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#ae05d2510af09fe76b0203a0b89e3b4a4">setGraphicScale</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> scale)</td></tr>
 <tr class="memdesc:ae05d2510af09fe76b0203a0b89e3b4a4 inherit pub_methods_classccSensor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the sensor graphic representation scale.  <a href="classccSensor.html#ae05d2510af09fe76b0203a0b89e3b4a4">More...</a><br /></td></tr>
 <tr class="separator:ae05d2510af09fe76b0203a0b89e3b4a4 inherit pub_methods_classccSensor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46d937320a3a4aa93927446606bfb61f inherit pub_methods_classccSensor"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#a46d937320a3a4aa93927446606bfb61f">getGraphicScale</a> () const</td></tr>
+<tr class="memitem:a46d937320a3a4aa93927446606bfb61f inherit pub_methods_classccSensor"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#a46d937320a3a4aa93927446606bfb61f">getGraphicScale</a> () const</td></tr>
 <tr class="memdesc:a46d937320a3a4aa93927446606bfb61f inherit pub_methods_classccSensor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the sensor graphic representation scale.  <a href="classccSensor.html#a46d937320a3a4aa93927446606bfb61f">More...</a><br /></td></tr>
 <tr class="separator:a46d937320a3a4aa93927446606bfb61f inherit pub_methods_classccSensor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d68697c0b1bbe410f97b114c795ad11 inherit pub_methods_classccSensor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#a6d68697c0b1bbe410f97b114c795ad11">setFrameColor</a> (<a class="el" href="namespaceecvColor.html#a130363ede0dcec29fea72299720873c6">ecvColor::Rgb</a> <a class="el" href="TriangleMeshBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>)</td></tr>
@@ -360,7 +392,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a3817540ce25b70106566ac760c0a2493 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an axis-aligned bounding box of the geometry.  <a href="classccHObject.html#a3817540ce25b70106566ac760c0a2493">More...</a><br /></td></tr>
 <tr class="separator:a3817540ce25b70106566ac760c0a2493 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classecvOrientedBBox.html">ecvOrientedBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">GetOrientedBoundingBox</a> () const</td></tr>
-<tr class="memdesc:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an oriented bounding box of the geometry.  <a href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">More...</a><br /></td></tr>
 <tr class="separator:a43b508f70ef34fba0aec7ed5d5316964 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad45ba56d6d3ba8398a15886292fd1bce inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccHObject.html">ccHObject</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#ad45ba56d6d3ba8398a15886292fd1bce">Transform</a> (const Eigen::Matrix4d &amp;transformation)</td></tr>
 <tr class="memdesc:ad45ba56d6d3ba8398a15886292fd1bce inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply transformation (4x4 matrix) to the geometry coordinates.  <a href="classccHObject.html#ad45ba56d6d3ba8398a15886292fd1bce">More...</a><br /></td></tr>
@@ -475,7 +506,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aea53c4efc95be608547a555bf40f795e inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a7d28a89dc197e089208b6b43648b50b7">setPointSizeRecursive</a> (int pSize)</td></tr>
 <tr class="separator:a7d28a89dc197e089208b6b43648b50b7 inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (PointCoordinateType <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
+<tr class="memitem:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">setLineWidthRecursive</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>)</td></tr>
 <tr class="separator:a1172ad4113ed07560b58e65e1600b78c inherit pub_methods_classccHObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccBBox.html">ccBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">getBB_recursive</a> (bool withGLFeatures=false, bool onlyEnabledChildren=true)</td></tr>
 <tr class="memdesc:aa9d5b40019739029911758c5cdd90f10 inherit pub_methods_classccHObject"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the bounding-box of this entity and it's children.  <a href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">More...</a><br /></td></tr>
@@ -930,7 +961,7 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a9ad24db63ddcd9889f051d917eb63a67"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a9ad24db63ddcd9889f051d917eb63a67">drawMeOnly</a> (<a class="el" href="ecvDrawContext_8h.html#a4104a00cf2edb8142c6fbadcbaac47ff">CC_DRAW_CONTEXT</a> &amp;<a class="el" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) override</td></tr>
 <tr class="memdesc:a9ad24db63ddcd9889f051d917eb63a67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws the entity only (not its children)  <a href="classccGBLSensor.html#a9ad24db63ddcd9889f051d917eb63a67">More...</a><br /></td></tr>
 <tr class="separator:a9ad24db63ddcd9889f051d917eb63a67"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66c3e00ad26320ba40522ff3081066c5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a66c3e00ad26320ba40522ff3081066c5">convertToDepthMapCoords</a> (PointCoordinateType yaw, PointCoordinateType pitch, unsigned &amp;i, unsigned &amp;j) const</td></tr>
+<tr class="memitem:a66c3e00ad26320ba40522ff3081066c5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a66c3e00ad26320ba40522ff3081066c5">convertToDepthMapCoords</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> yaw, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> pitch, unsigned &amp;i, unsigned &amp;j) const</td></tr>
 <tr class="separator:a66c3e00ad26320ba40522ff3081066c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classccSensor"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classccSensor')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classccSensor.html">ccSensor</a></td></tr>
 <tr class="memitem:a587e9de09d42dc7360419a69be26cde2 inherit pro_methods_classccSensor"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#a587e9de09d42dc7360419a69be26cde2">toFile_MeOnly</a> (QFile &amp;out, short dataVersion) const override</td></tr>
@@ -973,24 +1004,24 @@ Protected Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a2a19789f285b56f57bc36e8fd438fda1"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a2a19789f285b56f57bc36e8fd438fda1">m_phiMin</a></td></tr>
+<tr class="memitem:a2a19789f285b56f57bc36e8fd438fda1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a2a19789f285b56f57bc36e8fd438fda1">m_phiMin</a></td></tr>
 <tr class="memdesc:a2a19789f285b56f57bc36e8fd438fda1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimal pitch limit (in radians)  <a href="classccGBLSensor.html#a2a19789f285b56f57bc36e8fd438fda1">More...</a><br /></td></tr>
 <tr class="separator:a2a19789f285b56f57bc36e8fd438fda1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9659f9b15640c2cfcc05b3f7b35e1485"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a9659f9b15640c2cfcc05b3f7b35e1485">m_phiMax</a></td></tr>
+<tr class="memitem:a9659f9b15640c2cfcc05b3f7b35e1485"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a9659f9b15640c2cfcc05b3f7b35e1485">m_phiMax</a></td></tr>
 <tr class="memdesc:a9659f9b15640c2cfcc05b3f7b35e1485"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximal pitch limit (in radians)  <a href="classccGBLSensor.html#a9659f9b15640c2cfcc05b3f7b35e1485">More...</a><br /></td></tr>
 <tr class="separator:a9659f9b15640c2cfcc05b3f7b35e1485"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a306db14a2e17e87f220f4db4e579876a"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a306db14a2e17e87f220f4db4e579876a">m_deltaPhi</a></td></tr>
+<tr class="memitem:a306db14a2e17e87f220f4db4e579876a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a306db14a2e17e87f220f4db4e579876a">m_deltaPhi</a></td></tr>
 <tr class="memdesc:a306db14a2e17e87f220f4db4e579876a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pitch step (in radians)  <a href="classccGBLSensor.html#a306db14a2e17e87f220f4db4e579876a">More...</a><br /></td></tr>
 <tr class="separator:a306db14a2e17e87f220f4db4e579876a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a356f430c6193e3d11e71eb1c92d93b65"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a356f430c6193e3d11e71eb1c92d93b65">m_pitchAnglesAreShifted</a></td></tr>
 <tr class="separator:a356f430c6193e3d11e71eb1c92d93b65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a089ee6f2c51c4da50b929dfc8aa39fa3"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a089ee6f2c51c4da50b929dfc8aa39fa3">m_thetaMin</a></td></tr>
+<tr class="memitem:a089ee6f2c51c4da50b929dfc8aa39fa3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a089ee6f2c51c4da50b929dfc8aa39fa3">m_thetaMin</a></td></tr>
 <tr class="memdesc:a089ee6f2c51c4da50b929dfc8aa39fa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimal yaw limit (in radians)  <a href="classccGBLSensor.html#a089ee6f2c51c4da50b929dfc8aa39fa3">More...</a><br /></td></tr>
 <tr class="separator:a089ee6f2c51c4da50b929dfc8aa39fa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1378e8602a284c04671131af5f74229a"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a1378e8602a284c04671131af5f74229a">m_thetaMax</a></td></tr>
+<tr class="memitem:a1378e8602a284c04671131af5f74229a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a1378e8602a284c04671131af5f74229a">m_thetaMax</a></td></tr>
 <tr class="memdesc:a1378e8602a284c04671131af5f74229a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximal yaw limit (in radians)  <a href="classccGBLSensor.html#a1378e8602a284c04671131af5f74229a">More...</a><br /></td></tr>
 <tr class="separator:a1378e8602a284c04671131af5f74229a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c6f3c6b6f94a6a3a9be2067a279a467"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a0c6f3c6b6f94a6a3a9be2067a279a467">m_deltaTheta</a></td></tr>
+<tr class="memitem:a0c6f3c6b6f94a6a3a9be2067a279a467"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a0c6f3c6b6f94a6a3a9be2067a279a467">m_deltaTheta</a></td></tr>
 <tr class="memdesc:a0c6f3c6b6f94a6a3a9be2067a279a467"><td class="mdescLeft">&#160;</td><td class="mdescRight">Yaw step (in radians)  <a href="classccGBLSensor.html#a0c6f3c6b6f94a6a3a9be2067a279a467">More...</a><br /></td></tr>
 <tr class="separator:a0c6f3c6b6f94a6a3a9be2067a279a467"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19178b29c8f82d1896ba13b4050acf12"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a19178b29c8f82d1896ba13b4050acf12">m_yawAnglesAreShifted</a></td></tr>
@@ -998,10 +1029,10 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a1ac79e21c539c3fe0342fea9aba724af"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccGBLSensor.html#a29cad0169c3e8e03c8e56da95b01860a">ROTATION_ORDER</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#a1ac79e21c539c3fe0342fea9aba724af">m_rotationOrder</a></td></tr>
 <tr class="memdesc:a1ac79e21c539c3fe0342fea9aba724af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors rotation order.  <a href="classccGBLSensor.html#a1ac79e21c539c3fe0342fea9aba724af">More...</a><br /></td></tr>
 <tr class="separator:a1ac79e21c539c3fe0342fea9aba724af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9bb8c4538726f77a5f805667a0dad8f"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ae9bb8c4538726f77a5f805667a0dad8f">m_sensorRange</a></td></tr>
+<tr class="memitem:ae9bb8c4538726f77a5f805667a0dad8f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ae9bb8c4538726f77a5f805667a0dad8f">m_sensorRange</a></td></tr>
 <tr class="memdesc:ae9bb8c4538726f77a5f805667a0dad8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sensor max range.  <a href="classccGBLSensor.html#ae9bb8c4538726f77a5f805667a0dad8f">More...</a><br /></td></tr>
 <tr class="separator:ae9bb8c4538726f77a5f805667a0dad8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9b174d43db992111821ec877a5739b9"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ad9b174d43db992111821ec877a5739b9">m_uncertainty</a></td></tr>
+<tr class="memitem:ad9b174d43db992111821ec877a5739b9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#ad9b174d43db992111821ec877a5739b9">m_uncertainty</a></td></tr>
 <tr class="memdesc:ad9b174d43db992111821ec877a5739b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Z-buffer uncertainty.  <a href="classccGBLSensor.html#ad9b174d43db992111821ec877a5739b9">More...</a><br /></td></tr>
 <tr class="separator:ad9b174d43db992111821ec877a5739b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc8986e68bcc5d80998d481b27f56e4c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccDepthBuffer.html">ccDepthBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccGBLSensor.html#acc8986e68bcc5d80998d481b27f56e4c">m_depthBuffer</a></td></tr>
@@ -1026,7 +1057,7 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:ab805c62155e151f58ffb9d5db81b7e5d inherit pro_attribs_classccSensor"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespaceecvColor.html#a130363ede0dcec29fea72299720873c6">ecvColor::Rgb</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#ab805c62155e151f58ffb9d5db81b7e5d">m_color</a></td></tr>
 <tr class="memdesc:ab805c62155e151f58ffb9d5db81b7e5d inherit pro_attribs_classccSensor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Color of the sensor.  <a href="classccSensor.html#ab805c62155e151f58ffb9d5db81b7e5d">More...</a><br /></td></tr>
 <tr class="separator:ab805c62155e151f58ffb9d5db81b7e5d inherit pro_attribs_classccSensor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30a2e0b071c8c45a9d97ebc79dbd2ed1 inherit pro_attribs_classccSensor"><td class="memItemLeft" align="right" valign="top">PointCoordinateType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#a30a2e0b071c8c45a9d97ebc79dbd2ed1">m_scale</a></td></tr>
+<tr class="memitem:a30a2e0b071c8c45a9d97ebc79dbd2ed1 inherit pro_attribs_classccSensor"><td class="memItemLeft" align="right" valign="top"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccSensor.html#a30a2e0b071c8c45a9d97ebc79dbd2ed1">m_scale</a></td></tr>
 <tr class="memdesc:a30a2e0b071c8c45a9d97ebc79dbd2ed1 inherit pro_attribs_classccSensor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sensor graphic representation scale.  <a href="classccSensor.html#a30a2e0b071c8c45a9d97ebc79dbd2ed1">More...</a><br /></td></tr>
 <tr class="separator:a30a2e0b071c8c45a9d97ebc79dbd2ed1 inherit pro_attribs_classccSensor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classccHObject"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classccHObject')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classccHObject.html">ccHObject</a></td></tr>
@@ -1467,13 +1498,13 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">bool ccGBLSensor::convertToDepthMapCoords </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>yaw</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>pitch</em>, </td>
         </tr>
         <tr>
@@ -1625,7 +1656,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvGBLSensor_8h_source.html#l00050">50</a> of file <a class="el" href="ecvGBLSensor_8h_source.html">ecvGBLSensor.h</a>.</p>
 
-<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00114">CV_TYPES::GBL_SENSOR</a>.</p>
+<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00117">CV_TYPES::GBL_SENSOR</a>.</p>
 
 </div>
 </div>
@@ -1700,7 +1731,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getMaxPitch </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getMaxPitch </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1731,7 +1762,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getMaxYaw </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getMaxYaw </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1762,7 +1793,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getMinPitch </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getMinPitch </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1793,7 +1824,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getMinYaw </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getMinYaw </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1901,7 +1932,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getPitchStep </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getPitchStep </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -2044,7 +2075,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getSensorRange </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getSensorRange </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -2075,7 +2106,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getUncertainty </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getUncertainty </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -2106,7 +2137,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::getYawStep </td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::getYawStep </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -2346,7 +2377,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;&#160;</td>
           <td class="paramname"><em>depth</em>, </td>
         </tr>
         <tr>
@@ -2385,13 +2416,13 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="memname">void ccGBLSensor::setPitchRange </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>minPhi</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>maxPhi</em>&#160;</td>
         </tr>
         <tr>
@@ -2424,7 +2455,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="memname">void ccGBLSensor::setPitchStep </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>dPhi</em></td><td>)</td>
           <td></td>
         </tr>
@@ -2493,7 +2524,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="memname">void ccGBLSensor::setSensorRange </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>range</em></td><td>)</td>
           <td></td>
         </tr>
@@ -2531,7 +2562,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="memname">void ccGBLSensor::setUncertainty </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>u</em></td><td>)</td>
           <td></td>
         </tr>
@@ -2566,13 +2597,13 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="memname">void ccGBLSensor::setYawRange </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>minTheta</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>maxTheta</em>&#160;</td>
         </tr>
         <tr>
@@ -2605,7 +2636,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
         <tr>
           <td class="memname">void ccGBLSensor::setYawStep </td>
           <td>(</td>
-          <td class="paramtype">PointCoordinateType&#160;</td>
+          <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>dTheta</em></td><td>)</td>
           <td></td>
         </tr>
@@ -2736,7 +2767,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_deltaPhi</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_deltaPhi</td>
         </tr>
       </table>
   </td>
@@ -2762,7 +2793,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_deltaTheta</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_deltaTheta</td>
         </tr>
       </table>
   </td>
@@ -2862,7 +2893,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_phiMax</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_phiMax</td>
         </tr>
       </table>
   </td>
@@ -2889,7 +2920,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_phiMin</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_phiMin</td>
         </tr>
       </table>
   </td>
@@ -2967,7 +2998,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_sensorRange</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_sensorRange</td>
         </tr>
       </table>
   </td>
@@ -2993,7 +3024,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_thetaMax</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_thetaMax</td>
         </tr>
       </table>
   </td>
@@ -3020,7 +3051,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_thetaMin</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_thetaMin</td>
         </tr>
       </table>
   </td>
@@ -3047,7 +3078,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">PointCoordinateType ccGBLSensor::m_uncertainty</td>
+          <td class="memname"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> ccGBLSensor::m_uncertainty</td>
         </tr>
       </table>
   </td>
@@ -3089,7 +3120,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/root/ACloudViewer/libs/eCV_db/include/<a class="el" href="ecvGBLSensor_8h_source.html">ecvGBLSensor.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="ecvGBLSensor_8h_source.html">ecvGBLSensor.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -3097,7 +3128,7 @@ This method is not supported by all entities! (returns the axis-aligned bounding
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classccGBLSensor.html">ccGBLSensor</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

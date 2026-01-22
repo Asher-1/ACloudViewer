@@ -1,0 +1,13 @@
+<map id="flann::ResultSet&lt; DistanceType &gt;" name="flann::ResultSet&lt; DistanceType &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="5,201,201,243"/>
+<area shape="rect" id="node2" href="$classflann_1_1CountRadiusResultSet.html" title=" " alt="" coords="256,5,441,47"/>
+<area shape="rect" id="node3" href="$classflann_1_1KNNRadiusResultSet.html" title=" " alt="" coords="250,71,447,112"/>
+<area shape="rect" id="node4" href="$classflann_1_1KNNResultSet.html" title=" " alt="" coords="272,136,425,177"/>
+<area shape="rect" id="node5" href="$classflann_1_1KNNResultSet2.html" title=" " alt="" coords="268,201,429,243"/>
+<area shape="rect" id="node6" href="$classflann_1_1KNNSimpleResultSet.html" title=" " alt="" coords="249,267,448,308"/>
+<area shape="rect" id="node7" href="$classflann_1_1RadiusResultSet.html" title=" " alt="" coords="265,332,433,373"/>
+<area shape="rect" id="node8" href="$classflann_1_1UniqueResultSet.html" title=" " alt="" coords="263,397,434,439"/>
+<area shape="rect" id="node9" href="$classflann_1_1KNNUniqueResultSet.html" title=" " alt="" coords="496,364,695,405"/>
+<area shape="rect" id="node11" href="$classflann_1_1RadiusUniqueResultSet.html" title=" " alt="" coords="499,429,692,471"/>
+<area shape="rect" id="node10" href="$classflann_1_1KNNRadiusUniqueResultSet.html" title=" " alt="" coords="743,364,965,405"/>
+</map>

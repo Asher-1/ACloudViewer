@@ -453,8 +453,8 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8cpp_source.html','')
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    m_helper-&gt;<a class="code" href="classccCloudLayersHelper.html#a0140c095ec3812178331045f8e1e4506">projectCloud</a>(camera);</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    QPointF pos2D = <a class="code" href="classecvDisplayTools.html#a24557235192c97caf4f98e168a4b76d1">ecvDisplayTools::ToCenteredGLCoordinates</a>(x, y);</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    <a class="code" href="classVector2Tpl.html">CCVector2</a> center(<span class="keyword">static_cast&lt;</span>PointCoordinateType<span class="keyword">&gt;</span>(pos2D.x()),</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;                     <span class="keyword">static_cast&lt;</span>PointCoordinateType<span class="keyword">&gt;</span>(pos2D.y()));</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    <a class="code" href="classVector2Tpl.html">CCVector2</a> center(<span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(pos2D.x()),</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;                     <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(pos2D.y()));</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keywordtype">int</span> radius = m_mouseCircle-&gt;<a class="code" href="classccMouseCircle.html#aa5353db7c09571adfa078229865303ef">getRadiusPx</a>();</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    std::map&lt;ScalarType, int&gt; affected;</div>
@@ -592,6 +592,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8cpp_source.html','')
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;    outputIndex = cbOutput-&gt;currentIndex();</div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;}</div>
 <div class="ttc" id="aBitmapWindowSystem_8cpp_html_a676b8935df5792ce9ed1492ee266822e"><div class="ttname"><a href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a></div><div class="ttdeci">MouseEvent event</div><div class="ttdef"><b>Definition:</b> <a href="BitmapWindowSystem_8cpp_source.html#l00061">BitmapWindowSystem.cpp:61</a></div></div>
+<div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aclassVector2Tpl_html"><div class="ttname"><a href="classVector2Tpl.html">Vector2Tpl&lt; PointCoordinateType &gt;</a></div></div>
@@ -659,7 +660,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8cpp_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_0ddd015bacd93a2b1d2bac93db97fdae.html">qCloudLayers</a></li><li class="navelem"><a class="el" href="dir_9fc569ce28825700fc5877d0412b9c64.html">src</a></li><li class="navelem"><a class="el" href="ccCloudLayersDlg_8cpp.html">ccCloudLayersDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:05 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

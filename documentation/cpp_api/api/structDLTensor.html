@@ -100,19 +100,29 @@ $(document).ready(function(){initNavTree('structDLTensor.html',''); initResizabl
 Collaboration diagram for DLTensor:</div>
 <div class="dyncontent">
 <div class="center"><img src="structDLTensor__coll__graph.png" border="0" usemap="#aDLTensor_coll__map" alt="Collaboration graph"/></div>
+<map name="aDLTensor_coll__map" id="aDLTensor_coll__map">
+<area shape="rect" title="Plain C Tensor object, does not manage memory." alt="" coords="204,213,284,240"/>
+<area shape="rect" title=" " alt="" coords="5,109,80,136"/>
+<area shape="rect" href="structDLDevice.html" title="A Device for Tensor and operator." alt="" coords="202,109,286,136"/>
+<area shape="rect" title=" " alt="" coords="144,5,211,32"/>
+<area shape="rect" href="structDLDataType.html" title="The data type the tensor can hold. The data type is assumed to follow the native endian&#45;ness...." alt="" coords="310,109,410,136"/>
+<area shape="rect" title=" " alt="" coords="297,5,372,32"/>
+<area shape="rect" title=" " alt="" coords="396,5,463,32"/>
+<area shape="rect" title=" " alt="" coords="435,109,501,136"/>
+</map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a6af4539ae2c74d60e8dbc4c6047ed805"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a6af4539ae2c74d60e8dbc4c6047ed805">data</a></td></tr>
-<tr class="memdesc:a6af4539ae2c74d60e8dbc4c6047ed805"><td class="mdescLeft">&#160;</td><td class="mdescRight">The opaque data pointer points to the allocated data. This will be CUDA device pointer or cl_mem handle in OpenCL. This pointer is always aligned to 256 bytes as in CUDA.  <a href="structDLTensor.html#a6af4539ae2c74d60e8dbc4c6047ed805">More...</a><br /></td></tr>
+<tr class="memdesc:a6af4539ae2c74d60e8dbc4c6047ed805"><td class="mdescLeft">&#160;</td><td class="mdescRight">The data pointer points to the allocated data. This will be CUDA device pointer or cl_mem handle in OpenCL. It may be opaque on some device types. This pointer is always aligned to 256 bytes as in CUDA. The <code>byte_offset</code> field should be used to point to the beginning of the data.  <a href="structDLTensor.html#a6af4539ae2c74d60e8dbc4c6047ed805">More...</a><br /></td></tr>
 <tr class="separator:a6af4539ae2c74d60e8dbc4c6047ed805"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a552ca85f7d04138c876c636e25b3c484"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structDLContext.html">DLContext</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a552ca85f7d04138c876c636e25b3c484">ctx</a></td></tr>
-<tr class="memdesc:a552ca85f7d04138c876c636e25b3c484"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device context of the tensor.  <a href="structDLTensor.html#a552ca85f7d04138c876c636e25b3c484">More...</a><br /></td></tr>
-<tr class="separator:a552ca85f7d04138c876c636e25b3c484"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b28a3876c4d157ccea80956f3ec18f5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a8b28a3876c4d157ccea80956f3ec18f5">ndim</a></td></tr>
-<tr class="memdesc:a8b28a3876c4d157ccea80956f3ec18f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of dimensions.  <a href="structDLTensor.html#a8b28a3876c4d157ccea80956f3ec18f5">More...</a><br /></td></tr>
-<tr class="separator:a8b28a3876c4d157ccea80956f3ec18f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38995144d9ea19deeec30bfe80aa8362"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structDLDevice.html">DLDevice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a38995144d9ea19deeec30bfe80aa8362">device</a></td></tr>
+<tr class="memdesc:a38995144d9ea19deeec30bfe80aa8362"><td class="mdescLeft">&#160;</td><td class="mdescRight">The device of the tensor.  <a href="structDLTensor.html#a38995144d9ea19deeec30bfe80aa8362">More...</a><br /></td></tr>
+<tr class="separator:a38995144d9ea19deeec30bfe80aa8362"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a028208c9b0c685fffe5eccf45f012388"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a028208c9b0c685fffe5eccf45f012388">ndim</a></td></tr>
+<tr class="memdesc:a028208c9b0c685fffe5eccf45f012388"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of dimensions.  <a href="structDLTensor.html#a028208c9b0c685fffe5eccf45f012388">More...</a><br /></td></tr>
+<tr class="separator:a028208c9b0c685fffe5eccf45f012388"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0cf02d1a8b19118838670b3b3d857f5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structDLDataType.html">DLDataType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#ae0cf02d1a8b19118838670b3b3d857f5">dtype</a></td></tr>
 <tr class="memdesc:ae0cf02d1a8b19118838670b3b3d857f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">The data type of the pointer.  <a href="structDLTensor.html#ae0cf02d1a8b19118838670b3b3d857f5">More...</a><br /></td></tr>
 <tr class="separator:ae0cf02d1a8b19118838670b3b3d857f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -120,7 +130,7 @@ Public Attributes</h2></td></tr>
 <tr class="memdesc:a6e33904029ec8a18658b6bd62be28688"><td class="mdescLeft">&#160;</td><td class="mdescRight">The shape of the tensor.  <a href="structDLTensor.html#a6e33904029ec8a18658b6bd62be28688">More...</a><br /></td></tr>
 <tr class="separator:a6e33904029ec8a18658b6bd62be28688"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ad3b8079e712f711b716d34d418d44e"><td class="memItemLeft" align="right" valign="top">int64_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a0ad3b8079e712f711b716d34d418d44e">strides</a></td></tr>
-<tr class="memdesc:a0ad3b8079e712f711b716d34d418d44e"><td class="mdescLeft">&#160;</td><td class="mdescRight">strides of the tensor (in number of elements, not bytes) can be NULL, indicating tensor is compact and row-majored.  <a href="structDLTensor.html#a0ad3b8079e712f711b716d34d418d44e">More...</a><br /></td></tr>
+<tr class="memdesc:a0ad3b8079e712f711b716d34d418d44e"><td class="mdescLeft">&#160;</td><td class="mdescRight">strides of the tensor (in number of elements, not bytes), can not be NULL if ndim != 0, must points to an array of ndim elements that specifies the strides, so consumer can always rely on strides[dim] being valid for 0 &lt;= dim &lt; ndim.  <a href="structDLTensor.html#a0ad3b8079e712f711b716d34d418d44e">More...</a><br /></td></tr>
 <tr class="separator:a0ad3b8079e712f711b716d34d418d44e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a647dfbb2a3b976c4e9d1e17740dca568"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDLTensor.html#a647dfbb2a3b976c4e9d1e17740dca568">byte_offset</a></td></tr>
 <tr class="memdesc:a647dfbb2a3b976c4e9d1e17740dca568"><td class="mdescLeft">&#160;</td><td class="mdescRight">The offset in bytes to the beginning pointer to data.  <a href="structDLTensor.html#a647dfbb2a3b976c4e9d1e17740dca568">More...</a><br /></td></tr>
@@ -129,7 +139,7 @@ Public Attributes</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Plain C Tensor object, does not manage memory. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00128">128</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00244">244</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a647dfbb2a3b976c4e9d1e17740dca568"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a647dfbb2a3b976c4e9d1e17740dca568">&#9670;&nbsp;</a></span>byte_offset</h2>
@@ -145,29 +155,7 @@ Public Attributes</h2></td></tr>
 
 <p>The offset in bytes to the beginning pointer to data. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00163">163</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
-
-</div>
-</div>
-<a id="a552ca85f7d04138c876c636e25b3c484"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a552ca85f7d04138c876c636e25b3c484">&#9670;&nbsp;</a></span>ctx</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structDLContext.html">DLContext</a> DLTensor::ctx</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The device context of the tensor. </p>
-
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00150">150</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00302">302</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -183,27 +171,45 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>The opaque data pointer points to the allocated data. This will be CUDA device pointer or cl_mem handle in OpenCL. This pointer is always aligned to 256 bytes as in CUDA. </p>
+<p>The data pointer points to the allocated data. This will be CUDA device pointer or cl_mem handle in OpenCL. It may be opaque on some device types. This pointer is always aligned to 256 bytes as in CUDA. The <code>byte_offset</code> field should be used to point to the beginning of the data. </p>
+<p>Note that as of Nov 2021, multiple libraries (CuPy, PyTorch, TensorFlow, TVM, perhaps others) do not adhere to this 256 byte alignment requirement on CPU/CUDA/ROCm, and always use <code>byte_offset=0</code>. This must be fixed (after which this note will be updated); at the moment it is recommended to not rely on the data pointer being correctly aligned.</p>
 <p>For given <a class="el" href="structDLTensor.html" title="Plain C Tensor object, does not manage memory.">DLTensor</a>, the size of memory required to store the contents of data is calculated as follows:</p>
 <div class="fragment"><div class="line"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">size_t</span> GetDataSize(<span class="keyword">const</span> <a class="code" href="structDLTensor.html">DLTensor</a>* t) {</div>
 <div class="line">  <span class="keywordtype">size_t</span> <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a> = 1;</div>
-<div class="line">  <span class="keywordflow">for</span> (tvm_index_t i = 0; i &lt; t-&gt;<a class="code" href="structDLTensor.html#a8b28a3876c4d157ccea80956f3ec18f5">ndim</a>; ++i) {</div>
+<div class="line">  <span class="keywordflow">for</span> (tvm_index_t i = 0; i &lt; t-&gt;<a class="code" href="structDLTensor.html#a028208c9b0c685fffe5eccf45f012388">ndim</a>; ++i) {</div>
 <div class="line">    <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a> *= t-&gt;<a class="code" href="structDLTensor.html#a6e33904029ec8a18658b6bd62be28688">shape</a>[i];</div>
 <div class="line">  }</div>
 <div class="line">  <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a> *= (t-&gt;<a class="code" href="structDLTensor.html#ae0cf02d1a8b19118838670b3b3d857f5">dtype</a>.<a class="code" href="structDLDataType.html#a412e36fa9c58e808a2333e9044c5d9b5">bits</a> * t-&gt;<a class="code" href="structDLTensor.html#ae0cf02d1a8b19118838670b3b3d857f5">dtype</a>.<a class="code" href="structDLDataType.html#a24de092fe56d358c1582e41499862594">lanes</a> + 7) / 8;</div>
 <div class="line">  <span class="keywordflow">return</span> <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>;</div>
 <div class="line">}</div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
-<div class="ttc" id="astructDLDataType_html_a24de092fe56d358c1582e41499862594"><div class="ttname"><a href="structDLDataType.html#a24de092fe56d358c1582e41499862594">DLDataType::lanes</a></div><div class="ttdeci">uint16_t lanes</div><div class="ttdoc">Number of lanes in the type, used for vector types.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00122">DLPack.h:122</a></div></div>
-<div class="ttc" id="astructDLDataType_html_a412e36fa9c58e808a2333e9044c5d9b5"><div class="ttname"><a href="structDLDataType.html#a412e36fa9c58e808a2333e9044c5d9b5">DLDataType::bits</a></div><div class="ttdeci">uint8_t bits</div><div class="ttdoc">Number of bits, common choices are 8, 16, 32.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00120">DLPack.h:120</a></div></div>
-<div class="ttc" id="astructDLTensor_html"><div class="ttname"><a href="structDLTensor.html">DLTensor</a></div><div class="ttdoc">Plain C Tensor object, does not manage memory.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00128">DLPack.h:128</a></div></div>
-<div class="ttc" id="astructDLTensor_html_a6e33904029ec8a18658b6bd62be28688"><div class="ttname"><a href="structDLTensor.html#a6e33904029ec8a18658b6bd62be28688">DLTensor::shape</a></div><div class="ttdeci">int64_t * shape</div><div class="ttdoc">The shape of the tensor.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00156">DLPack.h:156</a></div></div>
-<div class="ttc" id="astructDLTensor_html_a8b28a3876c4d157ccea80956f3ec18f5"><div class="ttname"><a href="structDLTensor.html#a8b28a3876c4d157ccea80956f3ec18f5">DLTensor::ndim</a></div><div class="ttdeci">int ndim</div><div class="ttdoc">Number of dimensions.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00152">DLPack.h:152</a></div></div>
-<div class="ttc" id="astructDLTensor_html_ae0cf02d1a8b19118838670b3b3d857f5"><div class="ttname"><a href="structDLTensor.html#ae0cf02d1a8b19118838670b3b3d857f5">DLTensor::dtype</a></div><div class="ttdeci">DLDataType dtype</div><div class="ttdoc">The data type of the pointer.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00154">DLPack.h:154</a></div></div>
-</div><!-- fragment --> 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00148">148</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+<div class="ttc" id="astructDLDataType_html_a24de092fe56d358c1582e41499862594"><div class="ttname"><a href="structDLDataType.html#a24de092fe56d358c1582e41499862594">DLDataType::lanes</a></div><div class="ttdeci">uint16_t lanes</div><div class="ttdoc">Number of lanes in the type, used for vector types.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00238">DLPack.h:238</a></div></div>
+<div class="ttc" id="astructDLDataType_html_a412e36fa9c58e808a2333e9044c5d9b5"><div class="ttname"><a href="structDLDataType.html#a412e36fa9c58e808a2333e9044c5d9b5">DLDataType::bits</a></div><div class="ttdeci">uint8_t bits</div><div class="ttdoc">Number of bits, common choices are 8, 16, 32.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00236">DLPack.h:236</a></div></div>
+<div class="ttc" id="astructDLTensor_html"><div class="ttname"><a href="structDLTensor.html">DLTensor</a></div><div class="ttdoc">Plain C Tensor object, does not manage memory.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00244">DLPack.h:244</a></div></div>
+<div class="ttc" id="astructDLTensor_html_a028208c9b0c685fffe5eccf45f012388"><div class="ttname"><a href="structDLTensor.html#a028208c9b0c685fffe5eccf45f012388">DLTensor::ndim</a></div><div class="ttdeci">int32_t ndim</div><div class="ttdoc">Number of dimensions.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00278">DLPack.h:278</a></div></div>
+<div class="ttc" id="astructDLTensor_html_a6e33904029ec8a18658b6bd62be28688"><div class="ttname"><a href="structDLTensor.html#a6e33904029ec8a18658b6bd62be28688">DLTensor::shape</a></div><div class="ttdeci">int64_t * shape</div><div class="ttdoc">The shape of the tensor.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00286">DLPack.h:286</a></div></div>
+<div class="ttc" id="astructDLTensor_html_ae0cf02d1a8b19118838670b3b3d857f5"><div class="ttname"><a href="structDLTensor.html#ae0cf02d1a8b19118838670b3b3d857f5">DLTensor::dtype</a></div><div class="ttdeci">DLDataType dtype</div><div class="ttdoc">The data type of the pointer.</div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00280">DLPack.h:280</a></div></div>
+</div><!-- fragment --><p>Note that if the tensor is of size zero, then the data pointer should be set to <code>NULL</code>. </p>
 
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00274">274</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
+
+</div>
+</div>
+<a id="a38995144d9ea19deeec30bfe80aa8362"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38995144d9ea19deeec30bfe80aa8362">&#9670;&nbsp;</a></span>device</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structDLDevice.html">DLDevice</a> DLTensor::device</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The device of the tensor. </p>
+
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00276">276</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -221,29 +227,25 @@ Public Attributes</h2></td></tr>
 
 <p>The data type of the pointer. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00154">154</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00280">280</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
-<a id="a8b28a3876c4d157ccea80956f3ec18f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8b28a3876c4d157ccea80956f3ec18f5">&#9670;&nbsp;</a></span>ndim</h2>
+<a id="a028208c9b0c685fffe5eccf45f012388"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a028208c9b0c685fffe5eccf45f012388">&#9670;&nbsp;</a></span>ndim</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int DLTensor::ndim</td>
+          <td class="memname">int32_t DLTensor::ndim</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Number of dimensions. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00152">152</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00278">278</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -260,10 +262,9 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>The shape of the tensor. </p>
+<p>When ndim == 0, shape can be set to NULL. </p>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00156">156</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00286">286</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -279,11 +280,11 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>strides of the tensor (in number of elements, not bytes) can be NULL, indicating tensor is compact and row-majored. </p>
+<p>strides of the tensor (in number of elements, not bytes), can not be NULL if ndim != 0, must points to an array of ndim elements that specifies the strides, so consumer can always rely on strides[dim] being valid for 0 &lt;= dim &lt; ndim. </p>
+<p>When ndim == 0, strides can be set to NULL.</p>
+<dl class="section note"><dt>Note</dt><dd>Before DLPack v1.2, strides can be NULL to indicate contiguous data. This is not allowed in DLPack v1.2 and later. The rationale is to simplify the consumer handling. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00161">161</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="Tensor_8cpp_source.html#l01781">cloudViewer::core::Tensor::FromDLPack()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="DLPack_8h_source.html#l00300">300</a> of file <a class="el" href="DLPack_8h_source.html">DLPack.h</a>.</p>
 
 </div>
 </div>
@@ -296,7 +297,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="structDLTensor.html">DLTensor</a></li>
-    <li class="footer">Generated on Wed Jan 14 2026 10:26:10 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Thu Jan 22 2026 06:01:25 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

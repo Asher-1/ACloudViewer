@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.models.PointRCNN
+-------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.models
+
+.. autoclass:: PointRCNN
+    :members:
+    :undoc-members:

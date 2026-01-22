@@ -1,0 +1,16 @@
+cloudViewer.ml.torch.modules.metrics
+====================================
+
+.. currentmodule:: cloudViewer.ml.torch.modules.metrics
+
+**Classes**
+
+.. autosummary::
+
+    SemSegMetric
+
+
+.. toctree::
+    :hidden:
+
+    SemSegMetric <cloudViewer.ml.torch.modules.metrics.SemSegMetric>

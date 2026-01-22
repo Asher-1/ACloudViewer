@@ -1,0 +1,5 @@
+<map id="cloudViewer::HornRegistrationTools" name="cloudViewer::HornRegistrationTools">
+<area shape="rect" id="node1" title="Horn point cloud registration algorithm." alt="" coords="5,169,225,211"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1RegistrationTools.html" title="Common point cloud registration algorithms." alt="" coords="21,80,210,121"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="26,5,205,32"/>
+</map>
