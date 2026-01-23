@@ -83,9 +83,11 @@ if os.environ.get("skip_notebooks", "false") == "true":
 # -- Options for nbsphinx (Jupyter notebooks) --------------------------------
 # Allow for more time for notebook cell evaluation
 nbsphinx_timeout = 6000
-# We pre-execute nbs. Some (jupyter_visualizer.ipynb) shouldn't be executed
-nbsphinx_execute = 'never'
-# nbsphinx_allow_errors = True
+# We pre-execute notebooks in make_docs.py before Sphinx build.
+# Use 'never' to only use pre-executed outputs, do not execute during Sphinx build.
+# This ensures notebooks with outputs are displayed correctly in HTML.
+nbsphinx_execute = 'never'  # Use pre-executed outputs only, do not execute during Sphinx build
+# nbsphinx_allow_errors = True  # Allow errors in notebooks (some may fail in headless mode)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
