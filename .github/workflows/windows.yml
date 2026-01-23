@@ -170,7 +170,7 @@ jobs:
           echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.SRC_DIR }}\build
         run: |
           $ErrorActionPreference = 'Continue'
@@ -194,23 +194,9 @@ jobs:
             exit 1
           }
           
-          # For CUDA builds, ensure CUDA DLL path is in PATH
-          if ("${{ matrix.BUILD_CUDA_MODULE }}" -eq "ON" -and $env:CUDA_PATH) {
-            $cudaBinPath = Join-Path $env:CUDA_PATH "bin"
-            if (Test-Path $cudaBinPath) {
-              Write-Host "Adding CUDA bin directory to PATH: $cudaBinPath"
-              $env:PATH = "$cudaBinPath;$env:PATH"
-            } else {
-              Write-Warning "CUDA bin directory not found: $cudaBinPath"
-            }
-          }
-          
           Write-Host "Running C++ unit tests from: $(Get-Location)"
           Write-Host "Test executable: $testExe"
           Write-Host "BUILD_CUDA_MODULE: ${{ matrix.BUILD_CUDA_MODULE }}"
-          if ($env:CUDA_PATH) {
-            Write-Host "CUDA_PATH: $env:CUDA_PATH"
-          }
           Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
           
           # Run the tests
@@ -219,12 +205,6 @@ jobs:
           
           if ($testResult -ne 0) {
             Write-Error "C++ unit tests failed with exit code: $testResult"
-            # On Windows, if the test executable fails to start, it might be a DLL issue
-            if ($testResult -eq -1073741515 -or $testResult -eq 0xC0000135) {
-              Write-Error "Possible DLL loading error. Check if CUDA DLLs are accessible."
-              Write-Host "CUDA_PATH: $env:CUDA_PATH"
-              Write-Host "PATH contains CUDA: $($env:PATH -like '*CUDA*')"
-            }
             exit $testResult
           }
           

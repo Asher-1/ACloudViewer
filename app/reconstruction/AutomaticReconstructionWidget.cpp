@@ -9,9 +9,16 @@
 
 #include <ecvPointCloud.h>
 
+#include <QApplication>
+#include <QMessageBox>
+#include <QProgressDialog>
+#include <QShowEvent>
+
 #include "MainWindow.h"
 #include "ReconstructionWidget.h"
 #include "ThreadControlWidget.h"
+#include "retrieval/resources.h"
+#include "util/download.h"
 
 namespace cloudViewer {
 
@@ -29,8 +36,8 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     AddSpacer();
     AddOptionDirPath(&options_.mask_path, "Mask folder");
     AddSpacer();
-    AddOptionFilePath(&options_.vocab_tree_path,
-                      "Vocabulary tree<br>(optional)");
+    
+    AddOptionFilePath(&options_.vocab_tree_path, "Vocabulary tree<br>(optional)");
 
     AddSpacer();
 
@@ -162,6 +169,90 @@ void AutomaticReconstructionWidget::Run() {
             break;
     }
 
+    // Check if vocab_tree_path is a URI and needs to be downloaded
+    std::string vocab_tree_path = options_.vocab_tree_path;
+    if (vocab_tree_path.empty()) {
+        vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    }
+    
+    // If it's a URI, check if it's already cached or needs to be downloaded
+    if (!vocab_tree_path.empty() && colmap::IsURI(vocab_tree_path)) {
+#ifdef COLMAP_DOWNLOAD_ENABLED
+        // First, check if the file is already cached
+        std::filesystem::path cached_path = colmap::GetCachedFilePath(vocab_tree_path);
+        if (!cached_path.empty() && std::filesystem::exists(cached_path)) {
+            // File already exists in cache, use it directly
+            LOG(INFO) << "Using cached vocabulary tree file: " << cached_path;
+            options_.vocab_tree_path = cached_path.string();
+        } else {
+            // File doesn't exist, show download progress dialog
+            QProgressDialog progress_dialog(
+                tr("Downloading vocabulary tree..."), tr("Cancel"), 0, 100, this);
+            progress_dialog.setWindowModality(Qt::ApplicationModal);
+            progress_dialog.setWindowTitle(tr("Downloading"));
+            progress_dialog.setAutoClose(false);
+            progress_dialog.setAutoReset(false);
+            progress_dialog.setMinimumDuration(0);
+            progress_dialog.show();
+            QApplication::processEvents();
+            
+            bool download_canceled = false;
+            colmap::DownloadProgressCallback progress_callback =
+                [&progress_dialog, &download_canceled](int64_t downloaded, int64_t total) {
+                    QApplication::processEvents();
+                    if (progress_dialog.wasCanceled()) {
+                        download_canceled = true;
+                        return;
+                    }
+                    
+                    if (total > 0) {
+                        int percent = static_cast<int>((downloaded * 100) / total);
+                        progress_dialog.setValue(percent);
+                        
+                        // Update label with size information
+                        double downloaded_mb = static_cast<double>(downloaded) / (1024.0 * 1024.0);
+                        double total_mb = static_cast<double>(total) / (1024.0 * 1024.0);
+                        progress_dialog.setLabelText(
+                            tr("Downloading vocabulary tree...\n%1 MB / %2 MB (%3%)")
+                                .arg(downloaded_mb, 0, 'f', 2)
+                                .arg(total_mb, 0, 'f', 2)
+                                .arg(percent));
+                    } else {
+                        progress_dialog.setValue(0);
+                        double downloaded_mb = static_cast<double>(downloaded) / (1024.0 * 1024.0);
+                        progress_dialog.setLabelText(
+                            tr("Downloading vocabulary tree...\n%1 MB")
+                                .arg(downloaded_mb, 0, 'f', 2));
+                    }
+                    QApplication::processEvents();
+                };
+            
+            try {
+                std::string downloaded_path = colmap::DownloadAndCacheFile(vocab_tree_path, progress_callback);
+                progress_dialog.close();
+                
+                if (download_canceled || downloaded_path.empty()) {
+                    QMessageBox::warning(this, tr("Download Canceled"),
+                        tr("Vocabulary tree download was canceled. Please provide a local path."));
+                    return;
+                }
+                
+                // Update options with the downloaded path
+                options_.vocab_tree_path = downloaded_path;
+            } catch (const std::exception& e) {
+                progress_dialog.close();
+                QMessageBox::critical(this, tr("Download Failed"),
+                    tr("Failed to download vocabulary tree: %1").arg(e.what()));
+                return;
+            }
+        }
+#else
+        QMessageBox::warning(this, tr("Download Disabled"),
+            tr("Download support is disabled. Please provide a local vocabulary tree path."));
+        return;
+#endif
+    }
+
     main_window_->reconstruction_manager_.Clear();
     main_window_->reconstruction_manager_widget_->Update();
     main_window_->RenderClear();
@@ -183,6 +274,29 @@ void AutomaticReconstructionWidget::Run() {
     });
 
     thread_control_widget_->StartThread("Reconstructing...", true, controller);
+}
+
+void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
+    // Ensure vocab_tree_path has default value before reading options
+    // This ensures that even if WriteOptions() previously saved an empty value,
+    // we restore the default value when the window is shown
+    if (options_.vocab_tree_path.empty()) {
+        options_.vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    }
+    
+    // Call base class showEvent to read all options (including the default value)
+    OptionsWidget::showEvent(event);
+    
+    // Double-check: if UI is still empty after ReadOptions, set it explicitly
+    // This handles the case where options_.vocab_tree_path was empty before
+    for (auto& option : options_path_) {
+        if (option.second == &options_.vocab_tree_path) {
+            if (option.first->text().isEmpty() && !options_.vocab_tree_path.empty()) {
+                option.first->setText(QString::fromStdString(options_.vocab_tree_path));
+            }
+            break;
+        }
+    }
 }
 
 void AutomaticReconstructionWidget::RenderResult() {
