@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <QtWidgets>
+
 #include "controllers/AutomaticReconstructionController.h"
 #include "ui/options_widget.h"
-
-#include <QtWidgets>
 
 namespace cloudViewer {
 class ReconstructionWidget;
