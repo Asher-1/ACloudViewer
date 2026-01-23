@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-23T01:27:47.986627",
+  "generated_at": "2026-01-23T06:32:13.129983",
   "version_metadata": [
     {
       "value": "main-devel",
@@ -113,6 +113,12 @@
       "linux": {
         "ubuntu20.04": {
           "app": {
+            "cpu": {
+              "amd64": {
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.4%2B5c18a43-ubuntu20.04-cpu-amd64.run",
+                "size": "240.1 MB"
+              }
+            },
             "cuda": {
               "amd64": {
                 "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.4%2B5c18a43-ubuntu20.04-cuda-amd64.run",
@@ -127,7 +133,7 @@
             "cpu": {
               "amd64": {
                 "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.4%2B5c18a43-ubuntu22.04-cpu-amd64.run",
-                "size": "242.8 MB"
+                "size": "242.6 MB"
               }
             },
             "cuda": {
@@ -182,6 +188,12 @@
         },
         "ubuntu24.04": {
           "app": {
+            "cpu": {
+              "amd64": {
+                "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.4%2B5c18a43-ubuntu24.04-cpu-amd64.run",
+                "size": "251.5 MB"
+              }
+            },
             "cuda": {
               "amd64": {
                 "url": "https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/ACloudViewer-3.9.4%2B5c18a43-ubuntu24.04-cuda-amd64.run",
