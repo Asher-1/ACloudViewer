@@ -27,8 +27,6 @@ Tutorial Structure
      - Volumetric RGB-D reconstruction and dense RGB-D SLAM with tensor interface
    * - :doc:`sensor/index`
      - Sensor integration and data capture (Azure Kinect, RealSense)
-   * - :doc:`ml/index`
-     - Machine learning with 3D data
    * - :doc:`advanced/index`
      - Advanced topics
 
