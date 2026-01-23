@@ -45,12 +45,28 @@ bool Visualizer::InitOpenGL() {
 
     glewExperimental = true;
     const GLenum init_ret = glewInit();
+
+    // In headless mode (GLFW_PLATFORM_NULL), GLEW may return
+    // GLEW_ERROR_NO_GL_VERSION, which should be allowed.
+    // This is similar to how GLEW_ERROR_NO_GLX_DISPLAY is handled.
+    // Use glfwGetPlatform() to detect headless mode since GLFW is already
+    // initialized at this point (InitOpenGL() is called after
+    // CreateVisualizerWindow()).
+    bool is_headless = (glfwGetPlatform() == GLFW_PLATFORM_NULL);
+
     if (init_ret != GLEW_OK && init_ret != GLEW_ERROR_NO_GLX_DISPLAY) {
-        const std::string err_msg{
-                reinterpret_cast<const char *>(glewGetErrorString(init_ret))};
-        utility::LogWarning("Failed to initialize GLEW: {} ({})", err_msg,
-                            init_ret);
-        return false;
+        // Allow GLEW_ERROR_NO_GL_VERSION in headless mode
+        if (is_headless && init_ret == GLEW_ERROR_NO_GL_VERSION) {
+            utility::LogWarning(
+                    "GLEW initialization returned GLEW_ERROR_NO_GL_VERSION in "
+                    "headless mode, continuing anyway.");
+        } else {
+            const std::string err_msg{reinterpret_cast<const char *>(
+                    glewGetErrorString(init_ret))};
+            utility::LogWarning("Failed to initialize GLEW: {} ({})", err_msg,
+                                init_ret);
+            return false;
+        }
     }
 
     render_fbo_ = 0;
