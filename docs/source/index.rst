@@ -85,7 +85,19 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    :maxdepth: 2
    :caption: Tutorial
 
-   tutorial/index
+   tutorial/core/index
+   tutorial/geometry/index
+   tutorial/t_geometry/index
+   tutorial/data/index
+   tutorial/visualization/index
+   tutorial/pipelines/index
+   tutorial/t_pipelines/index
+   tutorial/reconstruction_system/index
+   tutorial/t_reconstruction_system/index
+   tutorial/sensor/index
+   tutorial/ml/index
+   tutorial/advanced/index
+   tutorial/reference
 
 .. toctree::
    :maxdepth: 1
