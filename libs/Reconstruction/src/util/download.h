@@ -24,8 +24,10 @@ bool IsURI(const std::string& uri);
 
 // Progress callback function type: (downloaded_bytes, total_bytes) -> void
 // If total_bytes is 0, the total size is unknown.
-// Using int64_t instead of curl_off_t to avoid including curl headers in the public interface
-using DownloadProgressCallback = std::function<void(int64_t downloaded, int64_t total)>;
+// Using int64_t instead of curl_off_t to avoid including curl headers in the
+// public interface
+using DownloadProgressCallback =
+        std::function<void(int64_t downloaded, int64_t total)>;
 
 // Download file from server. Supports any protocol supported by Curl.
 // Automatically follows redirects. Returns null in case of failure. Notice that
@@ -34,8 +36,8 @@ using DownloadProgressCallback = std::function<void(int64_t downloaded, int64_t 
 // the downloaded data chunks to disk instead of accumulating them in memory.
 // progress_callback: Optional callback function to report download progress.
 std::optional<std::string> DownloadFile(
-    const std::string& url,
-    DownloadProgressCallback progress_callback = nullptr);
+        const std::string& url,
+        DownloadProgressCallback progress_callback = nullptr);
 
 // Computes SHA256 digest for given string.
 std::string ComputeSHA256(const std::string_view& str);
@@ -47,8 +49,8 @@ std::string ComputeSHA256(const std::string_view& str);
 // Returns the path to the cached file.
 // progress_callback: Optional callback function to report download progress.
 std::string DownloadAndCacheFile(
-    const std::string& uri,
-    DownloadProgressCallback progress_callback = nullptr);
+        const std::string& uri,
+        DownloadProgressCallback progress_callback = nullptr);
 
 // Overwrites the default download cache directory at $HOME/.cache/colmap/.
 void OverwriteDownloadCacheDir(std::filesystem::path path);
