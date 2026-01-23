@@ -16,6 +16,10 @@ v3.9.4-Beta (Asher) - 01/16/2026
     -   Add protractor widget based on vtk support for measurement tools
     -   Add contour widget based on vtk support for measurement tools
     -   Add selection tools based on vtk
+    -   Add memory monitoring module in the bottom-right corner of the application
+        -   Real-time display of current memory usage and available memory
+        -   Visual indicator for memory status with color-coded alerts
+        -   Helps users monitor system resources during intensive operations
     -   New 'Display > Display settings' options:
         -   Restore default window geometry on startup
         -   option to control whether the default window geometry (size and position) should be restored or not
