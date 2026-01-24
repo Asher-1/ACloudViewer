@@ -10,6 +10,7 @@
 #include <string>
 
 #include "base/reconstruction_manager.h"
+#include "retrieval/resources.h"
 #include "util/option_manager.h"
 #include "util/threading.h"
 
@@ -32,7 +33,7 @@ public:
         std::string mask_path;
 
         // The path to the vocabulary tree for feature matching.
-        std::string vocab_tree_path;
+        std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
         // The type of input data used to choose optimal mapper settings.
         DataType data_type = DataType::INDIVIDUAL;

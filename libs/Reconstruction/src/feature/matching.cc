@@ -39,6 +39,7 @@
 #include "feature/utils.h"
 #include "retrieval/visual_index.h"
 #include "util/cuda.h"
+#include "util/download.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -1135,8 +1136,11 @@ void SequentialFeatureMatcher::RunSequentialMatching(
 void SequentialFeatureMatcher::RunLoopDetection(
     const std::vector<image_t>& image_ids) {
   // Read the pre-trained vocabulary tree from disk.
+  // Automatically download and cache if URI format is provided.
+  std::string vocab_tree_path =
+      MaybeDownloadAndCacheFile(options_.vocab_tree_path).string();
   retrieval::VisualIndex<> visual_index;
-  visual_index.Read(options_.vocab_tree_path);
+  visual_index.Read(vocab_tree_path);
 
   // Index all images in the visual index.
   IndexImagesInVisualIndex(match_options_.num_threads,
@@ -1186,8 +1190,11 @@ void VocabTreeFeatureMatcher::Run() {
   cache_.Setup();
 
   // Read the pre-trained vocabulary tree from disk.
+  // Automatically download and cache if URI format is provided.
+  std::string vocab_tree_path =
+      MaybeDownloadAndCacheFile(options_.vocab_tree_path).string();
   retrieval::VisualIndex<> visual_index;
-  visual_index.Read(options_.vocab_tree_path);
+  visual_index.Read(vocab_tree_path);
 
   const std::vector<image_t> all_image_ids = cache_.GetImageIds();
   std::vector<image_t> image_ids;

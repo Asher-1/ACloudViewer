@@ -828,10 +828,6 @@ install_docs_dependencies() {
 # Build documentation
 # Usage: build_docs $DEVELOPER_BUILD
 build_docs() {
-    # Simplified documentation build function
-    # Assumes Python module is already compiled in ../build or ../build_app
-    # Core command: cd docs && make docs
-    
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📚 ACloudViewer Documentation Build"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -851,78 +847,121 @@ build_docs() {
     else
         DOC_ARGS="--is_release"
         echo "🚀 Release build mode"
+        echo ""
+        echo "Building ACloudViewer with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
+        echo ""
     fi
     echo ""
     
-    # Check if Python module already exists
-    PYTHON_MODULE_FOUND=false
-    if [ -f "build_app/lib/Release/Python/cuda/pybind.cpython-*.so" ] || \
-       [ -f "build/lib/Release/Python/cuda/pybind.cpython-*.so" ] || \
-       [ -f "build/lib/python_package/cloudViewer.cpython-*.so" ]; then
-        PYTHON_MODULE_FOUND=true
-        echo "✅ Found existing Python module, skipping compilation"
-        echo ""
+    # Base cmake options
+    cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
+        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DWITH_OPENMP=ON"
+        "-DBUILD_AZURE_KINECT=OFF"
+        "-DBUILD_LIBREALSENSE=OFF"
+        "-DBUILD_TENSORFLOW_OPS=OFF"
+        "-DBUILD_PYTORCH_OPS=ON"
+        "-DBUILD_EXAMPLES=OFF"
+        "-DBUILD_DOCUMENTATION=ON"
+        "-DBUILD_PYTHON_MODULE=ON"
+        "-DUSE_PCL_BACKEND=OFF" # no need pcl for documentation
+        "-DBUILD_JUPYTER_EXTENSION=OFF"
+        "-DBUILD_UNIT_TESTS=OFF"
+        "-DBUILD_BENCHMARKS=OFF"
+        "-DCVCORELIB_SHARED=ON"
+        "-DBUILD_FILAMENT_FROM_SOURCE=OFF"
+        "-DBUILD_RECONSTRUCTION=OFF"
+    )
+    
+    # Add CMAKE_PREFIX_PATH if QT_DIR is set
+    if [ -n "${QT_DIR:-}" ]; then
+        cmakeOptions+=("-DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake")
     fi
     
-    # If Python module not found, build it
-    if [ "$PYTHON_MODULE_FOUND" = false ]; then
-        echo "📦 Python module not found, building..."
-        echo ""
-        
-        mkdir -p build
-        cd build
-        # BUILD_GUI=ON for visualization.{gui,rendering} documentation
-        cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
-            "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
-            "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_INSTALL_LIBDIR=lib"
-            "-DWITH_OPENMP=ON"
-            "-DBUILD_AZURE_KINECT=OFF"
-            "-DBUILD_LIBREALSENSE=OFF"
-            "-DBUILD_TENSORFLOW_OPS=OFF"
-            "-DBUILD_PYTORCH_OPS=ON"
-            "-DBUILD_EXAMPLES=OFF"
-            "-DBUILD_DOCUMENTATION=ON"
-            "-DBUILD_PYTHON_MODULE=ON"
-            "-DBUNDLE_CLOUDVIEWER_ML=ON"
-            "-DUSE_PCL_BACKEND=OFF" # no need pcl for documentation
-            "-DBUILD_GUI=ON"
-            "-DBUILD_WEBRTC=ON"
-            "-DENABLE_HEADLESS_RENDERING=OFF"
-            "-DBUILD_JUPYTER_EXTENSION=OFF"
-            "-DBUILD_UNIT_TESTS=OFF"
-            "-DBUILD_BENCHMARKS=OFF"
-            "-DCVCORELIB_SHARED=ON"
-            "-DBUILD_FILAMENT_FROM_SOURCE=OFF"
-            "-DBUILD_RECONSTRUCTION=OFF"
-        )
-        
-        # Add CMAKE_PREFIX_PATH if QT_DIR is set
-        if [ -n "${QT_DIR:-}" ]; then
-            cmakeOptions+=("-DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake")
-        fi
-        
-        set -x
-        cmake "${cmakeOptions[@]}" ..
-        # Build only what's needed for Python module documentation
-        make python-package -j$NPROC
-        set +x
-        
-        echo ""
-        echo "✅ Python module compiled"
-        echo ""
-        
-        # Test Python module
-        export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$PWD/lib/python_package"
-        python -c "import cloudViewer; print('✓ cloudViewer module:', cloudViewer)" || \
-            echo "⚠️  Warning: Could not import cloudViewer module"
-        
-        cd ..
-    fi
-    
-    # Generate documentation
+    # First build: Headless rendering for Jupyter notebooks execution
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📄 Generating Documentation"
+    echo "🔨 Build 1/2: Headless Rendering (for Jupyter notebooks)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    mkdir -p build
+    cd build
+    
+    set -x
+    cmake "${cmakeOptions[@]}" \
+        -DENABLE_HEADLESS_RENDERING=ON \
+        -DBUNDLE_CLOUDVIEWER_ML=OFF \
+        -DBUILD_GUI=OFF \
+        -DBUILD_WEBRTC=OFF \
+        ..
+    make python-package -j$NPROC
+    set +x
+    
+    # Test Python module
+    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$PWD/lib/python_package"
+    python -c "import cloudViewer; print('✓ cloudViewer module:', cloudViewer)" || \
+        echo "⚠️  Warning: Could not import cloudViewer module"
+    
+    echo ""
+    echo "✅ Headless build complete"
+    echo ""
+    
+    # Execute Jupyter notebooks with headless build
+    # JupyterDocsBuilder will automatically execute notebooks that don't have output
+    cd ../docs
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📓 Executing Jupyter notebooks (headless mode)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    set -x
+    # Only build Sphinx to execute notebooks, skip Doxygen
+    # Use --clean to start fresh, but executed notebooks will be saved in source/tutorial/
+    # Use --clean-notebooks to clean existing notebooks before copying
+    # Use --execute-notebooks=always to ensure notebooks are executed in headless mode
+    # Use --py-api-rst=never and --py-example-rst=never to skip Python API/example generation in first build
+    python make_docs.py $DOC_ARGS --clean --sphinx --clean-notebooks --execute-notebooks=always --py-api-rst=never --py-example-rst=never
+    set +x
+    
+    echo ""
+    echo "✅ Jupyter notebooks executed (outputs saved in source/tutorial/)"
+    echo ""
+    
+    # Uninstall headless build before building GUI version
+    cd ../build
+    python -m pip uninstall --yes cloudviewer || echo "⚠️  cloudviewer not installed via pip"
+    
+    # Second build: GUI enabled for visualization.{gui,rendering} documentation
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔨 Build 2/2: GUI Enabled (for visualization documentation)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    set -x
+    cmake "${cmakeOptions[@]}" \
+        -DENABLE_HEADLESS_RENDERING=OFF \
+        -DBUNDLE_CLOUDVIEWER_ML=ON \
+        -DBUILD_GUI=ON \
+        -DBUILD_WEBRTC=ON \
+        ..
+    make python-package -j$NPROC
+    set +x
+    
+    # Test Python module (may fail in headless CI, that's expected)
+    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$PWD/lib/python_package"
+    python -c "import cloudViewer; print('✓ cloudViewer module:', cloudViewer)" || \
+        echo "⚠️  Warning: Could not import cloudViewer module (expected in headless CI)"
+    
+    echo ""
+    echo "✅ GUI build complete"
+    echo ""
+    
+    # Generate full documentation with GUI build
+    cd ../docs
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📄 Generating Full Documentation"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Build Strategy:"
@@ -938,15 +977,16 @@ build_docs() {
     echo "Reference: https://github.com/isl-org/Open3D"
     echo ""
     
-    cd docs
-    
     set -x
     # Build both Doxygen and Sphinx documentation
     # This follows Open3D's proven approach:
     # - Doxygen runs first, generates independent HTML
     # - Sphinx runs second, generates Python docs
+    # - Notebooks already executed in first build, use --execute-notebooks=never to skip re-execution
     # - HTML outputs are combined via file system
-    python make_docs.py $DOC_ARGS --sphinx --doxygen --parallel
+    # Don't use --clean here to preserve executed notebook outputs from first build
+    # Use --py-api-rst=always and --py-example-rst=always to generate Python API/example docs in second build
+    python make_docs.py $DOC_ARGS --sphinx --doxygen --parallel --execute-notebooks=never --py-api-rst=always --py-example-rst=always
     set +x
     
     echo ""
