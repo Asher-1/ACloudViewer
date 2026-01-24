@@ -23,6 +23,11 @@ Usage examples:
 
     # Clean and rebuild
     python make_docs.py --clean --sphinx --doxygen
+
+    # Control Jupyter notebook execution
+    python make_docs.py --sphinx --execute-notebooks=always  # Always execute
+    python make_docs.py --sphinx --execute-notebooks=never    # Never execute
+    python make_docs.py --sphinx --execute-notebooks=auto    # Auto (default)
 """
 
 import argparse
@@ -540,8 +545,19 @@ class PyAPIDocsBuilder:
 class JupyterDocsBuilder:
     """Copy Jupyter notebooks from jupyter/ to source/tutorial/."""
 
-    def __init__(self, current_file_dir):
+    def __init__(self, current_file_dir, clean_notebooks=False, execute_notebooks="auto"):
+        """
+        Args:
+            current_file_dir: Directory containing jupyter/ folder
+            clean_notebooks: Whether to clean existing notebooks before copying
+            execute_notebooks: "always", "never", or "auto" (default: "auto")
+                - "always": Always execute notebooks that don't have output
+                - "never": Never execute notebooks, just copy them
+                - "auto": Execute only if notebook has code but no output
+        """
         self.current_file_dir = current_file_dir
+        self.clean_notebooks = clean_notebooks
+        self.execute_notebooks = execute_notebooks
 
     def overwrite_tutorial_file(self, url, output_file, output_file_path):
         with urllib.request.urlopen(
@@ -555,6 +571,9 @@ class JupyterDocsBuilder:
     def run(self):
         """Copy Jupyter notebooks to tutorial directories."""
         print("📓 Copying Jupyter notebooks to tutorial directories...")
+        
+        if self.execute_notebooks == "never":
+            return
         
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
         # Jupyter notebooks
@@ -585,9 +604,11 @@ class JupyterDocsBuilder:
             out_dir = nb_parent_dst / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            for nb_out_path in out_dir.glob("*.ipynb"):
-                print("Delete: {}".format(nb_out_path))
-                nb_out_path.unlink()
+            # Clean existing notebooks if clean_notebooks is True
+            if self.clean_notebooks:
+                for nb_out_path in out_dir.glob("*.ipynb"):
+                    print("Delete: {}".format(nb_out_path))
+                    nb_out_path.unlink()
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
@@ -607,10 +628,15 @@ class JupyterDocsBuilder:
         nb_direct_copy = [
             'draw_plotly.ipynb',
             'hashmap.ipynb',
+            '3d_gaussian_splatting.ipynb',
             'jupyter_visualization.ipynb',
             't_icp_registration.ipynb',
             'tensor.ipynb',
         ]
+
+        # Track failed notebooks to report at the end
+        failed_notebooks = []
+        successful_notebooks = []
 
         for nb_path in nb_paths:
             if nb_path.name in nb_direct_copy:
@@ -628,22 +654,67 @@ class JupyterDocsBuilder:
                 c.get("outputs") or c.get("execution_count")
                 for c in nb.cells
                 if c.cell_type == "code")
-            execute = (has_code and not has_output)
-            print("has_code: {}, has_output: {}, execute: {}".format(
-                has_code, has_output, execute))
+            
+            # Determine if notebook should be executed
+            if self.execute_notebooks == "always":
+                execute = has_code
+            elif self.execute_notebooks == "never":
+                execute = False
+            else:  # "auto"
+                execute = (has_code and not has_output)
+            
+            print("has_code: {}, has_output: {}, execute_mode: {}, execute: {}".format(
+                has_code, has_output, self.execute_notebooks, execute))
 
             if execute:
                 ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
+                    # Save successfully executed notebook
+                    with open(nb_path, "w", encoding="utf-8") as f:
+                        nbformat.write(nb, f)
+                    print("✅ Successfully executed and saved: {}".format(nb_path.name))
+                    successful_notebooks.append(nb_path.name)
                 except (nbconvert.preprocessors.execute.CellExecutionError, DeadKernelError) as e:
-                    print("Execution of {} failed: {} (this will cause CI to fail).".
+                    print("❌ Execution of {} failed: {} (this will cause CI to fail).".
                           format(nb_path.name, type(e).__name__))
-                    if "GITHUB_ACTIONS" in os.environ:
-                        raise
-
-                with open(nb_path, "w", encoding="utf-8") as f:
-                    nbformat.write(nb, f)
+                    # Print detailed error information
+                    if hasattr(e, 'traceback'):
+                        print("Error traceback:")
+                        for line in e.traceback:
+                            print("  {}".format(line))
+                    # Save notebook even if execution failed (may have partial output)
+                    # This allows nbsphinx to use any outputs that were generated
+                    with open(nb_path, "w", encoding="utf-8") as f:
+                        nbformat.write(nb, f)
+                    print("⚠️  Saved notebook with partial/failed execution: {}".format(nb_path.name))
+                    # Track failed notebook but continue processing others
+                    failed_notebooks.append(nb_path.name)
+        
+        # Report summary
+        print("")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("📊 Notebook Execution Summary")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("✅ Successfully executed: {} notebook(s)".format(len(successful_notebooks)))
+        if successful_notebooks:
+            for nb_name in successful_notebooks:
+                print("   - {}".format(nb_name))
+        print("❌ Failed to execute: {} notebook(s)".format(len(failed_notebooks)))
+        if failed_notebooks:
+            for nb_name in failed_notebooks:
+                print("   - {}".format(nb_name))
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("")
+        
+        # In CI environment (GITHUB_ACTIONS), raise to fail the build if any notebooks failed
+        # Note: We check GITHUB_ACTIONS specifically, not just CI, because CI=true is set
+        # locally to disable interactive mode in notebooks
+        if failed_notebooks and "GITHUB_ACTIONS" in os.environ:
+            raise RuntimeError(
+                "{} notebook(s) failed to execute in CI environment. "
+                "This will cause the build to fail.".format(len(failed_notebooks))
+            )
 
         url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
         output_file = "t_icp_registration.ipynb"
@@ -810,6 +881,33 @@ def main():
         default=None,
         help="Output directory for Doxygen temporary files (default: docs/doxygen or <output-dir>/../doxygen)",
     )
+    parser.add_argument(
+        "--execute-notebooks",
+        type=str,
+        choices=["always", "never", "auto"],
+        default="auto",
+        help="Jupyter notebook execution mode: 'always' (execute all), 'never' (skip execution), 'auto' (execute only if no output exists)",
+    )
+    parser.add_argument(
+        "--clean-notebooks",
+        action="store_true",
+        default=False,
+        help="Whether to clean existing notebooks in docs/source/tutorial before copying. Notebooks are cleaned before copying from jupyter/ directory.",
+    )
+    parser.add_argument(
+        "--py-api-rst",
+        type=str,
+        choices=["always", "never"],
+        default="always",
+        help="Python API reST generation mode: 'always' (generate), 'never' (skip)",
+    )
+    parser.add_argument(
+        "--py-example-rst",
+        type=str,
+        choices=["always", "never"],
+        default="always",
+        help="Python example reST generation mode: 'always' (generate), 'never' (skip)",
+    )
 
     args = parser.parse_args()
 
@@ -855,24 +953,28 @@ def main():
     else:
         print("ℹ️  Doxygen build disabled, use --doxygen to enable")
 
-    # Generate Python API docs BEFORE Sphinx build
-    if args.sphinx:
+    # Python API reST docs
+    if not args.py_api_rst == "never":
+        print("Building Python API reST")
         pyapi = PyAPIDocsBuilder()
         pyapi.generate_rst()
 
-    # Generate Python example docs BEFORE Sphinx build
-    if args.sphinx:
+    # Python example reST docs
+    if not args.py_example_rst == "never":
+        print("Building Python example reST")
         py_example_input_dir = os.path.join(pwd, "..", "examples", "Python")
-        if os.path.exists(py_example_input_dir):
-            print("Building Python example reST")
-            pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
-            pe.generate_rst()
-        else:
-            print(f"⚠️  Python examples directory not found: {py_example_input_dir}")
+        pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
+        pe.generate_rst()
 
     # Copy Jupyter notebooks BEFORE Sphinx build
-    if args.sphinx:
-        jdb = JupyterDocsBuilder(pwd)
+    # Only run JupyterDocsBuilder if we're going to execute notebooks
+    # (when execute_notebooks == "never", notebooks are already copied in first build)
+    if not args.execute_notebooks == "never":
+        jdb = JupyterDocsBuilder(
+            pwd,
+            clean_notebooks=args.clean_notebooks,
+            execute_notebooks=args.execute_notebooks
+        )
         jdb.run()
 
     # Build Sphinx documentation AFTER Doxygen, PyAPI, and Jupyter copy

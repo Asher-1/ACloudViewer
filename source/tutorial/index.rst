@@ -1,78 +1,6 @@
 Tutorial
 ========
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Core
-
-   core/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Geometry
-
-   geometry/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Geometry (Tensor)
-
-   t_geometry/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Data
-
-   data/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Pipelines
-
-   pipelines/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Pipelines (Tensor)
-
-   t_pipelines/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reconstruction System
-
-   reconstruction_system/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reconstruction System (Tensor)
-
-   t_reconstruction_system/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Sensor
-
-   sensor/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Visualization
-
-   visualization/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Machine Learning
-
-   ml/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Advanced Topics
-
-   advanced/index
-
 Overview
 --------
 
@@ -99,8 +27,6 @@ Tutorial Structure
      - Volumetric RGB-D reconstruction and dense RGB-D SLAM with tensor interface
    * - :doc:`sensor/index`
      - Sensor integration and data capture (Azure Kinect, RealSense)
-   * - :doc:`ml/index`
-     - Machine learning with 3D data
    * - :doc:`advanced/index`
      - Advanced topics
 

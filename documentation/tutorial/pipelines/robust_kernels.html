@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Pipelines (Tensor)" href="../t_pipelines/index.html" /><link rel="prev" title="Color Map Optimization" href="color_map_optimization.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Colored point cloud registration" href="colored_pointcloud_registration.html" /><link rel="prev" title="ICP registration" href="icp_registration.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Robust kernels - ACloudViewer primary (5c18a435f) documentation</title>
+        <title>Robust kernels - ACloudViewer primary (9c280aee7) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -133,7 +133,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (5c18a435f) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (9c280aee7) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -268,88 +268,89 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 has-children"><a class="reference internal" href="../core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Tutorial</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/uvmaps.html">UV Maps</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/uvmaps.html">UV Maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../data/index.html">Dataset</a></li>
-<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Pipelines</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="registration.html">Point Cloud Registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="icp_registration.html">ICP registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="colored_pointcloud_registration.html">Colored point cloud registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="global_registration.html">Global registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="multiway_registration.html">Multiway registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="rgbd_integration.html">RGBD integration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="rgbd_odometry.html">RGBD Odometry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="color_map_optimization.html">Color Map Optimization</a></li>
-<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Robust kernels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Dataset</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/customized_visualization.html">Customized visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/interactive_visualization.html">Interactive visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/non_blocking_visualization.html">Non-blocking visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/headless_rendering.html">Headless rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/cpu_rendering.html">CPU (Software) Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/web_visualizer.html">Web visualizer and Jupyter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html">TensorBoard Plugin</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Pipelines</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="color_map_optimization.html">Color Map Optimization</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/system_overview.html">System overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/make_fragments.html">Make fragments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/register_fragments.html">Register fragments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/refine_registration.html">Refine registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/integrate_scene.html">Integrate scene</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/index.html">Reconstruction system (Tensor)</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/system_overview.html">System overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/make_fragments.html">Make fragments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/register_fragments.html">Register fragments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/refine_registration.html">Refine registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/integrate_scene.html">Integrate scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../visualization/index.html">Visualization</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/visualization.html">Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/customized_visualization.html">Customized visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/interactive_visualization.html">Interactive visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/non_blocking_visualization.html">Non-blocking visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/headless_rendering.html">Headless rendering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/cpu_rendering.html">CPU rendering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/jupyter_visualization.html">Jupyter Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/draw_plotly.html">Plotly Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../visualization/tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_reconstruction_system/index.html">Reconstruction system (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Reconstruction system (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/voxel_block_grid.html">Voxel Block Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/integration.html">TSDF Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/customized_integration.html">Customized Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/ray_casting.html">Ray Casting in a Voxel Block Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/dense_slam.html">Dense RGB-D SLAM</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
 <ul>
@@ -1194,46 +1195,14 @@
 <div class="highlight"><pre>
 <span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] GLFW Error: X11: The DISPLAY environment variable is missing</span>
 <span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] GLFW initialized for headless rendering.</span>
-<span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] Failed to initialize GLEW: Missing GL version (1)</span>
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[3], line 7</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> target <span style="color: rgb(98,98,98)">=</span> cv3d<span style="color: rgb(98,98,98)">.</span>io<span style="color: rgb(98,98,98)">.</span>read_point_cloud(demo_icp_pcds<span style="color: rgb(98,98,98)">.</span>paths[<span style="color: rgb(98,98,98)">1</span>])
-<span class="ansi-green-intense-fg ansi-bold">      4</span> trans_init <span style="color: rgb(98,98,98)">=</span> np<span style="color: rgb(98,98,98)">.</span>asarray([[<span style="color: rgb(98,98,98)">0.862</span>, <span style="color: rgb(98,98,98)">0.011</span>, <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">0.507</span>, <span style="color: rgb(98,98,98)">0.5</span>],
-<span class="ansi-green-intense-fg ansi-bold">      5</span>                          [<span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">0.139</span>, <span style="color: rgb(98,98,98)">0.967</span>, <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">0.215</span>, <span style="color: rgb(98,98,98)">0.7</span>],
-<span class="ansi-green-intense-fg ansi-bold">      6</span>                          [<span style="color: rgb(98,98,98)">0.487</span>, <span style="color: rgb(98,98,98)">0.255</span>, <span style="color: rgb(98,98,98)">0.835</span>, <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">1.4</span>], [<span style="color: rgb(98,98,98)">0.0</span>, <span style="color: rgb(98,98,98)">0.0</span>, <span style="color: rgb(98,98,98)">0.0</span>, <span style="color: rgb(98,98,98)">1.0</span>]])
-<span class="ansi-green-fg">----&gt; 7</span> <span class="ansi-yellow-bg">draw_registration_result</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">source</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">target</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">trans_init</span><span class="ansi-yellow-bg">)</span>
-
-Cell <span class="ansi-green-fg">In[2], line 7</span>, in <span class="ansi-cyan-fg">draw_registration_result</span><span class="ansi-blue-fg">(source, target, transformation)</span>
-<span class="ansi-green-intense-fg ansi-bold">      5</span> target_temp<span style="color: rgb(98,98,98)">.</span>paint_uniform_color([<span style="color: rgb(98,98,98)">0</span>, <span style="color: rgb(98,98,98)">0.651</span>, <span style="color: rgb(98,98,98)">0.929</span>])
-<span class="ansi-green-intense-fg ansi-bold">      6</span> source_temp<span style="color: rgb(98,98,98)">.</span>transform(transformation)
-<span class="ansi-green-fg">----&gt; 7</span> <span class="ansi-yellow-bg">cv3d</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">visualization</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">draw_geometries</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg">source_temp</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">target_temp</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">      8</span> <span class="ansi-yellow-bg">                                   </span><span class="ansi-yellow-bg">zoom</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.4459</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">      9</span> <span class="ansi-yellow-bg">                                   </span><span class="ansi-yellow-bg">front</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.9288</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.2951</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.2242</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">     10</span> <span class="ansi-yellow-bg">                                   </span><span class="ansi-yellow-bg">lookat</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1.6784</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">2.0612</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1.4451</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">     11</span> <span class="ansi-yellow-bg">                                   </span><span class="ansi-yellow-bg">up</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.3402</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.9189</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">0.1996</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">)</span>
-
-File <span class="ansi-green-fg">~/ACloudViewer/docs/source/tutorial/pipelines/../cloudViewer_tutorial.py:40</span>, in <span class="ansi-cyan-fg">jupyter_draw_geometries</span><span class="ansi-blue-fg">(geoms, window_name, width, height, left, top, point_show_normal, mesh_show_wireframe, mesh_show_back_face, lookat, up, front, zoom)</span>
-<span class="ansi-green-intense-fg ansi-bold">     31</span> vis <span style="color: rgb(98,98,98)">=</span> cv3d<span style="color: rgb(98,98,98)">.</span>visualization<span style="color: rgb(98,98,98)">.</span>Visualizer()
-<span class="ansi-green-intense-fg ansi-bold">     32</span> vis<span style="color: rgb(98,98,98)">.</span>create_window(
-<span class="ansi-green-intense-fg ansi-bold">     33</span>     window_name<span style="color: rgb(98,98,98)">=</span>window_name,
-<span class="ansi-green-intense-fg ansi-bold">     34</span>     width<span style="color: rgb(98,98,98)">=</span>width,
-<span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">     38</span>     visible<span style="color: rgb(98,98,98)">=</span><span class="ansi-bold" style="color: rgb(0,135,0)">True</span>,  <span style="color: rgb(95,135,135)"># If false, capture_screen_float_buffer() won&#39;t work.</span>
-<span class="ansi-green-intense-fg ansi-bold">     39</span> )
-<span class="ansi-green-fg">---&gt; 40</span> <span class="ansi-yellow-bg">vis</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">get_render_option</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">point_show_normal</span> <span style="color: rgb(98,98,98)">=</span> point_show_normal
-<span class="ansi-green-intense-fg ansi-bold">     41</span> vis<span style="color: rgb(98,98,98)">.</span>get_render_option()<span style="color: rgb(98,98,98)">.</span>mesh_show_wireframe <span style="color: rgb(98,98,98)">=</span> mesh_show_wireframe
-<span class="ansi-green-intense-fg ansi-bold">     42</span> vis<span style="color: rgb(98,98,98)">.</span>get_render_option()<span style="color: rgb(98,98,98)">.</span>mesh_show_back_face <span style="color: rgb(98,98,98)">=</span> mesh_show_back_face
-
-<span class="ansi-red-fg">AttributeError</span>: &#39;NoneType&#39; object has no attribute &#39;point_show_normal&#39;
-</pre></div></div>
+<img alt="../../_images/tutorial_pipelines_robust_kernels_5_1.png" src="../../_images/tutorial_pipelines_robust_kernels_5_1.png" />
+</div>
 </div>
 </section>
 <section id="Point-to-plane-ICP-using-Robust-Kernels">
@@ -1277,8 +1246,8 @@ E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\rho\big((\mathbf{p}
 <section id="Vanilla-ICP-vs-Robust-ICP">
 <h2>Vanilla ICP vs Robust ICP<a class="headerlink" href="#Vanilla-ICP-vs-Robust-ICP" title="Permalink to this heading">#</a></h2>
 <p>To better show the advantages of using robust kernels in the registration, we add some artificially generated gaussian noise to the source point cloud.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">apply_noise</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
@@ -1301,11 +1270,27 @@ E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\rho\big((\mathbf{p}
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Source PointCloud + noise:
+<span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] GLFW initialized for headless rendering.</span>
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorial_pipelines_robust_kernels_9_1.png" src="../../_images/tutorial_pipelines_robust_kernels_9_1.png" />
+</div>
+</div>
 <section id="Vanilla-ICP">
 <h3>Vanilla ICP<a class="headerlink" href="#Vanilla-ICP" title="Permalink to this heading">#</a></h3>
 <p>We inspect how the results will look if we use the exact same parameters that were used in the <a class="reference internal" href="icp_registration.html"><span class="doc">ICP Registration Tutorial</span></a>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.02</span>
@@ -1322,13 +1307,36 @@ E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\rho\big((\mathbf{p}
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Vanilla point-to-plane ICP, threshold=0.02:
+RegistrationResult with fitness=9.888098e-02, inlier_rmse=1.190958e-02, and correspondence_set size of 19661
+Access transformation to get result.
+Transformation is:
+[[ 0.85609698  0.00452196 -0.51702199  0.52750792]
+ [-0.14887205  0.96018009 -0.23781714  0.78788939]
+ [ 0.49443813  0.27976553  0.82257539 -1.45230552]
+ [ 0.          0.          0.          1.        ]]
+<span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] GLFW initialized for headless rendering.</span>
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorial_pipelines_robust_kernels_11_1.png" src="../../_images/tutorial_pipelines_robust_kernels_11_1.png" />
+</div>
+</div>
 </section>
 <section id="Tuning-Vanilla-ICP">
 <h3>Tuning Vanilla ICP<a class="headerlink" href="#Tuning-Vanilla-ICP" title="Permalink to this heading">#</a></h3>
 <p>Given the fact that we are now dealing with gaussian noise, we might try to increase the threshold to search for nearest neighbors with the aim of improving the registration result.</p>
 <p>We can see that under these condtions and without a robust kernel, the traditional ICP has no chance to deal with outliers.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -1345,12 +1353,35 @@ E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\rho\big((\mathbf{p}
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Vanilla point-to-plane ICP, threshold=1.0:
+RegistrationResult with fitness=1.000000e+00, inlier_rmse=2.411878e-01, and correspondence_set size of 198835
+Access transformation to get result.
+Transformation is:
+[[ 0.79016429  0.06773352 -0.60942509  1.53600659]
+ [-0.29888309  0.91075545 -0.28635164  1.26434878]
+ [ 0.53464315  0.40764162  0.73966398 -1.48079473]
+ [ 0.          0.          0.          1.        ]]
+<span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] GLFW initialized for headless rendering.</span>
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorial_pipelines_robust_kernels_13_1.png" src="../../_images/tutorial_pipelines_robust_kernels_13_1.png" />
+</div>
+</div>
 </section>
 <section id="Robust-ICP">
 <h3>Robust ICP<a class="headerlink" href="#Robust-ICP" title="Permalink to this heading">#</a></h3>
 <p>Using the same <code class="docutils literal notranslate"><span class="pre">threshold=1.0</span></code> <strong>and</strong> a robust kernel, we can properly register the two point clouds:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Robust point-to-plane ICP, threshold=</span><span class="si">{}</span><span class="s2">:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span>
@@ -1367,6 +1398,30 @@ E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\rho\big((\mathbf{p}
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Robust point-to-plane ICP, threshold=1.0:
+Using robust loss: RobustKernel::TukeyLoss with k=0.100000
+RegistrationResult with fitness=9.387281e-01, inlier_rmse=3.367871e-01, and correspondence_set size of 186652
+Access transformation to get result.
+Transformation is:
+[[ 0.83118836  0.04008503 -0.55478858  0.6116321 ]
+ [-0.18531282  0.96076086 -0.20801165  0.90111514]
+ [ 0.52375477  0.27489409  0.80587827 -1.51033192]
+ [ 0.          0.          0.          1.        ]]
+<span class="ansi-yellow-intense-fg ansi-bold">[CloudViewer WARNING] GLFW initialized for headless rendering.</span>
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/tutorial_pipelines_robust_kernels_15_1.png" src="../../_images/tutorial_pipelines_robust_kernels_15_1.png" />
+</div>
+</div>
 <div class="admonition note">
 <p class="admonition-title"><strong>Note:</strong></p>
 <p>For this example we use the <strong>TukeyLoss</strong>, available in <code class="docutils literal notranslate"><span class="pre">cloudViewer.pipelines.registration.TukeyLoss</span></code>. For the parameter <code class="docutils literal notranslate"><span class="pre">k</span></code> we set it to match the std deviation of the noise model <span class="math notranslate nohighlight">\(k = \sigma\)</span>. The parameter <code class="docutils literal notranslate"><span class="pre">k</span></code> used in the Robust Kernels it’s usually pick to match the standard deviation of the noise model of the input data. In this sense, <code class="docutils literal notranslate"><span class="pre">k</span></code>, is the discriminator between <strong>inlier</strong>/<strong>outlier</strong>. Altough this is not always trivial to define in real world data, for synthetic one,
@@ -1381,23 +1436,23 @@ it’s easy to fix in order to illustrate the benefits of the robust kernels.</p
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../t_pipelines/index.html">
+          <a class="next-page" href="colored_pointcloud_registration.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Pipelines (Tensor)</div>
+                <div class="title">Colored point cloud registration</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="color_map_optimization.html">
+          <a class="prev-page" href="icp_registration.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Color Map Optimization</div>
+                <div class="title">ICP registration</div>
                 
               </div>
             </a>
@@ -1455,7 +1510,7 @@ it’s easy to fix in order to illustrate the benefits of the robust kernels.</p
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8ba9d2f"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=ab261969"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

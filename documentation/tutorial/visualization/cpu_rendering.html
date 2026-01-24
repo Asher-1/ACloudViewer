@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Jupyter Visualization" href="jupyter_visualization.html" /><link rel="prev" title="Headless rendering" href="headless_rendering.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Web visualizer and Jupyter" href="web_visualizer.html" /><link rel="prev" title="Headless rendering" href="headless_rendering.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>CPU rendering - ACloudViewer primary (5c18a435f) documentation</title>
+        <title>CPU (Software) Rendering - ACloudViewer primary (9c280aee7) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (5c18a435f) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (9c280aee7) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -267,88 +267,89 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 has-children"><a class="reference internal" href="../core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Tutorial</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/uvmaps.html">UV Maps</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/uvmaps.html">UV Maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../data/index.html">Dataset</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/registration.html">Point Cloud Registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Dataset</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Visualization</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="customized_visualization.html">Customized visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_visualization.html">Interactive visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_blocking_visualization.html">Non-blocking visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="headless_rendering.html">Headless rendering</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">CPU (Software) Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="web_visualizer.html">Web visualizer and Jupyter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html">TensorBoard Plugin</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/system_overview.html">System overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/make_fragments.html">Make fragments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/register_fragments.html">Register fragments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/refine_registration.html">Refine registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/integrate_scene.html">Integrate scene</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/index.html">Reconstruction system (Tensor)</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/system_overview.html">System overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/make_fragments.html">Make fragments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/register_fragments.html">Register fragments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/refine_registration.html">Refine registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/integrate_scene.html">Integrate scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Visualization</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="visualization.html">Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="customized_visualization.html">Customized visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="interactive_visualization.html">Interactive visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="non_blocking_visualization.html">Non-blocking visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="headless_rendering.html">Headless rendering</a></li>
-<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">CPU rendering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="jupyter_visualization.html">Jupyter Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="draw_plotly.html">Plotly Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_reconstruction_system/index.html">Reconstruction system (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Reconstruction system (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/voxel_block_grid.html">Voxel Block Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/integration.html">TSDF Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/customized_integration.html">Customized Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/ray_casting.html">Ray Casting in a Voxel Block Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/dense_slam.html">Dense RGB-D SLAM</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
 <ul>
@@ -1134,49 +1135,108 @@
           </label>
         </div>
         <article role="main">
-          <section id="cpu-rendering">
-<span id="id1"></span><h1>CPU rendering<a class="headerlink" href="#cpu-rendering" title="Permalink to this heading">#</a></h1>
-<p>ACloudViewer supports CPU-based rendering for systems without GPU support or for specific use cases.</p>
-<section id="cpu-rendering-backend">
-<h2>CPU rendering backend<a class="headerlink" href="#cpu-rendering-backend" title="Permalink to this heading">#</a></h2>
-<p>CPU rendering uses software-based rendering which doesn’t require GPU acceleration:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3d</span>
-
-<span class="c1"># Create visualizer with CPU rendering</span>
-<span class="n">vis</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">Visualizer</span><span class="p">()</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">create_window</span><span class="p">()</span>
-
-<span class="c1"># Set rendering option for CPU rendering</span>
-<span class="n">opt</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">get_render_option</span><span class="p">()</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">mesh_show_back_face</span> <span class="o">=</span> <span class="kc">True</span>
-
-<span class="c1"># Add geometry</span>
-<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="s2">&quot;cloud.pcd&quot;</span><span class="p">)</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">add_geometry</span><span class="p">(</span><span class="n">pcd</span><span class="p">)</span>
-
-<span class="n">vis</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">destroy_window</span><span class="p">()</span>
+          <section id="cpu-software-rendering">
+<span id="cpu-rendering"></span><h1>CPU (Software) Rendering<a class="headerlink" href="#cpu-software-rendering" title="Permalink to this heading">#</a></h1>
+<p>ACloudViewer’s new visualization functionality (<a class="reference internal" href="../../python_api/cloudViewer.visualization.O3DVisualizer.html#cloudViewer.visualization.O3DVisualizer" title="cloudViewer.visualization.O3DVisualizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">O3DVisualizer</span></code></a> class,
+<a class="reference internal" href="../../python_api/cloudViewer.visualization.draw.html#cloudViewer.visualization.draw" title="cloudViewer.visualization.draw"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw()</span></code></a> function and <a class="reference internal" href="../../python_api/cloudViewer.visualization.gui.html#module-cloudViewer.visualization.gui" title="cloudViewer.visualization.gui"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cloudViewer.visualization.gui</span></code></a> and
+<a class="reference internal" href="../../python_api/cloudViewer.visualization.rendering.html#module-cloudViewer.visualization.rendering" title="cloudViewer.visualization.rendering"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cloudViewer.visualization.rendering</span></code></a> modules) requires a recent GPU with
+support for OpenGL 4.1 or higher. This is not available in certain situations:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>GPU is too old to support OpenGL 4.1.</p></li>
+<li><p>No GPU is available, for example on cloud servers that do not have any GPU
+(integrated or discrete) installed, or in a docker container that does not
+have access to the host GPU. This is often the case for many cloud based
+Jupyter notebooks such as Google Colab, Kaggle, etc.</p></li>
+<li><p>A GPU is available, but it only supports computation, not graphics. This
+is a common scenario for cloud based Jupyter notebooks deployed in docker
+containers.</p></li>
+</ul>
+</div></blockquote>
+<p>ACloudViewer supports CPU or software rendering in such situations. Note that this
+usually produces slower and less responsive rendering, so a GPU is recommended.
+Currently, this is available only for Linux. There are two separate ways to
+use CPU rendering depending on whether interactive or headless rendering is
+desired. Both methods are described below.</p>
+<section id="headless-cpu-rendering">
+<h2>Headless CPU Rendering<a class="headerlink" href="#headless-cpu-rendering" title="Permalink to this heading">#</a></h2>
+<p>For Python code, you can enable CPU rendering for headless rendering when using
+the :class: <cite>.OffscreenRenderer</cite> for a process by setting an environment
+variable  before importing ACloudViewer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- ``EGL_PLATFORM=surfaceless`` for Ubuntu 20.04+ (Mesa v20.2 or newer)
 </pre></div>
 </div>
-</section>
-<section id="performance-considerations">
-<h2>Performance considerations<a class="headerlink" href="#performance-considerations" title="Permalink to this heading">#</a></h2>
-<p>CPU rendering is generally slower than GPU rendering but provides:
-- Compatibility with systems without GPU
-- Deterministic rendering results
-- Easier debugging</p>
-<p>For large point clouds or meshes, consider:
-- Using voxel downsampling
-- Reducing point/mesh size
-- Using appropriate rendering options</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="visualization.html"><span class="doc">Visualization</span></a> - Basic visualization</p></li>
-<li><p><a class="reference internal" href="headless_rendering.html"><span class="doc">Headless rendering</span></a> - Headless rendering</p></li>
-<li><p><a class="reference internal" href="../../python_api/cloudViewer.visualization.html"><span class="doc">cloudViewer.visualization</span></a> - Visualization API</p></li>
-</ul>
+<p>Here are the different ways to do that:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from the command line (Ubuntu 20.04+)</span>
+<span class="nv">EGL_PLATFORM</span><span class="o">=</span>surfaceless<span class="w"> </span>python<span class="w"> </span>examples/Python/visualization/render_to_image.py
+</pre></div>
 </div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In Python code</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;EGL_PLATFORM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;surfaceless&#39;</span>   <span class="c1"># Ubuntu 20.04+</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3d</span>
+
+<span class="c1"># In a Jupyter notebook</span>
+<span class="o">%</span><span class="n">env</span> <span class="n">EGL_PLATFORM</span> <span class="n">surfaceless</span>   <span class="c1"># Ubuntu 20.04+</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3d</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Setting the environment variable after importing <code class="docutils literal notranslate"><span class="pre">cloudViewer</span></code> will not work,
+even if <code class="docutils literal notranslate"><span class="pre">cloudViewer</span></code> is re-imported. In this case, if no usable GPU is present, the
+Python interpreter or Jupyter kernel will crash when visualization functions are
+used.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method will <strong>not</strong> work for interactive rendering scripts such
+as <code class="docutils literal notranslate"><span class="pre">examples/Python/visualization/draw.py</span></code>. For interactive rendering see
+the next section.</p>
+</div>
+</section>
+<section id="interactive-cpu-rendering">
+<h2>Interactive CPU Rendering<a class="headerlink" href="#interactive-cpu-rendering" title="Permalink to this heading">#</a></h2>
+<p>The method for enabling interactive CPU rendering depends on your system:</p>
+<ol class="arabic">
+<li><p><strong>You use Mesa drivers v20.2 or higher.</strong> This is the case for all
+Intel GPUs and some AMD and Nvidia GPUs. You should be running a recent Linux
+OS, such as Ubuntu 20.04. Check your Mesa version from your package manager
+(e.g. run <code class="docutils literal notranslate"><span class="pre">dpkg</span> <span class="pre">-s</span> <span class="pre">libglx-mesa0</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">Version</span></code> in Debian or Ubuntu). In this
+case, you can switch to CPU rendering by simply setting an environment
+variable before starting your application. For example, start the ACloudViewer
+visualizer app in CPU rendering mode with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">LIBGL_ALWAYS_SOFTWARE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>ACloudViewer
+</pre></div>
+</div>
+<p>Or for Python code:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">LIBGL_ALWAYS_SOFTWARE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>python<span class="w"> </span>examples/Python/visualization/draw.py
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Mesa drivers must be in use for this method to work; just having
+them installed is not sufficient. You can check the drivers in use with the
+<code class="docutils literal notranslate"><span class="pre">glxinfo</span></code> command.</p>
+</div>
+<ol class="arabic" start="2">
+<li><p><strong>You use Nvidia or AMD drivers, but your OS comes with recent Mesa drivers (&gt;= v20.2).</strong>
+Install Mesa drivers if they are not installed in your system (e.g. <cite>sudo apt install libglx0-mesa</cite>
+in Ubuntu). Preload the Mesa driver library before running any ACloudViewer application requiring CPU rendering.
+For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span>/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
+ACloudViewer
+</pre></div>
+</div>
+<p>Or with Python code:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span>/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
+python<span class="w"> </span>examples/Python/visualization/draw.py
+</pre></div>
+</div>
+</li>
+</ol>
 </section>
 </section>
 
@@ -1185,12 +1245,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="jupyter_visualization.html">
+          <a class="next-page" href="web_visualizer.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Jupyter Visualization</div>
+                <div class="title">Web visualizer and Jupyter</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -1235,9 +1295,9 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">CPU rendering</a><ul>
-<li><a class="reference internal" href="#cpu-rendering-backend">CPU rendering backend</a></li>
-<li><a class="reference internal" href="#performance-considerations">Performance considerations</a></li>
+<li><a class="reference internal" href="#">CPU (Software) Rendering</a><ul>
+<li><a class="reference internal" href="#headless-cpu-rendering">Headless CPU Rendering</a></li>
+<li><a class="reference internal" href="#interactive-cpu-rendering">Interactive CPU Rendering</a></li>
 </ul>
 </li>
 </ul>
@@ -1249,7 +1309,7 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8ba9d2f"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=ab261969"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

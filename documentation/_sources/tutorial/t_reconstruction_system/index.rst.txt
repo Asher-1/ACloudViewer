@@ -3,59 +3,87 @@
 Reconstruction system (Tensor)
 ===================================================================
 
-This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer tensor interface and hash map backend.
+This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer :doc:`/tutorial/core/tensor` interface and the ACloudViewer :doc:`/tutorial/core/hashmap` backend.
 
-Overview
---------
-
-The tensor-based reconstruction system provides:
-
-- **GPU Acceleration**: Fast volumetric integration on GPU
-- **Hash Map Backend**: Efficient memory usage for large scenes
-- **Real-Time SLAM**: Online reconstruction and tracking
-- **Scalable**: Handle large-scale indoor and outdoor scenes
-
-Key Components
---------------
-
-- **Voxel Block Grid**: Efficient sparse volumetric representation
-- **Integration**: TSDF-based RGB-D integration
-- **Ray Casting**: Fast ray casting for visualization and tracking
-- **Dense SLAM**: Real-time dense SLAM pipeline
-
-Getting started
----------------
+It is possible to run the tutorial with the minimalistic dataset ``SampleRedwoodRGBDImages``, but it is recommended to run the tutorial with real-world datasets with longer sequences to demonstrate its capability. Please refer to the :doc:`/tutorial/geometry/rgbd_image` for more available datasets. The ``Redwood`` dataset can be a good starting point.
 
 .. note::
-   The detailed tutorials for tensor-based reconstruction system are currently under development.
-   The following topics will be covered:
-   
-   - Voxel Block Grid
-   - Integration
-   - Customized Integration
-   - Ray Casting
-   - Dense SLAM
+   As of now the tutorial is only for **online** dense SLAM, and **offline** integration **with** provided poses. The tutorials for tensor-based **offline** reconstruction system are still under construction. At current, please refer to :ref:`reconstruction_system` for the legacy versions.
 
-   For now, please refer to the legacy reconstruction system tutorials in :doc:`../reconstruction_system/index`.
+Quick start
+``````````````````````````````````````
+Getting the example code
 
-Basic Usage
------------
+.. code-block:: sh
 
-Here's a basic example of using the tensor-based reconstruction system:
+    # Activate your conda environment, where you have installed cloudViewer pip package.
+    # Clone the ACloudViewer github repository and go to the example.
+    cd examples/Python/t_reconstruction_system/
 
-.. code-block:: python
+    # Show CLI help for ``dense_slam_gui.py``
+    python dense_slam_gui.py --help
 
-    import cloudViewer as cv3d
-    
-    # Initialize reconstruction system
-    # (Implementation details will be added as development progresses)
-    
-    # For now, use the legacy reconstruction system
-    # See ../reconstruction_system/index for details
+Running the example with default dataset.
 
-.. seealso::
+.. code-block:: sh
 
-   - :doc:`../reconstruction_system/index` - Legacy reconstruction system
-   - :doc:`../t_pipelines/index` - Tensor-based pipelines
-   - :doc:`../sensor/index` - Sensor integration
-   - :doc:`../../python_api/cloudViewer.t.pipelines` - Tensor pipelines API
+    # The following command, will download and use the default dataset,
+    # which is ``lounge`` dataset from stanford. 
+    python dense_slam_gui.py 
+
+It is recommended to use CUDA if available.
+
+.. code-block:: sh
+
+    # The following command, will download and use the default dataset,
+    # which is ``lounge`` dataset from stanford. 
+    python dense_slam_gui.py --device 'cuda:0'
+
+Changing the default dataset.
+One may change the default dataset to other available datasets.
+Currently the following datasets are available:
+
+1. Lounge (keyword: ``lounge``) (Default)
+
+2. Bedroom (keyword: ``bedroom``)
+
+3. Jack Jack (keyword: ``jack_jack``)
+
+.. code-block:: sh
+
+    # Using bedroom as the default dataset.
+    python dense_slam_gui.py --default_dataset 'bedroom'
+
+
+Running the example with custom dataset using config file.
+Manually download or store the data in a folder and store all the color images 
+in the ``image`` sub-folder, and all the depth images in the ``depth`` sub-folder. 
+Create a ``config.yml`` file and set the ``path_dataset`` to the data directory.
+Override the parameters for which you want to change the default values.
+
+Example config file for online reconstruction system has been provided in 
+``examples/Python/t_reconstruction_system/default_config.yml``, which looks like the following:
+
+.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/default_config.yml
+   :language: yaml
+   :lineno-start: 1
+   :lines: 1-
+   :linenos:
+
+Capture your own dataset
+``````````````````````````````````````
+
+This tutorial provides an example that can record synchronized and aligned RGBD
+images using the Intel RealSense camera. For more details, please see
+:ref:`capture_your_own_dataset`.
+
+Getting started with online reconstruction system
+`````````````````````````````````````````````````
+
+.. toctree::
+
+   voxel_block_grid
+   integration
+   customized_integration
+   ray_casting
+   dense_slam

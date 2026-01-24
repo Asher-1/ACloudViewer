@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="CPU rendering" href="cpu_rendering.html" /><link rel="prev" title="Non-blocking visualization" href="non_blocking_visualization.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="CPU (Software) Rendering" href="cpu_rendering.html" /><link rel="prev" title="Non-blocking visualization" href="non_blocking_visualization.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Headless rendering - ACloudViewer primary (5c18a435f) documentation</title>
+        <title>Headless rendering - ACloudViewer primary (9c280aee7) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (5c18a435f) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (9c280aee7) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -267,88 +267,89 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Tutorial</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 has-children"><a class="reference internal" href="../core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Tutorial</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../core/index.html">Core</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Core</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../core/tensor.html">Tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/hashmap.html">Hash map</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/uvmaps.html">UV Maps</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../geometry/index.html">Geometry</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Geometry</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud.html">Point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/rgbd_image.html">RGBD images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/kdtree.html">KDTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/half_edge_mesh.html">Half Edge Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/file_io.html">File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/pointcloud_outlier_removal.html">Point cloud outlier removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/voxelization.html">Voxelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/octree.html">Octree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/surface_reconstruction.html">Surface reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/transformation.html">Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/mesh_deformation.html">Mesh deformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/iss_keypoint_detector.html">Intrinsic shape signatures (ISS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/ray_casting.html">Ray Casting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/distance_queries.html">Distance Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/uvmaps.html">UV Maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/python_interface.html">Python Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/working_with_numpy.html">Working with NumPy</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_geometry/index.html">Geometry (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Geometry (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_geometry/pointcloud.html">PointCloud</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../data/index.html">Dataset</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/registration.html">Point Cloud Registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Dataset</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Visualization</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="customized_visualization.html">Customized visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_visualization.html">Interactive visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_blocking_visualization.html">Non-blocking visualization</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Headless rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cpu_rendering.html">CPU (Software) Rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="web_visualizer.html">Web visualizer and Jupyter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html">TensorBoard Plugin</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/robust_kernels.html">Robust kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/colored_pointcloud_registration.html">Colored point cloud registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/global_registration.html">Global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/multiway_registration.html">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_integration.html">RGBD integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/rgbd_odometry.html">RGBD Odometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pipelines/color_map_optimization.html">Color Map Optimization</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/system_overview.html">System overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/make_fragments.html">Make fragments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/register_fragments.html">Register fragments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/refine_registration.html">Refine registration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/integrate_scene.html">Integrate scene</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_pipelines/index.html">Pipelines (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of Pipelines (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_icp_registration.html">ICP registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_pipelines/t_robust_kernel.html">Robust Kernel</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/index.html">Reconstruction system (Tensor)</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reconstruction_system/index.html">Reconstruction system</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of Reconstruction system</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/system_overview.html">System overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/make_fragments.html">Make fragments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/register_fragments.html">Register fragments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/refine_registration.html">Refine registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/integrate_scene.html">Integrate scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reconstruction_system/capture_your_own_dataset.html">Capture your own dataset</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Visualization</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Visualization</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="visualization.html">Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="customized_visualization.html">Customized visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="interactive_visualization.html">Interactive visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="non_blocking_visualization.html">Non-blocking visualization</a></li>
-<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Headless rendering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="cpu_rendering.html">CPU rendering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="jupyter_visualization.html">Jupyter Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="draw_plotly.html">Plotly Visualization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="3d_gaussian_splatting.html">3D Gaussian Splatting</a></li>
-<li class="toctree-l3"><a class="reference internal" href="web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../t_reconstruction_system/index.html">Reconstruction system (Tensor)</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of Reconstruction system (Tensor)</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/voxel_block_grid.html">Voxel Block Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/integration.html">TSDF Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/customized_integration.html">Customized Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/ray_casting.html">Ray Casting in a Voxel Block Grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../t_reconstruction_system/dense_slam.html">Dense RGB-D SLAM</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">Machine Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Python API</span></p>
 <ul>
@@ -1136,61 +1137,171 @@
         <article role="main">
           <section id="headless-rendering">
 <span id="id1"></span><h1>Headless rendering<a class="headerlink" href="#headless-rendering" title="Permalink to this heading">#</a></h1>
-<p>Headless rendering allows you to render 3D scenes without a display, which is useful for server environments or automated rendering pipelines.</p>
-<section id="offscreen-rendering">
-<h2>Offscreen rendering<a class="headerlink" href="#offscreen-rendering" title="Permalink to this heading">#</a></h2>
-<p>ACloudViewer supports offscreen rendering using OSMesa or EGL backends:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3d</span>
-
-<span class="c1"># Create offscreen visualizer</span>
-<span class="n">vis</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">Visualizer</span><span class="p">()</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">create_window</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Create offscreen window</span>
-
-<span class="c1"># Add geometry</span>
-<span class="n">pcd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_point_cloud</span><span class="p">(</span><span class="s2">&quot;cloud.pcd&quot;</span><span class="p">)</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">add_geometry</span><span class="p">(</span><span class="n">pcd</span><span class="p">)</span>
-
-<span class="c1"># Render to image</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">poll_events</span><span class="p">()</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">update_renderer</span><span class="p">()</span>
-<span class="n">image</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">capture_screen_float_buffer</span><span class="p">()</span>
-
-<span class="c1"># Save image</span>
-<span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_image</span><span class="p">(</span><span class="s2">&quot;render.png&quot;</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
-
-<span class="n">vis</span><span class="o">.</span><span class="n">destroy_window</span><span class="p">()</span>
+<p>This tutorial explains how to render and save images from a terminal without any display device.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature is experimental; it was only tested with an Ubuntu 18.04 environment.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although Ubuntu 16.04 is no longer supported for CloudViewer, additional instructions are under <a class="reference internal" href="#headless-ubuntu1604"><span class="std std-ref">Headless Ubuntu 16.04</span></a>.</p>
+</div>
+<section id="install-osmesa">
+<h2>Install OSMesa<a class="headerlink" href="#install-osmesa" title="Permalink to this heading">#</a></h2>
+<p>To generate a headless context, it is necessary to install <a class="reference external" href="https://www.mesa3d.org/osmesa.html">OSMesa</a>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>libosmesa6-dev
 </pre></div>
 </div>
 </section>
-<section id="rendering-to-file">
-<h2>Rendering to file<a class="headerlink" href="#rendering-to-file" title="Permalink to this heading">#</a></h2>
-<p>You can render multiple views and save them:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv3d</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-<span class="n">vis</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">Visualizer</span><span class="p">()</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">create_window</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">vis</span><span class="o">.</span><span class="n">add_geometry</span><span class="p">(</span><span class="n">pcd</span><span class="p">)</span>
-
-<span class="c1"># Render from different viewpoints</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">36</span><span class="p">)):</span>
-    <span class="n">vis</span><span class="o">.</span><span class="n">get_view_control</span><span class="p">()</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="n">vis</span><span class="o">.</span><span class="n">poll_events</span><span class="p">()</span>
-    <span class="n">vis</span><span class="o">.</span><span class="n">update_renderer</span><span class="p">()</span>
-    <span class="n">image</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">capture_screen_float_buffer</span><span class="p">()</span>
-    <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_image</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;render_</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
-
-<span class="n">vis</span><span class="o">.</span><span class="n">destroy_window</span><span class="p">()</span>
+<section id="install-virtualenv">
+<span id="id2"></span><h2>Install virtualenv<a class="headerlink" href="#install-virtualenv" title="Permalink to this heading">#</a></h2>
+<p>Create a virtual environment for Python.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>virtualenv<span class="w"> </span>python-pip
+$<span class="w"> </span>virtualenv<span class="w"> </span>-p<span class="w"> </span>/usr/bin/python3<span class="w"> </span>py3env
+$<span class="w"> </span><span class="nb">source</span><span class="w"> </span>py3env/bin/activate
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>numpy<span class="w"> </span>matplotlib
 </pre></div>
 </div>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="visualization.html"><span class="doc">Visualization</span></a> - Basic visualization</p></li>
-<li><p><a class="reference internal" href="cpu_rendering.html"><span class="doc">CPU rendering</span></a> - CPU rendering</p></li>
-<li><p><a class="reference internal" href="../../python_api/cloudViewer.visualization.html"><span class="doc">cloudViewer.visualization</span></a> - Visualization API</p></li>
-</ul>
+<p>This script installs and activates <code class="docutils literal notranslate"><span class="pre">py3env</span></code>. The necessary modules, <code class="docutils literal notranslate"><span class="pre">numpy</span></code> and <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>, are installed in <code class="docutils literal notranslate"><span class="pre">py3env</span></code>.</p>
+<div class="admonition error">
+<p class="admonition-title">Error</p>
+<p>Anaconda users are recommended to use this configuration as <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">matplotlib</span></code> installs additional modules that are not based on OSMesa.
+This will result in <strong>segmentation fault error</strong> at runtime.</p>
 </div>
+</section>
+<section id="build-cloudviewer-with-osmesa">
+<h2>Build CloudViewer with OSMesa<a class="headerlink" href="#build-cloudviewer-with-osmesa" title="Permalink to this heading">#</a></h2>
+<p>Let’s move to build a folder.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/ACloudViewer/
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+</pre></div>
+</div>
+<p>In the next step, there are two cmake flags that need to be specified.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-DENABLE_HEADLESS_RENDERING=ON</span></code>: this flag informs glew and glfw should use <strong>OSMesa</strong>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-DUSE_SYSTEM_GLEW=OFF</span> <span class="pre">-DUSE_SYSTEM_GLFW=OFF</span></code>: note that headless rendering only works with the <strong>glew 2.1</strong> and <strong>glfw 3.3-dev</strong> version.
+In most cases, these versions are not installed in vanilla Ubuntu systems.
+Use these CMake options to force to build glew 2.1 and glfw 3.3-dev from source included with CloudViewer.</p></li>
+<li><p>The Filament-based GUI implementation is not compatible with headless rendering, please set <code class="docutils literal notranslate"><span class="pre">-DBUILD_GUI=OFF</span></code>.</p></li>
+<li><p>With <code class="docutils literal notranslate"><span class="pre">-DBUILD_GUI=OFF</span></code> webRTC support must also be disabled <code class="docutils literal notranslate"><span class="pre">-DBUILD_WEBRTC=OFF</span></code>.</p></li>
+</ul>
+<p>As a result, the cmake command is the following</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>cmake<span class="w"> </span>-DENABLE_HEADLESS_RENDERING<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">                 </span>-DBUILD_GUI<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">                 </span>-DBUILD_WEBRTC<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">                 </span>-DUSE_SYSTEM_GLEW<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">                 </span>-DUSE_SYSTEM_GLFW<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">                 </span>..
+</pre></div>
+</div>
+<p>If cmake successfully generates makefiles, build CloudViewer.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>make<span class="w"> </span>install-pip-package
+</pre></div>
+</div>
+</section>
+<section id="test-headless-rendering">
+<span id="id3"></span><h2>Test headless rendering<a class="headerlink" href="#test-headless-rendering" title="Permalink to this heading">#</a></h2>
+<p>As a final step, test a Python script that saves depth and surface normal sequences.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/ACloudViewer/examples/Python/visualization
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>python<span class="w"> </span>headless_rendering.py
+</pre></div>
+</div>
+<p>This should print the following:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00000</span>
+Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00001</span>
+Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00002</span>
+Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00003</span>
+Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00004</span>
+Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00005</span>
+:
+Capture<span class="w"> </span>image<span class="w"> </span><span class="m">00030</span>
+</pre></div>
+</div>
+<p>Rendered images are at ~/CloudViewer/examples/test_data/depth and the image folder.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">headless_rendering.py</span></code> saves png files.</div>
+<div class="line">This may take some time, so try to tweak the script for your purpose.</div>
+</div>
+</div>
+</section>
+<section id="possible-issues">
+<h2>Possible Issues<a class="headerlink" href="#possible-issues" title="Permalink to this heading">#</a></h2>
+<div class="admonition error">
+<p class="admonition-title">Error</p>
+<div class="line-block">
+<div class="line">If glew and glfw did not correctly link with OSMesa, it may crash with the following error.</div>
+<div class="line"><strong>GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW</strong></div>
+</div>
+</div>
+<p>Try <code class="docutils literal notranslate"><span class="pre">cmake</span></code> with <code class="docutils literal notranslate"><span class="pre">-DUSE_SYSTEM_GLEW=OFF</span></code> and <code class="docutils literal notranslate"><span class="pre">-DUSE_SYSTEM_GLFW=OFF</span></code> flags.</p>
+<div class="admonition error">
+<p class="admonition-title">Error</p>
+<div class="line-block">
+<div class="line">If OSMesa does not support GL 3.3 Core you will get the following error:</div>
+<div class="line"><strong>GLFW Error: OSMesa: Failed to create context</strong></div>
+</div>
+</div>
+<p>CloudViewer currently uses GL 3.3 Core Profile, if that is not supported you will get the above error.
+You can run</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/ACloudViewer/build
+$<span class="w"> </span>bin/GLInfo
+</pre></div>
+</div>
+<p>to get GL information for your environment (with or without a screen).
+It will try and print various configurations, the second one is the one we use,
+it should look something like</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>CloudViewer<span class="w"> </span>INFO<span class="o">]</span><span class="w"> </span>TryGLVersion:<span class="w"> </span><span class="m">3</span>.3<span class="w">  </span>GLFW_OPENGL_CORE_PROFILE
+<span class="o">[</span>CloudViewer<span class="w"> </span>DEBUG<span class="o">]</span><span class="w"> </span>GL_VERSION:<span class="w">     </span><span class="m">3</span>.3<span class="w"> </span><span class="o">(</span>Core<span class="w"> </span>Profile<span class="o">)</span><span class="w"> </span>Mesa<span class="w"> </span><span class="m">19</span>.2.8
+<span class="o">[</span>CloudViewer<span class="w"> </span>DEBUG<span class="o">]</span><span class="w"> </span>GL_RENDERER:<span class="w">    </span>llvmpipe<span class="w"> </span><span class="o">(</span>LLVM<span class="w"> </span><span class="m">9</span>.0,<span class="w"> </span><span class="m">256</span><span class="w"> </span>bits<span class="o">)</span>
+<span class="o">[</span>CloudViewer<span class="w"> </span>DEBUG<span class="o">]</span><span class="w"> </span>GL_VENDOR:<span class="w">      </span>VMware,<span class="w"> </span>Inc.
+<span class="o">[</span>CloudViewer<span class="w"> </span>DEBUG<span class="o">]</span><span class="w"> </span>GL_SHADING_LANGUAGE_VERSION:<span class="w">    </span><span class="m">3</span>.30
+</pre></div>
+</div>
+<p>If instead you get</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>CloudViewer<span class="w"> </span>INFO<span class="o">]</span><span class="w"> </span>TryGLVersion:<span class="w"> </span><span class="m">3</span>.3<span class="w">  </span>GLFW_OPENGL_CORE_PROFILE
+<span class="o">[</span>CloudViewer<span class="w"> </span>WARNING<span class="o">]</span><span class="w"> </span>GLFW<span class="w"> </span>Error:<span class="w"> </span>OSMesa:<span class="w"> </span>Failed<span class="w"> </span>to<span class="w"> </span>create<span class="w"> </span>context
+<span class="o">[</span>CloudViewer<span class="w"> </span>DEBUG<span class="o">]</span><span class="w"> </span>Failed<span class="w"> </span>to<span class="w"> </span>create<span class="w"> </span>window
+</pre></div>
+</div>
+<p>Then your OSMesa version might be too old.  Try to follow instructions below to <a class="reference internal" href="#compile-osmesa"><span class="std std-ref">Compile OSMesa from source</span></a> to build a newer version and see if that resolves your issue.</p>
+</section>
+<section id="headless-ubuntu-16-04">
+<span id="headless-ubuntu1604"></span><h2>Headless Ubuntu 16.04<a class="headerlink" href="#headless-ubuntu-16-04" title="Permalink to this heading">#</a></h2>
+<p>For Ubuntu 16.04, a version of OSMesa needs to be built from source.
+First follow <a class="reference internal" href="#install-virtualenv"><span class="std std-ref">Install virtualenv</span></a> instructions above, then follow <a class="reference internal" href="#compile-osmesa"><span class="std std-ref">Compile OSMesa from source</span></a> instructions below.</p>
+</section>
+<section id="compile-osmesa-from-source">
+<span id="compile-osmesa"></span><h2>Compile OSMesa from source<a class="headerlink" href="#compile-osmesa-from-source" title="Permalink to this heading">#</a></h2>
+<p>Here are instructions for compiling mesa-19.0.8, last version that still supported ./configure:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># install llvm-8</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>llvm-8
+
+<span class="c1"># download OSMesa 19.0.8 release</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>curl<span class="w"> </span>-O<span class="w"> </span>https://mesa.freedesktop.org/archive/mesa-19.0.8.tar.xz
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>tar<span class="w"> </span>xvf<span class="w"> </span>mesa-19.0.8.tar.xz
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>mesa-19.0.8
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span><span class="nv">LLVM_CONFIG</span><span class="o">=</span><span class="s2">&quot;/usr/bin/llvm-config-8&quot;</span><span class="w"> </span>./configure<span class="w"> </span>--prefix<span class="o">=</span><span class="nv">$HOME</span>/osmesa<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--disable-osmesa<span class="w"> </span>--disable-driglx-direct<span class="w"> </span>--disable-gbm<span class="w"> </span>--enable-dri<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--with-gallium-drivers<span class="o">=</span>swrast<span class="w"> </span>--enable-autotools<span class="w"> </span>--enable-llvm<span class="w"> </span>--enable-gallium-osmesa
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>make<span class="w"> </span>install
+<span class="c1"># this installed OSMesa libraries to $HOME/osmesa/lib; in order for CloudViewer to pick it up</span>
+<span class="c1"># LD_LIBRARY_PATH needs to be updated to include it:</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/osmesa/lib:</span><span class="nv">$LD_LIBRARY_PATH</span><span class="s2">&quot;</span>
+<span class="c1"># this needs to be done for every shell, or you can add it to your .bashrc</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/ACloudViewer
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>cmake<span class="w"> </span>-DENABLE_HEADLESS_RENDERING<span class="o">=</span>ON<span class="w"> </span>-DUSE_SYSTEM_GLEW<span class="o">=</span>OFF<span class="w"> </span>-DUSE_SYSTEM_GLFW<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DOSMESA_INCLUDE_DIR<span class="o">=</span><span class="nv">$HOME</span>/osmesa/include<span class="w"> </span>-DOSMESA_LIBRARY<span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/osmesa/lib/libOSMesa.so&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>..
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+<span class="o">(</span>py3env<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>make<span class="w"> </span>install-pip-package
+</pre></div>
+</div>
+<p>Now you can follow the instructions under <a class="reference internal" href="#test-headless-rendering"><span class="std std-ref">Test headless rendering</span></a>.</p>
 </section>
 </section>
 
@@ -1204,7 +1315,7 @@
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">CPU rendering</div>
+                <div class="title">CPU (Software) Rendering</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -1250,8 +1361,13 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Headless rendering</a><ul>
-<li><a class="reference internal" href="#offscreen-rendering">Offscreen rendering</a></li>
-<li><a class="reference internal" href="#rendering-to-file">Rendering to file</a></li>
+<li><a class="reference internal" href="#install-osmesa">Install OSMesa</a></li>
+<li><a class="reference internal" href="#install-virtualenv">Install virtualenv</a></li>
+<li><a class="reference internal" href="#build-cloudviewer-with-osmesa">Build CloudViewer with OSMesa</a></li>
+<li><a class="reference internal" href="#test-headless-rendering">Test headless rendering</a></li>
+<li><a class="reference internal" href="#possible-issues">Possible Issues</a></li>
+<li><a class="reference internal" href="#headless-ubuntu-16-04">Headless Ubuntu 16.04</a></li>
+<li><a class="reference internal" href="#compile-osmesa-from-source">Compile OSMesa from source</a></li>
 </ul>
 </li>
 </ul>
@@ -1263,7 +1379,7 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8ba9d2f"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=ab261969"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
