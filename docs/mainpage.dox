@@ -9,11 +9,11 @@
     <div class="links-section">
         <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> | 
         <a href="https://asher-1.github.io/ACloudViewer/documentation/">Docs</a> | 
-        <a href="https://github.com/Asher-1/ACloudViewer#quick-start">Quick Start</a> | 
-        <a href="../../index.html">Back to Overview</a> | 
-        <a href="../../index.html#python-api">Python</a> | 
+        <a href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/quickstart.html">Quick Start</a> | 
+        <a href="https://asher-1.github.io/ACloudViewer/documentation/python_api/cloudViewer.core.html">Python</a> | 
         <a href="index.html">C++</a> | 
-        <a href="../../index.html#tutorial">Tutorial</a> | 
+        <a href="https://asher-1.github.io/ACloudViewer/documentation/tutorial/index.html">Tutorial</a> | 
+        <a href="../../index.html">Back to Overview</a> | 
         <a href="https://github.com/Asher-1/ACloudViewer">GitHub</a>
     </div>
 </div>
@@ -238,11 +238,11 @@ python -c "import cloudViewer as cv3d; \
 
 \section compile_sec Compiling from Source
 
-To compile ACloudViewer from source, please refer to the <a href="../getting_started/build_from_source.html">compilation guide</a>.
+To compile ACloudViewer from source, please refer to the <a href="../../getting_started/build_from_source.html">compilation guide</a>.
 
 For detailed build instructions:
-- <a href="../getting_started/build_from_source.html">Building from Source</a>
-- <a href="../getting_started/build_from_source.html">Platform-Specific Build Guides</a>
+- <a href="../../getting_started/build_from_source.html">Building from Source</a>
+- <a href="../../getting_started/build_from_source.html">Platform-Specific Build Guides</a>
 
 \section visualization_sec Visualization Examples
 
@@ -277,9 +277,9 @@ ACloudViewer provides powerful 3D visualization capabilities for interactive dat
 
 \subsection examples_sec Examples
 
-- **C++ examples**: Located in `examples/Cpp/` directory
-- **Python examples**: Located in `examples/Python/` directory
-- **Jupyter tutorials**: Available in the <a href="../tutorial/index.html">tutorial section</a>
+- **C++ examples**: Located in <a href="https://github.com/Asher-1/ACloudViewer/tree/main/examples/Cpp">`examples/Cpp/`</a> directory
+- **Python examples**: Located in <a href="https://github.com/Asher-1/ACloudViewer/tree/main/examples/Python">`examples/Python/`</a> directory
+- **Jupyter tutorials**: Available in the <a href="../../tutorial/index.html">tutorial section</a>
 
 \subsection api_docs_sec API Documentation
 
@@ -289,7 +289,7 @@ ACloudViewer provides powerful 3D visualization capabilities for interactive dat
   - CV_io - I/O Module
   - Classes, Namespaces, Files tabs for detailed navigation
 
-- **Python API**: See the <a href="../python_api/index.html">Python API documentation</a>
+- **Python API**: See the <a href="../../python_api/cloudViewer.core.html">Python API documentation</a>
 
 \section communication_sec Communication Channels
 
