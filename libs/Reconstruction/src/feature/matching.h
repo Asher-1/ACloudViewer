@@ -16,6 +16,7 @@
 
 #include "base/database.h"
 #include "feature/sift.h"
+#include "retrieval/resources.h"
 #include "util/alignment.h"
 #include "util/cache.h"
 #include "util/opengl_utils.h"
@@ -63,7 +64,7 @@ struct SequentialMatchingOptions {
     int loop_detection_max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::string vocab_tree_path = "";
+    std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
     bool Check() const;
 };
@@ -87,7 +88,7 @@ struct VocabTreeMatchingOptions {
     int max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::string vocab_tree_path = "";
+    std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
     // Optional path to file with specific image names to match.
     std::string match_list_path = "";

@@ -18,5 +18,9 @@ void pybind_matrix(py::module &m);
 void pybind_logging(py::module &m);
 void pybind_eigen(py::module &m);
 
+namespace random {
+void pybind_random(py::module &m);
+}
+
 }  // namespace utility
 }  // namespace cloudViewer

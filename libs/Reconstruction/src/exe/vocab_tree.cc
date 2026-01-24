@@ -38,7 +38,9 @@
 #include "feature/matching.h"
 #include "feature/sift.h"
 #include "feature/utils.h"
+#include "retrieval/resources.h"
 #include "retrieval/visual_index.h"
+#include "util/download.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
 #include "util/option_manager.h"
@@ -119,7 +121,7 @@ std::vector<Image> ReadVocabTreeRetrievalImageList(const std::string& path,
 }  // namespace
 
 int RunVocabTreeBuilder(int argc, char** argv) {
-  std::string vocab_tree_path;
+  std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
   retrieval::VisualIndex<>::BuildOptions build_options;
   int max_num_images = -1;
 
@@ -153,7 +155,7 @@ int RunVocabTreeBuilder(int argc, char** argv) {
 }
 
 int RunVocabTreeRetriever(int argc, char** argv) {
-  std::string vocab_tree_path;
+  std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
   std::string database_image_list_path;
   std::string query_image_list_path;
   std::string output_index_path;
@@ -175,8 +177,11 @@ int RunVocabTreeRetriever(int argc, char** argv) {
   options.AddDefaultOption("max_num_features", &max_num_features);
   options.Parse(argc, argv);
 
+  // Automatically download and cache if URI format is provided.
+  std::string resolved_vocab_tree_path =
+      MaybeDownloadAndCacheFile(vocab_tree_path).string();
   retrieval::VisualIndex<> visual_index;
-  visual_index.Read(vocab_tree_path);
+  visual_index.Read(resolved_vocab_tree_path);
 
   Database database(*options.database_path);
 

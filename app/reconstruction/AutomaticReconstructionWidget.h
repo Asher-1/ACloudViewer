@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <QtWidgets>
+
 #include "controllers/AutomaticReconstructionController.h"
 #include "ui/options_widget.h"
 
@@ -19,6 +21,9 @@ public:
     AutomaticReconstructionWidget(ReconstructionWidget* main_window);
 
     void Run();
+
+protected:
+    void showEvent(QShowEvent* event) override;
 
 private:
     void RenderResult();

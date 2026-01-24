@@ -39,6 +39,7 @@
 #include "mvs/fusion.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
+#include "util/download.h"
 #include "util/misc.h"
 #include "util/option_manager.h"
 
@@ -114,19 +115,41 @@ AutomaticReconstructionController::AutomaticReconstructionController(
       *option_manager_.exhaustive_matching, *option_manager_.sift_matching,
       *option_manager_.database_path));
 
-  if (!options_.vocab_tree_path.empty()) {
+  // Resolve vocab_tree_path: use default if empty, and download/cache if URI
+  std::string resolved_vocab_tree_path = options_.vocab_tree_path;
+  if (resolved_vocab_tree_path.empty()) {
+    resolved_vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+  }
+  
+  // Automatically download and cache if URI format is provided
+  if (!resolved_vocab_tree_path.empty()) {
+#ifdef COLMAP_DOWNLOAD_ENABLED
+    // Download and cache the file if it's a URI, otherwise use as local path
+    resolved_vocab_tree_path = MaybeDownloadAndCacheFile(resolved_vocab_tree_path).string();
     option_manager_.sequential_matching->loop_detection = true;
-    option_manager_.sequential_matching->vocab_tree_path =
-        options_.vocab_tree_path;
+    option_manager_.sequential_matching->vocab_tree_path = resolved_vocab_tree_path;
+#else
+    // If download is disabled, check if it's a URI and warn, otherwise use as local path
+    if (resolved_vocab_tree_path.find("http://") == 0 ||
+        resolved_vocab_tree_path.find("https://") == 0 ||
+        resolved_vocab_tree_path.find(';') != std::string::npos) {
+      LOG(WARNING) << "vocab_tree_path appears to be a URI but download support is disabled. "
+                   << "Please provide a local path or enable DOWNLOAD_ENABLED.";
+      resolved_vocab_tree_path = "";  // Clear to avoid using invalid URI
+    } else {
+      // Use as local path
+      option_manager_.sequential_matching->loop_detection = true;
+      option_manager_.sequential_matching->vocab_tree_path = resolved_vocab_tree_path;
+    }
+#endif
   }
 
   sequential_matcher_.reset(new SequentialFeatureMatcher(
       *option_manager_.sequential_matching, *option_manager_.sift_matching,
       *option_manager_.database_path));
 
-  if (!options_.vocab_tree_path.empty()) {
-    option_manager_.vocab_tree_matching->vocab_tree_path =
-        options_.vocab_tree_path;
+  if (!resolved_vocab_tree_path.empty()) {
+    option_manager_.vocab_tree_matching->vocab_tree_path = resolved_vocab_tree_path;
     vocab_tree_matcher_.reset(new VocabTreeFeatureMatcher(
         *option_manager_.vocab_tree_matching, *option_manager_.sift_matching,
         *option_manager_.database_path));
@@ -189,10 +212,11 @@ void AutomaticReconstructionController::RunFeatureMatching() {
              options_.data_type == DataType::INTERNET) {
     Database database(*option_manager_.database_path);
     const size_t num_images = database.NumImages();
-    if (options_.vocab_tree_path.empty() || num_images < 200) {
-      matcher = exhaustive_matcher_.get();
-    } else {
+    // Use vocab tree matcher if it was created (vocab_tree_path was resolved) and num_images >= 200
+    if (vocab_tree_matcher_ && num_images >= 200) {
       matcher = vocab_tree_matcher_.get();
+    } else {
+      matcher = exhaustive_matcher_.get();
     }
   }
 
