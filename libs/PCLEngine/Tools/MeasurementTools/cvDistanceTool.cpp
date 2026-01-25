@@ -23,10 +23,10 @@
 #include <vtkRenderer.h>
 #include <vtkTextProperty.h>
 
+#include <QApplication>
 #include <QLayout>
 #include <QLayoutItem>
 #include <QShortcut>
-#include <QApplication>
 #include <QSizePolicy>
 #include <algorithm>
 
@@ -278,7 +278,7 @@ void cvDistanceTool::createUi() {
     }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Distance Parameters"));
-    
+
     m_configUi->distanceSpinBox->setValue(1.0);
 
 #ifdef Q_OS_MAC
@@ -286,17 +286,24 @@ void cvDistanceTool::createUi() {
             m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
 #endif
 
-    // CRITICAL: Ensure Tips label can display full text with ParaView-style compact layout
-    // ParaView uses Minimum sizePolicy to prevent horizontal expansion
-    // This must be done AFTER text is set (including macOS text replacement)
+    // CRITICAL: Ensure Tips label can display full text with ParaView-style
+    // compact layout ParaView uses Minimum sizePolicy to prevent horizontal
+    // expansion This must be done AFTER text is set (including macOS text
+    // replacement)
     if (m_configUi->instructionLabel) {
-        // ParaView-style: Use Minimum sizePolicy to prevent horizontal expansion
-        // The label will wrap text based on its natural width, not a fixed maximum
-        m_configUi->instructionLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        // CRITICAL: Remove any maximum height constraint to allow full text display
-        m_configUi->instructionLabel->setMaximumHeight(16777215);  // QWIDGETSIZE_MAX equivalent
-        // Remove maximum width constraint - let it wrap naturally based on parent width
-        m_configUi->instructionLabel->setMaximumWidth(16777215);  // QWIDGETSIZE_MAX equivalent
+        // ParaView-style: Use Minimum sizePolicy to prevent horizontal
+        // expansion The label will wrap text based on its natural width, not a
+        // fixed maximum
+        m_configUi->instructionLabel->setSizePolicy(QSizePolicy::Minimum,
+                                                    QSizePolicy::Minimum);
+        // CRITICAL: Remove any maximum height constraint to allow full text
+        // display
+        m_configUi->instructionLabel->setMaximumHeight(
+                16777215);  // QWIDGETSIZE_MAX equivalent
+        // Remove maximum width constraint - let it wrap naturally based on
+        // parent width
+        m_configUi->instructionLabel->setMaximumWidth(
+                16777215);  // QWIDGETSIZE_MAX equivalent
         m_configUi->instructionLabel->setWordWrap(true);
         // Force the label to update its size based on wrapped text
         // This ensures the label expands vertically to show all text
@@ -304,7 +311,7 @@ void cvDistanceTool::createUi() {
         // CRITICAL: Update geometry to ensure layout recalculates
         m_configUi->instructionLabel->updateGeometry();
     }
-    
+
     // CRITICAL: Use Qt's automatic sizing based on sizeHint
     // This ensures each tool adapts to its own content without interference
     // Reset size constraints to allow Qt's layout system to work properly
@@ -312,7 +319,7 @@ void cvDistanceTool::createUi() {
     this->setMinimumSize(0, 0);
     this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
     this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-    
+
     // Let Qt calculate the optimal size based on content
     // Order matters: adjust configWidget first, then the main widget
     configWidget->adjustSize();

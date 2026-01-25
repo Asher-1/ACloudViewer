@@ -216,37 +216,45 @@ void cvPointPickingHelper::pickPoint() {
         return;
     }
 
-    // ParaView approach: Check if the keypress event actually happened in the window
-    // This matches ParaView's pqPointPickingHelper::pickPoint() implementation
+    // ParaView approach: Check if the keypress event actually happened in the
+    // window This matches ParaView's pqPointPickingHelper::pickPoint()
+    // implementation
     QPointF pos = renderWidget->mapFromGlobal(QCursor::pos());
     QSize sz = renderWidget->size();
-    bool outside = pos.x() < 0 || pos.x() > sz.width() || pos.y() < 0 || pos.y() > sz.height();
+    bool outside = pos.x() < 0 || pos.x() > sz.width() || pos.y() < 0 ||
+                   pos.y() > sz.height();
     if (outside) {
-        CVLog::PrintVerbose("[cvPointPickingHelper] Cursor is outside the render widget");
+        CVLog::PrintVerbose(
+                "[cvPointPickingHelper] Cursor is outside the render widget");
         return;
     }
 
     // ParaView approach: Use GetEventPosition() from the interactor
-    // This matches ParaView's pqPointPickingHelper::pickPoint() implementation exactly
-    // GetEventPosition() returns the position of the last event (keyboard shortcut activation)
-    // which is more reliable than QCursor::pos() for keyboard-triggered picking, especially on macOS
+    // This matches ParaView's pqPointPickingHelper::pickPoint() implementation
+    // exactly GetEventPosition() returns the position of the last event
+    // (keyboard shortcut activation) which is more reliable than QCursor::pos()
+    // for keyboard-triggered picking, especially on macOS
     int displayX = 0;
     int displayY = 0;
     const int* eventpos = m_interactor->GetEventPosition();
     if (eventpos && (eventpos[0] >= 0 && eventpos[1] >= 0)) {
         // Use event position from interactor (ParaView style)
-        // GetEventPosition() returns coordinates in VTK display space (origin at bottom-left)
+        // GetEventPosition() returns coordinates in VTK display space (origin
+        // at bottom-left)
         displayX = eventpos[0];
         displayY = eventpos[1];
-        
+
         // Validate coordinates against render window size
         int* renderSize = m_interactor->GetRenderWindow()->GetSize();
-        if (displayX < 0 || displayX >= renderSize[0] ||
-            displayY < 0 || displayY >= renderSize[1]) {
+        if (displayX < 0 || displayX >= renderSize[0] || displayY < 0 ||
+            displayY >= renderSize[1]) {
             // Event position is out of bounds, fallback to cursor position
-            CVLog::PrintDebug(QString("[cvPointPickingHelper] GetEventPosition() out of bounds (%1,%2), "
-                                     "falling back to QCursor::pos()")
-                                     .arg(displayX).arg(displayY));
+            CVLog::PrintDebug(
+                    QString("[cvPointPickingHelper] GetEventPosition() out of "
+                            "bounds (%1,%2), "
+                            "falling back to QCursor::pos()")
+                            .arg(displayX)
+                            .arg(displayY));
             displayX = static_cast<int>(pos.x());
             displayY = sz.height() - static_cast<int>(pos.y()) - 1;
         }

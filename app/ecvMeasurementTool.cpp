@@ -29,9 +29,9 @@
 
 // QT
 #include <QApplication>
-#include <QSizePolicy>
 #include <QColorDialog>
 #include <QMessageBox>
+#include <QSizePolicy>
 
 #ifdef USE_PCL_BACKEND
 #include <Tools/MeasurementTools/PclMeasurementTools.h>
@@ -128,16 +128,18 @@ ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
         tool->start();
 
         // CRITICAL: New tools always use their own default values
-        // Different tool types are completely isolated - they don't inherit from UI
-        // "Apply all" only affects instances of the SAME tool type
-        // If "Apply all" is checked and there are existing instances, apply their settings
-        if (applyToAllCheckBox && applyToAllCheckBox->isChecked() && 
+        // Different tool types are completely isolated - they don't inherit
+        // from UI "Apply all" only affects instances of the SAME tool type If
+        // "Apply all" is checked and there are existing instances, apply their
+        // settings
+        if (applyToAllCheckBox && applyToAllCheckBox->isChecked() &&
             !m_toolInstances.isEmpty() && m_toolInstances[0]) {
             // Apply settings from first existing instance of same type
             ecvGenericMeasurementTools* firstInstance = m_toolInstances[0];
             if (firstInstance->getMeasurementType() == type) {
 #ifdef USE_PCL_BACKEND
-                PclMeasurementTools* firstPclTool = qobject_cast<PclMeasurementTools*>(firstInstance);
+                PclMeasurementTools* firstPclTool =
+                        qobject_cast<PclMeasurementTools*>(firstInstance);
                 if (firstPclTool) {
                     double r = 0.0, g = 1.0, b = 0.0;
                     if (firstPclTool->getColor(r, g, b)) {
@@ -152,8 +154,10 @@ ecvGenericMeasurementTools* ecvMeasurementTool::createMeasurementTool(
                     tool->setItalic(firstPclTool->getFontItalic());
                     tool->setShadow(firstPclTool->getFontShadow());
                     tool->setFontOpacity(firstPclTool->getFontOpacity());
-                    tool->setHorizontalJustification(firstPclTool->getHorizontalJustification());
-                    tool->setVerticalJustification(firstPclTool->getVerticalJustification());
+                    tool->setHorizontalJustification(
+                            firstPclTool->getHorizontalJustification());
+                    tool->setVerticalJustification(
+                            firstPclTool->getVerticalJustification());
                 }
 #endif
             }
@@ -183,32 +187,33 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
 
     m_measurementType = tool->getMeasurementType();
 
-    // CRITICAL: When switching tool types, clean up old tools of different types
-    // This ensures each tool type has its own fresh instance and UI, preventing
-    // UI interference between different tool types
+    // CRITICAL: When switching tool types, clean up old tools of different
+    // types This ensures each tool type has its own fresh instance and UI,
+    // preventing UI interference between different tool types
     QList<ecvGenericMeasurementTools*> toolsToRemove;
     for (ecvGenericMeasurementTools* existingTool : m_toolInstances) {
-        if (existingTool && existingTool->getMeasurementType() != m_measurementType) {
+        if (existingTool &&
+            existingTool->getMeasurementType() != m_measurementType) {
             // Mark different type tools for removal
             toolsToRemove.append(existingTool);
         }
     }
-    
+
     // Remove and delete old tools of different types
     for (ecvGenericMeasurementTools* toolToRemove : toolsToRemove) {
         // Disable shortcuts before deletion
         toolToRemove->disableShortcuts();
-        
+
         // Remove widget from layout
         QWidget* widget = toolToRemove->getMeasurementWidget();
         if (widget) {
             parametersLayout->removeWidget(widget);
             widget->setVisible(false);
         }
-        
+
         // Remove from list
         m_toolInstances.removeAll(toolToRemove);
-        
+
         // Delete the tool (this will also delete its UI)
         toolToRemove->clear();
         delete toolToRemove;
@@ -225,16 +230,19 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
         tool->lockInteraction();
 
         // CRITICAL: New tools always use their own default values
-        // Different tool types are completely isolated - they don't inherit from UI
-        // "Apply all" only affects instances of the SAME tool type
-        // If "Apply all" is checked and there are existing instances, apply their settings
-        if (applyToAllCheckBox && applyToAllCheckBox->isChecked() && 
+        // Different tool types are completely isolated - they don't inherit
+        // from UI "Apply all" only affects instances of the SAME tool type If
+        // "Apply all" is checked and there are existing instances, apply their
+        // settings
+        if (applyToAllCheckBox && applyToAllCheckBox->isChecked() &&
             !m_toolInstances.isEmpty() && m_toolInstances[0]) {
             // Apply settings from first existing instance of same type
             ecvGenericMeasurementTools* firstInstance = m_toolInstances[0];
-            if (firstInstance->getMeasurementType() == tool->getMeasurementType()) {
+            if (firstInstance->getMeasurementType() ==
+                tool->getMeasurementType()) {
 #ifdef USE_PCL_BACKEND
-                PclMeasurementTools* firstPclTool = qobject_cast<PclMeasurementTools*>(firstInstance);
+                PclMeasurementTools* firstPclTool =
+                        qobject_cast<PclMeasurementTools*>(firstInstance);
                 if (firstPclTool) {
                     double r = 0.0, g = 1.0, b = 0.0;
                     if (firstPclTool->getColor(r, g, b)) {
@@ -249,8 +257,10 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
                     tool->setItalic(firstPclTool->getFontItalic());
                     tool->setShadow(firstPclTool->getFontShadow());
                     tool->setFontOpacity(firstPclTool->getFontOpacity());
-                    tool->setHorizontalJustification(firstPclTool->getHorizontalJustification());
-                    tool->setVerticalJustification(firstPclTool->getVerticalJustification());
+                    tool->setHorizontalJustification(
+                            firstPclTool->getHorizontalJustification());
+                    tool->setVerticalJustification(
+                            firstPclTool->getVerticalJustification());
                 }
 #endif
             }
@@ -308,26 +318,29 @@ void ecvMeasurementTool::switchToToolUI(ecvGenericMeasurementTools* tool) {
         parametersLayout->addWidget(currentWidget);
         currentWidget->setVisible(true);
 
-        // CRITICAL: Reset size constraints and let Qt's layout system handle sizing
-        // This ensures each tool adapts to its own content without interference
-        // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
+        // CRITICAL: Reset size constraints and let Qt's layout system handle
+        // sizing This ensures each tool adapts to its own content without
+        // interference ParaView-style: use Minimum (horizontal) to prevent
+        // unnecessary expansion
         currentWidget->setMinimumSize(0, 0);
-        currentWidget->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
-        currentWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+        currentWidget->setMaximumSize(16777215,
+                                      16777215);  // QWIDGETSIZE_MAX equivalent
+        currentWidget->setSizePolicy(QSizePolicy::Minimum,
+                                     QSizePolicy::Preferred);
         // Force Qt to recalculate size based on content
         currentWidget->adjustSize();
         currentWidget->updateGeometry();
         // CRITICAL: Process events to ensure layout is fully updated
         QApplication::processEvents();
-        
+
         // Unlock the active tool (enable interaction, shortcuts, and UI
         // controls)
         tool->unlockInteraction();
     }
-    
-    // CRITICAL: Update UI controls (color button and font widget) from the current tool
-    // This prevents UI interference between different tool instances
-    // Each tool instance should have its own independent settings
+
+    // CRITICAL: Update UI controls (color button and font widget) from the
+    // current tool This prevents UI interference between different tool
+    // instances Each tool instance should have its own independent settings
     updateUIFromTool();
 }
 
@@ -601,34 +614,37 @@ void ecvMeasurementTool::updateMeasurementDisplay() {
 void ecvMeasurementTool::updateUIFromTool() {
     // UI updates are now handled by the individual tool widgets
     // No need to update removed spinboxes
-    
-    // CRITICAL: Update shared UI controls (color button and font widget) from current tool
-    // This prevents UI interference between different tool instances
-    // Each tool instance should have its own independent settings displayed in the UI
+
+    // CRITICAL: Update shared UI controls (color button and font widget) from
+    // current tool This prevents UI interference between different tool
+    // instances Each tool instance should have its own independent settings
+    // displayed in the UI
     if (!m_tool) return;
-    
+
     // Prevent recursive updates
     if (m_updatingFromTool) return;
     m_updatingFromTool = true;
-    
+
     // Update color button and font widget from current tool's properties
 #ifdef USE_PCL_BACKEND
     PclMeasurementTools* pclTool = qobject_cast<PclMeasurementTools*>(m_tool);
     if (pclTool) {
         // CRITICAL: Always update UI from current tool's actual color
-        // Different tool types are completely isolated - UI always reflects current tool's state
+        // Different tool types are completely isolated - UI always reflects
+        // current tool's state
         double r = 0.0, g = 1.0, b = 0.0;  // Default green
         if (pclTool->getColor(r, g, b)) {
             QColor toolColor = QColor::fromRgbF(r, g, b);
             // Always update button appearance to show current tool's color
             updateColorButtonAppearance(toolColor);
         }
-        
+
         // Update font widget from current tool's font properties
         if (m_fontPropertyWidget) {
-            // Block signals to prevent triggering applyFontToTools during update
+            // Block signals to prevent triggering applyFontToTools during
+            // update
             m_fontPropertyWidget->blockSignals(true);
-            
+
             // Get font properties from tool
             ecvFontPropertyWidget::FontProperties props;
             props.family = pclTool->getFontFamily();
@@ -640,17 +656,19 @@ void ecvMeasurementTool::updateUIFromTool() {
             props.italic = pclTool->getFontItalic();
             props.shadow = pclTool->getFontShadow();
             props.opacity = pclTool->getFontOpacity();
-            props.horizontalJustification = pclTool->getHorizontalJustification();
+            props.horizontalJustification =
+                    pclTool->getHorizontalJustification();
             props.verticalJustification = pclTool->getVerticalJustification();
-            
-            // Update font widget using setFontProperties (sets all properties at once)
+
+            // Update font widget using setFontProperties (sets all properties
+            // at once)
             m_fontPropertyWidget->setFontProperties(props);
-            
+
             m_fontPropertyWidget->blockSignals(false);
         }
     }
 #endif
-    
+
     m_updatingFromTool = false;
 }
 
@@ -820,7 +838,8 @@ void ecvMeasurementTool::onPointPickingCancelled() {
 
 void ecvMeasurementTool::onColorButtonClicked() {
     // CRITICAL: Get current tool's color as the initial color for the dialog
-    // This ensures the color picker shows the correct color for the current tool
+    // This ensures the color picker shows the correct color for the current
+    // tool
     QColor initialColor = QColor(0, 255, 0);  // Default green
 #ifdef USE_PCL_BACKEND
     PclMeasurementTools* pclTool = qobject_cast<PclMeasurementTools*>(m_tool);
@@ -831,16 +850,18 @@ void ecvMeasurementTool::onColorButtonClicked() {
         }
     }
 #endif
-    
+
     QColor newColor = QColorDialog::getColor(initialColor, this,
                                              tr("Select Measurement Color"));
 
     if (newColor.isValid()) {
-        // Apply color to tools (all instances of current tool type, or just current based on checkbox)
+        // Apply color to tools (all instances of current tool type, or just
+        // current based on checkbox)
         applyColorToAllTools(newColor);
-        
-        // CRITICAL: Always update UI from current tool to reflect the actual applied color
-        // This ensures UI always shows the current tool's state, regardless of "Apply all" setting
+
+        // CRITICAL: Always update UI from current tool to reflect the actual
+        // applied color This ensures UI always shows the current tool's state,
+        // regardless of "Apply all" setting
         updateUIFromTool();
     }
 }
@@ -848,7 +869,7 @@ void ecvMeasurementTool::onColorButtonClicked() {
 void ecvMeasurementTool::updateColorButtonAppearance(const QColor& color) {
     // Use provided color, or fall back to m_currentColor if not provided
     QColor colorToDisplay = color.isValid() ? color : m_currentColor;
-    
+
     if (colorButton) {
         QString styleSheet =
                 QString("QPushButton { background-color: rgb(%1, %2, %3); }")
@@ -861,7 +882,7 @@ void ecvMeasurementTool::updateColorButtonAppearance(const QColor& color) {
 
 void ecvMeasurementTool::applyColorToAllTools(const QColor& color) {
     if (!color.isValid()) return;
-    
+
     // Convert QColor to normalized RGB [0.0, 1.0]
     double r = color.redF();
     double g = color.greenF();
@@ -885,15 +906,14 @@ void ecvMeasurementTool::applyColorToAllTools(const QColor& color) {
     }
 }
 
-void ecvMeasurementTool::onFontPropertiesChanged() { 
+void ecvMeasurementTool::onFontPropertiesChanged() {
     applyFontToTools();
-    
-    // CRITICAL: Always update UI from current tool to reflect the actual applied properties
-    // This ensures UI always shows the current tool's state, regardless of "Apply all" setting
-    // Use QTimer::singleShot to avoid recursive updates during signal processing
-    QTimer::singleShot(0, this, [this]() {
-        updateUIFromTool();
-    });
+
+    // CRITICAL: Always update UI from current tool to reflect the actual
+    // applied properties This ensures UI always shows the current tool's state,
+    // regardless of "Apply all" setting Use QTimer::singleShot to avoid
+    // recursive updates during signal processing
+    QTimer::singleShot(0, this, [this]() { updateUIFromTool(); });
 }
 
 void ecvMeasurementTool::applyFontToTools() {
