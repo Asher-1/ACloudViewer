@@ -6,22 +6,22 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>550</height>
+    <width>0</width>
+    <height>0</height>
    </rect>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>550</width>
-    <height>550</height>
-   </size>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Distance Tool</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
-    <number>8</number>
+    <number>6</number>
    </property>
    <property name="leftMargin">
     <number>6</number>
@@ -38,35 +38,47 @@
    <item>
     <widget class="QGroupBox" name="shortcutsTipsGroupBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Shortcuts Tips</string>
+      <string>Tips</string>
      </property>
      <layout class="QVBoxLayout" name="shortcutsTipsLayout">
       <property name="spacing">
-       <number>4</number>
+       <number>2</number>
+      </property>
+      <property name="leftMargin">
+       <number>3</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
+      <property name="rightMargin">
+       <number>3</number>
+      </property>
+      <property name="bottomMargin">
+       <number>3</number>
       </property>
       <item>
        <widget class="QLabel" name="instructionLabel">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-        </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       </property>
         <property name="scaledContents">
          <bool>false</bool>
         </property>
@@ -79,15 +91,18 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
         <property name="wordWrap">
          <bool>true</bool>
         </property>
-        <property name="margin">
-         <number>4</number>
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
         </property>
-        <property name="styleSheet">
-         <string>QLabel {
+     <property name="margin">
+      <number>3</number>
+     </property>
+     <property name="styleSheet">
+      <string>QLabel {
     background-color: #FFF9E6;
     border: 1px solid #FFD700;
-    border-radius: 3px;
-    padding: 6px;
+    border-radius: 2px;
+    padding: 3px;
     color: #333;
 }</string>
         </property>
@@ -99,19 +114,31 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
    <item>
     <widget class="QGroupBox" name="distanceParamsGroupBox">
      <property name="title">
-      <string>Distance Parameters</string>
+      <string>Parameters</string>
      </property>
-     <layout class="QVBoxLayout" name="distanceParamsLayout">
-      <property name="spacing">
-       <number>6</number>
-      </property>
+      <layout class="QVBoxLayout" name="distanceParamsLayout">
+       <property name="spacing">
+        <number>4</number>
+       </property>
+       <property name="leftMargin">
+        <number>6</number>
+       </property>
+       <property name="topMargin">
+        <number>8</number>
+       </property>
+       <property name="rightMargin">
+        <number>6</number>
+       </property>
+       <property name="bottomMargin">
+        <number>6</number>
+       </property>
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <property name="horizontalSpacing">
          <number>6</number>
         </property>
         <property name="verticalSpacing">
-         <number>8</number>
+         <number>4</number>
         </property>
         <item row="0" column="0">
          <widget class="QLabel" name="label_2">
@@ -124,6 +151,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
          <widget class="QDoubleSpinBox" name="distanceSpinBox">
           <property name="readOnly">
            <bool>true</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
@@ -148,6 +181,9 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
         </item>
         <item row="1" column="1">
          <layout class="QHBoxLayout" name="point1Layout">
+          <property name="spacing">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QToolButton" name="pickPoint1ToolButton">
             <property name="toolTip">
@@ -176,6 +212,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
             <property name="prefix">
              <string>X: </string>
             </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="decimals">
              <number>4</number>
             </property>
@@ -195,6 +237,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
             <property name="prefix">
              <string>Y: </string>
             </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="decimals">
              <number>4</number>
             </property>
@@ -213,6 +261,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
            <widget class="QDoubleSpinBox" name="point1ZSpinBox">
             <property name="prefix">
              <string>Z: </string>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="decimals">
              <number>4</number>
@@ -239,6 +293,9 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
         </item>
         <item row="2" column="1">
          <layout class="QHBoxLayout" name="point2Layout">
+          <property name="spacing">
+           <number>4</number>
+          </property>
           <item>
            <widget class="QToolButton" name="pickPoint2ToolButton">
             <property name="toolTip">
@@ -267,6 +324,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
             <property name="prefix">
              <string>X: </string>
             </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="decimals">
              <number>4</number>
             </property>
@@ -286,6 +349,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
             <property name="prefix">
              <string>Y: </string>
             </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="decimals">
              <number>4</number>
             </property>
@@ -304,6 +373,12 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
            <widget class="QDoubleSpinBox" name="point2ZSpinBox">
             <property name="prefix">
              <string>Z: </string>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="decimals">
              <number>4</number>
@@ -327,245 +402,320 @@ Use 'X'/'Y'/'Z'/'L' to constrain the movement to the X / Y / Z / Line axis respe
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="settingsLayout">
-     <item>
-      <widget class="QGroupBox" name="rulerSettingsGroupBox">
-       <property name="title">
-        <string>Ruler Settings</string>
-       </property>
-       <layout class="QVBoxLayout" name="rulerSettingsLayout">
+    <widget class="QGroupBox" name="rulerSettingsGroupBox">
+     <property name="title">
+      <string>Ruler</string>
+     </property>
+     <layout class="QVBoxLayout" name="rulerSettingsLayout">
+      <property name="spacing">
+       <number>4</number>
+      </property>
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
+      <property name="topMargin">
+       <number>8</number>
+      </property>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <property name="bottomMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QCheckBox" name="rulerModeCheckBox">
+        <property name="text">
+         <string>Ruler Mode</string>
+        </property>
+        <property name="toolTip">
+         <string>Enable ruler mode with tick marks</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="rulerDistanceLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
         <item>
-         <widget class="QCheckBox" name="rulerModeCheckBox">
+         <widget class="QLabel" name="label_6">
           <property name="text">
-           <string>Ruler Mode</string>
+           <string>Tick Spacing:</string>
           </property>
-          <property name="toolTip">
-           <string>Enable ruler mode with tick marks</string>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="rulerDistanceLayout">
-          <item>
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Tick Spacing:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QDoubleSpinBox" name="rulerDistanceSpinBox">
-            <property name="toolTip">
-             <string>Distance between major tick marks (when Ruler Mode is on)</string>
-            </property>
-            <property name="decimals">
-             <number>2</number>
-            </property>
-            <property name="minimum">
-             <double>0.010000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>999999.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>1.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>0.050000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QDoubleSpinBox" name="rulerDistanceSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Distance between major tick marks (when Ruler Mode is on)</string>
+          </property>
+          <property name="decimals">
+           <number>2</number>
+          </property>
+          <property name="minimum">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>999999.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.050000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="numberOfTicksLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Number of Ticks:</string>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="numberOfTicksLayout">
-          <item>
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Number of Ticks:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="numberOfTicksSpinBox">
-            <property name="toolTip">
-             <string>Number of tick marks (when Ruler Mode is off)</string>
-            </property>
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>100</number>
-            </property>
-            <property name="value">
-             <number>5</number>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QSpinBox" name="numberOfTicksSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Number of tick marks (when Ruler Mode is off)</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>5</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="scaleLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>Scale Factor:</string>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="scaleLayout">
-          <item>
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>Scale Factor:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QDoubleSpinBox" name="scaleSpinBox">
-            <property name="toolTip">
-             <string>Scale factor to convert VTK world units (e.g., 2.54 to convert inches to cm)</string>
-            </property>
-            <property name="decimals">
-             <number>4</number>
-            </property>
-            <property name="minimum">
-             <double>0.000100000000000</double>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-            <property name="value">
-             <double>1.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QDoubleSpinBox" name="scaleSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Scale factor to convert VTK world units (e.g., 2.54 to convert inches to cm)</string>
+          </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
+          <property name="minimum">
+           <double>0.000100000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="labelFormatLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="labelFormatLabel">
+          <property name="text">
+           <string>Label Format:</string>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Printf-style format string for distance label (e.g., %6.3g, %.2f)</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="labelFormatLayout">
-          <item>
-           <widget class="QLabel" name="labelFormatLabel">
-            <property name="text">
-             <string>Label Format:</string>
-            </property>
-            <property name="toolTip">
-             <string>Printf-style format string for distance label (e.g., %6.3g, %.2f)</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="labelFormatLineEdit">
-            <property name="toolTip">
-             <string>Printf-style format string for distance label
+         <widget class="QLineEdit" name="labelFormatLineEdit">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Printf-style format string for distance label
 Examples:
   %-#6.3g - General format, 6 chars wide, 3 significant digits
   %.2f - Fixed point, 2 decimal places
   %.4e - Scientific notation, 4 decimal places</string>
-            </property>
-            <property name="text">
-             <string>%-#6.3g</string>
-            </property>
-            <property name="placeholderText">
-             <string>%-#6.3g</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="displayOptionsGroupBox">
-       <property name="title">
-        <string>Display Options</string>
-       </property>
-       <layout class="QVBoxLayout" name="displayOptionsLayout">
-        <item>
-         <widget class="QCheckBox" name="widgetVisibilityCheckBox">
+          </property>
           <property name="text">
-           <string>Show Widget</string>
+           <string>%-#6.3g</string>
           </property>
-          <property name="toolTip">
-           <string>Show/hide the distance widget</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
+          <property name="placeholderText">
+           <string>%-#6.3g</string>
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QCheckBox" name="labelVisibilityCheckBox">
-          <property name="text">
-           <string>Show Label</string>
-          </property>
-          <property name="toolTip">
-           <string>Show/hide the distance label</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="lineWidthLayout">
-          <item>
-           <widget class="QLabel" name="label_10">
-            <property name="text">
-             <string>Line Width:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QDoubleSpinBox" name="lineWidthSpinBox">
-            <property name="toolTip">
-             <string>Width of the distance line</string>
-            </property>
-            <property name="decimals">
-             <number>1</number>
-            </property>
-            <property name="minimum">
-             <double>0.500000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>10.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.500000000000000</double>
-            </property>
-            <property name="value">
-             <double>2.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
        </layout>
-      </widget>
-     </item>
-    </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QGroupBox" name="displayOptionsGroupBox">
+     <property name="title">
+      <string>Display</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+     <layout class="QVBoxLayout" name="displayOptionsLayout">
+      <property name="spacing">
+       <number>4</number>
+      </property>
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
+      <property name="topMargin">
+       <number>8</number>
+      </property>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <property name="bottomMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QCheckBox" name="widgetVisibilityCheckBox">
+        <property name="text">
+         <string>Show Widget</string>
+        </property>
+        <property name="toolTip">
+         <string>Show/hide the distance widget</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="labelVisibilityCheckBox">
+        <property name="text">
+         <string>Show Label</string>
+        </property>
+        <property name="toolTip">
+         <string>Show/hide the distance label</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="lineWidthLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_10">
+          <property name="text">
+           <string>Line Width:</string>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="lineWidthSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Width of the distance line</string>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="minimum">
+           <double>0.500000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.500000000000000</double>
+          </property>
+          <property name="value">
+           <double>2.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

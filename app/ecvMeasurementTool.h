@@ -96,10 +96,12 @@ protected:
     void switchToToolUI(ecvGenericMeasurementTools* tool);
 
     //! Updates color button appearance based on current color
-    void updateColorButtonAppearance();
+    //! @param color Optional color to display. If not provided, uses m_currentColor
+    void updateColorButtonAppearance(const QColor& color = QColor());
 
-    //! Applies current color to all tool instances
-    void applyColorToAllTools();
+    //! Applies color to all tool instances (or current tool if "Apply all" is unchecked)
+    //! @param color Optional color to apply. If not provided, uses m_currentColor
+    void applyColorToAllTools(const QColor& color = QColor());
 
     //! Applies font properties to tool instances (all or current based on
     //! checkbox)
