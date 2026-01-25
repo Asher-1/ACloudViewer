@@ -64,7 +64,7 @@ public:  // implemented from ecvGenericMeasurementTools interface
     virtual void setShadow(bool shadow) override;
     virtual void setFontOpacity(double opacity) override;
     virtual void setFontColor(double r, double g, double b) override;
-    
+
     //! Get font properties (for UI synchronization)
     QString getFontFamily() const;
     int getFontSize() const;

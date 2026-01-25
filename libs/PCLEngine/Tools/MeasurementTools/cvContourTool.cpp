@@ -26,9 +26,9 @@
 #include "VTKExtensions/ConstrainedWidgets/cvConstrainedContourRepresentation.h"
 
 // QT
+#include <QApplication>
 #include <QLayout>
 #include <QLayoutItem>
-#include <QApplication>
 #include <QSizePolicy>
 
 // CV_DB_LIB
@@ -173,7 +173,7 @@ void cvContourTool::createUi() {
     }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Contour Parameters"));
-    
+
     // CRITICAL: Use Qt's automatic sizing based on sizeHint
     // This ensures each tool adapts to its own content without interference
     // Reset size constraints to allow Qt's layout system to work properly
@@ -181,7 +181,7 @@ void cvContourTool::createUi() {
     this->setMinimumSize(0, 0);
     this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
     this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-    
+
     // Let Qt calculate the optimal size based on content
     // Order matters: adjust configWidget first, then the main widget
     configWidget->adjustSize();

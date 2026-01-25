@@ -28,6 +28,7 @@
 // System
 #include <assert.h>
 #include <string.h>
+
 #include <algorithm>  // For std::max, std::min
 
 //'Delta' character
@@ -1614,12 +1615,13 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
 
     // draw label rectangle
     // CRITICAL FIX for macOS: m_screenPos is relative coordinates (0.0 to 1.0)
-    // context.glW and context.glH are physical pixels (already scaled by devicePixelRatio)
-    // m_screenPos is stored relative to LOGICAL pixels (as seen in move2D implementation)
-    // We need to use logical pixels for position calculation to match the coordinate system
-    // used by move2D and DrawWidgets
+    // context.glW and context.glH are physical pixels (already scaled by
+    // devicePixelRatio) m_screenPos is stored relative to LOGICAL pixels (as
+    // seen in move2D implementation) We need to use logical pixels for position
+    // calculation to match the coordinate system used by move2D and DrawWidgets
     // const int xStart = static_cast<int>(context.glW * m_screenPos[0]);
-    // const int yStart = static_cast<int>(context.glH * (1.0f - m_screenPos[1]));
+    // const int yStart = static_cast<int>(context.glH * (1.0f -
+    // m_screenPos[1]));
     const float logicalW = context.glW / context.devicePixelRatio;
     const float logicalH = context.glH / context.devicePixelRatio;
     const int xStart = static_cast<int>(logicalW * m_screenPos[0]);
@@ -1723,44 +1725,50 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CAPTION,
                                 this->getViewId());
         param.center = position;
-        // CRITICAL: m_labelROI uses logical pixels (calculated from logicalW/logicalH)
-        // PCLVis::addCaption divides pos2D by getRenderWindow()->GetSize() to get relative coordinates
-        // 
+        // CRITICAL: m_labelROI uses logical pixels (calculated from
+        // logicalW/logicalH) PCLVis::addCaption divides pos2D by
+        // getRenderWindow()->GetSize() to get relative coordinates
+        //
         // Coordinate system analysis:
-        // - m_labelROI is in Qt coordinate system (top-left origin, Y increases downward)
+        // - m_labelROI is in Qt coordinate system (top-left origin, Y increases
+        // downward)
         //   m_labelROI.y() is the top edge of the label rectangle
-        // - VTK's SetPosition expects pixel coordinates that will be divided by GetSize()
+        // - VTK's SetPosition expects pixel coordinates that will be divided by
+        // GetSize()
         //   to get normalized coordinates (0.0 to 1.0) where Y=0 is at BOTTOM
-        // - Since Qt Y increases downward and VTK Y=0 is at bottom, we need to invert Y
+        // - Since Qt Y increases downward and VTK Y=0 is at bottom, we need to
+        // invert Y
         //   VTK_Y_pixel = windowHeight - Qt_Y_pixel
-        // 
-        // Get render window size for coordinate conversion and boundary checking
+        //
+        // Get render window size for coordinate conversion and boundary
+        // checking
         const float logicalW = context.glW / context.devicePixelRatio;
         const float logicalH = context.glH / context.devicePixelRatio;
-        
+
         // m_labelROI coordinates are in Qt system (top-left origin)
         float posX = static_cast<float>(m_labelROI.x());
         float posY = static_cast<float>(m_labelROI.y());
-        
+
         // Boundary check: ensure coordinates are within valid range
         // This is a safety measure to prevent caption from going off-screen
         posX = std::max(0.0f, std::min(posX, logicalW - 1.0f));
         posY = std::max(0.0f, std::min(posY, logicalH - 1.0f));
-        
+
         // CRITICAL: macOS-specific fix for coordinate system conversion
         // On macOS, VTK's coordinate system may differ from Linux
         // Only apply Y-axis inversion on macOS where this issue occurs
 #ifdef Q_OS_MAC
-        // Convert from Qt coordinate system (top-left) to VTK coordinate system (bottom-left)
-        // VTK expects Y coordinate where 0 is at bottom, Qt has Y=0 at top
-        // So we need to invert Y: VTK_Y = windowHeight - Qt_Y
-        // Since PCLVis::addCaption divides by GetSize(), we pass pixel coordinates
-        // If GetSize() returns logical pixels (Qt convention), this works correctly
+        // Convert from Qt coordinate system (top-left) to VTK coordinate system
+        // (bottom-left) VTK expects Y coordinate where 0 is at bottom, Qt has
+        // Y=0 at top So we need to invert Y: VTK_Y = windowHeight - Qt_Y Since
+        // PCLVis::addCaption divides by GetSize(), we pass pixel coordinates If
+        // GetSize() returns logical pixels (Qt convention), this works
+        // correctly
         float vtkY = logicalH - posY;
-        
+
         // Final boundary check for VTK coordinates
         vtkY = std::max(0.0f, std::min(vtkY, logicalH - 1.0f));
-        
+
         param.pos = CCVector2(posX, vtkY);
 #else
         // On Linux, use coordinates directly (no Y-axis inversion needed)
