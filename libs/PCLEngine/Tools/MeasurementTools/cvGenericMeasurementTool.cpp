@@ -26,6 +26,10 @@
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
+// QT
+#include <QApplication>
+#include <QSizePolicy>
+
 // VTK
 #include <vtkAbstractWidget.h>
 #include <vtkActor.h>
@@ -37,6 +41,16 @@
 cvGenericMeasurementTool::cvGenericMeasurementTool(QWidget* parent)
     : QWidget(parent), m_ui(new Ui::GenericMeasurementToolDlg) {
     setWindowTitle(tr("Generic Measurement Tool"));
+    
+    // CRITICAL: Set size policy to Minimum (horizontal) to prevent unnecessary expansion
+    // This ensures each tool adapts to its content width without extra whitespace
+    // ParaView-style: use Minimum to prevent horizontal expansion beyond content
+    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    
+    // CRITICAL: Remove any fixed size constraints to allow Qt's layout system to work
+    // This prevents UI size interference between different tool types
+    setMinimumSize(0, 0);
+    setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
 }
 
 cvGenericMeasurementTool::~cvGenericMeasurementTool() {

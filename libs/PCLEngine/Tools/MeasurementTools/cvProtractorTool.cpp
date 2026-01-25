@@ -25,7 +25,11 @@
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 
+#include <QLayout>
+#include <QLayoutItem>
 #include <QShortcut>
+#include <QApplication>
+#include <QSizePolicy>
 #include <algorithm>
 #include <cmath>
 
@@ -243,17 +247,86 @@ void cvProtractorTool::initTool() {
 }
 
 void cvProtractorTool::createUi() {
+    // CRITICAL: Only setup base UI once to avoid resetting configLayout
+    // Each tool instance has its own m_ui, but setupUi clears all children
+    // so we must ensure it's only called once per tool instance
+    // Check if base UI is already set up by checking if configLayout exists
+    if (!m_ui->configLayout) {
+        m_ui->setupUi(this);
+    }
+
+    // CRITICAL: Always clean up existing config UI before creating new one
+    // This prevents UI interference when createUi() is called multiple times
+    // (e.g., when tool is restarted or switched)
+    if (m_configUi && m_ui->configLayout) {
+        // Remove all existing widgets from configLayout
+        QLayoutItem* item;
+        while ((item = m_ui->configLayout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->setParent(nullptr);
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+        delete m_configUi;
+        m_configUi = nullptr;
+    }
+
+    // Create fresh config UI for this tool instance
     m_configUi = new Ui::ProtractorToolDlg;
     QWidget* configWidget = new QWidget(this);
+    // CRITICAL: Set size policy to Minimum to prevent horizontal expansion
+    // This ensures the widget only takes the space it needs
+    configWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     m_configUi->setupUi(configWidget);
-    m_ui->setupUi(this);
+    // CRITICAL: Set layout size constraint to ensure minimum size calculation
+    // This prevents extra whitespace on the right
+    if (configWidget->layout()) {
+        configWidget->layout()->setSizeConstraint(QLayout::SetMinimumSize);
+    }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Protractor Parameters"));
-
+    
 #ifdef Q_OS_MAC
     m_configUi->instructionLabel->setText(
             m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
 #endif
+
+    // CRITICAL: Ensure Tips label can display full text with ParaView-style compact layout
+    // ParaView uses Minimum sizePolicy to prevent horizontal expansion
+    // This must be done AFTER text is set (including macOS text replacement)
+    if (m_configUi->instructionLabel) {
+        // ParaView-style: Use Minimum sizePolicy to prevent horizontal expansion
+        // The label will wrap text based on its natural width, not a fixed maximum
+        m_configUi->instructionLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        // CRITICAL: Remove any maximum height constraint to allow full text display
+        m_configUi->instructionLabel->setMaximumHeight(16777215);  // QWIDGETSIZE_MAX equivalent
+        // Remove maximum width constraint - let it wrap naturally based on parent width
+        m_configUi->instructionLabel->setMaximumWidth(16777215);  // QWIDGETSIZE_MAX equivalent
+        m_configUi->instructionLabel->setWordWrap(true);
+        // Force the label to update its size based on wrapped text
+        // This ensures the label expands vertically to show all text
+        m_configUi->instructionLabel->adjustSize();
+        // CRITICAL: Update geometry to ensure layout recalculates
+        m_configUi->instructionLabel->updateGeometry();
+    }
+    
+    // CRITICAL: Use Qt's automatic sizing based on sizeHint
+    // This ensures each tool adapts to its own content without interference
+    // Reset size constraints to allow Qt's layout system to work properly
+    // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
+    this->setMinimumSize(0, 0);
+    this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
+    this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    
+    // Let Qt calculate the optimal size based on content
+    // Order matters: adjust configWidget first, then the main widget
+    configWidget->adjustSize();
+    this->adjustSize();
+    // Force layout update to apply size changes
+    this->updateGeometry();
+    // CRITICAL: Process events to ensure layout is fully updated
+    QApplication::processEvents();
 
     connect(m_configUi->point1XSpinBox,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -762,6 +835,13 @@ void cvProtractorTool::setColor(double r, double g, double b) {
         }
     }
     update();
+}
+
+bool cvProtractorTool::getColor(double& r, double& g, double& b) const {
+    r = m_currentColor[0];
+    g = m_currentColor[1];
+    b = m_currentColor[2];
+    return true;
 }
 
 void cvProtractorTool::lockInteraction() {

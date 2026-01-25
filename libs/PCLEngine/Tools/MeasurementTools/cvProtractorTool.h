@@ -37,6 +37,7 @@ public:
     virtual void setPoint2(double pos[3]) override;
     virtual void setCenter(double pos[3]) override;
     virtual void setColor(double r, double g, double b) override;
+    virtual bool getColor(double& r, double& g, double& b) const override;
     virtual void lockInteraction() override;
     virtual void unlockInteraction() override;
     virtual void setInstanceLabel(const QString& label) override;

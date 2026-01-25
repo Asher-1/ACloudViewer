@@ -25,6 +25,12 @@
 #include "Tools/PickingTools/cvPointPickingHelper.h"
 #include "VTKExtensions/ConstrainedWidgets/cvConstrainedContourRepresentation.h"
 
+// QT
+#include <QLayout>
+#include <QLayoutItem>
+#include <QApplication>
+#include <QSizePolicy>
+
 // CV_DB_LIB
 #include <CVLog.h>
 #include <ecvColorTypes.h>
@@ -128,12 +134,62 @@ void cvContourTool::createNewContour() {
 }
 
 void cvContourTool::createUi() {
+    // CRITICAL: Only setup base UI once to avoid resetting configLayout
+    // Each tool instance has its own m_ui, but setupUi clears all children
+    // so we must ensure it's only called once per tool instance
+    // Check if base UI is already set up by checking if configLayout exists
+    if (!m_ui->configLayout) {
+        m_ui->setupUi(this);
+    }
+
+    // CRITICAL: Always clean up existing config UI before creating new one
+    // This prevents UI interference when createUi() is called multiple times
+    // (e.g., when tool is restarted or switched)
+    if (m_configUi && m_ui->configLayout) {
+        // Remove all existing widgets from configLayout
+        QLayoutItem* item;
+        while ((item = m_ui->configLayout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->setParent(nullptr);
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+        delete m_configUi;
+        m_configUi = nullptr;
+    }
+
+    // Create fresh config UI for this tool instance
     m_configUi = new Ui::ContourToolDlg;
     QWidget* configWidget = new QWidget(this);
+    // CRITICAL: Set size policy to Minimum to prevent horizontal expansion
+    // This ensures the widget only takes the space it needs
+    configWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     m_configUi->setupUi(configWidget);
-    m_ui->setupUi(this);
+    // CRITICAL: Set layout size constraint to ensure minimum size calculation
+    // This prevents extra whitespace on the right
+    if (configWidget->layout()) {
+        configWidget->layout()->setSizeConstraint(QLayout::SetMinimumSize);
+    }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Contour Parameters"));
+    
+    // CRITICAL: Use Qt's automatic sizing based on sizeHint
+    // This ensures each tool adapts to its own content without interference
+    // Reset size constraints to allow Qt's layout system to work properly
+    // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
+    this->setMinimumSize(0, 0);
+    this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
+    this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    
+    // Let Qt calculate the optimal size based on content
+    // Order matters: adjust configWidget first, then the main widget
+    configWidget->adjustSize();
+    this->adjustSize();
+    // Force layout update to apply size changes
+    this->updateGeometry();
+    // CRITICAL: Process events to ensure layout is fully updated
+    QApplication::processEvents();
 
     // Connect display options
     connect(m_configUi->widgetVisibilityCheckBox, &QCheckBox::toggled, this,
@@ -204,6 +260,13 @@ void cvContourTool::setColor(double r, double g, double b) {
         }
     }
     update();
+}
+
+bool cvContourTool::getColor(double& r, double& g, double& b) const {
+    r = m_currentColor[0];
+    g = m_currentColor[1];
+    b = m_currentColor[2];
+    return true;
 }
 
 void cvContourTool::lockInteraction() {
