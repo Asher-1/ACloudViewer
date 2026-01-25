@@ -246,7 +246,8 @@ void cvDistanceTool::createUi() {
     // Each tool instance has its own m_ui, but setupUi clears all children
     // so we must ensure it's only called once per tool instance
     // Check if base UI is already set up by checking if widget has a layout
-    // NOTE: Cannot check m_ui->configLayout directly as it's uninitialized before setupUi()
+    // NOTE: Cannot check m_ui->configLayout directly as it's uninitialized
+    // before setupUi()
     if (!m_ui) {
         CVLog::Error("[cvDistanceTool::createUi] m_ui is null!");
         return;
