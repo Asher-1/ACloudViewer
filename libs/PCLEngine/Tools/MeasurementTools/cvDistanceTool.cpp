@@ -36,6 +36,9 @@
 #include "VTKExtensions/ConstrainedWidgets/cvCustomAxisHandleRepresentation.h"
 #include "cvMeasurementToolsCommon.h"
 
+// CV_CORE_LIB
+#include <CVLog.h>
+
 // CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvBBox.h>
@@ -242,8 +245,13 @@ void cvDistanceTool::createUi() {
     // CRITICAL: Only setup base UI once to avoid resetting configLayout
     // Each tool instance has its own m_ui, but setupUi clears all children
     // so we must ensure it's only called once per tool instance
-    // Check if base UI is already set up by checking if configLayout exists
-    if (!m_ui->configLayout) {
+    // Check if base UI is already set up by checking if widget has a layout
+    // NOTE: Cannot check m_ui->configLayout directly as it's uninitialized before setupUi()
+    if (!m_ui) {
+        CVLog::Error("[cvDistanceTool::createUi] m_ui is null!");
+        return;
+    }
+    if (!layout()) {
         m_ui->setupUi(this);
     }
 
