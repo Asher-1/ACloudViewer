@@ -4775,6 +4775,9 @@ void MainWindow::initSelectionController() {
                 // Zoom is already performed by cvZoomToBoxTool using VTK
                 // This signal is for notification/logging purposes
                 ecvDisplayTools::UpdateScreen();
+                // CRITICAL: Update 2D labels after zoom to box to ensure they
+                // align with their 3D anchor points
+                ecvDisplayTools::TheInstance()->Update2DLabel(true);
             });
 
     // Set the properties delegate for the controller
