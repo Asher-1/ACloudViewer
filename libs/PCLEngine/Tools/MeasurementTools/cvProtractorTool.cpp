@@ -47,6 +47,8 @@
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
+#include <ecvHObjectCaster.h>
+#include <ecvPointCloud.h>
 
 namespace {
 
@@ -601,14 +603,7 @@ ccHObject* cvProtractorTool::getOutput() {
         return nullptr;
     }
 
-    // Find the nearest points in the cloud for all three measurement endpoints
-    unsigned nearestIndex1 = 0;
-    unsigned nearestIndexC = 0;  // center
-    unsigned nearestIndex2 = 0;
-    double minDist1 = std::numeric_limits<double>::max();
-    double minDistC = std::numeric_limits<double>::max();
-    double minDist2 = std::numeric_limits<double>::max();
-
+    // Convert protractor's exact 3D coordinates to CCVector3
     CCVector3 point1(static_cast<PointCoordinateType>(p1[0]),
                      static_cast<PointCoordinateType>(p1[1]),
                      static_cast<PointCoordinateType>(p1[2]));
@@ -619,26 +614,78 @@ ccHObject* cvProtractorTool::getOutput() {
                      static_cast<PointCoordinateType>(p2[1]),
                      static_cast<PointCoordinateType>(p2[2]));
 
+    // Find the nearest points in the cloud for all three measurement endpoints
+    // CRITICAL: We need to use the exact protractor coordinates, not just the
+    // nearest points in the cloud. If the nearest point is too far away, we
+    // should add the exact point to the cloud to ensure the exported label
+    // matches the protractor exactly.
+    unsigned nearestIndex1 = 0;
+    unsigned nearestIndexC = 0;  // center
+    unsigned nearestIndex2 = 0;
+    double minDist1 = std::numeric_limits<double>::max();
+    double minDistC = std::numeric_limits<double>::max();
+    double minDist2 = std::numeric_limits<double>::max();
+
+    // Threshold for considering a point "close enough" (1mm in world units)
+    // If the nearest point is farther than this, we'll add the exact point
+    const double DISTANCE_THRESHOLD = 0.001;
+
     for (unsigned i = 0; i < cloud->size(); ++i) {
         const CCVector3* P = cloud->getPoint(i);
         if (!P) continue;
 
-        double d1 = (*P - point1).norm2d();
+        double d1 = (*P - point1).norm();
         if (d1 < minDist1) {
             minDist1 = d1;
             nearestIndex1 = i;
         }
 
-        double dC = (*P - pointC).norm2d();
+        double dC = (*P - pointC).norm();
         if (dC < minDistC) {
             minDistC = dC;
             nearestIndexC = i;
         }
 
-        double d2 = (*P - point2).norm2d();
+        double d2 = (*P - point2).norm();
         if (d2 < minDist2) {
             minDist2 = d2;
             nearestIndex2 = i;
+        }
+    }
+
+    // CRITICAL: If the nearest points are too far from the exact protractor
+    // coordinates, add the exact points to the cloud to ensure perfect alignment
+    // This ensures the exported label's edges match the protractor's rays exactly
+    ccPointCloud* pointCloud = ccHObjectCaster::ToPointCloud(cloud);
+    if (pointCloud) {
+        // Calculate how many new points we need to add
+        unsigned pointsToAdd = 0;
+        if (minDist1 > DISTANCE_THRESHOLD) pointsToAdd++;
+        if (minDistC > DISTANCE_THRESHOLD) pointsToAdd++;
+        if (minDist2 > DISTANCE_THRESHOLD) pointsToAdd++;
+
+        // Reserve memory for all new points at once (more efficient)
+        if (pointsToAdd > 0) {
+            unsigned currentSize = pointCloud->size();
+            if (pointCloud->reserve(currentSize + pointsToAdd)) {
+                // Check and add point1 if needed
+                if (minDist1 > DISTANCE_THRESHOLD) {
+                    pointCloud->addPoint(point1);
+                    nearestIndex1 = pointCloud->size() - 1;
+                }
+
+                // Check and add center if needed
+                if (minDistC > DISTANCE_THRESHOLD) {
+                    pointCloud->addPoint(pointC);
+                    nearestIndexC = pointCloud->size() - 1;
+                }
+
+                // Check and add point2 if needed
+                if (minDist2 > DISTANCE_THRESHOLD) {
+                    pointCloud->addPoint(point2);
+                    nearestIndex2 = pointCloud->size() - 1;
+                }
+            }
         }
     }
 
@@ -682,11 +729,48 @@ ccHObject* cvProtractorTool::getOutput() {
     label->displayPointLegend(true);
     label->setCollapsed(false);
 
-    // Set a position for the label (relative to screen)
-    label->setPosition(0.05f, 0.90f);
+    // Get the angle label's screen position from VTK representation
+    // This ensures the exported label appears at the same location as the 3D angle label
+    float labelPosX = 0.05f;  // Default fallback position
+    float labelPosY = 0.90f;  // Default fallback position
+    
+    if (m_rep && m_renderer) {
+        // Get the angle label actor position (in display/pixel coordinates)
+        if (auto* labelActor = m_rep->GetAngleLabelActor()) {
+            double* vtkPos = labelActor->GetPosition();  // Returns [x, y] in display coordinates
+            if (vtkPos && m_interactor && m_interactor->GetRenderWindow()) {
+                int* windowSize = m_interactor->GetRenderWindow()->GetSize();
+                if (windowSize && windowSize[0] > 0 && windowSize[1] > 0) {
+                    // Convert from VTK display coordinates (pixels, bottom-left origin)
+                    // to cc2DLabel relative coordinates (0.0-1.0, top-left origin)
+                    float normalizedX = static_cast<float>(vtkPos[0]) / static_cast<float>(windowSize[0]);
+                    float normalizedY = static_cast<float>(vtkPos[1]) / static_cast<float>(windowSize[1]);
+                    
+                    // VTK Y=0 is at bottom, cc2DLabel Y=0 is at top
+                    // So invert Y: labelY = 1.0 - vtkY
+                    labelPosX = normalizedX;
+                    labelPosY = 1.0f - normalizedY;
+                    
+                    CVLog::PrintVerbose(
+                            QString("[cvProtractorTool::getOutput] Retrieved angle label "
+                                    "position from VTK: display=(%1, %2), "
+                                    "normalized=(%3, %4)")
+                                    .arg(vtkPos[0])
+                                    .arg(vtkPos[1])
+                                    .arg(labelPosX)
+                                    .arg(labelPosY));
+                }
+            }
+        }
+    }
+    
+    // Set the position for the exported label (relative to screen, 0.0-1.0)
+    label->setPosition(labelPosX, labelPosY);
 
-    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1°")
-                         .arg(getMeasurementValue(), 0, 'f', 2));
+    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1° at position (%2, %3)")
+                         .arg(getMeasurementValue(), 0, 'f', 2)
+                         .arg(labelPosX)
+                         .arg(labelPosY));
 
     return label;
 }
@@ -1060,11 +1144,17 @@ void cvProtractorTool::unlockInteraction() {
                             .arg((quintptr)this, 0, 16));
         }
     } else {
-        // Shortcuts already exist - just enable them
+        // Shortcuts already exist - update interactor/renderer and enable them
+        // CRITICAL: Update interactor/renderer in case they weren't set when
+        // shortcuts were created (e.g., in addInstance before tool is fully
+        // initialized)
         CVLog::PrintDebug(QString("[cvProtractorTool::unlockInteraction] "
-                                  "Enabling %1 existing shortcuts for tool=%2")
+                                  "Updating %1 existing shortcuts for tool=%2")
                                   .arg(m_pickingHelpers.size())
                                   .arg((quintptr)this, 0, 16));
+        updatePickingHelpers();
+        
+        // Enable all shortcuts
         for (cvPointPickingHelper* helper : m_pickingHelpers) {
             if (helper) {
                 helper->setEnabled(true,

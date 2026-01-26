@@ -34,6 +34,7 @@
 
 // CV_DB_LIB
 #include <LineSet.h>
+#include <ecv2DLabel.h>
 #include <ecvBBox.h>
 #include <ecvCameraSensor.h>
 #include <ecvColorScale.h>
@@ -1305,7 +1306,43 @@ bool PCLVis::updateCaption(const std::string& text,
                 actor2D->GetTextActor()->GetTextProperty();
         textProperty->SetColor(r, g, b);
         textProperty->SetFontSize(fontSize);
+        // Set line spacing to prevent text overlap between lines
+        // 1.2 means 20% extra spacing between lines (1.0 = no extra spacing)
+        textProperty->SetLineSpacing(1.2);
     }
+
+    return true;
+}
+
+bool PCLVis::getCaptionPosition(const std::string& viewID, float& posX, float& posY) {
+    vtkAbstractWidget* widget = getWidgetById(viewID);
+    if (!widget) {
+        return false;
+    }
+
+    CustomVtkCaptionWidget* captionWidget =
+            CustomVtkCaptionWidget::SafeDownCast(widget);
+    if (!captionWidget) {
+        return false;
+    }
+
+    vtkCaptionRepresentation* rep = vtkCaptionRepresentation::SafeDownCast(
+            captionWidget->GetRepresentation());
+    if (!rep) {
+        return false;
+    }
+
+    // GetPosition() returns a pointer to double[2] array (normalized coordinates)
+    const double* pos = rep->GetPosition();
+    if (!pos) {
+        return false;
+    }
+
+    // VTK uses normalized coordinates (0.0 to 1.0)
+    // pos[0] is X (0.0 = left, 1.0 = right)
+    // pos[1] is Y (0.0 = bottom, 1.0 = top in VTK coordinate system)
+    posX = static_cast<float>(pos[0]);
+    posY = static_cast<float>(pos[1]);
 
     return true;
 }
@@ -1366,16 +1403,55 @@ bool PCLVis::addCaption(const std::string& text,
     textProperty->SetFontFamilyToArial();
     textProperty->SetJustificationToLeft();
     textProperty->SetVerticalJustificationToCentered();
+    // Set line spacing to prevent text overlap between lines
+    // 1.2 means 20% extra spacing between lines (1.0 = no extra spacing)
+    textProperty->SetLineSpacing(1.2);
 
     vtkSmartPointer<CustomVtkCaptionWidget> captionWidget =
             vtkSmartPointer<CustomVtkCaptionWidget>::New();
     captionWidget->SetHandleEnabled(anchorDragable);
-    captionWidget->SetInteractor(getRenderWindowInteractor());
+    
+    vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
+    if (!interactor) {
+        return false;
+    }
+    
+    captionWidget->SetInteractor(interactor);
     captionWidget->SetRepresentation(captionRepresentation);
     captionWidget->On();
 
+    // Associate the widget with the corresponding cc2DLabel for selection
+    // Find the cc2DLabel by viewID in the scene database
+    cc2DLabel* associatedLabel = nullptr;
+    ccHObject* sceneRoot = ecvDisplayTools::GetSceneDB();
+    if (sceneRoot) {
+        QString viewIDStr = QString::fromStdString(viewID);
+        
+        // Recursively search for cc2DLabel with matching viewID
+        std::function<cc2DLabel*(ccHObject*)> findByViewID =
+                [&findByViewID, &viewIDStr](ccHObject* node) -> cc2DLabel* {
+            if (!node) return nullptr;
+            if (node->getViewId() == viewIDStr &&
+                node->isA(CV_TYPES::LABEL_2D)) {
+                return ccHObjectCaster::To2DLabel(node);
+            }
+            for (unsigned i = 0; i < node->getChildrenNumber(); ++i) {
+                cc2DLabel* found = findByViewID(node->getChild(i));
+                if (found) return found;
+            }
+            return nullptr;
+        };
+        associatedLabel = findByViewID(sceneRoot);
+    }
+
+    // Set the associated label for selection notification
+    if (associatedLabel) {
+        captionWidget->SetAssociatedLabel(associatedLabel);
+    }
+
     // Save the pointer/ID pair to the global actor map
     (*m_widget_map)[viewID].widget = captionWidget;
+    
     return true;
 }
 

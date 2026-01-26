@@ -2026,6 +2026,9 @@ public:  // event representation
     //! Ignore next mouse release event
     bool m_ignoreMouseReleaseEvent;
 
+    //! Flag to indicate that a VTK widget was clicked (to prevent deferred picking)
+    bool m_widgetClicked;
+
     static int Width() { return size().width(); }
     static int Height() { return size().height(); }
     static QSize size() { return GetScreenSize(); }

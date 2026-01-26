@@ -1731,7 +1731,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionZoomAndCenter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/pqZoomToData.svg</normaloff>:/Resources/images/svg/pqZoomToData.svg</iconset>
+     <normaloff>:/Resources/images/svg/pqZoomToSelectedData.svg</normaloff>:/Resources/images/svg/pqZoomToSelectedData.svg</iconset>
    </property>
    <property name="text">
     <string>Zoom &amp; Center</string>
@@ -1755,7 +1755,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionGlobalZoom">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/zoom.png</normaloff>:/Resources/images/zoom.png</iconset>
+     <normaloff>:/Resources/images/svg/pqZoomToGlobalData.svg</normaloff>:/Resources/images/svg/pqZoomToGlobalData.svg</iconset>
    </property>
    <property name="text">
     <string>Global Zoom</string>

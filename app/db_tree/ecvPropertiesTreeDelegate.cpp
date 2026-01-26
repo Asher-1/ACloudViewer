@@ -434,22 +434,57 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
 
     // 3. Data Axes Grid - ParaView-style: checkbox with integrated Edit button
     // This shows the coordinate axes for the data bounds of the current object
-    {
-        // Get current visibility from backend
-        bool visible = false;
-        if (m_currentObject) {
+    // CRITICAL: Only show axes grid for objects that have valid 3D bounding
+    // boxes Objects without valid bbox: 2D labels, viewport objects, arrays,
+    // material sets
+    if (m_currentObject) {
+        // Check if object has a valid 3D bounding box
+        bool hasValidBBox = false;
+
+        // First, check object types that definitely don't have 3D bbox
+        bool is2DObject = (m_currentObject->isA(CV_TYPES::LABEL_2D) ||
+                           m_currentObject->isA(CV_TYPES::VIEWPORT_2D_OBJECT) ||
+                           m_currentObject->isA(CV_TYPES::VIEWPORT_2D_LABEL));
+        bool isImage = m_currentObject->isKindOf(CV_TYPES::IMAGE);
+        bool isPolyline = m_currentObject->isKindOf(CV_TYPES::POLY_LINE);
+        bool isArray = (m_currentObject->isA(CV_TYPES::NORMAL_INDEXES_ARRAY) ||
+                        m_currentObject->isA(CV_TYPES::TEX_COORDS_ARRAY) ||
+                        m_currentObject->isA(CV_TYPES::NORMALS_ARRAY) ||
+                        m_currentObject->isA(CV_TYPES::RGB_COLOR_ARRAY));
+        bool isMaterialSet = m_currentObject->isA(CV_TYPES::MATERIAL_SET);
+
+        if (!is2DObject && !isImage && !isArray && !isMaterialSet) {
+            // For other objects, check if they have a valid recursive bounding
+            // box
+            ccBBox bbox = m_currentObject->getBB_recursive();
+            hasValidBBox = bbox.isValid();
+        }
+
+        if (isPolyline) {
+            ccPolyline* polyline = ccHObjectCaster::ToPolyline(m_currentObject);
+            if (polyline) {
+                if (polyline->size() <= 1 || polyline->is2DMode()) {
+                    hasValidBBox = false;
+                }
+            } else {
+                hasValidBBox = false;
+            }
+        }
+
+        if (hasValidBBox) {
+            // Get current visibility from backend
             QString viewID = m_currentObject->getViewId();
             AxesGridProperties props;
             ecvDisplayTools::TheInstance()->getDataAxesGridProperties(viewID,
                                                                       props);
-            visible = props.visible;
-        }
 
-        // ParaView-style: Checkbox and Edit button in same row (like Opacity's
-        // slider+spinbox) We create a custom editor that combines checkbox +
-        // button using PERSISTENT_EDITOR
-        appendRow(ITEM(tr("Show Axes Grid")),
-                  PERSISTENT_EDITOR(OBJECT_VIEW_DATA_AXES_GRID_VISIBLE), true);
+            // ParaView-style: Checkbox and Edit button in same row (like
+            // Opacity's slider+spinbox) We create a custom editor that combines
+            // checkbox + button using PERSISTENT_EDITOR
+            appendRow(ITEM(tr("Show Axes Grid")),
+                      PERSISTENT_EDITOR(OBJECT_VIEW_DATA_AXES_GRID_VISIBLE),
+                      true);
+        }
     }
 }
 
