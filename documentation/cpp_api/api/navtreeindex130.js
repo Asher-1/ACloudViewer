@@ -1,5 +1,6 @@
 var NAVTREEINDEX130 =
 {
+"quaziodevice_8h_source.html":[4,0,2,0,0,10,0,0,0,0,13],
 "quazip_8cpp.html":[4,0,2,0,0,10,0,0,0,0,14],
 "quazip_8cpp.html#a73d7bbbf660efdce21288f82d7c4440b":[4,0,2,0,0,10,0,0,0,0,14,0],
 "quazip_8cpp.html#ae5589fb3c4c9bc0ef6d93415cf861446":[4,0,2,0,0,10,0,0,0,0,14,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX130 =
 "rename_8h.html#aba5d67bf5804f7736d2b798b36bcf55d":[4,0,1,3,0,1,0,50,235],
 "rename_8h.html#aba6642c7f9f2a54d7e1aba76fb4f88e5":[4,0,1,3,0,1,0,50,200],
 "rename_8h.html#abbafdb1fdcbe77372e2d37bb0ce7597a":[4,0,1,3,0,1,0,50,128],
-"rename_8h.html#abec93b959cf25c026faf3d95b67ef1ac":[4,0,1,3,0,1,0,50,86],
-"rename_8h.html#ac07033db43699f76cb2d7fb3b4da9403":[4,0,1,3,0,1,0,50,117]
+"rename_8h.html#abec93b959cf25c026faf3d95b67ef1ac":[4,0,1,3,0,1,0,50,86]
 };

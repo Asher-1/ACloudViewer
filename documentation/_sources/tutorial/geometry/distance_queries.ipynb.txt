@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:55.315392Z",
-     "iopub.status.busy": "2026-01-24T04:23:55.315210Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.289952Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.289400Z"
+     "iopub.execute_input": "2026-01-26T15:53:03.500652Z",
+     "iopub.status.busy": "2026-01-26T15:53:03.500468Z",
+     "iopub.status.idle": "2026-01-26T15:53:04.473767Z",
+     "shell.execute_reply": "2026-01-26T15:53:04.473036Z"
     },
     "nbsphinx": "hidden",
     "pycharm": {
@@ -93,10 +93,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.292554Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.292111Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.372765Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.372202Z"
+     "iopub.execute_input": "2026-01-26T15:53:04.477194Z",
+     "iopub.status.busy": "2026-01-26T15:53:04.476406Z",
+     "iopub.status.idle": "2026-01-26T15:53:04.559406Z",
+     "shell.execute_reply": "2026-01-26T15:53:04.558587Z"
     },
     "pycharm": {
      "is_executing": true
@@ -134,10 +134,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.375418Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.374994Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.590697Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.590072Z"
+     "iopub.execute_input": "2026-01-26T15:53:04.562536Z",
+     "iopub.status.busy": "2026-01-26T15:53:04.562062Z",
+     "iopub.status.idle": "2026-01-26T15:53:04.796325Z",
+     "shell.execute_reply": "2026-01-26T15:53:04.795592Z"
     },
     "pycharm": {
      "is_executing": true
@@ -169,10 +169,10 @@
    "execution_count": 4,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.593201Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.592773Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.596980Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.596370Z"
+     "iopub.execute_input": "2026-01-26T15:53:04.798925Z",
+     "iopub.status.busy": "2026-01-26T15:53:04.798478Z",
+     "iopub.status.idle": "2026-01-26T15:53:04.802871Z",
+     "shell.execute_reply": "2026-01-26T15:53:04.802328Z"
     },
     "pycharm": {
      "is_executing": true
@@ -216,10 +216,10 @@
    "execution_count": 5,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.599264Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.598832Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.622248Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.621652Z"
+     "iopub.execute_input": "2026-01-26T15:53:04.805162Z",
+     "iopub.status.busy": "2026-01-26T15:53:04.804741Z",
+     "iopub.status.idle": "2026-01-26T15:53:04.824620Z",
+     "shell.execute_reply": "2026-01-26T15:53:04.824081Z"
     },
     "pycharm": {
      "is_executing": true
@@ -251,10 +251,10 @@
    "execution_count": 6,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.624374Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.624077Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.966087Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.965497Z"
+     "iopub.execute_input": "2026-01-26T15:53:04.826836Z",
+     "iopub.status.busy": "2026-01-26T15:53:04.826446Z",
+     "iopub.status.idle": "2026-01-26T15:53:05.144420Z",
+     "shell.execute_reply": "2026-01-26T15:53:05.143807Z"
     },
     "pycharm": {
      "is_executing": true
@@ -264,7 +264,7 @@
     {
      "data": {
       "text/plain": [
-       "<matplotlib.image.AxesImage at 0x7f3c31d3e7d0>"
+       "<matplotlib.image.AxesImage at 0x7f7f8504e830>"
       ]
      },
      "execution_count": 6,
@@ -337,10 +337,10 @@
    "execution_count": 7,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.968668Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.968291Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.972932Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.972334Z"
+     "iopub.execute_input": "2026-01-26T15:53:05.147604Z",
+     "iopub.status.busy": "2026-01-26T15:53:05.147186Z",
+     "iopub.status.idle": "2026-01-26T15:53:05.152461Z",
+     "shell.execute_reply": "2026-01-26T15:53:05.151899Z"
     },
     "pycharm": {
      "is_executing": true
@@ -379,10 +379,10 @@
    "execution_count": 8,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.975296Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.974924Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.979862Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.979289Z"
+     "iopub.execute_input": "2026-01-26T15:53:05.154534Z",
+     "iopub.status.busy": "2026-01-26T15:53:05.154344Z",
+     "iopub.status.idle": "2026-01-26T15:53:05.159118Z",
+     "shell.execute_reply": "2026-01-26T15:53:05.158450Z"
     },
     "pycharm": {
      "is_executing": true
@@ -429,10 +429,10 @@
    "execution_count": 9,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.982258Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.981808Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.985421Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.984820Z"
+     "iopub.execute_input": "2026-01-26T15:53:05.161454Z",
+     "iopub.status.busy": "2026-01-26T15:53:05.161078Z",
+     "iopub.status.idle": "2026-01-26T15:53:05.164471Z",
+     "shell.execute_reply": "2026-01-26T15:53:05.163962Z"
     },
     "pycharm": {
      "is_executing": true
@@ -462,10 +462,10 @@
    "execution_count": 10,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.987498Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.987199Z",
-     "iopub.status.idle": "2026-01-24T04:23:56.990682Z",
-     "shell.execute_reply": "2026-01-24T04:23:56.990198Z"
+     "iopub.execute_input": "2026-01-26T15:53:05.166526Z",
+     "iopub.status.busy": "2026-01-26T15:53:05.166335Z",
+     "iopub.status.idle": "2026-01-26T15:53:05.169834Z",
+     "shell.execute_reply": "2026-01-26T15:53:05.169287Z"
     },
     "pycharm": {
      "is_executing": true
@@ -496,10 +496,10 @@
    "execution_count": 11,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-24T04:23:56.992689Z",
-     "iopub.status.busy": "2026-01-24T04:23:56.992507Z",
-     "iopub.status.idle": "2026-01-24T04:23:57.233141Z",
-     "shell.execute_reply": "2026-01-24T04:23:57.232612Z"
+     "iopub.execute_input": "2026-01-26T15:53:05.171893Z",
+     "iopub.status.busy": "2026-01-26T15:53:05.171700Z",
+     "iopub.status.idle": "2026-01-26T15:53:05.390226Z",
+     "shell.execute_reply": "2026-01-26T15:53:05.389562Z"
     },
     "pycharm": {
      "is_executing": true
@@ -509,7 +509,7 @@
     {
      "data": {
       "text/plain": [
-       "<matplotlib.image.AxesImage at 0x7f3c31d3e500>"
+       "<matplotlib.image.AxesImage at 0x7f7fccd49330>"
       ]
      },
      "execution_count": 11,

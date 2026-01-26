@@ -1,5 +1,6 @@
 var NAVTREEINDEX107 =
 {
+"ecvDrawContext_8h.html#aa9344eadeddfc620f4e896bfda0ce009acd87147bbc13aa5779282ef83b375815":[4,0,1,1,0,28,21,1],
 "ecvDrawContext_8h.html#aa9344eadeddfc620f4e896bfda0ce009adbce153adeae6cb9a85d65d21d2d32b7":[4,0,1,1,0,28,21,4],
 "ecvDrawContext_8h.html#aa9344eadeddfc620f4e896bfda0ce009ae6bde493926a42602c6d77c44c6a855c":[4,0,1,1,0,28,21,7],
 "ecvDrawContext_8h.html#aa9344eadeddfc620f4e896bfda0ce009aeb19b2e19ee824b043fdeaa3380819c3":[4,0,1,1,0,28,21,6],
@@ -248,6 +249,5 @@ var NAVTREEINDEX107 =
 "estmem_8c.html#afab3d31ade6f48cf8bde664879ae0e63":[4,0,1,3,0,1,0,7,1],
 "estmem_8c_source.html":[4,0,1,3,0,1,0,7],
 "facetsClassifier_8h.html":[4,0,2,0,1,8,0,3],
-"facetsClassifier_8h.html#a0070b5d90e52798440cb032d087a2547":[4,0,2,0,1,8,0,3,4],
-"facetsClassifier_8h.html#a7e6142427f5e0730538817bbad59e2cc":[4,0,2,0,1,8,0,3,2]
+"facetsClassifier_8h.html#a0070b5d90e52798440cb032d087a2547":[4,0,2,0,1,8,0,3,4]
 };

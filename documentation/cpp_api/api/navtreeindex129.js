@@ -1,5 +1,6 @@
 var NAVTREEINDEX129 =
 {
+"qMasonry_2qAutoSeg_2profileImportDlg_8h_source.html":[4,0,2,0,1,13,0,1],
 "qMasonry_2qManualSeg_2profileImportDlg_8cpp.html":[4,0,2,0,1,13,1,0],
 "qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html":[4,0,2,0,1,13,1,0],
 "qMasonry_2qManualSeg_2profileImportDlg_8h.html":[4,0,2,0,1,13,1,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX129 =
 "quaziodevice_8cpp.html#ae13b100a248e870771d63d7724961412":[4,0,2,0,0,10,0,0,0,0,12,0],
 "quaziodevice_8cpp.html#ae8ba10541ebf3928f703c320acff91e8":[4,0,2,0,0,10,0,0,0,0,12,1],
 "quaziodevice_8cpp_source.html":[4,0,2,0,0,10,0,0,0,0,12],
-"quaziodevice_8h.html":[4,0,2,0,0,10,0,0,0,0,13],
-"quaziodevice_8h_source.html":[4,0,2,0,0,10,0,0,0,0,13]
+"quaziodevice_8h.html":[4,0,2,0,0,10,0,0,0,0,13]
 };

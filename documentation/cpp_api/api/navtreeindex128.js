@@ -1,5 +1,6 @@
 var NAVTREEINDEX128 =
 {
+"qCSF_8h.html":[4,0,2,0,1,7,0,5],
 "qCSF_8h_source.html":[4,0,2,0,1,7,0,5],
 "qCSVMatrixIO_8cpp.html":[4,0,2,0,0,2,1,4],
 "qCSVMatrixIO_8cpp_source.html":[4,0,2,0,0,2,1,4],
@@ -248,6 +249,5 @@ var NAVTREEINDEX128 =
 "qMasonry_2qAutoSeg_2profileImportDlg_8cpp.html#a6c3fdf91114777e87b94533452eaa1b4":[4,0,2,0,1,13,0,0,0],
 "qMasonry_2qAutoSeg_2profileImportDlg_8cpp.html#a8f266264e7cf5e1285826852a965ed65":[4,0,2,0,1,13,0,0,1],
 "qMasonry_2qAutoSeg_2profileImportDlg_8cpp_source.html":[4,0,2,0,1,13,0,0],
-"qMasonry_2qAutoSeg_2profileImportDlg_8h.html":[4,0,2,0,1,13,0,1],
-"qMasonry_2qAutoSeg_2profileImportDlg_8h_source.html":[4,0,2,0,1,13,0,1]
+"qMasonry_2qAutoSeg_2profileImportDlg_8h.html":[4,0,2,0,1,13,0,1]
 };

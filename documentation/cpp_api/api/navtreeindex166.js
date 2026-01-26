@@ -1,5 +1,6 @@
 var NAVTREEINDEX166 =
 {
+"structSubstContext.html#aea8056722d58fbcdb342cbfad7422ad4":[3,0,829,4],
 "structSumCtx.html":[3,0,830],
 "structSumCtx.html#a035a2a22271fee066d9a92d12fe3b9a5":[3,0,830,0],
 "structSumCtx.html#a1774080b9bcada2f4e867eaf40763f41":[3,0,830,4],
@@ -248,6 +249,5 @@ var NAVTREEINDEX166 =
 "structVdbeFrame.html#a0e5670c52e8eeb7e66bf1e3bff8ce2b5":[3,0,883,3],
 "structVdbeFrame.html#a11de10011ea2164995c6b616bba8a576":[3,0,883,16],
 "structVdbeFrame.html#a199f005c277fcaeca33abf86c0a865bc":[3,0,883,13],
-"structVdbeFrame.html#a2d2900348092258d12eb71057812429a":[3,0,883,7],
-"structVdbeFrame.html#a2f6258356959c94398d1d006a740c4ce":[3,0,883,17]
+"structVdbeFrame.html#a2d2900348092258d12eb71057812429a":[3,0,883,7]
 };

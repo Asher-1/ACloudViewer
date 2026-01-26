@@ -1,5 +1,6 @@
 var NAVTREEINDEX165 =
 {
+"structShellState.html#a3b0b640aa0211b45e6a10a0304e25c05":[3,0,762,44],
 "structShellState.html#a443b930c7001c9b669728b917c2f5587":[3,0,762,37],
 "structShellState.html#a555e4be1ff388f8fb4e71765e4b08ab2":[3,0,762,20],
 "structShellState.html#a576a4b6fd62786683bafb6c7631eae6f":[3,0,762,38],
@@ -248,6 +249,5 @@ var NAVTREEINDEX165 =
 "structSubstContext.html#a43336e8c2442bac062bc96e1a0674a95":[3,0,829,3],
 "structSubstContext.html#a453efa99ce17dbce235117d5e46dd6f7":[3,0,829,2],
 "structSubstContext.html#a49733a7875355a0a0c84fd182233b1a1":[3,0,829,1],
-"structSubstContext.html#a828f6ffc3b5266cbedc16e149fb0cd19":[3,0,829,0],
-"structSubstContext.html#aea8056722d58fbcdb342cbfad7422ad4":[3,0,829,4]
+"structSubstContext.html#a828f6ffc3b5266cbedc16e149fb0cd19":[3,0,829,0]
 };

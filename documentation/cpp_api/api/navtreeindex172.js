@@ -1,5 +1,6 @@
 var NAVTREEINDEX172 =
 {
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#aed36972a617be33b6c0337908c61a285":[3,0,2,1,3,0,5],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#aefc9114e7ddba257cd939ca41b6c7fa1":[3,0,2,1,3,0,6],
 "structcloudViewer_1_1core_1_1tensor__init_1_1InitializerDim.html":[3,0,2,1,4,2],
 "structcloudViewer_1_1core_1_1tensor__init_1_1InitializerDim.html#af04e696b29c78d84de4430164c357535":[3,0,2,1,4,2,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX172 =
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a3b6aae1de4525ed4fee5428a1817e50a":[3,0,2,6,0,1,8],
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a498ee13302709032dd9e93c97b6aecdc":[3,0,2,6,0,1,9],
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a6bcd1a5dafc26a3bcd55f84557a72334":[3,0,2,6,0,1,1],
-"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a9bf60d10b0395b11bb09659b6fc78419":[3,0,2,6,0,1,7],
-"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#abdcff5a940e06af7e3a8815882ae430e":[3,0,2,6,0,1,3]
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a9bf60d10b0395b11bb09659b6fc78419":[3,0,2,6,0,1,7]
 };

@@ -1,5 +1,6 @@
 var NAVTREEINDEX180 =
 {
+"structflann_1_1L2__Simple.html#a28411e1737078601802c56ee8205e010":[3,0,8,39,2],
 "structflann_1_1L2__Simple.html#a639b2fe2347ce45a050780e7fe6aa659":[3,0,8,39,4],
 "structflann_1_1L2__Simple.html#a771567229156bd2de9b3411267601b6b":[3,0,8,39,0],
 "structflann_1_1L2__Simple.html#a90d4ff33f4dcf13f665e101195d7fbc5":[3,0,8,39,3],
@@ -248,6 +249,5 @@ var NAVTREEINDEX180 =
 "structflann_1_1cuda_1_1kd__tree__builder__detail_1_1set__addr3.html#a432b4e05bd66dfaab5531f873fa2606f":[3,0,8,1,0,6,3],
 "structflann_1_1cuda_1_1kd__tree__builder__detail_1_1set__addr3.html#a51f76750fc50239d185adafb4c46acce":[3,0,8,1,0,6,0],
 "structflann_1_1cuda_1_1kd__tree__builder__detail_1_1set__addr3.html#a945f1305a771c884a9926a1317804cb6":[3,0,8,1,0,6,2],
-"structflann_1_1cuda_1_1kd__tree__builder__detail_1_1set__addr3.html#ac5625fbee8cd29e431f004995549ec04":[3,0,8,1,0,6,1],
-"structflann_1_1disable__if.html":[3,0,8,7]
+"structflann_1_1cuda_1_1kd__tree__builder__detail_1_1set__addr3.html#ac5625fbee8cd29e431f004995549ec04":[3,0,8,1,0,6,1]
 };

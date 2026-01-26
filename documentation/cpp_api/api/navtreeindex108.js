@@ -1,5 +1,6 @@
 var NAVTREEINDEX108 =
 {
+"facetsClassifier_8h.html#a7e6142427f5e0730538817bbad59e2cc":[4,0,2,0,1,8,0,3,2],
 "facetsClassifier_8h.html#a89e33880518146d3789355dd1f9e5a50":[4,0,2,0,1,8,0,3,3],
 "facetsClassifier_8h.html#adeb9ed27433092715074697300c619e0":[4,0,2,0,1,8,0,3,1],
 "facetsClassifier_8h_source.html":[4,0,2,0,1,8,0,3],
@@ -248,6 +249,5 @@ var NAVTREEINDEX108 =
 "frename_8c.html#a2b366fa1141d4cd08686568d87a8c53b":[4,0,1,3,0,1,0,10,52],
 "frename_8c.html#a2c902d47241eb4a9fd10eb75241ae433":[4,0,1,3,0,1,0,10,6],
 "frename_8c.html#a2f81a42d236e5f7ba1d8ccbb277554fd":[4,0,1,3,0,1,0,10,0],
-"frename_8c.html#a340aca3d83f93b4cb828255e6289667c":[4,0,1,3,0,1,0,10,42],
-"frename_8c.html#a363d2b71df380d833f7afa6a042d70af":[4,0,1,3,0,1,0,10,34]
+"frename_8c.html#a340aca3d83f93b4cb828255e6289667c":[4,0,1,3,0,1,0,10,42]
 };

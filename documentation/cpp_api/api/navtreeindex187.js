@@ -1,5 +1,6 @@
 var NAVTREEINDEX187 =
 {
+"structunz64__s.html":[3,0,872],
 "structunz64__s.html#a01d834fe3f5d52a7d2d760088ae0e76b":[3,0,872,18],
 "structunz64__s.html#a1a05ae390405b254baab33422211acab":[3,0,872,14],
 "structunz64__s.html#a2c0f02f769c43e2c351e310ff130f1c0":[3,0,872,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX187 =
 "t_2io_2file__format_2FileASSIMP_8cpp.html#af830b79d1ca65cfdc0f2d26795cf64b3":[4,0,1,0,6,1,0,0,4],
 "t_2io_2file__format_2FileASSIMP_8cpp_source.html":[4,0,1,0,6,1,0,0],
 "t_2io_2sensor_2RGBDSensor_8h.html":[4,0,1,0,6,1,1,1],
-"t_2io_2sensor_2RGBDSensor_8h_source.html":[4,0,1,0,6,1,1,1],
-"t_2pipelines_2kernel_2Registration_8cpp.html":[4,0,1,0,6,2,0,10]
+"t_2io_2sensor_2RGBDSensor_8h_source.html":[4,0,1,0,6,1,1,1]
 };

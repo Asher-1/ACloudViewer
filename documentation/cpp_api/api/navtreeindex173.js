@@ -1,5 +1,6 @@
 var NAVTREEINDEX173 =
 {
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#abdcff5a940e06af7e3a8815882ae430e":[3,0,2,6,0,1,3],
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#ac2467d7ebccfd61df6b266041f6e0c47":[3,0,2,6,0,1,4],
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#ac300e3195f97d86e9322dc3d66341019":[3,0,2,6,0,1,5],
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#acb3a16d178cb069cfa9fbbc0dcbed484":[3,0,2,6,0,1,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX173 =
 "structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl.html#a5dee59c440f010266993dfb8453d7142":[3,0,2,10,17,0,8],
 "structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl.html#a5f17ea225364367797ebcd187d0a1dd5":[3,0,2,10,17,0,15],
 "structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl.html#a62f29f1c91481df04a7e4a682063904e":[3,0,2,10,17,0,14],
-"structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl.html#a7bff2158fa92b9e08ca1db0a93d7419c":[3,0,2,10,17,0,17],
-"structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl.html#a7f99bbe4a3bb61881307bb3455472d88":[3,0,2,10,17,0,11]
+"structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl.html#a7bff2158fa92b9e08ca1db0a93d7419c":[3,0,2,10,17,0,17]
 };

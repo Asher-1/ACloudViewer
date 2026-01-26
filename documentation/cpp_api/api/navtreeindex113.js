@@ -1,5 +1,6 @@
 var NAVTREEINDEX113 =
 {
+"lz4_8h.html#afdcbf92c1921ecf2838db322c77c1485":[4,0,1,3,0,0,1,1,41],
 "lz4_8h.html#affe4afb333be7fdc027316cc3a381b04":[4,0,1,3,0,0,1,1,20],
 "lz4_8h_source.html":[4,0,1,3,0,0,1,1],
 "lz4hc_8c.html":[4,0,1,3,0,0,1,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX113 =
 "ml_2impl_2misc_2NeighborSearchCommon_8h.html#a512fee38118bccff478641b7db279ceda788c46505f9f11ee55a58c193a16ec05":[4,0,1,0,4,1,1,3,5,2],
 "ml_2impl_2misc_2NeighborSearchCommon_8h.html#a71aa9d3d13bbbb0bf2a9f96c6596a3bd":[4,0,1,0,4,1,1,3,6],
 "ml_2impl_2misc_2NeighborSearchCommon_8h.html#a9e64b37aa76347c9bf88985c9dec78c9":[4,0,1,0,4,1,1,3,4],
-"ml_2impl_2misc_2NeighborSearchCommon_8h.html#aff15b4e435d9359810229f73fee3d990":[4,0,1,0,4,1,1,3,8],
-"ml_2impl_2misc_2NeighborSearchCommon_8h_source.html":[4,0,1,0,4,1,1,3]
+"ml_2impl_2misc_2NeighborSearchCommon_8h.html#aff15b4e435d9359810229f73fee3d990":[4,0,1,0,4,1,1,3,8]
 };

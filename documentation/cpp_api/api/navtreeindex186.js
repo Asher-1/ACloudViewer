@@ -1,5 +1,6 @@
 var NAVTREEINDEX186 =
 {
+"structsqlite3__io__methods.html#ad1c72bdfde750a09a797f314a096a965":[3,0,791,0],
 "structsqlite3__io__methods.html#ad269e3cbda39d0a2383aef13b60b02f8":[3,0,791,6],
 "structsqlite3__io__methods.html#ad817335f15cad777b60d973f73cb542c":[3,0,791,4],
 "structsqlite3__io__methods.html#aedf4a59fa25ad33e0625a2aa0f6f2184":[3,0,791,10],
@@ -248,6 +249,5 @@ var NAVTREEINDEX186 =
 "structunix__syscall.html#aaf85c3771782bac6dc0c0c225bb93337":[3,0,863,2],
 "structunz64__file__pos__s.html":[3,0,871],
 "structunz64__file__pos__s.html#a3750057b6e72229a7acfb12b23bcb2fb":[3,0,871,0],
-"structunz64__file__pos__s.html#a56b202151059b18903fe46dacbfbf12d":[3,0,871,1],
-"structunz64__s.html":[3,0,872]
+"structunz64__file__pos__s.html#a56b202151059b18903fe46dacbfbf12d":[3,0,871,1]
 };

@@ -1,5 +1,6 @@
 var NAVTREEINDEX168 =
 {
+"structWhereInfo.html#ad480304ebeadcad7cb742dd8d8e11a0b":[3,0,919,17],
 "structWhereInfo.html#ae51ef2af01420b9370a844ee32cc5fc5":[3,0,919,22],
 "structWhereInfo.html#af72f77dc0efdd0f86b9dbb076d46626d":[3,0,919,2],
 "structWhereInfo.html#afae86f54ed8f79536437d1e71e348133":[3,0,919,19],
@@ -248,6 +249,5 @@ var NAVTREEINDEX168 =
 "structcallbacks_1_1ListIntersectionsContext.html#a4c3dafea7c04081f5d8acf991419cdc8":[3,0,1,2,1],
 "structcallbacks_1_1ListIntersectionsContext.html#a90b3dda87d8dce3025054d87a9748dae":[3,0,1,2,8],
 "structcallbacks_1_1ListIntersectionsContext.html#abb476c9b04bfa03e1b795b8588a7527c":[3,0,1,2,3],
-"structcallbacks_1_1ListIntersectionsContext.html#af70a540b7a6acc3c8a5f90981a6a4fd0":[3,0,1,2,4],
-"structcallbacks_1_1ListIntersectionsContext.html#afef7e45629460ff52eeb64769d324151":[3,0,1,2,6]
+"structcallbacks_1_1ListIntersectionsContext.html#af70a540b7a6acc3c8a5f90981a6a4fd0":[3,0,1,2,4]
 };

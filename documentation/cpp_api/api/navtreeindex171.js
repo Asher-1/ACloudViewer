@@ -1,5 +1,6 @@
 var NAVTREEINDEX171 =
 {
+"structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a7ecb3c3ec0cf3647cea646328c1e8336":[3,0,2,23,0,3],
 "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a9f6ba6cbbe6b0a27ce5bfb42cfcb39a7":[3,0,2,23,0,2],
 "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#aa5bbb56eb5bac494da353f88ba495349":[3,0,2,23,0,6],
 "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#aaf28e5cb7a28e71a3cc2109ecb12c363":[3,0,2,23,0,4],
@@ -248,6 +249,5 @@ var NAVTREEINDEX171 =
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a6949d0e5dda6fb83f8fb5d8704d94b57":[3,0,2,1,3,0,0],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a9f2870f4e6ac62244d1be06228846ee5":[3,0,2,1,3,0,2],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ab68bae0d78c99b5a8ef1d92bf507f2cd":[3,0,2,1,3,0,4],
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ae33a27a6b2262c2ce499b4195e6cd22e":[3,0,2,1,3,0,1],
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#aed36972a617be33b6c0337908c61a285":[3,0,2,1,3,0,5]
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ae33a27a6b2262c2ce499b4195e6cd22e":[3,0,2,1,3,0,1]
 };

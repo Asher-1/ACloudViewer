@@ -1,5 +1,6 @@
 var NAVTREEINDEX167 =
 {
+"structVdbeFrame.html#a2f6258356959c94398d1d006a740c4ce":[3,0,883,17],
 "structVdbeFrame.html#a5d373b3a195dbd1a31f5aa0dbe1822ee":[3,0,883,4],
 "structVdbeFrame.html#a77aacb67d627f4446dd50a795b5a2f0f":[3,0,883,6],
 "structVdbeFrame.html#a833bdf519676567bc3a700cdedc6562d":[3,0,883,8],
@@ -248,6 +249,5 @@ var NAVTREEINDEX167 =
 "structWhereInfo.html#ab5690a0fa9f78c25a79dd9e50d747fdf":[3,0,919,24],
 "structWhereInfo.html#abc7ead2e05361b942b4cd34047928f2c":[3,0,919,13],
 "structWhereInfo.html#abff60764e39a62d7ede2a5d8f1ce4fff":[3,0,919,20],
-"structWhereInfo.html#ac0c497c57f2b3121738806d3edd4fc09":[3,0,919,3],
-"structWhereInfo.html#ad480304ebeadcad7cb742dd8d8e11a0b":[3,0,919,17]
+"structWhereInfo.html#ac0c497c57f2b3121738806d3edd4fc09":[3,0,919,3]
 };

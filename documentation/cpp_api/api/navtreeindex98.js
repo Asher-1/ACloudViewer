@@ -1,5 +1,6 @@
 var NAVTREEINDEX98 =
 {
+"classflann_1_1LshIndex.html#abff61767b795c65ad44ef59eadc42260":[3,0,8,66,4],
 "classflann_1_1LshIndex.html#acb6bd3d02ac3d7e56501a637910bd5d5":[3,0,8,66,6],
 "classflann_1_1LshIndex.html#ad55a49ae8e0e228405d59625925f60a4":[3,0,8,66,8],
 "classflann_1_1LshIndex.html#adba1402deaba296376f586c1bc052738":[3,0,8,66,12],
@@ -248,6 +249,5 @@ var NAVTREEINDEX98 =
 "classknncpp_1_1KDTreeMinkowski.html#a84b82a42c601d55ed05cf9cd23f387d1":[3,0,11,7,6],
 "classknncpp_1_1KDTreeMinkowski.html#a96dcf466bc4c2d8e7d8e00e8ea302195":[3,0,11,7,1],
 "classknncpp_1_1KDTreeMinkowski.html#a9f3603f98d11d5d35b6dfe54414d1627":[3,0,11,7,3],
-"classknncpp_1_1KDTreeMinkowski.html#aa51ff1ff8e91414cd8d5599dbd37af00":[3,0,11,7,18],
-"classknncpp_1_1KDTreeMinkowski.html#ab3e74d2ca0fe566f6e30b15fbc8d0e20":[3,0,11,7,15]
+"classknncpp_1_1KDTreeMinkowski.html#aa51ff1ff8e91414cd8d5599dbd37af00":[3,0,11,7,18]
 };

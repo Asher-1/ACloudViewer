@@ -1,5 +1,6 @@
 var NAVTREEINDEX102 =
 {
+"classqVoxFallDialog.html#a850b8488401a8e98e9549e019141290e":[3,0,713,7],
 "classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415":[3,0,713,18],
 "classqVoxFallDialog.html#aa18fe9bc72f60152348bc2e38d206220":[3,0,713,6],
 "classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71":[3,0,713,16],
@@ -248,6 +249,5 @@ var NAVTREEINDEX102 =
 "cloudViewer_2t_2io_2ImageIO_8h.html#ac9ed60d5ae37329a31c5f23b2e9209a8":[4,0,1,0,6,1,5,5],
 "cloudViewer_2t_2io_2ImageIO_8h.html#ad1e11e5a436370da46fa4bff570efd01":[4,0,1,0,6,1,5,6],
 "cloudViewer_2t_2io_2ImageIO_8h.html#adfe1cfc25014aa1b9c0c2aa777235316":[4,0,1,0,6,1,5,3],
-"cloudViewer_2t_2io_2ImageIO_8h_source.html":[4,0,1,0,6,1,5],
-"coarsen_8c.html":[4,0,1,3,0,1,0,3]
+"cloudViewer_2t_2io_2ImageIO_8h_source.html":[4,0,1,0,6,1,5]
 };

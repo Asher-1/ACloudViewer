@@ -1,5 +1,6 @@
 var NAVTREEINDEX157 =
 {
+"structBtCursor.html#a37db7ea50e0f355ea6a3d8d3213722c3":[3,0,60,4],
 "structBtCursor.html#a3c979824f27f63678d7a2b02311bc330":[3,0,60,15],
 "structBtCursor.html#a61c245712549192f7644e5ac23c00b74":[3,0,60,12],
 "structBtCursor.html#a65dcb301e19091f0c2e106b5e36ea092":[3,0,60,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX157 =
 "structCloudDesc.html#aba2abdfacfae067a8e6c68a08c7f801f":[3,0,216,1],
 "structCollSeq.html":[3,0,226],
 "structCollSeq.html#a3cee924d41e730ccec7f686eb5b6f041":[3,0,226,1],
-"structCollSeq.html#a3f5a0c7eb4da9d8e396138719210f580":[3,0,226,2],
-"structCollSeq.html#a48d6d5f71d4f8a3ab122903464e8b4a1":[3,0,226,4]
+"structCollSeq.html#a3f5a0c7eb4da9d8e396138719210f580":[3,0,226,2]
 };

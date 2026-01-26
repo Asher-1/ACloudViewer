@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['knncpp_29947',['knncpp',['../namespaceknncpp.html',1,'']]]
+  ['knncpp_29970',['knncpp',['../namespaceknncpp.html',1,'']]]
 ];

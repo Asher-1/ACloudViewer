@@ -501,6 +501,7 @@ var classecvDisplayTools =
     [ "m_validProjectionMatrix", "classecvDisplayTools.html#a1730c8ecf19709dbe594c41646668ffc", null ],
     [ "m_viewMatd", "classecvDisplayTools.html#a04ccfa389fe2a2e9db01eadf1b06430c", null ],
     [ "m_viewportParams", "classecvDisplayTools.html#a7ad455fcb8e972507d45dd2aefdbf52b", null ],
+    [ "m_widgetClicked", "classecvDisplayTools.html#ac5b91de7414e2c947dc0ddfeae02dd85", null ],
     [ "m_win", "classecvDisplayTools.html#a614cd7f66f1227b4c7c3b37bbb4789c0", null ],
     [ "m_winDBRoot", "classecvDisplayTools.html#a61e5c652765fa6744ac9ed03af31b16d", null ],
     [ "USE_2D", "classecvDisplayTools.html#a5049e27c9623910d093d364a35bd647a", null ],
