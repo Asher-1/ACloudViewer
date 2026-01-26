@@ -51,6 +51,9 @@ public:  // implemented from ecvGenericMeasurementTools interface
     virtual void setPoint2(double pos[3]) override;
     virtual void setCenter(double pos[3]) override;
     virtual void setColor(double r, double g, double b) override;
+    //! Get measurement color (RGB values in range [0.0, 1.0])
+    //! Returns false if not implemented, true if color is retrieved
+    virtual bool getColor(double& r, double& g, double& b) const;
     virtual void lockInteraction() override;
     virtual void unlockInteraction() override;
     virtual void setInstanceLabel(const QString& label) override;
@@ -61,6 +64,17 @@ public:  // implemented from ecvGenericMeasurementTools interface
     virtual void setShadow(bool shadow) override;
     virtual void setFontOpacity(double opacity) override;
     virtual void setFontColor(double r, double g, double b) override;
+
+    //! Get font properties (for UI synchronization)
+    QString getFontFamily() const;
+    int getFontSize() const;
+    void getFontColor(double& r, double& g, double& b) const;
+    bool getFontBold() const;
+    bool getFontItalic() const;
+    bool getFontShadow() const;
+    double getFontOpacity() const;
+    QString getHorizontalJustification() const;
+    QString getVerticalJustification() const;
     virtual void setHorizontalJustification(
             const QString& justification) override;
     virtual void setVerticalJustification(

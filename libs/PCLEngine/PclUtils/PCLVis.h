@@ -321,6 +321,17 @@ public:
                        const std::string& viewID = "caption",
                        int viewport = 0);
 
+    //! Get caption widget 2D position (normalized coordinates 0.0-1.0)
+    /** Returns false if widget not found or invalid
+     *  \param viewID widget view ID
+     *  \param posX output X position (0.0-1.0, left to right)
+     *  \param posY output Y position (0.0-1.0, bottom to top in VTK coordinate
+     *system) \return true if position retrieved successfully
+     **/
+    bool getCaptionPosition(const std::string& viewID,
+                            float& posX,
+                            float& posY);
+
     bool addPolyline(const PCLPolygon::ConstPtr pclPolygon,
                      double r,
                      double g,

@@ -12,7 +12,9 @@
 #include <QKeySequence>
 #include <QObject>
 #include <QPointer>
-#include <QShortcut>
+
+// CV_DB_LIB
+#include <Shortcuts/ecvModalShortcut.h>
 
 class QWidget;
 class vtkCell;
@@ -139,7 +141,7 @@ private:
                        vtkCell* cell,
                        double normal[3]);
 
-    QPointer<QShortcut> m_shortcut;
+    QPointer<ecvModalShortcut> m_shortcut;
     QPointer<QWidget> m_contextWidget;
     vtkRenderWindowInteractor* m_interactor = nullptr;
     vtkRenderer* m_renderer = nullptr;

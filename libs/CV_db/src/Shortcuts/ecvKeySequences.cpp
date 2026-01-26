@@ -28,6 +28,9 @@ struct Shortcuts {
     /// All shortcuts (siblings) that share the same key sequence
     QSet<ecvModalShortcut*> Siblings;
 
+    /// Most recently used shortcut (for reordering)
+    ecvModalShortcut* mruShortcut = nullptr;
+
     // TODO: Allow a key-sequence to be "default to last" when a shortcut is
     //       removed/disabled as an option?
     // TODO: Hold tooltip or preference name?
@@ -54,7 +57,7 @@ ecvKeySequences& ecvKeySequences::instance() {
 //-----------------------------------------------------------------------------
 ecvKeySequences::ecvKeySequences(QObject* parent)
     : QObject(parent), m_silence(false) {
-    CVLog::Print("[ecvKeySequences] Modal shortcut manager initialized");
+    CVLog::PrintVerbose("[ecvKeySequences] Modal shortcut manager initialized");
 }
 
 //-----------------------------------------------------------------------------
@@ -106,7 +109,7 @@ ecvModalShortcut* ecvKeySequences::addModalShortcut(
     // Enable (this will trigger disableSiblings() to ensure only one is active)
     shortcut->setEnabled(true);
 
-    CVLog::Print(
+    CVLog::PrintVerbose(
             QString("[ecvKeySequences] Registered modal shortcut: %1 (ID: %2)")
                     .arg(keySequence.toString())
                     .arg(shortcut->objectName().isEmpty()
@@ -118,8 +121,40 @@ ecvModalShortcut* ecvKeySequences::addModalShortcut(
 
 //-----------------------------------------------------------------------------
 void ecvKeySequences::reorder(ecvModalShortcut* target) {
-    (void)target;
-    // TODO: Implement reordering logic for MRU (Most Recently Used) behavior
+    if (!target) {
+        return;
+    }
+
+    // Find the key sequence for this shortcut
+    QMap<QKeySequence, Shortcuts>::iterator iter =
+            g_keys.Data.find(target->keySequence());
+    if (iter == g_keys.Data.end()) {
+        return;
+    }
+
+    // Check if any sibling of target is currently active
+    bool hasActiveSibling = false;
+    for (auto& sibling : iter->Siblings) {
+        if (sibling != target && sibling && sibling->isEnabled()) {
+            hasActiveSibling = true;
+            break;
+        }
+    }
+
+    // If no sibling is active, reorder has no effect (as per ParaView
+    // documentation)
+    if (!hasActiveSibling) {
+        return;
+    }
+
+    // Mark target as the most recently used shortcut
+    // This allows enableNextSibling() to activate it when the current
+    // shortcut is disabled
+    iter->mruShortcut = target;
+
+    CVLog::PrintVerbose(
+            QString("[ecvKeySequences] Reordered shortcut: %1 (MRU set)")
+                    .arg(target->keySequence().toString()));
 }
 
 //-----------------------------------------------------------------------------
@@ -133,16 +168,17 @@ void ecvKeySequences::dumpShortcuts(const QKeySequence& keySequence) const {
         return;
     }
 
-    CVLog::Print(QString("[ecvKeySequences] Shortcuts for %1:")
-                         .arg(keySequence.toString()));
+    CVLog::PrintVerbose(QString("[ecvKeySequences] Shortcuts for %1:")
+                                .arg(keySequence.toString()));
     for (auto& sibling : iter->Siblings) {
         if (sibling) {
-            CVLog::Print(QString("  - %1: %2")
-                                 .arg(sibling->objectName().isEmpty()
-                                              ? "unnamed"
-                                              : sibling->objectName())
-                                 .arg(sibling->isEnabled() ? "enabled"
-                                                           : "disabled"));
+            CVLog::PrintVerbose(QString("  - %1: %2")
+                                        .arg(sibling->objectName().isEmpty()
+                                                     ? "unnamed"
+                                                     : sibling->objectName())
+                                        .arg(sibling->isEnabled()
+                                                     ? "enabled"
+                                                     : "disabled"));
         }
     }
 }
@@ -164,6 +200,12 @@ void ecvKeySequences::disableSiblings() {
         return;
     }
 
+    // Update MRU shortcut to the one being enabled
+    iter->mruShortcut = shortcut;
+
+    // Update MRU shortcut to the one being enabled
+    iter->mruShortcut = shortcut;
+
     // Disable all siblings except the one being enabled
     m_silence = true;
     int disabledCount = 0;
@@ -176,9 +218,10 @@ void ecvKeySequences::disableSiblings() {
     m_silence = false;
 
     if (disabledCount > 0) {
-        CVLog::Print(QString("[ecvKeySequences] Disabled %1 sibling(s) for %2")
-                             .arg(disabledCount)
-                             .arg(shortcut->keySequence().toString()));
+        CVLog::PrintVerbose(
+                QString("[ecvKeySequences] Disabled %1 sibling(s) for %2")
+                        .arg(disabledCount)
+                        .arg(shortcut->keySequence().toString()));
     }
 }
 
@@ -193,8 +236,64 @@ void ecvKeySequences::enableNextSibling() {
         return;
     }
 
-    // TODO: Activate a sibling of shortcut that is the most-recently-used
-    //       and also not a child of a disabled widget.
+    // Find the key sequence for this shortcut
+    QMap<QKeySequence, Shortcuts>::iterator iter =
+            g_keys.Data.find(shortcut->keySequence());
+    if (iter == g_keys.Data.end()) {
+        return;
+    }
+
+    // Activate the most-recently-used sibling if available
+    // This implements the reordering behavior: when a shortcut is disabled,
+    // the MRU shortcut (set via reorder()) becomes the next one to activate
+    if (iter->mruShortcut && iter->mruShortcut != shortcut) {
+        // Check if the MRU shortcut's parent widget is still valid and enabled
+        QWidget* parentWidget =
+                qobject_cast<QWidget*>(iter->mruShortcut->parent());
+        if (parentWidget && parentWidget->isEnabled() &&
+            parentWidget->isVisible()) {
+            iter->mruShortcut->setEnabled(true);
+            CVLog::PrintVerbose(
+                    QString("[ecvKeySequences] Enabled next sibling (MRU): %1")
+                            .arg(shortcut->keySequence().toString()));
+        } else {
+            // MRU shortcut's widget is disabled/hidden, try to find another
+            // enabled sibling
+            for (auto& sibling : iter->Siblings) {
+                if (sibling != shortcut && sibling) {
+                    QWidget* siblingParent =
+                            qobject_cast<QWidget*>(sibling->parent());
+                    if (siblingParent && siblingParent->isEnabled() &&
+                        siblingParent->isVisible()) {
+                        sibling->setEnabled(true);
+                        CVLog::PrintVerbose(QString("[ecvKeySequences] Enabled "
+                                                    "next sibling: "
+                                                    "%1")
+                                                    .arg(shortcut->keySequence()
+                                                                 .toString()));
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        // No MRU shortcut set, try to find any enabled sibling
+        for (auto& sibling : iter->Siblings) {
+            if (sibling != shortcut && sibling) {
+                QWidget* siblingParent =
+                        qobject_cast<QWidget*>(sibling->parent());
+                if (siblingParent && siblingParent->isEnabled() &&
+                    siblingParent->isVisible()) {
+                    sibling->setEnabled(true);
+                    CVLog::PrintVerbose(
+                            QString("[ecvKeySequences] Enabled next sibling: "
+                                    "%1")
+                                    .arg(shortcut->keySequence().toString()));
+                    break;
+                }
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -214,8 +313,9 @@ void ecvKeySequences::removeModalShortcut() {
     iter->Siblings.remove(shortcut);
     QObject::disconnect(shortcut);
 
-    CVLog::Print(QString("[ecvKeySequences] Unregistered modal shortcut: %1")
-                         .arg(shortcut->keySequence().toString()));
+    CVLog::PrintVerbose(
+            QString("[ecvKeySequences] Unregistered modal shortcut: %1")
+                    .arg(shortcut->keySequence().toString()));
 
     // If no more siblings, remove the key sequence entry
     if (iter->Siblings.empty()) {

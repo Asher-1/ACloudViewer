@@ -30,6 +30,9 @@
 #include <CVLog.h>
 #include <ecvDisplayTools.h>
 
+// CV_APP (forward declaration to avoid circular dependency)
+class MainWindow;
+
 // VTK
 #include <vtkCell.h>
 #include <vtkCellData.h>
@@ -57,8 +60,12 @@
 // QT
 #include <QActionGroup>
 #include <QApplication>
+#include <QClipboard>
+#include <QKeySequence>
+#include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QShortcut>
 #include <QTimer>
 #include <QToolTip>
 #include <QWidget>
@@ -129,6 +136,39 @@ cvRenderViewSelectionReaction::cvRenderViewSelectionReaction(
     connect(&m_mouseMovingTimer, &QTimer::timeout, this,
             &cvRenderViewSelectionReaction::onMouseStop);
 
+    // Copy tooltip shortcut (ParaView-style)
+    // Reference: pqRenderViewSelectionReaction.cxx line 59, 118-120
+    // Use main window widget as parent (like ParaView's
+    // pqCoreUtilities::mainWidget()) ParaView uses
+    // pqCoreUtilities::mainWidget() which finds QMainWindow from top-level
+    // widgets
+    QWidget* parentWidget = nullptr;
+    // Find main window from top-level widgets (ParaView-style)
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+        if (widget->isWindow() && widget->isVisible() &&
+            qobject_cast<QMainWindow*>(widget)) {
+            parentWidget = widget;
+            break;
+        }
+    }
+    if (!parentWidget) {
+        // Fallback: find any main window (even if not visible)
+        for (QWidget* widget : QApplication::topLevelWidgets()) {
+            if (widget->isWindow() && qobject_cast<QMainWindow*>(widget)) {
+                parentWidget = widget;
+                break;
+            }
+        }
+    }
+    // If still no parent, use nullptr (shortcut will be application-wide)
+    m_copyTooltipShortcut = new QShortcut(parentWidget);
+    connect(m_copyTooltipShortcut, &QShortcut::activated, this, [this]() {
+        if (!m_plainTooltipText.isEmpty()) {
+            QApplication::clipboard()->setText(m_plainTooltipText);
+        }
+    });
+    m_copyTooltipShortcut->setEnabled(false);
+
     // Initial enable state update
     updateEnableState();
 }
@@ -138,6 +178,12 @@ cvRenderViewSelectionReaction::~cvRenderViewSelectionReaction() {
     // Clean up observers before destruction
     // Reference: pqRenderViewSelectionReaction.cxx line 124-127
     cleanupObservers();
+
+    // Clean up copy tooltip shortcut
+    if (m_copyTooltipShortcut) {
+        delete m_copyTooltipShortcut;
+        m_copyTooltipShortcut = nullptr;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -167,6 +213,7 @@ void cvRenderViewSelectionReaction::setVisualizer(
     }
 
     // Update enable state with new visualizer
+    // This ensures polygon selection actions are enabled when viewer is set
     updateEnableState();
 }
 
@@ -334,6 +381,15 @@ void cvRenderViewSelectionReaction::updateEnableState() {
             m_parentAction->setEnabled(m_viewer != nullptr);
             break;
 
+        case SelectionMode::SELECT_SURFACE_CELLS_POLYGON:
+        case SelectionMode::SELECT_SURFACE_POINTS_POLYGON:
+            // Polygon selection modes: enable if visualizer is available
+            // These modes require viewer/interactor to work, but should be
+            // enabled even if viewer is not yet set (shortcut should still
+            // work)
+            m_parentAction->setEnabled(true);
+            break;
+
         default:
             // Other modes: enable if visualizer is available
             m_parentAction->setEnabled(m_viewer != nullptr);
@@ -349,7 +405,13 @@ void cvRenderViewSelectionReaction::beginSelection() {
     // Reference: pqRenderViewSelectionReaction::beginSelection()
     // lines 307-494
 
-    if (!m_viewer || !m_interactor) {
+    // GROW/SHRINK/CLEAR don't require viewer/interactor - they work directly
+    // with the selection manager
+    bool requiresViewer = (m_mode != SelectionMode::GROW_SELECTION &&
+                           m_mode != SelectionMode::SHRINK_SELECTION &&
+                           m_mode != SelectionMode::CLEAR_SELECTION);
+
+    if (requiresViewer && (!m_viewer || !m_interactor)) {
         CVLog::Warning(
                 "[cvRenderViewSelectionReaction::beginSelection] No viewer or "
                 "interactor");
@@ -480,6 +542,13 @@ void cvRenderViewSelectionReaction::endSelection() {
     // Clear hover state
     m_hoveredId = -1;
     m_currentPolyData = nullptr;
+
+    // Disable copy tooltip shortcut
+    // Reference: pqRenderViewSelectionReaction.cxx line 930-931
+    if (m_copyTooltipShortcut) {
+        m_copyTooltipShortcut->setKey(QKeySequence());
+        m_copyTooltipShortcut->setEnabled(false);
+    }
 
     // CRITICAL FIX: Defer cleanup operations to avoid crashing when called
     // from within VTK event handlers (e.g.,
@@ -1258,10 +1327,25 @@ void cvRenderViewSelectionReaction::updateTooltip() {
             QPoint globalPos = widget->mapToGlobal(localPos);
 
             QToolTip::showText(globalPos, tooltipText);
+
+            // Copy to clipboard mechanism (ParaView-style)
+            // Reference: pqRenderViewSelectionReaction.cxx line 924-926
+            // ParaView sets PlainTooltipText first, then enables shortcut and
+            // sets key
             m_plainTooltipText = tooltipText;
+            if (m_copyTooltipShortcut) {
+                m_copyTooltipShortcut->setEnabled(true);
+                m_copyTooltipShortcut->setKey(QKeySequence::Copy);
+            }
         }
     } else {
         QToolTip::hideText();
+        // Disable copy tooltip shortcut when no tooltip
+        // Reference: pqRenderViewSelectionReaction.cxx line 930-931
+        if (m_copyTooltipShortcut) {
+            m_copyTooltipShortcut->setKey(QKeySequence());
+            m_copyTooltipShortcut->setEnabled(false);
+        }
     }
 }
 

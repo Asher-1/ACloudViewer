@@ -20,6 +20,8 @@ ecvModalShortcut::ecvModalShortcut(const QKeySequence& key,
                                    QWidget* parent)
     : Superclass(parent), m_key(key), m_action(action) {
     // Create the underlying QShortcut
+    // Note: Default context is WindowShortcut, but we'll set it properly
+    // in setContextWidget() if needed
     m_shortcut = new QShortcut(key, parent);
 
     // Connect shortcut activation to our signal
@@ -47,8 +49,31 @@ void ecvModalShortcut::setContextWidget(QWidget* contextWidget,
     if (m_shortcut) {
         // Check if we're already using this widget and context
         if (qobject_cast<QWidget*>(m_shortcut->parent()) == contextWidget) {
+            // Same parent - update context if needed
+            // CRITICAL: QShortcut's context can be changed after creation,
+            // but for ApplicationShortcut (especially for system shortcuts like
+            // "Ctrl+C"), it's safer to recreate to ensure proper registration
             if (m_shortcut->context() != contextArea) {
-                m_shortcut->setContext(contextArea);
+                // For ApplicationShortcut, recreate to ensure proper
+                // registration This is especially important for "Ctrl+C" which
+                // may conflict with system shortcuts
+                if (contextArea == Qt::ApplicationShortcut) {
+                    delete m_shortcut;
+                    m_shortcut = new QShortcut(m_key, contextWidget);
+                    m_shortcut->setEnabled(enabled);
+                    m_shortcut->setContext(contextArea);
+
+                    // Reconnect signals
+                    QObject::connect(m_shortcut, &QShortcut::activated, this,
+                                     &ecvModalShortcut::activated);
+                    if (m_action) {
+                        QObject::connect(m_shortcut, &QShortcut::activated,
+                                         m_action, &QAction::trigger);
+                    }
+                } else {
+                    // For other contexts, just update
+                    m_shortcut->setContext(contextArea);
+                }
             }
             return;
         }

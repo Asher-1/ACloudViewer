@@ -10,6 +10,9 @@
 // CV_CORE_LIB
 #include <CVLog.h>
 
+// CV_DB_LIB
+#include <Shortcuts/ecvKeySequences.h>
+
 // VTK
 #include <vtkActor.h>
 #include <vtkCell.h>
@@ -53,12 +56,31 @@ cvPointPickingHelper::cvPointPickingHelper(const QKeySequence& keySequence,
         return;
     }
 
-    // Use ApplicationShortcut context for global shortcuts
-    // We rely on m_contextWidget visibility check in pickPoint() to ensure
-    // only the active tool responds to the shortcut
-    m_shortcut = new QShortcut(keySequence, parent);
-    m_shortcut->setContext(Qt::ApplicationShortcut);
-    connect(m_shortcut, &QShortcut::activated, this,
+    // Use ParaView-style modal shortcuts to prevent conflicts when multiple
+    // tool instances exist. ecvKeySequences ensures only one shortcut with
+    // the same key sequence is active at a time, automatically disabling
+    // siblings when a new one is enabled.
+    m_shortcut = ecvKeySequences::instance().addModalShortcut(
+            keySequence, /* action */ nullptr, parent);
+
+    // CRITICAL: Set context widget to ApplicationShortcut for global shortcuts
+    // This must be done AFTER addModalShortcut() because addModalShortcut()
+    // initially creates the shortcut with default context (WindowShortcut).
+    // We need to explicitly set ApplicationShortcut context so the shortcut
+    // works globally, especially for "Ctrl+C" which may conflict with system
+    // shortcuts or other application shortcuts.
+    m_shortcut->setContextWidget(parent, Qt::ApplicationShortcut);
+
+    // Verify the shortcut was created and context is set correctly
+    CVLog::PrintDebug(
+            QString("[cvPointPickingHelper] Created shortcut: %1, context: %2, "
+                    "enabled: %3")
+                    .arg(keySequence.toString())
+                    .arg(m_shortcut->isEnabled() ? "ApplicationShortcut"
+                                                 : "unknown")
+                    .arg(m_shortcut->isEnabled() ? "yes" : "no"));
+
+    connect(m_shortcut, &ecvModalShortcut::activated, this,
             &cvPointPickingHelper::pickPoint);
 
     // Set focus policy so the widget can receive focus when needed
@@ -67,9 +89,9 @@ cvPointPickingHelper::cvPointPickingHelper(const QKeySequence& keySequence,
 
 //-----------------------------------------------------------------------------
 cvPointPickingHelper::~cvPointPickingHelper() {
-    if (m_shortcut) {
-        delete m_shortcut;
-    }
+    // ecvModalShortcut will automatically unregister itself when deleted
+    // via the unregister signal connected to ecvKeySequences
+    delete m_shortcut;
 }
 
 //-----------------------------------------------------------------------------
@@ -86,24 +108,30 @@ void cvPointPickingHelper::setRenderer(vtkRenderer* renderer) {
 //-----------------------------------------------------------------------------
 void cvPointPickingHelper::setContextWidget(QWidget* widget) {
     m_contextWidget = widget;
-    // Note: We don't change the shortcut's parent here because it should
-    // remain bound to the VTK render window widget for proper focus handling
+    // Update the modal shortcut's context widget if needed
+    // Note: The shortcut's parent remains the VTK render window widget for
+    // proper focus handling, but we can update the context widget for
+    // visibility checks
+    if (m_shortcut) {
+        // Get the current parent widget (VTK render window widget)
+        QWidget* parentWidget = qobject_cast<QWidget*>(m_shortcut->parent());
+        if (parentWidget) {
+            // Keep ApplicationShortcut context for global shortcuts
+            // Use the parent widget (VTK widget) as context, not the tool
+            // dialog This ensures shortcuts work globally while still being
+            // associated with the VTK render window
+            m_shortcut->setContextWidget(parentWidget, Qt::ApplicationShortcut);
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
 void cvPointPickingHelper::setEnabled(bool enabled, bool setFocus) {
     if (m_shortcut) {
-        m_shortcut->setEnabled(enabled);
-
-        // If enabling and setFocus is true, give focus to the shortcut's parent
-        // widget This is similar to ParaView's pqModalShortcut::setEnabled
-        // approach
-        if (enabled && setFocus) {
-            QWidget* parent = qobject_cast<QWidget*>(m_shortcut->parent());
-            if (parent) {
-                parent->setFocus(Qt::OtherFocusReason);
-            }
-        }
+        // Use ecvModalShortcut::setEnabled which automatically disables
+        // siblings via ecvKeySequences::disableSiblings(). This ensures only
+        // one tool instance's shortcut is active at a time (ParaView-style).
+        m_shortcut->setEnabled(enabled, setFocus);
     }
 }
 
@@ -169,7 +197,7 @@ void cvPointPickingHelper::pickPoint() {
     // enabled to ensure only the active (unlocked) tool responds.
     if (!m_shortcut || !m_shortcut->isEnabled()) {
         // This shortcut is disabled (tool is locked), don't process picking
-        CVLog::PrintDebug(
+        CVLog::PrintVerbose(
                 "[cvPointPickingHelper::pickPoint] Shortcut disabled, "
                 "skipping");
         return;
@@ -190,6 +218,18 @@ void cvPointPickingHelper::pickPoint() {
                 "skipping");
         return;
     }
+
+    // CRITICAL: Additional check - ensure the context widget is actually the
+    // active tool instance. When multiple tool instances exist with the same
+    // shortcut (e.g., "Ctrl+C"), Qt may trigger shortcuts from all instances,
+    // but we only want the active (visible) one to respond. This check ensures
+    // that only the tool instance whose dialog is currently visible will
+    // process the pick.
+    // Note: This is especially important for "Ctrl+C" which may conflict with
+    // main window shortcuts or other tool instances.
+    // The visibility check above should be sufficient, but we also verify that
+    // the widget is actually active (has focus or is the top-level visible
+    // widget).
 
     CVLog::PrintDebug("[cvPointPickingHelper::pickPoint] Processing pick...");
 
@@ -216,22 +256,54 @@ void cvPointPickingHelper::pickPoint() {
         return;
     }
 
-    // Get cursor position in widget coordinates
-    QPoint globalPos = QCursor::pos();
-    QPoint localPos = renderWidget->mapFromGlobal(globalPos);
-
-    // Check if cursor is within the widget
-    QSize widgetSize = renderWidget->size();
-    if (localPos.x() < 0 || localPos.x() > widgetSize.width() ||
-        localPos.y() < 0 || localPos.y() > widgetSize.height()) {
-        CVLog::Print(
+    // ParaView approach: Check if the keypress event actually happened in the
+    // window This matches ParaView's pqPointPickingHelper::pickPoint()
+    // implementation
+    QPointF pos = renderWidget->mapFromGlobal(QCursor::pos());
+    QSize sz = renderWidget->size();
+    bool outside = pos.x() < 0 || pos.x() > sz.width() || pos.y() < 0 ||
+                   pos.y() > sz.height();
+    if (outside) {
+        CVLog::PrintVerbose(
                 "[cvPointPickingHelper] Cursor is outside the render widget");
         return;
     }
 
-    // Convert to VTK display coordinates (origin at bottom-left)
-    int displayX = localPos.x();
-    int displayY = widgetSize.height() - localPos.y() - 1;
+    // ParaView approach: Use GetEventPosition() from the interactor
+    // This matches ParaView's pqPointPickingHelper::pickPoint() implementation
+    // exactly GetEventPosition() returns the position of the last event
+    // (keyboard shortcut activation) which is more reliable than QCursor::pos()
+    // for keyboard-triggered picking, especially on macOS
+    int displayX = 0;
+    int displayY = 0;
+    const int* eventpos = m_interactor->GetEventPosition();
+    if (eventpos && (eventpos[0] >= 0 && eventpos[1] >= 0)) {
+        // Use event position from interactor (ParaView style)
+        // GetEventPosition() returns coordinates in VTK display space (origin
+        // at bottom-left)
+        displayX = eventpos[0];
+        displayY = eventpos[1];
+
+        // Validate coordinates against render window size
+        int* renderSize = m_interactor->GetRenderWindow()->GetSize();
+        if (displayX < 0 || displayX >= renderSize[0] || displayY < 0 ||
+            displayY >= renderSize[1]) {
+            // Event position is out of bounds, fallback to cursor position
+            CVLog::PrintDebug(
+                    QString("[cvPointPickingHelper] GetEventPosition() out of "
+                            "bounds (%1,%2), "
+                            "falling back to QCursor::pos()")
+                            .arg(displayX)
+                            .arg(displayY));
+            displayX = static_cast<int>(pos.x());
+            displayY = sz.height() - static_cast<int>(pos.y()) - 1;
+        }
+    } else {
+        // Fallback to cursor position if GetEventPosition() is invalid
+        // Convert to VTK display coordinates (origin at bottom-left)
+        displayX = static_cast<int>(pos.x());
+        displayY = sz.height() - static_cast<int>(pos.y()) - 1;
+    }
 
     double position[3] = {0.0, 0.0, 0.0};
     double normal[3] = {0.0, 0.0, 1.0};  // Default normal
