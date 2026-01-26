@@ -1314,7 +1314,9 @@ bool PCLVis::updateCaption(const std::string& text,
     return true;
 }
 
-bool PCLVis::getCaptionPosition(const std::string& viewID, float& posX, float& posY) {
+bool PCLVis::getCaptionPosition(const std::string& viewID,
+                                float& posX,
+                                float& posY) {
     vtkAbstractWidget* widget = getWidgetById(viewID);
     if (!widget) {
         return false;
@@ -1332,7 +1334,8 @@ bool PCLVis::getCaptionPosition(const std::string& viewID, float& posX, float& p
         return false;
     }
 
-    // GetPosition() returns a pointer to double[2] array (normalized coordinates)
+    // GetPosition() returns a pointer to double[2] array (normalized
+    // coordinates)
     const double* pos = rep->GetPosition();
     if (!pos) {
         return false;
@@ -1410,12 +1413,12 @@ bool PCLVis::addCaption(const std::string& text,
     vtkSmartPointer<CustomVtkCaptionWidget> captionWidget =
             vtkSmartPointer<CustomVtkCaptionWidget>::New();
     captionWidget->SetHandleEnabled(anchorDragable);
-    
+
     vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
     if (!interactor) {
         return false;
     }
-    
+
     captionWidget->SetInteractor(interactor);
     captionWidget->SetRepresentation(captionRepresentation);
     captionWidget->On();
@@ -1426,7 +1429,7 @@ bool PCLVis::addCaption(const std::string& text,
     ccHObject* sceneRoot = ecvDisplayTools::GetSceneDB();
     if (sceneRoot) {
         QString viewIDStr = QString::fromStdString(viewID);
-        
+
         // Recursively search for cc2DLabel with matching viewID
         std::function<cc2DLabel*(ccHObject*)> findByViewID =
                 [&findByViewID, &viewIDStr](ccHObject* node) -> cc2DLabel* {
@@ -1451,7 +1454,7 @@ bool PCLVis::addCaption(const std::string& text,
 
     // Save the pointer/ID pair to the global actor map
     (*m_widget_map)[viewID].widget = captionWidget;
-    
+
     return true;
 }
 

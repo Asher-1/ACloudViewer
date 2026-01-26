@@ -190,7 +190,7 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
       m_scaleBar(nullptr),
       m_wheelZoomUpdateTimer(nullptr) {
     this->setWindowTitle("3D View");
-    
+
     // Initialize timer for delayed 2D label update after wheel zoom
     m_wheelZoomUpdateTimer = new QTimer(this);
     m_wheelZoomUpdateTimer->setSingleShot(true);
@@ -640,7 +640,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
         // update label and 3D name if visible
         emit m_tools->labelmove2D(0, 0, 0, 0);
         ecvDisplayTools::UpdateNamePoseRecursive();
-        
+
         // OPTIMIZATION: Delay 2D label update during wheel zoom to improve
         // performance. Restart the timer on each wheel event, so labels are
         // updated 150ms after the last wheel event, reducing frequent updates
@@ -649,7 +649,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent* event) {
             m_wheelZoomUpdateTimer->stop();
             m_wheelZoomUpdateTimer->start();
         }
-        
+
         ecvDisplayTools::Update();
     }
 }
@@ -743,11 +743,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     int dy = y - m_tools->m_lastMousePos.y();
 
     if ((event->buttons() & Qt::RightButton)) {
-        // OPTIMIZATION: Skip 2D label updates during zoom to improve performance
-        // Only emit signal for label movement, but skip expensive Update2DLabel during zoom
-        // The label will be updated when zoom stops (in mouseReleaseEvent)
+        // OPTIMIZATION: Skip 2D label updates during zoom to improve
+        // performance Only emit signal for label movement, but skip expensive
+        // Update2DLabel during zoom The label will be updated when zoom stops
+        // (in mouseReleaseEvent)
         if (abs(dx) > 0 || abs(dy) > 0) {
-            // Only emit signal for label movement, but skip expensive Update2DLabel during zoom
+            // Only emit signal for label movement, but skip expensive
+            // Update2DLabel during zoom
             emit m_tools->labelmove2D(x, y, 0, 0);
             ecvDisplayTools::UpdateNamePoseRecursive();
         }
@@ -819,11 +821,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
             }
         }
 
-        // OPTIMIZATION: Skip 2D label updates during panning to improve performance
-        // Only emit signal for label movement, but skip expensive Update2DLabel during panning
-        // The label will be updated when panning stops (in mouseReleaseEvent)
+        // OPTIMIZATION: Skip 2D label updates during panning to improve
+        // performance Only emit signal for label movement, but skip expensive
+        // Update2DLabel during panning The label will be updated when panning
+        // stops (in mouseReleaseEvent)
         if (abs(dx) > 0 || abs(dy) > 0) {
-            // Only emit signal for label movement, but skip expensive Update2DLabel during panning
+            // Only emit signal for label movement, but skip expensive
+            // Update2DLabel during panning
             emit m_tools->labelmove2D(x, y, dx, dy);
             ecvDisplayTools::UpdateNamePoseRecursive();
             // specific case: move active item(s)
@@ -871,11 +875,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 updateActivateditems(x, y, dx, dy, !ecvDisplayTools::USE_2D);
             }
         } else {
-            // OPTIMIZATION: Skip 2D label updates during camera rotation to improve performance
-            // Only update when actively moving 2D items, not during camera rotation
-            // The label will be updated when rotation stops (in mouseReleaseEvent)
+            // OPTIMIZATION: Skip 2D label updates during camera rotation to
+            // improve performance Only update when actively moving 2D items,
+            // not during camera rotation The label will be updated when
+            // rotation stops (in mouseReleaseEvent)
             if (abs(dx) > 0 || abs(dy) > 0) {
-                // Only emit signal for label movement, but skip expensive Update2DLabel during rotation
+                // Only emit signal for label movement, but skip expensive
+                // Update2DLabel during rotation
                 emit m_tools->labelmove2D(x, y, dx, dy);
                 ecvDisplayTools::UpdateNamePoseRecursive();
                 // specific case: move active item(s)
@@ -1265,8 +1271,9 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             event->accept();
         } else {
             // picking?
-            // CRITICAL: Don't start deferred picking if a VTK widget was clicked
-            // This prevents doPicking() from overriding the widget selection
+            // CRITICAL: Don't start deferred picking if a VTK widget was
+            // clicked This prevents doPicking() from overriding the widget
+            // selection
             if (!m_tools->m_widgetClicked &&
                 m_tools->m_timer.elapsed() <
                         m_tools->m_lastClickTime_ticks +
@@ -1285,7 +1292,8 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 }
             } else if (m_tools->m_widgetClicked) {
                 CVLog::PrintVerbose(
-                        "[QVTKWidgetCustom::mouseReleaseEvent] Skipping deferred "
+                        "[QVTKWidgetCustom::mouseReleaseEvent] Skipping "
+                        "deferred "
                         "picking because VTK widget was clicked");
                 // Reset the flag after checking
                 m_tools->m_widgetClicked = false;

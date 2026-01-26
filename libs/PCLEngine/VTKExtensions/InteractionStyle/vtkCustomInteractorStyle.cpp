@@ -170,8 +170,10 @@ void vtkCustomInteractorStyle::OnChar() {
         case 'J':
         case 'c':
         case 'C':
-        case 43:  // KEY_PLUS
-        case 45:  // KEY_MINUS
+        // Note: KEY_PLUS (43) and KEY_MINUS (45) are removed from exit list
+        // to allow grow/shrink selection shortcuts to work
+        // case 43:  // KEY_PLUS - reserved for grow selection
+        // case 45:  // KEY_MINUS - reserved for shrink selection
         case 'f':
         case 'F':
         case 'g':
@@ -643,14 +645,20 @@ void vtkCustomInteractorStyle::OnKeyDown() {
             break;
         }
         case '=': {
-            zoomIn();
+            // Zoom in with = key (requires modifier to avoid conflict with grow
+            // selection)
+            if (alt || ctrl) {
+                zoomIn();
+            }
             break;
         }
         case 43:  // KEY_PLUS
         {
-            if (alt && ctrl)
+            // Plus key: only handle with modifiers to avoid conflict with grow
+            // selection Grow selection uses plain '+' key, so we skip it here
+            if (alt && ctrl) {
                 zoomIn();
-            else if (shift && ctrl) {
+            } else if (shift && ctrl) {
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
                 vtkCollectionSimpleIterator ait;
@@ -667,13 +675,17 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                     }
                 }
             }
+            // Plain '+' is reserved for grow selection, do nothing
             break;
         }
         case 45:  // KEY_MINUS
         {
-            if (alt && ctrl)
+            // Minus key: only handle with modifiers to avoid conflict with
+            // shrink selection Shrink selection uses plain '-' key, so we skip
+            // it here
+            if (alt && ctrl) {
                 zoomOut();
-            else if (shift && ctrl) {
+            } else if (shift && ctrl) {
                 vtkSmartPointer<vtkActorCollection> ac =
                         CurrentRenderer->GetActors();
                 vtkCollectionSimpleIterator ait;
@@ -690,6 +702,7 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                     }
                 }
             }
+            // Plain '-' is reserved for shrink selection, do nothing
             break;
         }
         // Switch between maximize and original window size

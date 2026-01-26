@@ -509,8 +509,8 @@ ccHObject* cvDistanceTool::getOutput() {
                      static_cast<PointCoordinateType>(p2[2]));
 
     // Find the nearest points in the cloud for both measurement endpoints
-    // CRITICAL: We need to use the exact distance tool coordinates, not just the
-    // nearest points in the cloud. If the nearest point is too far away, we
+    // CRITICAL: We need to use the exact distance tool coordinates, not just
+    // the nearest points in the cloud. If the nearest point is too far away, we
     // should add the exact point to the cloud to ensure the exported label
     // matches the distance tool exactly.
     unsigned nearestIndex1 = 0;
@@ -540,8 +540,9 @@ ccHObject* cvDistanceTool::getOutput() {
     }
 
     // CRITICAL: If the nearest points are too far from the exact distance tool
-    // coordinates, add the exact points to the cloud to ensure perfect alignment
-    // This ensures the exported label's line matches the distance tool's line exactly
+    // coordinates, add the exact points to the cloud to ensure perfect
+    // alignment This ensures the exported label's line matches the distance
+    // tool's line exactly
     ccPointCloud* pointCloud = ccHObjectCaster::ToPointCloud(cloud);
     if (pointCloud) {
         // Calculate how many new points we need to add
