@@ -654,8 +654,9 @@ ccHObject* cvProtractorTool::getOutput() {
     }
 
     // CRITICAL: If the nearest points are too far from the exact protractor
-    // coordinates, add the exact points to the cloud to ensure perfect alignment
-    // This ensures the exported label's edges match the protractor's rays exactly
+    // coordinates, add the exact points to the cloud to ensure perfect
+    // alignment This ensures the exported label's edges match the protractor's
+    // rays exactly
     ccPointCloud* pointCloud = ccHObjectCaster::ToPointCloud(cloud);
     if (pointCloud) {
         // Calculate how many new points we need to add
@@ -730,29 +731,35 @@ ccHObject* cvProtractorTool::getOutput() {
     label->setCollapsed(false);
 
     // Get the angle label's screen position from VTK representation
-    // This ensures the exported label appears at the same location as the 3D angle label
+    // This ensures the exported label appears at the same location as the 3D
+    // angle label
     float labelPosX = 0.05f;  // Default fallback position
     float labelPosY = 0.90f;  // Default fallback position
-    
+
     if (m_rep && m_renderer) {
         // Get the angle label actor position (in display/pixel coordinates)
         if (auto* labelActor = m_rep->GetAngleLabelActor()) {
-            double* vtkPos = labelActor->GetPosition();  // Returns [x, y] in display coordinates
+            double* vtkPos = labelActor->GetPosition();  // Returns [x, y] in
+                                                         // display coordinates
             if (vtkPos && m_interactor && m_interactor->GetRenderWindow()) {
                 int* windowSize = m_interactor->GetRenderWindow()->GetSize();
                 if (windowSize && windowSize[0] > 0 && windowSize[1] > 0) {
-                    // Convert from VTK display coordinates (pixels, bottom-left origin)
-                    // to cc2DLabel relative coordinates (0.0-1.0, top-left origin)
-                    float normalizedX = static_cast<float>(vtkPos[0]) / static_cast<float>(windowSize[0]);
-                    float normalizedY = static_cast<float>(vtkPos[1]) / static_cast<float>(windowSize[1]);
-                    
+                    // Convert from VTK display coordinates (pixels, bottom-left
+                    // origin) to cc2DLabel relative coordinates (0.0-1.0,
+                    // top-left origin)
+                    float normalizedX = static_cast<float>(vtkPos[0]) /
+                                        static_cast<float>(windowSize[0]);
+                    float normalizedY = static_cast<float>(vtkPos[1]) /
+                                        static_cast<float>(windowSize[1]);
+
                     // VTK Y=0 is at bottom, cc2DLabel Y=0 is at top
                     // So invert Y: labelY = 1.0 - vtkY
                     labelPosX = normalizedX;
                     labelPosY = 1.0f - normalizedY;
-                    
+
                     CVLog::PrintVerbose(
-                            QString("[cvProtractorTool::getOutput] Retrieved angle label "
+                            QString("[cvProtractorTool::getOutput] Retrieved "
+                                    "angle label "
                                     "position from VTK: display=(%1, %2), "
                                     "normalized=(%3, %4)")
                                     .arg(vtkPos[0])
@@ -763,11 +770,12 @@ ccHObject* cvProtractorTool::getOutput() {
             }
         }
     }
-    
+
     // Set the position for the exported label (relative to screen, 0.0-1.0)
     label->setPosition(labelPosX, labelPosY);
 
-    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1° at position (%2, %3)")
+    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1° "
+                         "at position (%2, %3)")
                          .arg(getMeasurementValue(), 0, 'f', 2)
                          .arg(labelPosX)
                          .arg(labelPosY));
@@ -1153,10 +1161,26 @@ void cvProtractorTool::unlockInteraction() {
                                   .arg(m_pickingHelpers.size())
                                   .arg((quintptr)this, 0, 16));
         updatePickingHelpers();
-        
-        // Enable all shortcuts
+
+        // CRITICAL: Enable all shortcuts. Now using ecvModalShortcut
+        // (ParaView-style) which automatically handles conflicts via
+        // ecvKeySequences. When a shortcut is enabled,
+        // ecvKeySequences::disableSiblings() automatically disables all other
+        // shortcuts with the same key sequence, ensuring only the active
+        // (unlocked) tool instance's shortcuts respond.
+        //
+        // IMPORTANT: However, QAction shortcuts (like MainWindow's
+        // actionContourWidget with "Ctrl+C") are NOT managed by ecvKeySequences
+        // and may still conflict. The MainWindow action's shortcut is handled
+        // by ecvMeasurementTool when tools are activated/deactivated.
+        //
+        // The pickPoint() method in cvPointPickingHelper already checks for
+        // visibility and enabled state to ensure only the active tool instance
+        // responds.
         for (cvPointPickingHelper* helper : m_pickingHelpers) {
             if (helper) {
+                // Simply enable - ecvModalShortcut will handle disabling
+                // siblings
                 helper->setEnabled(true,
                                    false);  // Enable without setting focus
             }

@@ -572,30 +572,33 @@ ccHObject* cvContourTool::getOutput() {
     ccPolyline* polyline = vtk2cc::ConvertToPolyline(polyDataCopy, true);
     if (polyline) {
         // Determine if polyline should be in 2D mode based on point coordinates
-        // Check if all points are coplanar (e.g., all have the same Z coordinate)
-        cloudViewer::GenericIndexedCloudPersist* vertices = polyline->getAssociatedCloud();
+        // Check if all points are coplanar (e.g., all have the same Z
+        // coordinate)
+        cloudViewer::GenericIndexedCloudPersist* vertices =
+                polyline->getAssociatedCloud();
         if (vertices && vertices->size() > 0) {
             // Get first point's Z coordinate as reference
             const CCVector3* firstPoint = vertices->getPoint(0);
             PointCoordinateType refZ = firstPoint->z;
-            
+
             // Check if all points have the same Z coordinate (within epsilon)
             bool is2D = true;
             for (unsigned i = 1; i < vertices->size(); ++i) {
                 const CCVector3* point = vertices->getPoint(i);
                 PointCoordinateType zDiff = point->z - refZ;
-                // Use absolute value and check if difference is less than epsilon
-                // PointCoordinateType is float, so use LessThanEpsilon with abs value
+                // Use absolute value and check if difference is less than
+                // epsilon PointCoordinateType is float, so use LessThanEpsilon
+                // with abs value
                 if (!cloudViewer::LessThanEpsilon(std::abs(zDiff))) {
                     is2D = false;
                     break;
                 }
             }
-            
+
             // Set 2D mode if all points are coplanar
             polyline->set2DMode(is2D);
         }
-        
+
         // Set name with contour ID and export counter
         polyline->setName(QString("Contour_%1_%2")
                                   .arg(m_currentContourId)

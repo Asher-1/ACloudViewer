@@ -13,10 +13,10 @@
  * CustomVtkCaptionWidget with picking support for DB tree selection
  */
 
+#include <vtkCallbackCommand.h>
 #include <vtkCaptionWidget.h>
 #include <vtkCommand.h>
 #include <vtkObject.h>
-#include <vtkCallbackCommand.h>
 #include <vtkSmartPointer.h>
 
 // Forward declaration
@@ -24,7 +24,7 @@ class cc2DLabel;
 
 class QPCL_ENGINE_LIB_API CustomVtkCaptionWidget : public vtkCaptionWidget {
 public:
-    static CustomVtkCaptionWidget *New();
+    static CustomVtkCaptionWidget* New();
 
     vtkTypeMacro(CustomVtkCaptionWidget, vtkCaptionWidget);
 
@@ -41,8 +41,10 @@ protected:
     ~CustomVtkCaptionWidget() override;
 
     //! Callback for widget interaction events
-    static void OnWidgetInteraction(vtkObject* caller, unsigned long eventId,
-                                    void* clientData, void* callData);
+    static void OnWidgetInteraction(vtkObject* caller,
+                                    unsigned long eventId,
+                                    void* clientData,
+                                    void* callData);
 
     cc2DLabel* m_associatedLabel;
     vtkSmartPointer<vtkCallbackCommand> m_interactionCallback;

@@ -2067,13 +2067,13 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Grow Selection</string>
    </property>
    <property name="toolTip">
-    <string>Grow selection - Expand selection by one layer of neighbors (Alt++)</string>
+    <string>Grow selection - Expand selection by one layer of neighbors (+)</string>
    </property>
    <property name="statusTip">
     <string>Grow selection</string>
    </property>
    <property name="shortcut">
-    <string>Alt++</string>
+    <string>+</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
@@ -2088,13 +2088,13 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Shrink Selection</string>
    </property>
    <property name="toolTip">
-    <string>Shrink selection - Contract selection by removing boundary items (Alt+-)</string>
+    <string>Shrink selection - Contract selection by removing boundary items (-)</string>
    </property>
    <property name="statusTip">
     <string>Shrink selection</string>
    </property>
    <property name="shortcut">
-    <string>Alt+-</string>
+    <string>-</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
@@ -2499,12 +2499,6 @@ QTreeView::branch:open:has-children:has-siblings  {
    <property name="statusTip">
     <string>Protractor Measurement Tool</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+A</string>
-   </property>
-   <property name="shortcutContext">
-    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
-   </property>
   </action>
   <action name="actionContourWidget">
    <property name="icon">
@@ -2520,12 +2514,6 @@ QTreeView::branch:open:has-children:has-siblings  {
    <property name="statusTip">
     <string>Contour Measurement Tool</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+C</string>
-   </property>
-   <property name="shortcutContext">
-    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
-   </property>
   </action>
   <action name="actionTracePolyline">
    <property name="icon">
@@ -2536,13 +2524,13 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Trace Polyline</string>
    </property>
    <property name="toolTip">
-    <string>Trace a polyline by point picking</string>
+    <string>Trace a polyline by point picking (Ctrl+Shift+P)</string>
    </property>
    <property name="statusTip">
     <string>Trace a polyline by point picking</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Alt+P</string>
+    <string>Ctrl+Shift+P</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
@@ -4323,13 +4311,16 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Paste from clipboard</string>
    </property>
    <property name="toolTip">
-    <string>Paste from ASCII/text data stored in the clipboard</string>
+    <string>Paste from ASCII/text data stored in the clipboard (Ctrl+Shift+V)</string>
    </property>
    <property name="statusTip">
     <string>Paste from ASCII/text data stored in the clipboard</string>
    </property>
    <property name="shortcut">
-    <string>Alt+P</string>
+    <string>Ctrl+Shift+V</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionCheckForUpdates">

@@ -323,9 +323,9 @@ bool cvSelectionHighlighter::highlightSelection(
     // IMPORTANT: Store as vtkSmartPointer to prevent premature deletion!
     vtkSmartPointer<vtkActor> actor =
             createHighlightActor(polyData, selection, fieldAssociation, mode);
+    // If actor is nullptr, it's a normal case (e.g., invalid selection IDs),
+    // not an error - just return false silently
     if (!actor) {
-        CVLog::Error(
-                "[cvSelectionHighlighter] Failed to create highlight actor");
         return false;
     }
 
@@ -491,9 +491,43 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
         vtkIdTypeArray* selection,
         int fieldAssociation,
         HighlightMode mode) {
-    // Create selection node
+    if (!polyData || !selection) {
+        return nullptr;
+    }
+
+    // Validate selection IDs against polyData bounds and filter out invalid IDs
+    // This prevents extraction failures and error logs for invalid selections
+    // (e.g., when selection IDs are out of range or data has changed)
+    bool isPointSelection =
+            (fieldAssociation != 0);  // 0 = CELL, non-zero = POINT
+    vtkIdType maxValidId = isPointSelection ? polyData->GetNumberOfPoints()
+                                            : polyData->GetNumberOfCells();
+
+    // Filter out invalid IDs to prevent extraction failures
+    vtkSmartPointer<vtkIdTypeArray> validSelection =
+            vtkSmartPointer<vtkIdTypeArray>::New();
+    for (vtkIdType i = 0; i < selection->GetNumberOfTuples(); ++i) {
+        vtkIdType id = selection->GetValue(i);
+        if (id >= 0 && id < maxValidId) {
+            validSelection->InsertNextValue(id);
+        }
+    }
+
+    // If no valid IDs remain, this is a normal case (invalid selection),
+    // not an error - return nullptr silently
+    if (validSelection->GetNumberOfTuples() == 0) {
+        CVLog::PrintVerbose(
+                QString("[cvSelectionHighlighter::createHighlightActor] No "
+                        "valid "
+                        "selection IDs (all %1 IDs are out of range [0, %2))")
+                        .arg(selection->GetNumberOfTuples())
+                        .arg(maxValidId));
+        return nullptr;
+    }
+
+    // Create selection node using validated IDs
     vtkSmartPointer<vtkSelectionNode> selectionNode =
-            createSelectionNode(selection, fieldAssociation);
+            createSelectionNode(validSelection, fieldAssociation);
     if (!selectionNode) {
         CVLog::Error(
                 "[cvSelectionHighlighter::createHighlightActor] Failed to "
@@ -526,11 +560,13 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
     vtkIdType numCells = extracted->GetNumberOfCells();
     vtkIdType numPoints = extracted->GetNumberOfPoints();
 
+    // After validating IDs upfront, this should rarely happen, but if it does,
+    // it's still a normal case (e.g., degenerate geometry) - not an error
     if (numCells == 0 && numPoints == 0) {
-        CVLog::Error(
+        CVLog::PrintVerbose(
                 "[cvSelectionHighlighter::createHighlightActor] Extraction "
-                "failed: 0 cells and 0 points extracted - check if selection "
-                "IDs are valid");
+                "resulted in 0 cells and 0 points (normal case, e.g., "
+                "degenerate geometry)");
         return nullptr;
     }
 
