@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <QTimer>
+
 #ifdef _MSC_VER
 /* The below is MANDATORY for Windows builds or you will take an exception in
  * vtkRenderer::SetRenderWindow(vtkRenderWindow *renwin) */
@@ -180,4 +182,7 @@ protected:
     ScaleBarWidget* m_scaleBar = nullptr;
 
     VtkWidgetPrivate* d_ptr;
+
+    // Timer for delayed 2D label update after wheel zoom
+    QTimer* m_wheelZoomUpdateTimer = nullptr;
 };

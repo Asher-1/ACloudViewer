@@ -159,9 +159,7 @@ ENV QT_BASE_DIR=${QT_BASE_DIR} \
     QT_ROOT=${QT_BASE_DIR} \
     QTDIR=${QT_BASE_DIR} \
     QT_DIR=${QT_BASE_DIR} \
-    PATH=${QT_BASE_DIR}/bin:$PATH \
-    LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH \
-    PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
+    PATH=${QT_BASE_DIR}/bin:$PATH
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run

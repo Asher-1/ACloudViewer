@@ -32,12 +32,14 @@
 #include <QCursor>
 #include <QObject>
 #include <QPointer>
+#include <QShortcut>
 #include <QTimer>
 #else
 #include <QtWidgets/QAction>
 #include <QtGui/QCursor>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
+#include <QtWidgets/QShortcut>
 #include <QtCore/QTimer>
 #endif
 // clang-format on
@@ -631,6 +633,7 @@ private:
 
     // Tooltip state
     QString m_plainTooltipText;
+    QShortcut* m_copyTooltipShortcut = nullptr;
 
     // Current highlight state (for interactive modes)
     vtkIdType m_hoveredId = -1;

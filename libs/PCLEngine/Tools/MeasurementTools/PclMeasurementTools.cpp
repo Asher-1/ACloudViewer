@@ -199,6 +199,13 @@ void PclMeasurementTools::setColor(double r, double g, double b) {
     }
 }
 
+bool PclMeasurementTools::getColor(double& r, double& g, double& b) const {
+    if (m_tool) {
+        return m_tool->getColor(r, g, b);
+    }
+    return false;
+}
+
 void PclMeasurementTools::lockInteraction() {
     if (m_tool) {
         m_tool->lockInteraction();
@@ -257,6 +264,46 @@ void PclMeasurementTools::setFontColor(double r, double g, double b) {
     if (m_tool) {
         m_tool->setFontColor(r, g, b);
     }
+}
+
+QString PclMeasurementTools::getFontFamily() const {
+    return m_tool ? m_tool->getFontFamily() : QString("Arial");
+}
+
+int PclMeasurementTools::getFontSize() const {
+    return m_tool ? m_tool->getFontSize() : 6;
+}
+
+void PclMeasurementTools::getFontColor(double& r, double& g, double& b) const {
+    if (m_tool) {
+        m_tool->getFontColor(r, g, b);
+    } else {
+        r = g = b = 1.0;  // Default white
+    }
+}
+
+bool PclMeasurementTools::getFontBold() const {
+    return m_tool ? m_tool->getFontBold() : false;
+}
+
+bool PclMeasurementTools::getFontItalic() const {
+    return m_tool ? m_tool->getFontItalic() : false;
+}
+
+bool PclMeasurementTools::getFontShadow() const {
+    return m_tool ? m_tool->getFontShadow() : true;
+}
+
+double PclMeasurementTools::getFontOpacity() const {
+    return m_tool ? m_tool->getFontOpacity() : 1.0;
+}
+
+QString PclMeasurementTools::getHorizontalJustification() const {
+    return m_tool ? m_tool->getHorizontalJustification() : QString("Left");
+}
+
+QString PclMeasurementTools::getVerticalJustification() const {
+    return m_tool ? m_tool->getVerticalJustification() : QString("Bottom");
 }
 
 void PclMeasurementTools::setHorizontalJustification(

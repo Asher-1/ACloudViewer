@@ -6,120 +6,83 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>280</width>
-    <height>200</height>
+    <width>0</width>
+    <height>0</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Contour Tool</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
-    <number>6</number>
+    <number>2</number>
+   </property>
+   <property name="leftMargin">
+    <number>2</number>
+   </property>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="rightMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
    </property>
    <item>
-    <widget class="QLabel" name="label">
+    <widget class="QCheckBox" name="widgetVisibilityCheckBox">
      <property name="text">
-      <string>Display Options:</string>
+      <string>Show Widget</string>
+     </property>
+     <property name="toolTip">
+      <string>Show/hide the contour widget</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="visibilityLayout">
-     <item>
-      <widget class="QCheckBox" name="widgetVisibilityCheckBox">
-       <property name="text">
-        <string>Show Widget</string>
-       </property>
-       <property name="toolTip">
-        <string>Show/hide the contour widget</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
+    <widget class="QCheckBox" name="showNodesCheckBox">
+     <property name="text">
+      <string>Show Nodes</string>
+     </property>
+     <property name="toolTip">
+      <string>Show/hide contour control nodes</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="showNodesLayout">
-     <item>
-      <widget class="QCheckBox" name="showNodesCheckBox">
-       <property name="text">
-        <string>Show Nodes</string>
-       </property>
-       <property name="toolTip">
-        <string>Show/hide contour control nodes</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="closedLoopLayout">
-     <item>
-      <widget class="QCheckBox" name="closedLoopCheckBox">
-       <property name="text">
-        <string>Closed Loop</string>
-       </property>
-       <property name="toolTip">
-        <string>Close the contour to form a loop</string>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
+    <widget class="QCheckBox" name="closedLoopCheckBox">
+     <property name="text">
+      <string>Closed Loop</string>
+     </property>
+     <property name="toolTip">
+      <string>Close the contour to form a loop</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="lineWidthLayout">
+     <property name="spacing">
+      <number>1</number>
+     </property>
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Line Width:</string>
+        <string>Width:</string>
        </property>
       </widget>
      </item>
@@ -146,19 +109,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>

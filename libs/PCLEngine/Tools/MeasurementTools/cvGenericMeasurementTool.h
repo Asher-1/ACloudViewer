@@ -101,6 +101,15 @@ public:
     //! Set measurement color (RGB values in range [0.0, 1.0])
     virtual void setColor(double r, double g, double b) { /* not impl */ }
 
+    //! Get measurement color (RGB values in range [0.0, 1.0])
+    //! Returns false if not implemented, true if color is retrieved
+    virtual bool getColor(double& r, double& g, double& b) const {
+        Q_UNUSED(r);
+        Q_UNUSED(g);
+        Q_UNUSED(b);
+        return false;
+    }
+
     //! Lock tool interaction (disable VTK widget interaction and UI controls)
     virtual void lockInteraction() { /* not impl */ }
 
@@ -139,6 +148,23 @@ public:
     //! Set vertical justification for measurement labels ("Top", "Center",
     //! "Bottom")
     virtual void setVerticalJustification(const QString& justification);
+
+    //! Get font properties (for UI synchronization)
+    QString getFontFamily() const { return m_fontFamily; }
+    int getFontSize() const { return m_fontSize; }
+    void getFontColor(double& r, double& g, double& b) const {
+        r = m_fontColor[0];
+        g = m_fontColor[1];
+        b = m_fontColor[2];
+    }
+    bool getFontBold() const { return m_fontBold; }
+    bool getFontItalic() const { return m_fontItalic; }
+    bool getFontShadow() const { return m_fontShadow; }
+    double getFontOpacity() const { return m_fontOpacity; }
+    QString getHorizontalJustification() const {
+        return m_horizontalJustification;
+    }
+    QString getVerticalJustification() const { return m_verticalJustification; }
 
 protected:
     //! Apply font properties to VTK text properties

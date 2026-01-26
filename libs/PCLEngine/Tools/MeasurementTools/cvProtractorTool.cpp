@@ -25,7 +25,11 @@
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 
+#include <QApplication>
+#include <QLayout>
+#include <QLayoutItem>
 #include <QShortcut>
+#include <QSizePolicy>
 #include <algorithm>
 #include <cmath>
 
@@ -34,12 +38,17 @@
 #include "VTKExtensions/ConstrainedWidgets/cvConstrainedPolyLineWidget.h"
 #include "cvMeasurementToolsCommon.h"
 
+// CV_CORE_LIB
+#include <CVLog.h>
+
 // CV_DB_LIB
 #include <ecv2DLabel.h>
 #include <ecvBBox.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
+#include <ecvHObjectCaster.h>
+#include <ecvPointCloud.h>
 
 namespace {
 
@@ -243,10 +252,49 @@ void cvProtractorTool::initTool() {
 }
 
 void cvProtractorTool::createUi() {
+    // CRITICAL: Only setup base UI once to avoid resetting configLayout
+    // Each tool instance has its own m_ui, but setupUi clears all children
+    // so we must ensure it's only called once per tool instance
+    // Check if base UI is already set up by checking if widget has a layout
+    // NOTE: Cannot check m_ui->configLayout directly as it's uninitialized
+    // before setupUi()
+    if (!m_ui) {
+        CVLog::Error("[cvProtractorTool::createUi] m_ui is null!");
+        return;
+    }
+    if (!layout()) {
+        m_ui->setupUi(this);
+    }
+
+    // CRITICAL: Always clean up existing config UI before creating new one
+    // This prevents UI interference when createUi() is called multiple times
+    // (e.g., when tool is restarted or switched)
+    if (m_configUi && m_ui->configLayout) {
+        // Remove all existing widgets from configLayout
+        QLayoutItem* item;
+        while ((item = m_ui->configLayout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->setParent(nullptr);
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+        delete m_configUi;
+        m_configUi = nullptr;
+    }
+
+    // Create fresh config UI for this tool instance
     m_configUi = new Ui::ProtractorToolDlg;
     QWidget* configWidget = new QWidget(this);
+    // CRITICAL: Set size policy to Minimum to prevent horizontal expansion
+    // This ensures the widget only takes the space it needs
+    configWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     m_configUi->setupUi(configWidget);
-    m_ui->setupUi(this);
+    // CRITICAL: Set layout size constraint to ensure minimum size calculation
+    // This prevents extra whitespace on the right
+    if (configWidget->layout()) {
+        configWidget->layout()->setSizeConstraint(QLayout::SetMinimumSize);
+    }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Protractor Parameters"));
 
@@ -254,6 +302,49 @@ void cvProtractorTool::createUi() {
     m_configUi->instructionLabel->setText(
             m_configUi->instructionLabel->text().replace("Ctrl", "Cmd"));
 #endif
+
+    // CRITICAL: Ensure Tips label can display full text with ParaView-style
+    // compact layout ParaView uses Minimum sizePolicy to prevent horizontal
+    // expansion This must be done AFTER text is set (including macOS text
+    // replacement)
+    if (m_configUi->instructionLabel) {
+        // ParaView-style: Use Minimum sizePolicy to prevent horizontal
+        // expansion The label will wrap text based on its natural width, not a
+        // fixed maximum
+        m_configUi->instructionLabel->setSizePolicy(QSizePolicy::Minimum,
+                                                    QSizePolicy::Minimum);
+        // CRITICAL: Remove any maximum height constraint to allow full text
+        // display
+        m_configUi->instructionLabel->setMaximumHeight(
+                16777215);  // QWIDGETSIZE_MAX equivalent
+        // Remove maximum width constraint - let it wrap naturally based on
+        // parent width
+        m_configUi->instructionLabel->setMaximumWidth(
+                16777215);  // QWIDGETSIZE_MAX equivalent
+        m_configUi->instructionLabel->setWordWrap(true);
+        // Force the label to update its size based on wrapped text
+        // This ensures the label expands vertically to show all text
+        m_configUi->instructionLabel->adjustSize();
+        // CRITICAL: Update geometry to ensure layout recalculates
+        m_configUi->instructionLabel->updateGeometry();
+    }
+
+    // CRITICAL: Use Qt's automatic sizing based on sizeHint
+    // This ensures each tool adapts to its own content without interference
+    // Reset size constraints to allow Qt's layout system to work properly
+    // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
+    this->setMinimumSize(0, 0);
+    this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
+    this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+
+    // Let Qt calculate the optimal size based on content
+    // Order matters: adjust configWidget first, then the main widget
+    configWidget->adjustSize();
+    this->adjustSize();
+    // Force layout update to apply size changes
+    this->updateGeometry();
+    // CRITICAL: Process events to ensure layout is fully updated
+    QApplication::processEvents();
 
     connect(m_configUi->point1XSpinBox,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -512,14 +603,7 @@ ccHObject* cvProtractorTool::getOutput() {
         return nullptr;
     }
 
-    // Find the nearest points in the cloud for all three measurement endpoints
-    unsigned nearestIndex1 = 0;
-    unsigned nearestIndexC = 0;  // center
-    unsigned nearestIndex2 = 0;
-    double minDist1 = std::numeric_limits<double>::max();
-    double minDistC = std::numeric_limits<double>::max();
-    double minDist2 = std::numeric_limits<double>::max();
-
+    // Convert protractor's exact 3D coordinates to CCVector3
     CCVector3 point1(static_cast<PointCoordinateType>(p1[0]),
                      static_cast<PointCoordinateType>(p1[1]),
                      static_cast<PointCoordinateType>(p1[2]));
@@ -530,26 +614,79 @@ ccHObject* cvProtractorTool::getOutput() {
                      static_cast<PointCoordinateType>(p2[1]),
                      static_cast<PointCoordinateType>(p2[2]));
 
+    // Find the nearest points in the cloud for all three measurement endpoints
+    // CRITICAL: We need to use the exact protractor coordinates, not just the
+    // nearest points in the cloud. If the nearest point is too far away, we
+    // should add the exact point to the cloud to ensure the exported label
+    // matches the protractor exactly.
+    unsigned nearestIndex1 = 0;
+    unsigned nearestIndexC = 0;  // center
+    unsigned nearestIndex2 = 0;
+    double minDist1 = std::numeric_limits<double>::max();
+    double minDistC = std::numeric_limits<double>::max();
+    double minDist2 = std::numeric_limits<double>::max();
+
+    // Threshold for considering a point "close enough" (1mm in world units)
+    // If the nearest point is farther than this, we'll add the exact point
+    const double DISTANCE_THRESHOLD = 0.001;
+
     for (unsigned i = 0; i < cloud->size(); ++i) {
         const CCVector3* P = cloud->getPoint(i);
         if (!P) continue;
 
-        double d1 = (*P - point1).norm2d();
+        double d1 = (*P - point1).norm();
         if (d1 < minDist1) {
             minDist1 = d1;
             nearestIndex1 = i;
         }
 
-        double dC = (*P - pointC).norm2d();
+        double dC = (*P - pointC).norm();
         if (dC < minDistC) {
             minDistC = dC;
             nearestIndexC = i;
         }
 
-        double d2 = (*P - point2).norm2d();
+        double d2 = (*P - point2).norm();
         if (d2 < minDist2) {
             minDist2 = d2;
             nearestIndex2 = i;
+        }
+    }
+
+    // CRITICAL: If the nearest points are too far from the exact protractor
+    // coordinates, add the exact points to the cloud to ensure perfect
+    // alignment This ensures the exported label's edges match the protractor's
+    // rays exactly
+    ccPointCloud* pointCloud = ccHObjectCaster::ToPointCloud(cloud);
+    if (pointCloud) {
+        // Calculate how many new points we need to add
+        unsigned pointsToAdd = 0;
+        if (minDist1 > DISTANCE_THRESHOLD) pointsToAdd++;
+        if (minDistC > DISTANCE_THRESHOLD) pointsToAdd++;
+        if (minDist2 > DISTANCE_THRESHOLD) pointsToAdd++;
+
+        // Reserve memory for all new points at once (more efficient)
+        if (pointsToAdd > 0) {
+            unsigned currentSize = pointCloud->size();
+            if (pointCloud->reserve(currentSize + pointsToAdd)) {
+                // Check and add point1 if needed
+                if (minDist1 > DISTANCE_THRESHOLD) {
+                    pointCloud->addPoint(point1);
+                    nearestIndex1 = pointCloud->size() - 1;
+                }
+
+                // Check and add center if needed
+                if (minDistC > DISTANCE_THRESHOLD) {
+                    pointCloud->addPoint(pointC);
+                    nearestIndexC = pointCloud->size() - 1;
+                }
+
+                // Check and add point2 if needed
+                if (minDist2 > DISTANCE_THRESHOLD) {
+                    pointCloud->addPoint(point2);
+                    nearestIndex2 = pointCloud->size() - 1;
+                }
+            }
         }
     }
 
@@ -593,11 +730,55 @@ ccHObject* cvProtractorTool::getOutput() {
     label->displayPointLegend(true);
     label->setCollapsed(false);
 
-    // Set a position for the label (relative to screen)
-    label->setPosition(0.05f, 0.90f);
+    // Get the angle label's screen position from VTK representation
+    // This ensures the exported label appears at the same location as the 3D
+    // angle label
+    float labelPosX = 0.05f;  // Default fallback position
+    float labelPosY = 0.90f;  // Default fallback position
 
-    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1°")
-                         .arg(getMeasurementValue(), 0, 'f', 2));
+    if (m_rep && m_renderer) {
+        // Get the angle label actor position (in display/pixel coordinates)
+        if (auto* labelActor = m_rep->GetAngleLabelActor()) {
+            double* vtkPos = labelActor->GetPosition();  // Returns [x, y] in
+                                                         // display coordinates
+            if (vtkPos && m_interactor && m_interactor->GetRenderWindow()) {
+                int* windowSize = m_interactor->GetRenderWindow()->GetSize();
+                if (windowSize && windowSize[0] > 0 && windowSize[1] > 0) {
+                    // Convert from VTK display coordinates (pixels, bottom-left
+                    // origin) to cc2DLabel relative coordinates (0.0-1.0,
+                    // top-left origin)
+                    float normalizedX = static_cast<float>(vtkPos[0]) /
+                                        static_cast<float>(windowSize[0]);
+                    float normalizedY = static_cast<float>(vtkPos[1]) /
+                                        static_cast<float>(windowSize[1]);
+
+                    // VTK Y=0 is at bottom, cc2DLabel Y=0 is at top
+                    // So invert Y: labelY = 1.0 - vtkY
+                    labelPosX = normalizedX;
+                    labelPosY = 1.0f - normalizedY;
+
+                    CVLog::PrintVerbose(
+                            QString("[cvProtractorTool::getOutput] Retrieved "
+                                    "angle label "
+                                    "position from VTK: display=(%1, %2), "
+                                    "normalized=(%3, %4)")
+                                    .arg(vtkPos[0])
+                                    .arg(vtkPos[1])
+                                    .arg(labelPosX)
+                                    .arg(labelPosY));
+                }
+            }
+        }
+    }
+
+    // Set the position for the exported label (relative to screen, 0.0-1.0)
+    label->setPosition(labelPosX, labelPosY);
+
+    CVLog::Print(QString("[cvProtractorTool] Exported angle measurement: %1° "
+                         "at position (%2, %3)")
+                         .arg(getMeasurementValue(), 0, 'f', 2)
+                         .arg(labelPosX)
+                         .arg(labelPosY));
 
     return label;
 }
@@ -762,6 +943,13 @@ void cvProtractorTool::setColor(double r, double g, double b) {
         }
     }
     update();
+}
+
+bool cvProtractorTool::getColor(double& r, double& g, double& b) const {
+    r = m_currentColor[0];
+    g = m_currentColor[1];
+    b = m_currentColor[2];
+    return true;
 }
 
 void cvProtractorTool::lockInteraction() {
@@ -964,13 +1152,35 @@ void cvProtractorTool::unlockInteraction() {
                             .arg((quintptr)this, 0, 16));
         }
     } else {
-        // Shortcuts already exist - just enable them
+        // Shortcuts already exist - update interactor/renderer and enable them
+        // CRITICAL: Update interactor/renderer in case they weren't set when
+        // shortcuts were created (e.g., in addInstance before tool is fully
+        // initialized)
         CVLog::PrintDebug(QString("[cvProtractorTool::unlockInteraction] "
-                                  "Enabling %1 existing shortcuts for tool=%2")
+                                  "Updating %1 existing shortcuts for tool=%2")
                                   .arg(m_pickingHelpers.size())
                                   .arg((quintptr)this, 0, 16));
+        updatePickingHelpers();
+
+        // CRITICAL: Enable all shortcuts. Now using ecvModalShortcut
+        // (ParaView-style) which automatically handles conflicts via
+        // ecvKeySequences. When a shortcut is enabled,
+        // ecvKeySequences::disableSiblings() automatically disables all other
+        // shortcuts with the same key sequence, ensuring only the active
+        // (unlocked) tool instance's shortcuts respond.
+        //
+        // IMPORTANT: However, QAction shortcuts (like MainWindow's
+        // actionContourWidget with "Ctrl+C") are NOT managed by ecvKeySequences
+        // and may still conflict. The MainWindow action's shortcut is handled
+        // by ecvMeasurementTool when tools are activated/deactivated.
+        //
+        // The pickPoint() method in cvPointPickingHelper already checks for
+        // visibility and enabled state to ensure only the active tool instance
+        // responds.
         for (cvPointPickingHelper* helper : m_pickingHelpers) {
             if (helper) {
+                // Simply enable - ecvModalShortcut will handle disabling
+                // siblings
                 helper->setEnabled(true,
                                    false);  // Enable without setting focus
             }

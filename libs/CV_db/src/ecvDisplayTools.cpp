@@ -127,6 +127,7 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools,
     s_tools.instance->m_shouldBeRefreshed = false;
     s_tools.instance->m_mouseMoved = false;
     s_tools.instance->m_mouseButtonPressed = false;
+    s_tools.instance->m_widgetClicked = false;
 
     s_tools.instance->m_bbHalfDiag = 0.0;
     s_tools.instance->m_interactionFlags = TRANSFORM_CAMERA();
@@ -329,6 +330,16 @@ void ecvDisplayTools::onPointPicking(const CCVector3& p,
 }
 
 void ecvDisplayTools::doPicking() {
+    // CRITICAL: If a VTK widget was clicked, skip picking to prevent
+    // overriding the widget selection
+    if (m_widgetClicked) {
+        CVLog::PrintVerbose(
+                "[ecvDisplayTools::doPicking] Skipping picking because "
+                "VTK widget was clicked");
+        m_widgetClicked = false;  // Reset flag after use
+        return;
+    }
+
     int x = m_lastMousePos.x();
     int y = m_lastMousePos.y();
 
@@ -1971,6 +1982,11 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
     // we set the pivot point on the box center
     CCVector3d P = CCVector3d::fromArray(zoomedBox.getCenter().u);
     SetPivotPoint(P);
+
+    // CRITICAL: Update 2D labels after zoom operation to ensure they align with
+    // their 3D anchor points. This fixes the issue where labels become detached
+    // after zoom operations (zoom on selected, zoom to box, zoom to global).
+    s_tools.instance->Update2DLabel(true);
 }
 
 void ecvDisplayTools::SetRedrawRecursive(bool redraw /* = false*/) {

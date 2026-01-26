@@ -206,7 +206,6 @@
         <file>Resources/images/svg/pqStreamTracer.png</file>
         <file>Resources/images/svg/pqThreshold.png</file>
         <file>Resources/images/svg/pqToggleLock.png</file>
-        <file>Resources/images/svg/pqZoomToData.png</file>
         <file>Resources/images/svg/pqProtractor.svg</file>
         <file>Resources/images/svg/pqRuler.svg</file>
         <file>Resources/images/svg/pqSettings.svg</file>
@@ -232,7 +231,8 @@
         <file>Resources/images/pqResetCenter@2x.png</file>
         <file>Resources/images/svg/pqShowOrientationAxes.svg</file>
         <file>Resources/images/svg/pqAxes.png</file>
-        <file>Resources/images/svg/pqZoomToData.svg</file>
+        <file>Resources/images/svg/pqZoomToGlobalData.svg</file>
+        <file>Resources/images/svg/pqZoomToSelectedData.svg</file>
         <file>Resources/images/pqZoomToBox@2x.png</file>
         <file>Resources/images/svg/pqSurfaceHoveringCell.svg</file>
         <file>Resources/images/svg/pqSurfaceHoveringPoint.svg</file>

@@ -25,6 +25,12 @@
 #include "Tools/PickingTools/cvPointPickingHelper.h"
 #include "VTKExtensions/ConstrainedWidgets/cvConstrainedContourRepresentation.h"
 
+// QT
+#include <QApplication>
+#include <QLayout>
+#include <QLayoutItem>
+#include <QSizePolicy>
+
 // CV_DB_LIB
 #include <CVLog.h>
 #include <ecvColorTypes.h>
@@ -39,6 +45,8 @@ cvContourTool::cvContourTool(QWidget* parent)
       m_toolId(++s_contourIdCounter),
       m_exportCounter(0) {
     setWindowTitle(tr("Contour Measurement Tool"));
+    // Set default font size to 12 for better readability
+    m_fontSize = 12;
 }
 
 cvContourTool::~cvContourTool() {
@@ -128,12 +136,68 @@ void cvContourTool::createNewContour() {
 }
 
 void cvContourTool::createUi() {
+    // CRITICAL: Only setup base UI once to avoid resetting configLayout
+    // Each tool instance has its own m_ui, but setupUi clears all children
+    // so we must ensure it's only called once per tool instance
+    // Check if base UI is already set up by checking if widget has a layout
+    // NOTE: Cannot check m_ui->configLayout directly as it's uninitialized
+    // before setupUi()
+    if (!m_ui) {
+        CVLog::Error("[cvContourTool::createUi] m_ui is null!");
+        return;
+    }
+    if (!layout()) {
+        m_ui->setupUi(this);
+    }
+
+    // CRITICAL: Always clean up existing config UI before creating new one
+    // This prevents UI interference when createUi() is called multiple times
+    // (e.g., when tool is restarted or switched)
+    if (m_configUi && m_ui->configLayout) {
+        // Remove all existing widgets from configLayout
+        QLayoutItem* item;
+        while ((item = m_ui->configLayout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->setParent(nullptr);
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+        delete m_configUi;
+        m_configUi = nullptr;
+    }
+
+    // Create fresh config UI for this tool instance
     m_configUi = new Ui::ContourToolDlg;
     QWidget* configWidget = new QWidget(this);
+    // CRITICAL: Set size policy to Minimum to prevent horizontal expansion
+    // This ensures the widget only takes the space it needs
+    configWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     m_configUi->setupUi(configWidget);
-    m_ui->setupUi(this);
+    // CRITICAL: Set layout size constraint to ensure minimum size calculation
+    // This prevents extra whitespace on the right
+    if (configWidget->layout()) {
+        configWidget->layout()->setSizeConstraint(QLayout::SetMinimumSize);
+    }
     m_ui->configLayout->addWidget(configWidget);
     m_ui->groupBox->setTitle(tr("Contour Parameters"));
+
+    // CRITICAL: Use Qt's automatic sizing based on sizeHint
+    // This ensures each tool adapts to its own content without interference
+    // Reset size constraints to allow Qt's layout system to work properly
+    // ParaView-style: use Minimum (horizontal) to prevent unnecessary expansion
+    this->setMinimumSize(0, 0);
+    this->setMaximumSize(16777215, 16777215);  // QWIDGETSIZE_MAX equivalent
+    this->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+
+    // Let Qt calculate the optimal size based on content
+    // Order matters: adjust configWidget first, then the main widget
+    configWidget->adjustSize();
+    this->adjustSize();
+    // Force layout update to apply size changes
+    this->updateGeometry();
+    // CRITICAL: Process events to ensure layout is fully updated
+    QApplication::processEvents();
 
     // Connect display options
     connect(m_configUi->widgetVisibilityCheckBox, &QCheckBox::toggled, this,
@@ -204,6 +268,13 @@ void cvContourTool::setColor(double r, double g, double b) {
         }
     }
     update();
+}
+
+bool cvContourTool::getColor(double& r, double& g, double& b) const {
+    r = m_currentColor[0];
+    g = m_currentColor[1];
+    b = m_currentColor[2];
+    return true;
 }
 
 void cvContourTool::lockInteraction() {
@@ -500,14 +571,36 @@ ccHObject* cvContourTool::getOutput() {
     // Convert vtkPolyData to ccPolyline
     ccPolyline* polyline = vtk2cc::ConvertToPolyline(polyDataCopy, true);
     if (polyline) {
-        // Increment export counter for this contour instance
-        m_exportCounter++;
+        // Determine if polyline should be in 2D mode based on point coordinates
+        // Check if all points are coplanar (e.g., all have the same Z
+        // coordinate)
+        cloudViewer::GenericIndexedCloudPersist* vertices =
+                polyline->getAssociatedCloud();
+        if (vertices && vertices->size() > 0) {
+            // Get first point's Z coordinate as reference
+            const CCVector3* firstPoint = vertices->getPoint(0);
+            PointCoordinateType refZ = firstPoint->z;
+
+            // Check if all points have the same Z coordinate (within epsilon)
+            bool is2D = true;
+            for (unsigned i = 1; i < vertices->size(); ++i) {
+                const CCVector3* point = vertices->getPoint(i);
+                PointCoordinateType zDiff = point->z - refZ;
+                // Use absolute value and check if difference is less than
+                // epsilon PointCoordinateType is float, so use LessThanEpsilon
+                // with abs value
+                if (!cloudViewer::LessThanEpsilon(std::abs(zDiff))) {
+                    is2D = false;
+                    break;
+                }
+            }
+
+            // Set 2D mode if all points are coplanar
+            polyline->set2DMode(is2D);
+        }
 
         // Set name with contour ID and export counter
-        // Use m_toolId to distinguish tool instances, m_currentContourId for
-        // contours within tool
-        polyline->setName(QString("Contour_%1_%2_%3")
-                                  .arg(m_toolId)
+        polyline->setName(QString("Contour_%1_%2")
                                   .arg(m_currentContourId)
                                   .arg(m_exportCounter));
         polyline->setColor(ecvColor::green);
@@ -523,6 +616,9 @@ ccHObject* cvContourTool::getOutput() {
                              .arg(polyData->GetNumberOfPoints())
                              .arg(isClosed ? "true" : "false")
                              .arg(lineWidth));
+
+        // Increment export counter for this contour instance
+        m_exportCounter++;
 
         return polyline;
     } else {

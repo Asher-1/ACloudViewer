@@ -27,6 +27,7 @@ public:
     virtual void showWidget(bool state) override;
     virtual ccHObject* getOutput() override;
     virtual void setColor(double r, double g, double b) override;
+    virtual bool getColor(double& r, double& g, double& b) const override;
     virtual void lockInteraction() override;
     virtual void unlockInteraction() override;
     virtual void setInstanceLabel(const QString& label) override;
