@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Sensor" href="../sensor/index.html" /><link rel="prev" title="Ray Casting in a Voxel Block Grid" href="ray_casting.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Dense RGB-D SLAM - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Dense RGB-D SLAM - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1137,7 +1137,7 @@
         <article role="main">
           <section id="dense-rgb-d-slam">
 <span id="dense-slam"></span><h1>Dense RGB-D SLAM<a class="headerlink" href="#dense-rgb-d-slam" title="Permalink to this heading">#</a></h1>
-<p>Equipped with the fast volumetric reconstruction backend, we in addition provide a dense RGB-D SLAM system using frame-to-model tracking. The example can be found at <code class="docutils literal notranslate"><span class="pre">examples/Python/t_reconstruction_system/dense_slam.py</span></code> for the command line version and <code class="docutils literal notranslate"><span class="pre">examples/Python/t_reconstruction_system/dense_slam_gui.py</span></code> for a GUI demo.</p>
+<p>Equipped with the fast volumetric reconstruction backend, we in addition provide a dense RGB-D SLAM system using frame-to-model tracking. The example can be found at <code class="docutils literal notranslate"><span class="pre">examples/Python/t_reconstruction_system/dense_slam.py</span></code> for the command line version and <code class="docutils literal notranslate"><span class="pre">examples/Python/t_reconstruction_system/dense_slam_gui.py</span></code> for a GUI demo. Similar C++ versions can be found at <code class="docutils literal notranslate"><span class="pre">examples/Cpp/OnlineSLAMRGBD.cpp</span></code> and <code class="docutils literal notranslate"><span class="pre">examples/Cpp/OnlineSLAMRealSense.cpp</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This SLAM prototype is mainly a showcase of the real-time volumetric processing. Please be aware that the tracking/RGB-D odometry module is <strong>not fully optimized for accuracy</strong>, and there is <strong>no relocalization module</strong> implemented currently. In general, it should work for room-scale scenes with relatively moderate motion, and may fail on more challenging sequences. More robust and reliable localization is our future work.</p>
@@ -1185,7 +1185,7 @@
 <span class="linenos">59</span>                                     <span class="n">config</span><span class="o">.</span><span class="n">depth_min</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">depth_max</span><span class="p">,</span>
 </pre></div>
 </div>
-<p>where we iteratively update the synthesized frame via ray-casting from the model, and perform the tensor version of RGB-D odometry between the input frame and the synthesized frame.</p>
+<p>where we iteratively update the synthesized frame via ray-casting from the model, and perform the tensor version of <a class="reference internal" href="../pipelines/rgbd_odometry.html"><span class="std std-ref">RGBD Odometry</span></a> between the input frame and the synthesized frame.</p>
 <p>The reconstruction results can be saved following <a class="reference internal" href="integration.html#optimized-integration"><span class="std std-ref">TSDF Integration</span></a>, and the trajectory of the camera pose in the world coordinate system can be obtained by accumulating <code class="docutils literal notranslate"><span class="pre">T_frame_to_model</span></code>.</p>
 </section>
 <section id="faq">
@@ -1276,7 +1276,7 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

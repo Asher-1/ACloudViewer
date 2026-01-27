@@ -1,5 +1,9 @@
 var NAVTREEINDEX32 =
 {
+"classDONSegmentation.html#a820a4330d963ceb4efe574e184206cf3":[3,0,300,8],
+"classDONSegmentation.html#a85db74083f512031888c7e219db19f38":[3,0,300,6],
+"classDONSegmentation.html#a866852b0ad3854d2bacae2723008a5ed":[3,0,300,4],
+"classDONSegmentation.html#a95ec57f7af80067940fd71f6e981de26":[3,0,300,18],
 "classDONSegmentation.html#aadb2f7e4a312bb7ffdf4fabe4a28d710":[3,0,300,3],
 "classDONSegmentation.html#ab07a64d017d640f542031afee5432fdc":[3,0,300,7],
 "classDONSegmentation.html#ab782f949fb757cad7c3d1fb27bb39714":[3,0,300,14],
@@ -245,9 +249,5 @@ var NAVTREEINDEX32 =
 "classEuclideanClusterSegmentation.html":[3,0,342],
 "classEuclideanClusterSegmentation.html#a11538ff6a7483499029077753e6842e2":[3,0,342,1],
 "classEuclideanClusterSegmentation.html#a2e90e481a27a20f25a01e9268b24c58a":[3,0,342,7],
-"classEuclideanClusterSegmentation.html#a5531c879e5fde5047898f3468627afba":[3,0,342,0],
-"classEuclideanClusterSegmentation.html#a7bbb9c7132b9c5094e39a8b3573a7c41":[3,0,342,8],
-"classEuclideanClusterSegmentation.html#a7f51b38fe1b35bdbb9c63aa4a1e0e394":[3,0,342,6],
-"classEuclideanClusterSegmentation.html#a8052aec5fbbf351f31d6e2748464c0ff":[3,0,342,11],
-"classEuclideanClusterSegmentation.html#a8f557b109a72d253907f78e672db24c6":[3,0,342,3]
+"classEuclideanClusterSegmentation.html#a5531c879e5fde5047898f3468627afba":[3,0,342,0]
 };

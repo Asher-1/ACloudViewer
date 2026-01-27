@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Customized Integration" href="customized_integration.html" /><link rel="prev" title="Voxel Block Grid" href="voxel_block_grid.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>TSDF Integration - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>TSDF Integration - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1175,13 +1175,13 @@
 </pre></div>
 </div>
 <p>and CUDA</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">243</span><span class="k">template</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">IntegrateCUDA</span><span class="o">&lt;</span><span class="kt">uint16_t</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="o">&gt;</span><span class="p">(</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">238</span><span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">core</span><span class="o">::</span><span class="n">Tensor</span><span class="w"> </span><span class="o">&amp;</span><span class="n">color_intrinsic</span><span class="p">,</span><span class="w">                          </span>\
+<span class="linenos">239</span><span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">core</span><span class="o">::</span><span class="n">Tensor</span><span class="w"> </span><span class="o">&amp;</span><span class="n">extrinsic</span><span class="p">,</span><span class="w"> </span><span class="n">index_t</span><span class="w"> </span><span class="n">resolution</span><span class="p">,</span><span class="w">            </span>\
+<span class="linenos">240</span><span class="w">            </span><span class="kt">float</span><span class="w"> </span><span class="n">voxel_size</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sdf_trunc</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">depth_scale</span><span class="p">,</span><span class="w">         </span>\
+<span class="linenos">241</span><span class="w">            </span><span class="kt">float</span><span class="w"> </span><span class="n">depth_max</span>
+<span class="linenos">242</span>
+<span class="linenos">243</span><span class="k">template</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">IntegrateCUDA</span><span class="o">&lt;</span><span class="kt">uint16_t</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="o">&gt;</span><span class="p">(</span>
 <span class="linenos">244</span><span class="w">        </span><span class="n">FN_ARGUMENTS</span><span class="p">);</span>
-<span class="linenos">245</span><span class="k">template</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">IntegrateCUDA</span><span class="o">&lt;</span><span class="kt">uint16_t</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span>
-<span class="linenos">246</span><span class="w">        </span><span class="n">FN_ARGUMENTS</span><span class="p">);</span>
-<span class="linenos">247</span><span class="k">template</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">IntegrateCUDA</span><span class="o">&lt;</span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="o">&gt;</span><span class="p">(</span>
-<span class="linenos">248</span><span class="w">        </span><span class="n">FN_ARGUMENTS</span><span class="p">);</span>
-<span class="linenos">249</span><span class="k">template</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">IntegrateCUDA</span><span class="o">&lt;</span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">FN_ARGUMENTS</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>For more generalized functionalities, you may extend the macros and/or the kernel functions and compile ACloudViewer from scratch to achieve the maximal performance (~100Hz on a GTX 1070), or follow <a class="reference internal" href="customized_integration.html#customized-integration"><span class="std std-ref">Customized Integration</span></a> and implement a fast prototype (~25Hz).</p>
@@ -1190,11 +1190,10 @@
 <h2>Surface extraction<a class="headerlink" href="#surface-extraction" title="Permalink to this heading">#</a></h2>
 <p>You may use the provided APIs to extract surface points.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">105</span>
-<span class="linenos">106</span>    <span class="n">pcd</span> <span class="o">=</span> <span class="n">vbg</span><span class="o">.</span><span class="n">extract_point_cloud</span><span class="p">()</span>
-<span class="linenos">107</span>    <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw</span><span class="p">([</span><span class="n">pcd</span><span class="p">])</span>
-<span class="linenos">108</span>
-<span class="linenos">109</span>    <span class="n">mesh</span> <span class="o">=</span> <span class="n">vbg</span><span class="o">.</span><span class="n">extract_triangle_mesh</span><span class="p">()</span>
-<span class="linenos">110</span>    <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw</span><span class="p">([</span><span class="n">mesh</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()])</span>
+<span class="linenos">106</span>    <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw</span><span class="p">([</span><span class="n">pcd</span><span class="p">])</span>
+<span class="linenos">107</span>
+<span class="linenos">108</span>    <span class="n">mesh</span> <span class="o">=</span> <span class="n">vbg</span><span class="o">.</span><span class="n">extract_triangle_mesh</span><span class="p">()</span>
+<span class="linenos">109</span>    <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw</span><span class="p">([</span><span class="n">mesh</span><span class="o">.</span><span class="n">to_legacy</span><span class="p">()])</span>
 </pre></div>
 </div>
 <p>Note <code class="docutils literal notranslate"><span class="pre">extract_triangle_mesh</span></code> applies marching cubes and generates mesh. <code class="docutils literal notranslate"><span class="pre">extract_point_cloud</span></code> uses a similar algorithm, but skips the triangle face generation step.</p>
@@ -1202,10 +1201,9 @@
 <section id="save-and-load">
 <h2>Save and load<a class="headerlink" href="#save-and-load" title="Permalink to this heading">#</a></h2>
 <p>The voxel block grids can be saved to and loaded from <cite>.npz</cite> files that are accessible via numpy.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">26</span><span class="c1"># examples/python/t_reconstruction_system/integrate_custom.py</span>
-<span class="linenos">27</span>        <span class="nb">print</span><span class="p">(</span>
-<span class="linenos">28</span>        <span class="n">vbg</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">VoxelBlockGrid</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">path_npz</span><span class="p">)</span>
-<span class="linenos">29</span>    <span class="n">vbg</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">path_npz</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">47</span>
+<span class="linenos">48</span>        <span class="n">depth</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_image</span><span class="p">(</span><span class="n">depth_file_names</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="linenos">49</span>    <span class="n">depth_intrinsic</span> <span class="o">=</span> <span class="n">load_intrinsic</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">.npz</span></code> file of the aforementioned voxel block grid contains the following entries:</p>
@@ -1295,7 +1293,7 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

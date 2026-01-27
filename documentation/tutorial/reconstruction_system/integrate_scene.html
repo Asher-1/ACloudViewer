@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Capture your own dataset" href="capture_your_own_dataset.html" /><link rel="prev" title="Refine registration" href="refine_registration.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Integrate scene - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Integrate scene - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1150,6 +1150,45 @@ details). If it is not given, the PrimeSense factory setting is used instead.</p
 </section>
 <section id="integrate-rgbd-frames">
 <h2>Integrate RGBD frames<a class="headerlink" href="#integrate-rgbd-frames" title="Permalink to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">18</span><span class="k">def</span><span class="w"> </span><span class="nf">scalable_integrate_rgb_frames</span><span class="p">(</span><span class="n">path_dataset</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="linenos">19</span>    <span class="n">poses</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="linenos">20</span>    <span class="p">[</span><span class="n">color_files</span><span class="p">,</span> <span class="n">depth_files</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_rgbd_file_lists</span><span class="p">(</span><span class="n">path_dataset</span><span class="p">)</span>
+<span class="linenos">21</span>    <span class="n">n_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">color_files</span><span class="p">)</span>
+<span class="linenos">22</span>    <span class="n">n_fragments</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">n_files</span><span class="p">)</span> <span class="o">/</span> \
+<span class="linenos">23</span>            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_frames_per_fragment&#39;</span><span class="p">]))</span>
+<span class="linenos">24</span>    <span class="n">volume</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">ScalableTSDFVolume</span><span class="p">(</span>
+<span class="linenos">25</span>        <span class="n">voxel_length</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;tsdf_cubic_size&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">512.0</span><span class="p">,</span>
+<span class="linenos">26</span>        <span class="n">sdf_trunc</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span>
+<span class="linenos">27</span>        <span class="n">color_type</span><span class="o">=</span><span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">TSDFVolumeColorType</span><span class="o">.</span><span class="n">RGB8</span><span class="p">)</span>
+<span class="linenos">28</span>
+<span class="linenos">29</span>    <span class="n">pose_graph_fragment</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_pose_graph</span><span class="p">(</span>
+<span class="linenos">30</span>        <span class="n">join</span><span class="p">(</span><span class="n">path_dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_refined_posegraph_optimized&quot;</span><span class="p">]))</span>
+<span class="linenos">31</span>
+<span class="linenos">32</span>    <span class="k">for</span> <span class="n">fragment_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pose_graph_fragment</span><span class="o">.</span><span class="n">nodes</span><span class="p">)):</span>
+<span class="linenos">33</span>        <span class="n">pose_graph_rgbd</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_pose_graph</span><span class="p">(</span>
+<span class="linenos">34</span>            <span class="n">join</span><span class="p">(</span><span class="n">path_dataset</span><span class="p">,</span>
+<span class="linenos">35</span>                 <span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_fragment_posegraph_optimized&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="n">fragment_id</span><span class="p">))</span>
+<span class="linenos">36</span>
+<span class="linenos">37</span>        <span class="k">for</span> <span class="n">frame_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pose_graph_rgbd</span><span class="o">.</span><span class="n">nodes</span><span class="p">)):</span>
+<span class="linenos">38</span>            <span class="n">frame_id_abs</span> <span class="o">=</span> <span class="n">fragment_id</span> <span class="o">*</span> \
+<span class="linenos">39</span>                    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_frames_per_fragment&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">frame_id</span>
+<span class="linenos">40</span>            <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">41</span>                <span class="s2">&quot;Fragment </span><span class="si">%03d</span><span class="s2"> / </span><span class="si">%03d</span><span class="s2"> :: integrate rgbd frame </span><span class="si">%d</span><span class="s2"> (</span><span class="si">%d</span><span class="s2"> of </span><span class="si">%d</span><span class="s2">).&quot;</span> <span class="o">%</span>
+<span class="linenos">42</span>                <span class="p">(</span><span class="n">fragment_id</span><span class="p">,</span> <span class="n">n_fragments</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">frame_id_abs</span><span class="p">,</span> <span class="n">frame_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+<span class="linenos">43</span>                 <span class="nb">len</span><span class="p">(</span><span class="n">pose_graph_rgbd</span><span class="o">.</span><span class="n">nodes</span><span class="p">)))</span>
+<span class="linenos">44</span>            <span class="n">rgbd</span> <span class="o">=</span> <span class="n">read_rgbd_image</span><span class="p">(</span><span class="n">color_files</span><span class="p">[</span><span class="n">frame_id_abs</span><span class="p">],</span>
+<span class="linenos">45</span>                                   <span class="n">depth_files</span><span class="p">[</span><span class="n">frame_id_abs</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<span class="linenos">46</span>            <span class="n">pose</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pose_graph_fragment</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">fragment_id</span><span class="p">]</span><span class="o">.</span><span class="n">pose</span><span class="p">,</span>
+<span class="linenos">47</span>                          <span class="n">pose_graph_rgbd</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">frame_id</span><span class="p">]</span><span class="o">.</span><span class="n">pose</span><span class="p">)</span>
+<span class="linenos">48</span>            <span class="n">volume</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">rgbd</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">pose</span><span class="p">))</span>
+<span class="linenos">49</span>            <span class="n">poses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pose</span><span class="p">)</span>
+<span class="linenos">50</span>
+<span class="linenos">51</span>    <span class="n">mesh</span> <span class="o">=</span> <span class="n">volume</span><span class="o">.</span><span class="n">extract_triangle_mesh</span><span class="p">()</span>
+<span class="linenos">52</span>    <span class="n">mesh</span><span class="o">.</span><span class="n">compute_vertex_normals</span><span class="p">()</span>
+<span class="linenos">53</span>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;debug_mode&quot;</span><span class="p">]:</span>
+<span class="linenos">54</span>        <span class="n">cv3d</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">draw_geometries</span><span class="p">([</span><span class="n">mesh</span><span class="p">])</span>
+</pre></div>
+</div>
 <p>This function first reads the alignment results from both
 <a class="reference internal" href="make_fragments.html#reconstruction-system-make-fragments"><span class="std std-ref">Make fragments</span></a> and
 <a class="reference internal" href="register_fragments.html#reconstruction-system-register-fragments"><span class="std std-ref">Register fragments</span></a>, then computes the pose of each
@@ -1246,7 +1285,7 @@ Writing<span class="w"> </span>PLY:<span class="w"> </span><span class="o">[====
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

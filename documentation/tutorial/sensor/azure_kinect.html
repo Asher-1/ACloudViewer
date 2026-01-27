@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="RealSense with ACloudViewer" href="realsense.html" /><link rel="prev" title="Sensor" href="index.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Azure Kinect with ACloudViewer - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Azure Kinect with ACloudViewer - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1137,7 +1137,7 @@
         <article role="main">
           <section id="azure-kinect-with-acloudviewer">
 <span id="azure-kinect"></span><h1>Azure Kinect with ACloudViewer<a class="headerlink" href="#azure-kinect-with-acloudviewer" title="Permalink to this heading">#</a></h1>
-<p>Azure Kinect is supported on Windows and Linux (Ubuntu 18.04+).</p>
+<p>Azure Kinect is only officially supported on Windows and Ubuntu 18.04.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">#</a></h2>
 <section id="install-the-azure-kinect-sdk">
@@ -1151,6 +1151,25 @@ to install the Azure Kinect SDK (K4A).</p>
 <code class="docutils literal notranslate"><span class="pre">k4aviewer.exe</span></code> on Windows to make sure that the device is working.</p>
 <p>Currently, ACloudViewer supports the Azure Kinect SDK version <code class="docutils literal notranslate"><span class="pre">v1.4.1</span></code>, though future
 versions might also be compatible.</p>
+</section>
+<section id="install-acloudviewer-from-pip">
+<h3>Install ACloudViewer from Pip<a class="headerlink" href="#install-acloudviewer-from-pip" title="Permalink to this heading">#</a></h3>
+<p>If you’re using ACloudViewer installed via Pip, ACloudViewer’s Azure Kinect features
+should work out-of-the box if K4A is installed in the system in the recommended
+way. ACloudViewer will try to load the K4A dynamic library automatically at runtime,
+when a K4A related feature within ACloudViewer is used.</p>
+<p>On Ubuntu, the default search path
+follows the Linux <a class="reference external" href="https://unix.stackexchange.com/a/22999/130082">convention</a>.</p>
+<p>On Windows, ACloudViewer will try to load the shared library from the default
+installation path. For example, for K4A <code class="docutils literal notranslate"><span class="pre">v1.4.1</span></code>, the default path is
+<code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\Azure</span> <span class="pre">Kinect</span> <span class="pre">SDK</span> <span class="pre">v1.4.1</span></code>. If this doesn’t work, copy
+<code class="docutils literal notranslate"><span class="pre">depthengine_x_x.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">k4a.dll</span></code> and <code class="docutils literal notranslate"><span class="pre">k4arecord.dll</span></code> to where ACloudViewer
+Python module is installed if you’re using ACloudViewer with Python, or to the same
+directory as your C++ executable.</p>
+<p>You can get ACloudViewer’s Python module path with the following command:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cloudViewer as cv3d; import os; print(os.path.dirname(cv3d.__file__))&quot;</span>
+</pre></div>
+</div>
 </section>
 <section id="compile-from-source">
 <h3>Compile from Source<a class="headerlink" href="#compile-from-source" title="Permalink to this heading">#</a></h3>
@@ -1171,6 +1190,11 @@ see <code class="docutils literal notranslate"><span class="pre">examples/Cpp/Az
 for details.</p>
 <p>We’ll use the Python version as an example.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/Python/reconstruction_system/sensors/azure_kinect_viewer.py<span class="w"> </span>--align_depth_to_color
+</pre></div>
+</div>
+<p>When recording at a higher resolution at a high framerate, sometimes it is
+helpful to use the raw depth image without transformation to reduce computation.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/Python/reconstruction_system/sensors/azure_kinect_viewer.py
 </pre></div>
 </div>
 <p>When the visualizer window is active, press <code class="docutils literal notranslate"><span class="pre">ESC</span></code> to quit the viewer.</p>
@@ -1213,15 +1237,18 @@ recording or press <code class="docutils literal notranslate"><span class="pre">
 <section id="acloudviewer-azure-kinect-mkv-reader">
 <h2>ACloudViewer Azure Kinect MKV Reader<a class="headerlink" href="#acloudviewer-azure-kinect-mkv-reader" title="Permalink to this heading">#</a></h2>
 <p>The recorded MKV file uses K4A’s custom format which contains both RGB and depth
-information. To view the customized MKV file, use the
+information. The regular video player may only support playing back the color channel
+or not supporting the format at all. To view the customized MKV file, use the
 ACloudViewer Azure Kinect MKV Reader.</p>
-<p>ACloudViewer provides Python and C++ example code of Azure Kinect MKV Reader.
+<p>ACloudViewer provides Python and C++ example code of ACloudViewer Azure Kinect MKV Reader.
 Please see <code class="docutils literal notranslate"><span class="pre">examples/Cpp/AzureKinectMKVReader.cpp</span></code> and
 <code class="docutils literal notranslate"><span class="pre">examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py</span></code>
 for details.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py<span class="w"> </span>--input<span class="w"> </span>record.mkv
 </pre></div>
 </div>
+<p>Note that even though the recorder records the unaligned raw depth image, the
+reader can correctly wrap the depth image to align with the color image.</p>
 <p>To convert the MKV video to color and depth image frames, specify the <code class="docutils literal notranslate"><span class="pre">--output</span></code>
 flag.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py<span class="w"> </span>--input<span class="w"> </span>record.mkv<span class="w"> </span>--output<span class="w"> </span>frames
@@ -1322,6 +1349,7 @@ flag.</p>
 <li><a class="reference internal" href="#">Azure Kinect with ACloudViewer</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#install-the-azure-kinect-sdk">Install the Azure Kinect SDK</a></li>
+<li><a class="reference internal" href="#install-acloudviewer-from-pip">Install ACloudViewer from Pip</a></li>
 <li><a class="reference internal" href="#compile-from-source">Compile from Source</a></li>
 </ul>
 </li>
@@ -1340,7 +1368,7 @@ flag.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

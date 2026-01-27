@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:12.891387Z",
-     "iopub.status.busy": "2026-01-26T15:49:12.890871Z",
-     "iopub.status.idle": "2026-01-26T15:49:13.612897Z",
-     "shell.execute_reply": "2026-01-26T15:49:13.612286Z"
+     "iopub.execute_input": "2026-01-27T08:54:26.423824Z",
+     "iopub.status.busy": "2026-01-27T08:54:26.423636Z",
+     "iopub.status.idle": "2026-01-27T08:54:27.150846Z",
+     "shell.execute_reply": "2026-01-27T08:54:27.150298Z"
     },
     "nbsphinx": "hidden"
    },
@@ -57,10 +57,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:13.615325Z",
-     "iopub.status.busy": "2026-01-26T15:49:13.614954Z",
-     "iopub.status.idle": "2026-01-26T15:49:13.618375Z",
-     "shell.execute_reply": "2026-01-26T15:49:13.617866Z"
+     "iopub.execute_input": "2026-01-27T08:54:27.153385Z",
+     "iopub.status.busy": "2026-01-27T08:54:27.152961Z",
+     "iopub.status.idle": "2026-01-27T08:54:27.156736Z",
+     "shell.execute_reply": "2026-01-27T08:54:27.156225Z"
     }
    },
    "outputs": [],
@@ -80,10 +80,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:13.620476Z",
-     "iopub.status.busy": "2026-01-26T15:49:13.620098Z",
-     "iopub.status.idle": "2026-01-26T15:49:14.314290Z",
-     "shell.execute_reply": "2026-01-26T15:49:14.313665Z"
+     "iopub.execute_input": "2026-01-27T08:54:27.158881Z",
+     "iopub.status.busy": "2026-01-27T08:54:27.158505Z",
+     "iopub.status.idle": "2026-01-27T08:54:27.858571Z",
+     "shell.execute_reply": "2026-01-27T08:54:27.857839Z"
     }
    },
    "outputs": [
@@ -138,10 +138,10 @@
    "execution_count": 4,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:14.322797Z",
-     "iopub.status.busy": "2026-01-26T15:49:14.322371Z",
-     "iopub.status.idle": "2026-01-26T15:49:14.328660Z",
-     "shell.execute_reply": "2026-01-26T15:49:14.328088Z"
+     "iopub.execute_input": "2026-01-27T08:54:27.866901Z",
+     "iopub.status.busy": "2026-01-27T08:54:27.866433Z",
+     "iopub.status.idle": "2026-01-27T08:54:27.872859Z",
+     "shell.execute_reply": "2026-01-27T08:54:27.872235Z"
     }
    },
    "outputs": [],
@@ -201,10 +201,10 @@
    "execution_count": 5,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:14.330983Z",
-     "iopub.status.busy": "2026-01-26T15:49:14.330587Z",
-     "iopub.status.idle": "2026-01-26T15:49:15.600227Z",
-     "shell.execute_reply": "2026-01-26T15:49:15.599306Z"
+     "iopub.execute_input": "2026-01-27T08:54:27.874925Z",
+     "iopub.status.busy": "2026-01-27T08:54:27.874734Z",
+     "iopub.status.idle": "2026-01-27T08:54:29.154735Z",
+     "shell.execute_reply": "2026-01-27T08:54:29.153604Z"
     }
    },
    "outputs": [
@@ -317,15 +317,15 @@
       "[CloudViewer DEBUG] ICP Iteration #9: Fitness 0.9450, RMSE 0.0791\n",
       "[CloudViewer DEBUG] Residual : 1.17e-03 (# of elements : 25714)\n",
       "[CloudViewer DEBUG] ICP Iteration #10: Fitness 0.9487, RMSE 0.0791\n",
-      "[CloudViewer DEBUG] Residual : 1.23e-03 (# of elements : 25816)\n"
+      "[CloudViewer DEBUG] Residual : 1.23e-03 (# of elements : 25816)\n",
+      "[CloudViewer DEBUG] ICP Iteration #11: Fitness 0.9500, RMSE 0.0793\n",
+      "[CloudViewer DEBUG] Residual : 1.25e-03 (# of elements : 25850)\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] ICP Iteration #11: Fitness 0.9500, RMSE 0.0793\n",
-      "[CloudViewer DEBUG] Residual : 1.25e-03 (# of elements : 25850)\n",
       "[CloudViewer DEBUG] ICP Iteration #12: Fitness 0.9504, RMSE 0.0794\n",
       "[CloudViewer DEBUG] Residual : 1.27e-03 (# of elements : 25862)\n",
       "[CloudViewer DEBUG] ICP Iteration #13: Fitness 0.9506, RMSE 0.0794\n",
@@ -349,15 +349,15 @@
       "[CloudViewer DEBUG] ICP Iteration #2: Fitness 0.7057, RMSE 0.0105\n",
       "[CloudViewer DEBUG] Residual : 3.32e-05 (# of elements : 19203)\n",
       "Build cv3d.pipelines.registration.PoseGraph\n",
-      "Apply point-to-plane ICP\n"
+      "Apply point-to-plane ICP\n",
+      "[CloudViewer DEBUG] ICP Iteration #0: Fitness 0.7980, RMSE 0.1231\n",
+      "[CloudViewer DEBUG] Residual : 1.25e-02 (# of elements : 15272)\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] ICP Iteration #0: Fitness 0.7980, RMSE 0.1231\n",
-      "[CloudViewer DEBUG] Residual : 1.25e-02 (# of elements : 15272)\n",
       "[CloudViewer DEBUG] ICP Iteration #1: Fitness 0.9225, RMSE 0.1134\n",
       "[CloudViewer DEBUG] Residual : 1.02e-02 (# of elements : 17653)\n",
       "[CloudViewer DEBUG] ICP Iteration #2: Fitness 0.9636, RMSE 0.0960\n",
@@ -423,10 +423,10 @@
    "execution_count": 6,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:15.604320Z",
-     "iopub.status.busy": "2026-01-26T15:49:15.604110Z",
-     "iopub.status.idle": "2026-01-26T15:49:15.611910Z",
-     "shell.execute_reply": "2026-01-26T15:49:15.611110Z"
+     "iopub.execute_input": "2026-01-27T08:54:29.159363Z",
+     "iopub.status.busy": "2026-01-27T08:54:29.159138Z",
+     "iopub.status.idle": "2026-01-27T08:54:29.168352Z",
+     "shell.execute_reply": "2026-01-27T08:54:29.167748Z"
     }
    },
    "outputs": [
@@ -487,10 +487,10 @@
    "execution_count": 7,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:15.615029Z",
-     "iopub.status.busy": "2026-01-26T15:49:15.614819Z",
-     "iopub.status.idle": "2026-01-26T15:49:15.856547Z",
-     "shell.execute_reply": "2026-01-26T15:49:15.855897Z"
+     "iopub.execute_input": "2026-01-27T08:54:29.171125Z",
+     "iopub.status.busy": "2026-01-27T08:54:29.170871Z",
+     "iopub.status.idle": "2026-01-27T08:54:29.406558Z",
+     "shell.execute_reply": "2026-01-27T08:54:29.405905Z"
     }
    },
    "outputs": [
@@ -499,9 +499,9 @@
      "output_type": "stream",
      "text": [
       "Transform points and display\n",
-      "[[ 1.00000000e+00 -3.13613949e-19 -1.08420217e-19 -8.67361738e-19]\n",
-      " [ 1.20066920e-19  1.00000000e+00  0.00000000e+00  1.73472348e-18]\n",
-      " [ 1.08420217e-19  0.00000000e+00  1.00000000e+00  0.00000000e+00]\n",
+      "[[ 1.00000000e+00 -3.13825707e-19  0.00000000e+00 -8.67361738e-19]\n",
+      " [ 1.19855162e-19  1.00000000e+00 -2.16840434e-19  0.00000000e+00]\n",
+      " [ 0.00000000e+00 -2.16840434e-19  1.00000000e+00  0.00000000e+00]\n",
       " [ 0.00000000e+00  0.00000000e+00  0.00000000e+00  1.00000000e+00]]\n",
       "[[ 0.84019999 -0.14649437  0.52211433  0.34795979]\n",
       " [ 0.00633296  0.9654042   0.26068109 -0.39443798]\n",
@@ -551,10 +551,10 @@
    "execution_count": 8,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-26T15:49:15.865886Z",
-     "iopub.status.busy": "2026-01-26T15:49:15.865373Z",
-     "iopub.status.idle": "2026-01-26T15:49:16.418293Z",
-     "shell.execute_reply": "2026-01-26T15:49:16.417709Z"
+     "iopub.execute_input": "2026-01-27T08:54:29.415522Z",
+     "iopub.status.busy": "2026-01-27T08:54:29.415289Z",
+     "iopub.status.idle": "2026-01-27T08:54:29.982645Z",
+     "shell.execute_reply": "2026-01-27T08:54:29.982042Z"
     }
    },
    "outputs": [

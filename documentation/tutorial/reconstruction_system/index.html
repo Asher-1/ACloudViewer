@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="System overview" href="system_overview.html" /><link rel="prev" title="Robust Kernel" href="../t_pipelines/t_robust_kernel.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Reconstruction system - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Reconstruction system - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1145,6 +1145,7 @@ in <a class="reference internal" href="../reference.html#park2017" id="id3"><spa
 <li class="toctree-l1"><a class="reference internal" href="system_overview.html">System overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="system_overview.html#example-dataset">Example dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="system_overview.html#quick-start">Quick start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system_overview.html#capture-your-own-dataset">Capture your own dataset</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="make_fragments.html">Make fragments</a><ul>
@@ -1158,15 +1159,20 @@ in <a class="reference internal" href="../reference.html#park2017" id="id3"><spa
 </li>
 <li class="toctree-l1"><a class="reference internal" href="register_fragments.html">Register fragments</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="register_fragments.html#input-arguments">Input arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#global-registration">Global registration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#icp-refinement">ICP refinement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#pose-graph-optimization">Pose graph optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#preprocess-point-cloud">Preprocess point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#compute-initial-registration">Compute initial registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#pairwise-global-registration">Pairwise global registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#multiway-registration">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#main-registration-loop">Main registration loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="register_fragments.html#results">Results</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="refine_registration.html">Refine registration</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="refine_registration.html#input-arguments">Input arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="refine_registration.html#point-to-plane-icp">Point-to-plane ICP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="refine_registration.html#multiway-registration-refinement">Multiway registration refinement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="refine_registration.html#fine-grained-registration">Fine-grained registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="refine_registration.html#multiway-registration">Multiway registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="refine_registration.html#main-registration-loop">Main registration loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="refine_registration.html#results">Results</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="integrate_scene.html">Integrate scene</a><ul>
@@ -1234,7 +1240,7 @@ in <a class="reference internal" href="../reference.html#park2017" id="id3"><spa
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

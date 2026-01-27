@@ -7,7 +7,7 @@ The final step of the system is to integrate all RGBD images into a single TSDF
 volume and extract a mesh as the result.
 
 Input arguments
-````````````````````````````````````
+````````````````````````
 
 The script runs with ``python run_system.py [config] --integrate``. In
 ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth*
@@ -17,12 +17,12 @@ intrinsic matrix (See :ref:`/tutorial/pipelines/rgbd_odometry.ipynb#read-camera-
 details). If it is not given, the PrimeSense factory setting is used instead.
 
 Integrate RGBD frames
-````````````````````````````````````
+````````````````````````
 
 .. literalinclude:: ../../../../examples/Python/reconstruction_system/integrate_scene.py
    :language: python
    :pyobject: scalable_integrate_rgb_frames
-   :end-at:        cv3d.visualization.draw([mesh])
+   :end-at:        cv3d.visualization.draw_geometries([mesh])
    :linenos:
    :lineno-match:
 
@@ -33,7 +33,7 @@ RGBD image in the global space. After that, RGBD images are integrated using
 :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 
 Results
-````````````````````````````````````
+````````````````````````
 This is a printed log from the volume integration script.
 
 .. code-block:: sh

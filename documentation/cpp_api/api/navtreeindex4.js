@@ -1,5 +1,9 @@
 var NAVTREEINDEX4 =
 {
+"ContinuousConvTypes_8h.html#aa0141425cc5eef517c1d12e597b6eab1aedc71d68a68ed5f29b9a3e9cb2e680d9":[4,0,1,0,4,1,0,10,1,1],
+"ContinuousConvTypes_8h_source.html":[4,0,1,0,4,1,0,10],
+"ContinuousConv_8cuh.html":[4,0,1,0,4,1,0,0],
+"ContinuousConv_8cuh_source.html":[4,0,1,0,4,1,0,0],
 "ContinuousConv_8h.html":[4,0,1,0,4,1,0,1],
 "ContinuousConv_8h.html#a05367f1472c7e469259e7d6089b31632":[4,0,1,0,4,1,0,1,7],
 "ContinuousConv_8h.html#a065491957d683f16ae1cf56ad825f978":[4,0,1,0,4,1,0,1,3],
@@ -245,9 +249,5 @@ var NAVTREEINDEX4 =
 "DistancesUtils_8cuh_source.html":[4,0,1,0,0,3,0,6],
 "Download_8cpp.html":[4,0,1,0,7,2],
 "Download_8cpp.html#a170318acecd409f9a034dafc3bec3f32":[4,0,1,0,7,2,1],
-"Download_8cpp.html#a23d3d5a53054c7a5f82b551d5e97f063":[4,0,1,0,7,2,3],
-"Download_8cpp.html#a53dfd134a0398e42a44189945ea0b46e":[4,0,1,0,7,2,4],
-"Download_8cpp.html#aa07d4a99236e09c992abe5789d975472":[4,0,1,0,7,2,0],
-"Download_8cpp.html#aa8e216a015317dcf3469a4579fc62adc":[4,0,1,0,7,2,2],
-"Download_8cpp.html#ab044595f3496ed9d4e519aa2f0c09e12":[4,0,1,0,7,2,5]
+"Download_8cpp.html#a23d3d5a53054c7a5f82b551d5e97f063":[4,0,1,0,7,2,3]
 };

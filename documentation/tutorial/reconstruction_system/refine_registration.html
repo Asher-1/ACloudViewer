@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Integrate scene" href="integrate_scene.html" /><link rel="prev" title="Register fragments" href="register_fragments.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Refine registration - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Refine registration - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1137,34 +1137,210 @@
         <article role="main">
           <section id="refine-registration">
 <span id="reconstruction-system-refine-registration"></span><h1>Refine registration<a class="headerlink" href="#refine-registration" title="Permalink to this heading">#</a></h1>
-<p>The third step of the scene reconstruction system is to refine the rough
-alignments obtained from the previous step.</p>
 <section id="input-arguments">
 <h2>Input arguments<a class="headerlink" href="#input-arguments" title="Permalink to this heading">#</a></h2>
-<p>The script runs with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">run_system.py</span> <span class="pre">[config]</span> <span class="pre">--refine</span></code>. This step
-requires that fragments have been registered in the previous step (<code class="docutils literal notranslate"><span class="pre">--register</span></code>).</p>
+<p>This script runs with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">run_system.py</span> <span class="pre">[config]</span> <span class="pre">--refine</span></code>. In <code class="docutils literal notranslate"><span class="pre">[config]</span></code>,
+<code class="docutils literal notranslate"><span class="pre">[&quot;path_dataset&quot;]</span></code> should have subfolders <code class="docutils literal notranslate"><span class="pre">fragments</span></code> which stores fragments
+in <code class="docutils literal notranslate"><span class="pre">.ply</span></code> files and a pose graph in a <code class="docutils literal notranslate"><span class="pre">.json</span></code> file.</p>
+<p>The main function runs <code class="docutils literal notranslate"><span class="pre">local_refinement</span></code> and <code class="docutils literal notranslate"><span class="pre">optimize_posegraph_for_scene</span></code>.
+The first function performs pairwise registration on the pairs detected by
+<a class="reference internal" href="register_fragments.html#reconstruction-system-register-fragments"><span class="std std-ref">Register fragments</span></a>. The second function performs
+multiway registration.</p>
 </section>
-<section id="point-to-plane-icp">
-<h2>Point-to-plane ICP<a class="headerlink" href="#point-to-plane-icp" title="Permalink to this heading">#</a></h2>
-<p>Point-to-plane ICP is used to refine the alignments. This method is more
-accurate than point-to-point ICP as it takes into account surface normals.</p>
-</section>
-<section id="multiway-registration-refinement">
-<h2>Multiway registration refinement<a class="headerlink" href="#multiway-registration-refinement" title="Permalink to this heading">#</a></h2>
-<p>After individual pair-wise refinement, multiway registration is performed again
-to ensure global consistency across all fragments.</p>
-<p>The refined pose graph is saved and can be used in the final integration step.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="system_overview.html"><span class="doc">System overview</span></a> - System overview</p></li>
-<li><p><a class="reference internal" href="register_fragments.html"><span class="doc">Register fragments</span></a> - Registering fragments</p></li>
-<li><p><a class="reference internal" href="integrate_scene.html"><span class="doc">Integrate scene</span></a> - Integrating scene</p></li>
-</ul>
+<section id="fine-grained-registration">
+<h2>Fine-grained registration<a class="headerlink" href="#fine-grained-registration" title="Permalink to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 47</span><span class="k">def</span><span class="w"> </span><span class="nf">multiscale_icp</span><span class="p">(</span><span class="n">source</span><span class="p">,</span>
+<span class="linenos"> 48</span>                   <span class="n">target</span><span class="p">,</span>
+<span class="linenos"> 49</span>                   <span class="n">voxel_size</span><span class="p">,</span>
+<span class="linenos"> 50</span>                   <span class="n">max_iter</span><span class="p">,</span>
+<span class="linenos"> 51</span>                   <span class="n">config</span><span class="p">,</span>
+<span class="linenos"> 52</span>                   <span class="n">init_transformation</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">4</span><span class="p">)):</span>
+<span class="linenos"> 53</span>    <span class="n">current_transformation</span> <span class="o">=</span> <span class="n">init_transformation</span>
+<span class="linenos"> 54</span>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">max_iter</span><span class="p">))):</span>  <span class="c1"># multi-scale approach</span>
+<span class="linenos"> 55</span>        <span class="nb">iter</span> <span class="o">=</span> <span class="n">max_iter</span><span class="p">[</span><span class="n">scale</span><span class="p">]</span>
+<span class="linenos"> 56</span>        <span class="n">distance_threshold</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;voxel_size&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.4</span>
+<span class="linenos"> 57</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;voxel_size </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">]))</span>
+<span class="linenos"> 58</span>        <span class="n">source_down</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">voxel_down_sample</span><span class="p">(</span><span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">])</span>
+<span class="linenos"> 59</span>        <span class="n">target_down</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">voxel_down_sample</span><span class="p">(</span><span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">])</span>
+<span class="linenos"> 60</span>        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;icp_method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;point_to_point&quot;</span><span class="p">:</span>
+<span class="linenos"> 61</span>            <span class="n">result_icp</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">registration_icp</span><span class="p">(</span>
+<span class="linenos"> 62</span>                <span class="n">source_down</span><span class="p">,</span> <span class="n">target_down</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="p">,</span>
+<span class="linenos"> 63</span>                <span class="n">current_transformation</span><span class="p">,</span>
+<span class="linenos"> 64</span>                <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span>
+<span class="linenos"> 65</span>                <span class="n">TransformationEstimationPointToPoint</span><span class="p">(),</span>
+<span class="linenos"> 66</span>                <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">ICPConvergenceCriteria</span><span class="p">(</span>
+<span class="linenos"> 67</span>                    <span class="n">max_iteration</span><span class="o">=</span><span class="nb">iter</span><span class="p">))</span>
+<span class="linenos"> 68</span>        <span class="k">else</span><span class="p">:</span>
+<span class="linenos"> 69</span>            <span class="n">source_down</span><span class="o">.</span><span class="n">estimate_normals</span><span class="p">(</span>
+<span class="linenos"> 70</span>                <span class="n">cv3d</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">KDTreeSearchParamHybrid</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">]</span> <span class="o">*</span>
+<span class="linenos"> 71</span>                                                      <span class="mf">2.0</span><span class="p">,</span>
+<span class="linenos"> 72</span>                                                      <span class="n">max_nn</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+<span class="linenos"> 73</span>            <span class="n">target_down</span><span class="o">.</span><span class="n">estimate_normals</span><span class="p">(</span>
+<span class="linenos"> 74</span>                <span class="n">cv3d</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">KDTreeSearchParamHybrid</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">]</span> <span class="o">*</span>
+<span class="linenos"> 75</span>                                                      <span class="mf">2.0</span><span class="p">,</span>
+<span class="linenos"> 76</span>                                                      <span class="n">max_nn</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+<span class="linenos"> 77</span>            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;icp_method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;point_to_plane&quot;</span><span class="p">:</span>
+<span class="linenos"> 78</span>                <span class="n">result_icp</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">registration_icp</span><span class="p">(</span>
+<span class="linenos"> 79</span>                    <span class="n">source_down</span><span class="p">,</span> <span class="n">target_down</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="p">,</span>
+<span class="linenos"> 80</span>                    <span class="n">current_transformation</span><span class="p">,</span>
+<span class="linenos"> 81</span>                    <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span>
+<span class="linenos"> 82</span>                    <span class="n">TransformationEstimationPointToPlane</span><span class="p">(),</span>
+<span class="linenos"> 83</span>                    <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">ICPConvergenceCriteria</span><span class="p">(</span>
+<span class="linenos"> 84</span>                        <span class="n">max_iteration</span><span class="o">=</span><span class="nb">iter</span><span class="p">))</span>
+<span class="linenos"> 85</span>            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;icp_method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span>
+<span class="linenos"> 86</span>                <span class="c1"># Colored ICP is sensitive to threshold.</span>
+<span class="linenos"> 87</span>                <span class="c1"># Fallback to preset distance threshold that works better.</span>
+<span class="linenos"> 88</span>                <span class="c1"># TODO: make it adjustable in the upgraded system.</span>
+<span class="linenos"> 89</span>                <span class="n">result_icp</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">registration_colored_icp</span><span class="p">(</span>
+<span class="linenos"> 90</span>                    <span class="n">source_down</span><span class="p">,</span> <span class="n">target_down</span><span class="p">,</span> <span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">],</span>
+<span class="linenos"> 91</span>                    <span class="n">current_transformation</span><span class="p">,</span>
+<span class="linenos"> 92</span>                    <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span>
+<span class="linenos"> 93</span>                    <span class="n">TransformationEstimationForColoredICP</span><span class="p">(),</span>
+<span class="linenos"> 94</span>                    <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">ICPConvergenceCriteria</span><span class="p">(</span>
+<span class="linenos"> 95</span>                        <span class="n">relative_fitness</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="linenos"> 96</span>                        <span class="n">relative_rmse</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="linenos"> 97</span>                        <span class="n">max_iteration</span><span class="o">=</span><span class="nb">iter</span><span class="p">))</span>
+<span class="linenos"> 98</span>            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;icp_method&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;generalized&quot;</span><span class="p">:</span>
+<span class="linenos"> 99</span>                <span class="n">result_icp</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">registration_generalized_icp</span><span class="p">(</span>
+<span class="linenos">100</span>                    <span class="n">source_down</span><span class="p">,</span> <span class="n">target_down</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="p">,</span>
+<span class="linenos">101</span>                    <span class="n">current_transformation</span><span class="p">,</span>
+<span class="linenos">102</span>                    <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span>
+<span class="linenos">103</span>                    <span class="n">TransformationEstimationForGeneralizedICP</span><span class="p">(),</span>
+<span class="linenos">104</span>                    <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">ICPConvergenceCriteria</span><span class="p">(</span>
+<span class="linenos">105</span>                        <span class="n">relative_fitness</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="linenos">106</span>                        <span class="n">relative_rmse</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="linenos">107</span>                        <span class="n">max_iteration</span><span class="o">=</span><span class="nb">iter</span><span class="p">))</span>
+<span class="linenos">108</span>        <span class="n">current_transformation</span> <span class="o">=</span> <span class="n">result_icp</span><span class="o">.</span><span class="n">transformation</span>
+<span class="linenos">109</span>        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">max_iter</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+<span class="linenos">110</span>            <span class="n">information_matrix</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">get_information_matrix_from_point_clouds</span><span class="p">(</span>
+<span class="linenos">111</span>                <span class="n">source_down</span><span class="p">,</span> <span class="n">target_down</span><span class="p">,</span> <span class="n">voxel_size</span><span class="p">[</span><span class="n">scale</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.4</span><span class="p">,</span>
+<span class="linenos">112</span>                <span class="n">result_icp</span><span class="o">.</span><span class="n">transformation</span><span class="p">)</span>
+<span class="linenos">113</span>
+<span class="linenos">114</span>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;debug_mode&quot;</span><span class="p">]:</span>
+<span class="linenos">115</span>        <span class="n">draw_registration_result_original_color</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span>
+<span class="linenos">116</span>                                                <span class="n">result_icp</span><span class="o">.</span><span class="n">transformation</span><span class="p">)</span>
+<span class="linenos">117</span>    <span class="k">return</span> <span class="p">(</span><span class="n">result_icp</span><span class="o">.</span><span class="n">transformation</span><span class="p">,</span> <span class="n">information_matrix</span><span class="p">)</span>
+</pre></div>
 </div>
-<ul class="simple">
-<li><p><a class="reference internal" href="../pipelines/icp_registration.html"><span class="doc">ICP registration</span></a> - ICP registration</p></li>
-</ul>
+<p>Two options are given for the fine-grained registration. The <code class="docutils literal notranslate"><span class="pre">color</span></code> option is
+recommended since it uses color information to prevent drift. See <a class="reference internal" href="../reference.html#park2017" id="id1"><span>[Park2017]</span></a>
+for details.</p>
+</section>
+<section id="multiway-registration">
+<h2>Multiway registration<a class="headerlink" href="#multiway-registration" title="Permalink to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">24</span><span class="k">def</span><span class="w"> </span><span class="nf">update_posegraph_for_scene</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">transformation</span><span class="p">,</span> <span class="n">information</span><span class="p">,</span> <span class="n">odometry</span><span class="p">,</span>
+<span class="linenos">25</span>                               <span class="n">pose_graph</span><span class="p">):</span>
+<span class="linenos">26</span>    <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="n">s</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># odometry case</span>
+<span class="linenos">27</span>        <span class="n">odometry</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">transformation</span><span class="p">,</span> <span class="n">odometry</span><span class="p">)</span>
+<span class="linenos">28</span>        <span class="n">odometry_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">odometry</span><span class="p">)</span>
+<span class="linenos">29</span>        <span class="n">pose_graph</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<span class="linenos">30</span>            <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">PoseGraphNode</span><span class="p">(</span><span class="n">odometry_inv</span><span class="p">))</span>
+<span class="linenos">31</span>        <span class="n">pose_graph</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<span class="linenos">32</span>            <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">PoseGraphEdge</span><span class="p">(</span><span class="n">s</span><span class="p">,</span>
+<span class="linenos">33</span>                                                      <span class="n">t</span><span class="p">,</span>
+<span class="linenos">34</span>                                                      <span class="n">transformation</span><span class="p">,</span>
+<span class="linenos">35</span>                                                      <span class="n">information</span><span class="p">,</span>
+<span class="linenos">36</span>                                                      <span class="n">uncertain</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="linenos">37</span>    <span class="k">else</span><span class="p">:</span>  <span class="c1"># loop closure case</span>
+<span class="linenos">38</span>        <span class="n">pose_graph</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<span class="linenos">39</span>            <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">PoseGraphEdge</span><span class="p">(</span><span class="n">s</span><span class="p">,</span>
+<span class="linenos">40</span>                                                      <span class="n">t</span><span class="p">,</span>
+<span class="linenos">41</span>                                                      <span class="n">transformation</span><span class="p">,</span>
+<span class="linenos">42</span>                                                      <span class="n">information</span><span class="p">,</span>
+<span class="linenos">43</span>                                                      <span class="n">uncertain</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="linenos">44</span>    <span class="k">return</span> <span class="p">(</span><span class="n">odometry</span><span class="p">,</span> <span class="n">pose_graph</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This script uses the technique demonstrated in <a class="reference internal" href="../pipelines/multiway_registration.html"><span class="std std-ref">Multiway registration</span></a>. Function <code class="docutils literal notranslate"><span class="pre">update_posegraph_for_scene</span></code> builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.</p>
+<p>Once a pose graph is built, function <code class="docutils literal notranslate"><span class="pre">optimize_posegraph_for_scene</span></code> is called
+for multiway registration.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">46</span><span class="k">def</span><span class="w"> </span><span class="nf">optimize_posegraph_for_scene</span><span class="p">(</span><span class="n">path_dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="linenos">47</span>    <span class="n">pose_graph_name</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">path_dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_global_posegraph&quot;</span><span class="p">])</span>
+<span class="linenos">48</span>    <span class="n">pose_graph_optimized_name</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span>
+<span class="linenos">49</span>        <span class="n">path_dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_global_posegraph_optimized&quot;</span><span class="p">])</span>
+<span class="linenos">50</span>    <span class="n">run_posegraph_optimization</span><span class="p">(</span><span class="n">pose_graph_name</span><span class="p">,</span> <span class="n">pose_graph_optimized_name</span><span class="p">,</span>
+<span class="linenos">51</span>            <span class="n">max_correspondence_distance</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;voxel_size&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.4</span><span class="p">,</span>
+<span class="linenos">52</span>            <span class="n">preference_loop_closure</span> <span class="o">=</span> \
+<span class="linenos">53</span>            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;preference_loop_closure_registration&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="main-registration-loop">
+<h2>Main registration loop<a class="headerlink" href="#main-registration-loop" title="Permalink to this heading">#</a></h2>
+<p>The function <code class="docutils literal notranslate"><span class="pre">make_posegraph_for_refined_scene</span></code> below calls all the functions introduced above.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">156</span><span class="k">def</span><span class="w"> </span><span class="nf">make_posegraph_for_refined_scene</span><span class="p">(</span><span class="n">ply_file_names</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="linenos">157</span>    <span class="n">pose_graph</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_pose_graph</span><span class="p">(</span>
+<span class="linenos">158</span>        <span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;path_dataset&quot;</span><span class="p">],</span>
+<span class="linenos">159</span>             <span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_global_posegraph_optimized&quot;</span><span class="p">]))</span>
+<span class="linenos">160</span>
+<span class="linenos">161</span>    <span class="n">n_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ply_file_names</span><span class="p">)</span>
+<span class="linenos">162</span>    <span class="n">matching_results</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">163</span>    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">pose_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+<span class="linenos">164</span>        <span class="n">s</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source_node_id</span>
+<span class="linenos">165</span>        <span class="n">t</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">target_node_id</span>
+<span class="linenos">166</span>        <span class="n">matching_results</span><span class="p">[</span><span class="n">s</span> <span class="o">*</span> <span class="n">n_files</span> <span class="o">+</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> \
+<span class="linenos">167</span>            <span class="n">matching_result</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">transformation</span><span class="p">)</span>
+<span class="linenos">168</span>
+<span class="linenos">169</span>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;python_multi_threading&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+<span class="linenos">170</span>        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="linenos">171</span>        <span class="n">max_workers</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+<span class="linenos">172</span>            <span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pose_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">)))</span>
+<span class="linenos">173</span>        <span class="n">mp_context</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="s1">&#39;spawn&#39;</span><span class="p">)</span>
+<span class="linenos">174</span>        <span class="k">with</span> <span class="n">mp_context</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">max_workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+<span class="linenos">175</span>            <span class="n">args</span> <span class="o">=</span> <span class="p">[(</span><span class="n">ply_file_names</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">transformation</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<span class="linenos">176</span>                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">matching_results</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+<span class="linenos">177</span>            <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">register_point_cloud_pair</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+<span class="linenos">178</span>
+<span class="linenos">179</span>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matching_results</span><span class="p">):</span>
+<span class="linenos">180</span>            <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">transformation</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">181</span>            <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">information</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+<span class="linenos">182</span>    <span class="k">else</span><span class="p">:</span>
+<span class="linenos">183</span>        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">matching_results</span><span class="p">:</span>
+<span class="linenos">184</span>            <span class="p">(</span><span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">transformation</span><span class="p">,</span>
+<span class="linenos">185</span>             <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">information</span><span class="p">)</span> <span class="o">=</span> \
+<span class="linenos">186</span>                <span class="n">register_point_cloud_pair</span><span class="p">(</span><span class="n">ply_file_names</span><span class="p">,</span>
+<span class="linenos">187</span>                                          <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+<span class="linenos">188</span>                                          <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">transformation</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<span class="linenos">189</span>
+<span class="linenos">190</span>    <span class="n">pose_graph_new</span> <span class="o">=</span> <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">PoseGraph</span><span class="p">()</span>
+<span class="linenos">191</span>    <span class="n">odometry</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="linenos">192</span>    <span class="n">pose_graph_new</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<span class="linenos">193</span>        <span class="n">cv3d</span><span class="o">.</span><span class="n">pipelines</span><span class="o">.</span><span class="n">registration</span><span class="o">.</span><span class="n">PoseGraphNode</span><span class="p">(</span><span class="n">odometry</span><span class="p">))</span>
+<span class="linenos">194</span>    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">matching_results</span><span class="p">:</span>
+<span class="linenos">195</span>        <span class="p">(</span><span class="n">odometry</span><span class="p">,</span> <span class="n">pose_graph_new</span><span class="p">)</span> <span class="o">=</span> <span class="n">update_posegraph_for_scene</span><span class="p">(</span>
+<span class="linenos">196</span>            <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+<span class="linenos">197</span>            <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">transformation</span><span class="p">,</span> <span class="n">matching_results</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">information</span><span class="p">,</span>
+<span class="linenos">198</span>            <span class="n">odometry</span><span class="p">,</span> <span class="n">pose_graph_new</span><span class="p">)</span>
+<span class="linenos">199</span>    <span class="nb">print</span><span class="p">(</span><span class="n">pose_graph_new</span><span class="p">)</span>
+<span class="linenos">200</span>    <span class="n">cv3d</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_pose_graph</span><span class="p">(</span>
+<span class="linenos">201</span>        <span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;path_dataset&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_refined_posegraph&quot;</span><span class="p">]),</span>
+<span class="linenos">202</span>        <span class="n">pose_graph_new</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The main workflow is: pairwise local refinement -&gt; multiway registration.</p>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this heading">#</a></h2>
+<p>The pose graph optimization outputs the following messages:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>GlobalOptimizationLM<span class="o">]</span><span class="w"> </span>Optimizing<span class="w"> </span>PoseGraph<span class="w"> </span>having<span class="w"> </span><span class="m">14</span><span class="w"> </span>nodes<span class="w"> </span>and<span class="w"> </span><span class="m">35</span><span class="w"> </span>edges.
+Line<span class="w"> </span>process<span class="w"> </span>weight<span class="w"> </span>:<span class="w"> </span><span class="m">789</span>.730200
+<span class="o">[</span>Initial<span class="w">     </span><span class="o">]</span><span class="w"> </span>residual<span class="w"> </span>:<span class="w"> </span><span class="m">1</span>.208286e+04,<span class="w"> </span>lambda<span class="w"> </span>:<span class="w"> </span><span class="m">1</span>.706306e+01
+<span class="o">[</span>Iteration<span class="w"> </span><span class="m">00</span><span class="o">]</span><span class="w"> </span>residual<span class="w"> </span>:<span class="w"> </span><span class="m">2</span>.410383e+03,<span class="w"> </span>valid<span class="w"> </span>edges<span class="w"> </span>:<span class="w"> </span><span class="m">22</span>,<span class="w"> </span><span class="nb">time</span><span class="w"> </span>:<span class="w"> </span><span class="m">0</span>.000<span class="w"> </span>sec.
+<span class="o">[</span>Iteration<span class="w"> </span><span class="m">01</span><span class="o">]</span><span class="w"> </span>residual<span class="w"> </span>:<span class="w"> </span><span class="m">8</span>.127856e+01,<span class="w"> </span>valid<span class="w"> </span>edges<span class="w"> </span>:<span class="w"> </span><span class="m">22</span>,<span class="w"> </span><span class="nb">time</span><span class="w"> </span>:<span class="w"> </span><span class="m">0</span>.000<span class="w"> </span>sec.
+<span class="o">[</span>Iteration<span class="w"> </span><span class="m">02</span><span class="o">]</span><span class="w"> </span>residual<span class="w"> </span>:<span class="w"> </span><span class="m">8</span>.031355e+01,<span class="w"> </span>valid<span class="w"> </span>edges<span class="w"> </span>:<span class="w"> </span><span class="m">22</span>,<span class="w"> </span><span class="nb">time</span><span class="w"> </span>:<span class="w"> </span><span class="m">0</span>.000<span class="w"> </span>sec.
+Delta.norm<span class="o">()</span><span class="w"> </span>&lt;<span class="w"> </span><span class="m">1</span>.000000e-06<span class="w"> </span>*<span class="w"> </span><span class="o">(</span>x.norm<span class="o">()</span><span class="w"> </span>+<span class="w"> </span><span class="m">1</span>.000000e-06<span class="o">)</span>
+<span class="o">[</span>GlobalOptimizationLM<span class="o">]</span><span class="w"> </span>total<span class="w"> </span><span class="nb">time</span><span class="w"> </span>:<span class="w"> </span><span class="m">0</span>.001<span class="w"> </span>sec.
+<span class="o">[</span>GlobalOptimizationLM<span class="o">]</span><span class="w"> </span>Optimizing<span class="w"> </span>PoseGraph<span class="w"> </span>having<span class="w"> </span><span class="m">14</span><span class="w"> </span>nodes<span class="w"> </span>and<span class="w"> </span><span class="m">35</span><span class="w"> </span>edges.
+Line<span class="w"> </span>process<span class="w"> </span>weight<span class="w"> </span>:<span class="w"> </span><span class="m">789</span>.730200
+<span class="o">[</span>Initial<span class="w">     </span><span class="o">]</span><span class="w"> </span>residual<span class="w"> </span>:<span class="w"> </span><span class="m">8</span>.031355e+01,<span class="w"> </span>lambda<span class="w"> </span>:<span class="w"> </span><span class="m">1</span>.716826e+01
+Delta.norm<span class="o">()</span><span class="w"> </span>&lt;<span class="w"> </span><span class="m">1</span>.000000e-06<span class="w"> </span>*<span class="w"> </span><span class="o">(</span>x.norm<span class="o">()</span><span class="w"> </span>+<span class="w"> </span><span class="m">1</span>.000000e-06<span class="o">)</span>
+<span class="o">[</span>GlobalOptimizationLM<span class="o">]</span><span class="w"> </span>total<span class="w"> </span><span class="nb">time</span><span class="w"> </span>:<span class="w"> </span><span class="m">0</span>.000<span class="w"> </span>sec.
+CompensateReferencePoseGraphNode<span class="w"> </span>:<span class="w"> </span>reference<span class="w"> </span>:<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+<p>There are 14 fragments and 52 valid matching pairs between fragments. After 23
+iterations, 11 edges are detected to be false positives. After they are pruned,
+pose graph optimization runs again to achieve tight alignment.</p>
 </section>
 </section>
 
@@ -1225,8 +1401,10 @@ to ensure global consistency across all fragments.</p>
             <ul>
 <li><a class="reference internal" href="#">Refine registration</a><ul>
 <li><a class="reference internal" href="#input-arguments">Input arguments</a></li>
-<li><a class="reference internal" href="#point-to-plane-icp">Point-to-plane ICP</a></li>
-<li><a class="reference internal" href="#multiway-registration-refinement">Multiway registration refinement</a></li>
+<li><a class="reference internal" href="#fine-grained-registration">Fine-grained registration</a></li>
+<li><a class="reference internal" href="#multiway-registration">Multiway registration</a></li>
+<li><a class="reference internal" href="#main-registration-loop">Main registration loop</a></li>
+<li><a class="reference internal" href="#results">Results</a></li>
 </ul>
 </li>
 </ul>
@@ -1238,7 +1416,7 @@ to ensure global consistency across all fragments.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

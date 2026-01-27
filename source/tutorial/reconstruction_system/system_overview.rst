@@ -3,7 +3,7 @@
 System overview
 -----------------------------------
 
-The reconstruction system has 4 main steps:
+The system has 4 main steps:
 
 **Step 1**. :ref:`reconstruction_system_make_fragments`: build local geometric
 surfaces (referred to as
@@ -30,11 +30,10 @@ the scene. This part uses :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 .. _reconstruction_system_dataset:
 
 Example dataset
-````````````````````````````````````
-
+``````````````````````````````````
 We provide default datasets such as Lounge RGB-D dataset from Stanford, Bedroom RGB-D dataset from Redwood,
-to demonstrate the system in this tutorial.
-Other than this, one may use any RGB-D data.
+Jack Jack RealSense L515 bag file dataset to demonstrate the system in this tutorial.
+Other than this, one may user any RGB-D data.
 There are lots of excellent RGBD datasets such as: 
 `Redwood data <http://redwood-data.org/>`_, `TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_, 
 `ICL-NUIM data <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_, 
@@ -43,7 +42,7 @@ There are lots of excellent RGBD datasets such as:
 .. _reconstruction_system_how_to_run_the_pipeline:
 
 Quick start
-````````````````````````````````````
+````````````````````````
 Getting the example code
 
 .. code-block:: sh
@@ -53,7 +52,7 @@ Getting the example code
     cd examples/Python/reconstruction_system/
 
     # Show CLI help for `run_system.py`
-    python run_system.py --help
+    python dense_slam_gui.py --help
 
 Running the example with default dataset.
 
@@ -65,6 +64,7 @@ Running the example with default dataset.
     # --register will register all fragments to detect loop closure.
     # --refine flag will refine rough registrations.
     # --integrate flag will integrate the whole RGBD sequence to make final mesh.
+    # [Optional] Use --slac and --slac_integrate flags to perform SLAC optimisation.
     python run_system.py --make --register --refine --integrate
 
 Changing the default dataset.
@@ -75,10 +75,44 @@ Currently the following datasets are available:
 
 2. Bedroom (keyword: ``bedroom``)
 
-.. seealso::
+3. Jack Jack (keyword: ``jack_jack``)
 
-   - :doc:`make_fragments` - Making fragments
-   - :doc:`register_fragments` - Registering fragments
-   - :doc:`refine_registration` - Refining registration
-   - :doc:`integrate_scene` - Integrating scene
-   - :doc:`capture_your_own_dataset` - Capturing your own dataset
+
+.. code-block:: sh
+
+    # Using bedroom as the default dataset.
+    python run_system.py --default_dataset 'bedroom' --make --register --refine --integrate
+
+Running the example with custom dataset using config file.
+Manually download or store the data in a folder and store all the color images 
+in the ``image`` sub-folder, and all the depth images in the ``depth`` sub-folder. 
+Create a ``config.json`` file and set the ``path_dataset`` to the data directory.
+Override the parameters for which you want to change the default values.
+
+Example config file for offline reconstruction system has been provided in 
+``examples/Python/reconstruction_system/config/tutorial.json``, which looks like the following:
+
+.. literalinclude:: ../../../../examples/Python/reconstruction_system/config/tutorial.json
+   :language: json
+   :lineno-start: 1
+   :lines: 1-
+   :linenos:
+
+We assume that the color images and the depth images are synchronized and
+registered. ``"path_intrinsic"`` specifies path to a json file that stores the
+camera intrinsic matrix (See
+:ref:`/tutorial/pipelines/rgbd_odometry.ipynb#read-camera-intrinsic` for
+details). If it is not given, the PrimeSense factory setting is used. For your
+own dataset, use an appropriate camera intrinsic and visualize a depth image
+(likewise :ref:`/tutorial/geometry/rgbd_image.ipynb`) prior to using the system.
+
+.. note:: ``"python_multi_threading": true`` utilizes ``joblib`` to parallelize
+    the system using every CPU cores. With this option, Mac users may encounter
+    an unexpected program termination. To avoid this issue, set this flag to
+    ``false``.
+
+Capture your own dataset
+````````````````````````
+This tutorial provides an example that can record synchronized and aligned RGBD
+images using the Intel RealSense camera. For more details, please see
+:ref:`capture_your_own_dataset`.

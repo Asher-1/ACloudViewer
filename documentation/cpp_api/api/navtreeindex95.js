@@ -1,5 +1,9 @@
 var NAVTREEINDEX95 =
 {
+"classecvGenericFiltersTool.html#a220651c51fea27b6f9a01d40ab242d24":[3,0,314,10],
+"classecvGenericFiltersTool.html#a245bec35c869417a5775bcd1440cda01":[3,0,314,27],
+"classecvGenericFiltersTool.html#a27fcdc950af906a7210ade42a30b8079":[3,0,314,1],
+"classecvGenericFiltersTool.html#a3e0dadbc0eda54277c5851481ac26f21":[3,0,314,14],
 "classecvGenericFiltersTool.html#a42fdf1ba54d4c0cd10f25655d0a59f47":[3,0,314,2],
 "classecvGenericFiltersTool.html#a4442e1b6aa777ef03f157bdbaa6129fd":[3,0,314,26],
 "classecvGenericFiltersTool.html#a4df2132ea233c22ff60d538cfbe239bf":[3,0,314,5],
@@ -245,9 +249,5 @@ var NAVTREEINDEX95 =
 "classecvShiftAndScaleCloudDlg.html#a6afbb6de267ab6e390d160ccf13d5e91":[3,0,326,33],
 "classecvShiftAndScaleCloudDlg.html#a7816256ed819f6dc057b074bb1655919":[3,0,326,42],
 "classecvShiftAndScaleCloudDlg.html#a7968bbd6dc9a6f63308e874af8183e9b":[3,0,326,22],
-"classecvShiftAndScaleCloudDlg.html#a7ebf152b6de983df1981fe5fba378e98":[3,0,326,18],
-"classecvShiftAndScaleCloudDlg.html#a8354d7c8e795bf5a58b4db45eccac13a":[3,0,326,36],
-"classecvShiftAndScaleCloudDlg.html#a8a355a8f629e0898658bd5a011b30066":[3,0,326,45],
-"classecvShiftAndScaleCloudDlg.html#a9021762927c87af40d7138682fde3c79":[3,0,326,29],
-"classecvShiftAndScaleCloudDlg.html#a96f97ea15c62909e88130052eed5000c":[3,0,326,34]
+"classecvShiftAndScaleCloudDlg.html#a7ebf152b6de983df1981fe5fba378e98":[3,0,326,18]
 };

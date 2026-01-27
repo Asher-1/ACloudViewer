@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="PointCloud" href="pointcloud.html" /><link rel="prev" title="Working with NumPy" href="../geometry/working_with_numpy.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Geometry (Tensor) - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Geometry (Tensor) - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -143,7 +143,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -1129,7 +1129,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -1137,42 +1137,41 @@
         <article role="main">
           <section id="geometry-tensor">
 <h1>Geometry (Tensor)<a class="headerlink" href="#geometry-tensor" title="Permalink to this heading">#</a></h1>
-<p>This section covers tensor-based geometry operations in ACloudViewer. The tensor interface provides GPU-accelerated operations and efficient memory management for large-scale 3D data processing.</p>
-<section id="basics">
-<h2>Basics<a class="headerlink" href="#basics" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Basics</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="pointcloud.html">PointCloud</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pointcloud.html">PointCloud</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#PointCloud-creation">PointCloud creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Point-cloud-attributes-setter-and-getter">Point cloud attributes setter and getter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Conversion-between-tensor-and-legacy-point-cloud">Conversion between tensor and legacy point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Visualize-point-cloud">Visualize point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Downsampling">Downsampling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pointcloud.html#Farthest-point-downsampling">Farthest point downsampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Vertex-normal-estimation">Vertex normal estimation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pointcloud.html#Access-estimated-normals">Access estimated normals</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Crop-point-cloud">Crop point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Paint-point-cloud">Paint point cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Bounding-volumes">Bounding volumes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Point-cloud-outlier-removal">Point cloud outlier removal</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pointcloud.html#Prepare-input-data">Prepare input data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pointcloud.html#Select-down-sample">Select down sample</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pointcloud.html#Statistical-outlier-removal">Statistical outlier removal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pointcloud.html#Radius-outlier-removal">Radius outlier removal</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Convex-hull">Convex hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#DBSCAN-clustering">DBSCAN clustering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Plane-segmentation">Plane segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Hidden-point-removal">Hidden point removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pointcloud.html#Boundary-detection">Boundary detection</a></li>
+</ul>
+</li>
 </ul>
 </div>
-</section>
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
-<p>The tensor-based geometry module provides:</p>
-<ul class="simple">
-<li><p><strong>GPU Acceleration</strong>: Leverage CUDA for fast computation</p></li>
-<li><p><strong>Memory Efficiency</strong>: Optimized data structures for large point clouds</p></li>
-<li><p><strong>NumPy Integration</strong>: Seamless conversion between tensor and NumPy arrays</p></li>
-<li><p><strong>Batch Processing</strong>: Process multiple geometries simultaneously</p></li>
-</ul>
-</section>
-<section id="key-features">
-<h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this heading">#</a></h2>
-<ul class="simple">
-<li><p>Point cloud operations (downsampling, filtering, transformation)</p></li>
-<li><p>Mesh operations (creation, manipulation, processing)</p></li>
-<li><p>Efficient nearest neighbor search</p></li>
-<li><p>Ray casting and distance queries</p></li>
-</ul>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="../geometry/index.html"><span class="doc">Geometry</span></a> - Legacy geometry operations</p></li>
-<li><p><a class="reference internal" href="../../python_api/cloudViewer.t.geometry.html"><span class="doc">cloudViewer.t.geometry</span></a> - Tensor geometry API</p></li>
-<li><p><a class="reference internal" href="../t_pipelines/index.html"><span class="doc">Pipelines (Tensor)</span></a> - Tensor-based pipelines</p></li>
-</ul>
-</div>
-</section>
 </section>
 
         </article>
@@ -1218,34 +1217,13 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">Geometry (Tensor)</a><ul>
-<li><a class="reference internal" href="#basics">Basics</a></li>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#key-features">Key Features</a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

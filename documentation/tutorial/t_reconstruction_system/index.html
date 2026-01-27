@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Voxel Block Grid" href="voxel_block_grid.html" /><link rel="prev" title="Capture your own dataset" href="../reconstruction_system/capture_your_own_dataset.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Reconstruction system (Tensor) - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Reconstruction system (Tensor) - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1137,11 +1137,11 @@
         <article role="main">
           <section id="reconstruction-system-tensor">
 <span id="t-reconstruction-system"></span><h1>Reconstruction system (Tensor)<a class="headerlink" href="#reconstruction-system-tensor" title="Permalink to this heading">#</a></h1>
-<p>This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer <a class="reference internal" href="../core/tensor.html"><span class="doc">Tensor</span></a> interface and the ACloudViewer <a class="reference internal" href="../core/hashmap.html"><span class="doc">Hash map</span></a> backend.</p>
-<p>It is possible to run the tutorial with the minimalistic dataset <code class="docutils literal notranslate"><span class="pre">SampleRedwoodRGBDImages</span></code>, but it is recommended to run the tutorial with real-world datasets with longer sequences to demonstrate its capability. Please refer to the <a class="reference internal" href="../geometry/rgbd_image.html"><span class="doc">RGBD images</span></a> for more available datasets. The <code class="docutils literal notranslate"><span class="pre">Redwood</span></code> dataset can be a good starting point.</p>
+<p>This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer <a class="reference internal" href="../core/tensor.html"><span class="std std-ref">Tensor</span></a> interface and the ACloudViewer <a class="reference internal" href="../core/hashmap.html"><span class="std std-ref">Hash map</span></a> backend.</p>
+<p>It is possible to run the tutorial with the minimalistic dataset <code class="docutils literal notranslate"><span class="pre">SampleRedwoodRGBDImages</span></code>, but it is recommended to run the tutorial with real-world datasets with longer sequences to demonstrate its capability. Please refer to <a class="reference internal" href="../geometry/rgbd_image.html"><span class="std std-ref">RGBD images</span></a> for more available datasets. The <code class="docutils literal notranslate"><span class="pre">Redwood</span></code> dataset can be a good starting point.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>As of now the tutorial is only for <strong>online</strong> dense SLAM, and <strong>offline</strong> integration <strong>with</strong> provided poses. The tutorials for tensor-based <strong>offline</strong> reconstruction system are still under construction. At current, please refer to <a class="reference internal" href="../reconstruction_system/index.html#reconstruction-system"><span class="std std-ref">Reconstruction system</span></a> for the legacy versions.</p>
+<p>As of now the tutorial is only for <strong>online</strong> dense SLAM, and <strong>offline</strong> integration <strong>with</strong> provided poses. The tutorials for tensor-based <strong>offline</strong> reconstruction system, Simultaneous localization and calibration (SLAC), and shape from shading (SfS) tutorials as mentioned in <a class="reference internal" href="../reference.html#dong2021" id="id1"><span>[Dong2021]</span></a> are still under construction. At current, please refer to <a class="reference internal" href="../reconstruction_system/index.html#reconstruction-system"><span class="std std-ref">Reconstruction system</span></a> for the legacy versions.</p>
 </div>
 <section id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading">#</a></h2>
@@ -1174,7 +1174,7 @@ Currently the following datasets are available:</p>
 <li><p>Bedroom (keyword: <code class="docutils literal notranslate"><span class="pre">bedroom</span></code>)</p></li>
 <li><p>Jack Jack (keyword: <code class="docutils literal notranslate"><span class="pre">jack_jack</span></code>)</p></li>
 </ol>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using bedroom as the default dataset.</span>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using jack_jack as the default dataset.</span>
 python<span class="w"> </span>dense_slam_gui.py<span class="w"> </span>--default_dataset<span class="w"> </span><span class="s1">&#39;bedroom&#39;</span>
 </pre></div>
 </div>
@@ -1330,7 +1330,7 @@ images using the Intel RealSense camera. For more details, please see
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

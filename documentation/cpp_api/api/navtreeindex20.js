@@ -1,5 +1,9 @@
 var NAVTREEINDEX20 =
 {
+"Reconstruction_2lib_2PoissonRecon_2Octree_8h.html#aa1c0281395a97150474c058710b42bb2":[4,0,1,3,0,4,18,5],
+"Reconstruction_2lib_2PoissonRecon_2Octree_8h_source.html":[4,0,1,3,0,4,18],
+"ReduceSubarraysSum_8cuh.html":[4,0,1,0,4,1,1,6],
+"ReduceSubarraysSum_8cuh_source.html":[4,0,1,0,4,1,1,6],
 "ReduceSubarraysSum_8h.html":[4,0,1,0,4,1,1,7],
 "ReduceSubarraysSum_8h.html#acf7d0735a7c4df0dd20774e9806d5720":[4,0,1,0,4,1,1,7,0],
 "ReduceSubarraysSum_8h_source.html":[4,0,1,0,4,1,1,7],
@@ -245,9 +249,5 @@ var NAVTREEINDEX20 =
 "SACSegmentationDlg_8h.html":[4,0,2,0,1,15,1,3,0,9],
 "SACSegmentationDlg_8h_source.html":[4,0,2,0,1,15,1,3,0,9],
 "SACSegmentation_8cpp.html":[4,0,2,0,1,15,1,3,9],
-"SACSegmentation_8cpp.html#a1682d7c65c3c73e33a44d8d7faa380a5":[4,0,2,0,1,15,1,3,9,0],
-"SACSegmentation_8cpp_source.html":[4,0,2,0,1,15,1,3,9],
-"SACSegmentation_8h.html":[4,0,2,0,1,15,1,3,10],
-"SACSegmentation_8h_source.html":[4,0,2,0,1,15,1,3,10],
-"SIFTExtractDlg_8cpp.html":[4,0,2,0,1,15,1,0,0,2]
+"SACSegmentation_8cpp.html#a1682d7c65c3c73e33a44d8d7faa380a5":[4,0,2,0,1,15,1,3,9,0]
 };

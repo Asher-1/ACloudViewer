@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Make fragments" href="make_fragments.html" /><link rel="prev" title="Reconstruction system" href="index.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>System overview - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>System overview - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1137,7 +1137,7 @@
         <article role="main">
           <section id="system-overview">
 <span id="reconstruction-system-overview"></span><h1>System overview<a class="headerlink" href="#system-overview" title="Permalink to this heading">#</a></h1>
-<p>The reconstruction system has 4 main steps:</p>
+<p>The system has 4 main steps:</p>
 <p><strong>Step 1</strong>. <a class="reference internal" href="make_fragments.html#reconstruction-system-make-fragments"><span class="std std-ref">Make fragments</span></a>: build local geometric
 surfaces (referred to as
 fragments) from short subsequences of the input RGBD sequence. This part uses
@@ -1159,8 +1159,8 @@ the scene. This part uses <a class="reference internal" href="../pipelines/rgbd_
 <section id="example-dataset">
 <span id="reconstruction-system-dataset"></span><h2>Example dataset<a class="headerlink" href="#example-dataset" title="Permalink to this heading">#</a></h2>
 <p>We provide default datasets such as Lounge RGB-D dataset from Stanford, Bedroom RGB-D dataset from Redwood,
-to demonstrate the system in this tutorial.
-Other than this, one may use any RGB-D data.
+Jack Jack RealSense L515 bag file dataset to demonstrate the system in this tutorial.
+Other than this, one may user any RGB-D data.
 There are lots of excellent RGBD datasets such as:
 <a class="reference external" href="http://redwood-data.org/">Redwood data</a>, <a class="reference external" href="https://vision.in.tum.de/data/datasets/rgbd-dataset">TUM RGBD data</a>,
 <a class="reference external" href="https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html">ICL-NUIM data</a>,
@@ -1174,7 +1174,7 @@ There are lots of excellent RGBD datasets such as:
 <span class="nb">cd</span><span class="w"> </span>examples/Python/reconstruction_system/
 
 <span class="c1"># Show CLI help for `run_system.py`</span>
-python<span class="w"> </span>run_system.py<span class="w"> </span>--help
+python<span class="w"> </span>dense_slam_gui.py<span class="w"> </span>--help
 </pre></div>
 </div>
 <p>Running the example with default dataset.</p>
@@ -1184,6 +1184,7 @@ python<span class="w"> </span>run_system.py<span class="w"> </span>--help
 <span class="c1"># --register will register all fragments to detect loop closure.</span>
 <span class="c1"># --refine flag will refine rough registrations.</span>
 <span class="c1"># --integrate flag will integrate the whole RGBD sequence to make final mesh.</span>
+<span class="c1"># [Optional] Use --slac and --slac_integrate flags to perform SLAC optimisation.</span>
 python<span class="w"> </span>run_system.py<span class="w"> </span>--make<span class="w"> </span>--register<span class="w"> </span>--refine<span class="w"> </span>--integrate
 </pre></div>
 </div>
@@ -1193,17 +1194,55 @@ Currently the following datasets are available:</p>
 <ol class="arabic simple">
 <li><p>Lounge (keyword: <code class="docutils literal notranslate"><span class="pre">lounge</span></code>) (Default)</p></li>
 <li><p>Bedroom (keyword: <code class="docutils literal notranslate"><span class="pre">bedroom</span></code>)</p></li>
+<li><p>Jack Jack (keyword: <code class="docutils literal notranslate"><span class="pre">jack_jack</span></code>)</p></li>
 </ol>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="make_fragments.html"><span class="doc">Make fragments</span></a> - Making fragments</p></li>
-<li><p><a class="reference internal" href="register_fragments.html"><span class="doc">Register fragments</span></a> - Registering fragments</p></li>
-<li><p><a class="reference internal" href="refine_registration.html"><span class="doc">Refine registration</span></a> - Refining registration</p></li>
-<li><p><a class="reference internal" href="integrate_scene.html"><span class="doc">Integrate scene</span></a> - Integrating scene</p></li>
-<li><p><a class="reference internal" href="capture_your_own_dataset.html"><span class="doc">Capture your own dataset</span></a> - Capturing your own dataset</p></li>
-</ul>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using bedroom as the default dataset.</span>
+python<span class="w"> </span>run_system.py<span class="w"> </span>--default_dataset<span class="w"> </span><span class="s1">&#39;bedroom&#39;</span><span class="w"> </span>--make<span class="w"> </span>--register<span class="w"> </span>--refine<span class="w"> </span>--integrate
+</pre></div>
 </div>
+<p>Running the example with custom dataset using config file.
+Manually download or store the data in a folder and store all the color images
+in the <code class="docutils literal notranslate"><span class="pre">image</span></code> sub-folder, and all the depth images in the <code class="docutils literal notranslate"><span class="pre">depth</span></code> sub-folder.
+Create a <code class="docutils literal notranslate"><span class="pre">config.json</span></code> file and set the <code class="docutils literal notranslate"><span class="pre">path_dataset</span></code> to the data directory.
+Override the parameters for which you want to change the default values.</p>
+<p>Example config file for offline reconstruction system has been provided in
+<code class="docutils literal notranslate"><span class="pre">examples/Python/reconstruction_system/config/tutorial.json</span></code>, which looks like the following:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="p">{</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CloudViewer reconstruction tutorial http://open3d.org/docs/release/tutorial/reconstruction_system/system_overview.html&quot;</span><span class="p">,</span>
+<span class="linenos"> 3</span><span class="w">    </span><span class="nt">&quot;path_dataset&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dataset/tutorial/&quot;</span><span class="p">,</span>
+<span class="linenos"> 4</span><span class="w">    </span><span class="nt">&quot;path_intrinsic&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="linenos"> 5</span><span class="w">    </span><span class="nt">&quot;max_depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.0</span><span class="p">,</span>
+<span class="linenos"> 6</span><span class="w">    </span><span class="nt">&quot;voxel_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="nt">&quot;max_depth_diff&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.07</span><span class="p">,</span>
+<span class="linenos"> 8</span><span class="w">    </span><span class="nt">&quot;preference_loop_closure_odometry&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span>
+<span class="linenos"> 9</span><span class="w">    </span><span class="nt">&quot;preference_loop_closure_registration&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.0</span><span class="p">,</span>
+<span class="linenos">10</span><span class="w">    </span><span class="nt">&quot;tsdf_cubic_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.0</span><span class="p">,</span>
+<span class="linenos">11</span><span class="w">    </span><span class="nt">&quot;icp_method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;color&quot;</span><span class="p">,</span>
+<span class="linenos">12</span><span class="w">    </span><span class="nt">&quot;global_registration&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ransac&quot;</span><span class="p">,</span>
+<span class="linenos">13</span><span class="w">    </span><span class="nt">&quot;python_multi_threading&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="linenos">14</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>We assume that the color images and the depth images are synchronized and
+registered. <code class="docutils literal notranslate"><span class="pre">&quot;path_intrinsic&quot;</span></code> specifies path to a json file that stores the
+camera intrinsic matrix (See
+<a class="reference internal" href="../pipelines/rgbd_odometry.html#Read-camera-intrinsic"><span class="std std-ref">Read camera intrinsic</span></a> for
+details). If it is not given, the PrimeSense factory setting is used. For your
+own dataset, use an appropriate camera intrinsic and visualize a depth image
+(likewise <a class="reference internal" href="../geometry/rgbd_image.html"><span class="std std-ref">RGBD images</span></a>) prior to using the system.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;python_multi_threading&quot;:</span> <span class="pre">true</span></code> utilizes <code class="docutils literal notranslate"><span class="pre">joblib</span></code> to parallelize
+the system using every CPU cores. With this option, Mac users may encounter
+an unexpected program termination. To avoid this issue, set this flag to
+<code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
+</div>
+</section>
+<section id="capture-your-own-dataset">
+<h2>Capture your own dataset<a class="headerlink" href="#capture-your-own-dataset" title="Permalink to this heading">#</a></h2>
+<p>This tutorial provides an example that can record synchronized and aligned RGBD
+images using the Intel RealSense camera. For more details, please see
+<a class="reference internal" href="capture_your_own_dataset.html#capture-your-own-dataset"><span class="std std-ref">Capture your own dataset</span></a>.</p>
 </section>
 </section>
 
@@ -1265,6 +1304,7 @@ Currently the following datasets are available:</p>
 <li><a class="reference internal" href="#">System overview</a><ul>
 <li><a class="reference internal" href="#example-dataset">Example dataset</a></li>
 <li><a class="reference internal" href="#quick-start">Quick start</a></li>
+<li><a class="reference internal" href="#capture-your-own-dataset">Capture your own dataset</a></li>
 </ul>
 </li>
 </ul>
@@ -1276,7 +1316,7 @@ Currently the following datasets are available:</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

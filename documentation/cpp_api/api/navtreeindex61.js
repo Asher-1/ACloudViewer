@@ -1,5 +1,9 @@
 var NAVTREEINDEX61 =
 {
+"classccWaveformProxy.html#acdeb57c3df587ce9fa6f995494bc9527":[3,0,201,18],
+"classccWaveformProxy.html#ad4a269ddf04e7593ac5a7236becb780b":[3,0,201,0],
+"classccWaveformProxy.html#ad858a856a0edfb88eff2e7bb2b7fb5bb":[3,0,201,8],
+"classccWaveformProxy.html#ade8cbddb88f56d1babb3443da65e53f0":[3,0,201,15],
 "classccWaveformProxy.html#ae8ed03cbd3cdbfe39b70c95496daeded":[3,0,201,1],
 "classccWaveformProxy.html#aee27513c41ff1d2a5586a410eb3242b6":[3,0,201,7],
 "classcloudViewer_1_1AutoSegmentationTools.html":[3,0,2,11],
@@ -245,9 +249,5 @@ var NAVTREEINDEX61 =
 "classcloudViewer_1_1DistanceComputationTools.html#a1849085dee7c5ca870aa4151a3162cec":[3,0,2,23,31],
 "classcloudViewer_1_1DistanceComputationTools.html#a18ea1c61dabacfe77f056511059051bc":[3,0,2,23,4],
 "classcloudViewer_1_1DistanceComputationTools.html#a18ea1c61dabacfe77f056511059051bca0f6e0d8e310d7097614d101dadbeebb8":[3,0,2,23,4,3],
-"classcloudViewer_1_1DistanceComputationTools.html#a18ea1c61dabacfe77f056511059051bca2ae5b5a20edc2dbb1ceaea0d8c0a1e57":[3,0,2,23,4,1],
-"classcloudViewer_1_1DistanceComputationTools.html#a18ea1c61dabacfe77f056511059051bca47e4f3c4ee418801b8c223a5e0cd7a7c":[3,0,2,23,4,2],
-"classcloudViewer_1_1DistanceComputationTools.html#a18ea1c61dabacfe77f056511059051bca62398a454d21cfc54980f6ece49a8328":[3,0,2,23,4,0],
-"classcloudViewer_1_1DistanceComputationTools.html#a19ca9e4e0832d8cf2c628825f75f0ed3":[3,0,2,23,30],
-"classcloudViewer_1_1DistanceComputationTools.html#a28e16492abab281289c610acfede6d56":[3,0,2,23,26]
+"classcloudViewer_1_1DistanceComputationTools.html#a18ea1c61dabacfe77f056511059051bca2ae5b5a20edc2dbb1ceaea0d8c0a1e57":[3,0,2,23,4,1]
 };

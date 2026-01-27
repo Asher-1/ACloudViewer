@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Advanced Topics" href="../advanced/index.html" /><link rel="prev" title="Azure Kinect with ACloudViewer" href="azure_kinect.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>RealSense with ACloudViewer - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>RealSense with ACloudViewer - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1137,11 +1137,20 @@
         <article role="main">
           <section id="realsense-with-acloudviewer">
 <span id="realsense"></span><h1>RealSense with ACloudViewer<a class="headerlink" href="#realsense-with-acloudviewer" title="Permalink to this heading">#</a></h1>
-<p>RealSense (<code class="docutils literal notranslate"><span class="pre">librealsense</span></code> SDK v2) is integrated into ACloudViewer and you
-can use it through both C++ and Python APIs. RealSense support is available
-on Linux, macOS and Windows.</p>
+<p>RealSense (<code class="docutils literal notranslate"><span class="pre">librealsense</span></code> SDK v2) is integrated into ACloudViewer (v0.12+) and you
+can use it through both C++ and Python APIs without a separate <code class="docutils literal notranslate"><span class="pre">librealsense</span></code>
+SDK installation on Linux, macOS and Windows. Older versions of ACloudViewer support
+RealSense through a separate install of <code class="docutils literal notranslate"><span class="pre">librealsense</span></code> SDK v1 and
+<code class="docutils literal notranslate"><span class="pre">pyrealsense</span></code>.</p>
 <section id="obtaining-acloudviewer-with-realsense-support">
 <h2>Obtaining ACloudViewer with RealSense support<a class="headerlink" href="#obtaining-acloudviewer-with-realsense-support" title="Permalink to this heading">#</a></h2>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">#</a></h3>
+<p>Install ACloudViewer from PyPI (a virtual environment is recommended):</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>cloudviewer
+</pre></div>
+</div>
+</section>
 <section id="compile-from-source-c">
 <h3>Compile from source (C++)<a class="headerlink" href="#compile-from-source-c" title="Permalink to this heading">#</a></h3>
 <p>To build ACloudViewer from source with RealSense support, set
@@ -1157,7 +1166,9 @@ useful).</p>
 <h2>Reading from RealSense bag files<a class="headerlink" href="#reading-from-realsense-bag-files" title="Permalink to this heading">#</a></h2>
 <p>Here is a C++ code snippet that shows how to read a RealSense bag file recorded
 with ACloudViewer or the <code class="docutils literal notranslate"><span class="pre">realsense-viewer</span></code>. Note that general ROSbag files are not
-supported.</p>
+supported. See more details and available functionality (such as getting
+timestamps, aligning the depth stream to the color stream and getting intrinsic
+calibration) in the C++ API documentation.</p>
 <div class="highlight-C++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cloudViewer/CloudViewer.h&gt;</span>
 <span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">cloudViewer</span><span class="p">;</span>
 <span class="n">t</span><span class="o">::</span><span class="n">io</span><span class="o">::</span><span class="n">RSBagReader</span><span class="w"> </span><span class="n">bag_reader</span><span class="p">;</span>
@@ -1182,6 +1193,34 @@ supported.</p>
 <span class="n">bag_reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">#</a></h3>
+<section id="c-rs-bag-file-viewer">
+<h4>C++ RS bag file viewer<a class="headerlink" href="#c-rs-bag-file-viewer" title="Permalink to this heading">#</a></h4>
+<p>This C++ example that plays back the color and depth streams from a RealSense
+bag file. It also prints out metadata about the video streams in the file. Press
+[SPACE] to pause/resume and [ESC] to exit.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">RealSenseBagReader</span>
+<span class="nb">bin</span><span class="o">/</span><span class="n">examples</span><span class="o">/</span><span class="n">RealSenseBagReader</span> <span class="o">--</span><span class="nb">input</span> <span class="n">L515_test</span><span class="o">.</span><span class="n">bag</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="running-the-scene-reconstruction-pipeline">
+<h3>Running the scene reconstruction pipeline<a class="headerlink" href="#running-the-scene-reconstruction-pipeline" title="Permalink to this heading">#</a></h3>
+<p>You can provide an RS bag file directly to the reconstruction pipeline and
+colormap optimization pipelines. It will be automatically converted to a
+directory of depth and color frames and the camera intrinsics. Edit the
+<cite>examples/Python/reconstruction_system/config/realsense.json</cite> file with the path
+to your RS bag file and leave <cite>path_intrinsic</cite> empty. Update other configuration
+parameters if needed (see the reconstruction pipeline documentation for more
+details, including other required packages):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">examples</span><span class="o">/</span><span class="n">Python</span><span class="o">/</span><span class="n">reconstruction_system</span><span class="o">/</span>
+<span class="n">python</span> <span class="n">run_system</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">make</span> <span class="o">--</span><span class="n">register</span> <span class="o">--</span><span class="n">refine</span> <span class="o">--</span><span class="n">integrate</span> <span class="n">config</span><span class="o">/</span><span class="n">realsense</span><span class="o">.</span><span class="n">json</span>
+<span class="n">python</span> <span class="n">color_map_optimization_for_reconstruction_system</span><span class="o">.</span><span class="n">py</span>  <span class="o">--</span><span class="n">config</span> <span class="n">config</span><span class="o">/</span><span class="n">realsense</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+</section>
 </section>
 <section id="realsense-camera-configuration-live-capture-processing-and-recording">
 <h2>RealSense camera configuration, live capture, processing and recording<a class="headerlink" href="#realsense-camera-configuration-live-capture-processing-and-recording" title="Permalink to this heading">#</a></h2>
@@ -1198,12 +1237,27 @@ below.</p>
 <span class="n">cv3d</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">RealSenseSensor</span><span class="o">.</span><span class="n">list_devices</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>Here is sample output when only one L515 camera is connected:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="n">Intel</span> <span class="n">RealSense</span> <span class="n">L515</span><span class="p">:</span> <span class="n">f0141095</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">color_format</span><span class="p">:</span> <span class="p">[</span><span class="n">RS2_FORMAT_BGR8</span> <span class="o">|</span> <span class="n">RS2_FORMAT_BGRA8</span> <span class="o">|</span> <span class="n">RS2_FORMAT_RGB8</span> <span class="o">|</span> <span class="n">RS2_FORMAT_RGBA8</span> <span class="o">|</span> <span class="n">RS2_FORMAT_Y16</span> <span class="o">|</span> <span class="n">RS2_FORMAT_YUYV</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">color_resolution</span><span class="p">:</span> <span class="p">[</span><span class="mi">1280</span><span class="p">,</span><span class="mi">720</span> <span class="o">|</span> <span class="mi">1920</span><span class="p">,</span><span class="mi">1080</span> <span class="o">|</span> <span class="mi">960</span><span class="p">,</span><span class="mi">540</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">color_fps</span><span class="p">:</span> <span class="p">[</span><span class="mi">15</span> <span class="o">|</span> <span class="mi">30</span> <span class="o">|</span> <span class="mi">6</span> <span class="o">|</span> <span class="mi">60</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">depth_format</span><span class="p">:</span> <span class="p">[</span><span class="n">RS2_FORMAT_Z16</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">depth_resolution</span><span class="p">:</span> <span class="p">[</span><span class="mi">1024</span><span class="p">,</span><span class="mi">768</span> <span class="o">|</span> <span class="mi">320</span><span class="p">,</span><span class="mi">240</span> <span class="o">|</span> <span class="mi">640</span><span class="p">,</span><span class="mi">480</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">depth_fps</span><span class="p">:</span> <span class="p">[</span><span class="mi">30</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span>  <span class="n">visual_preset</span><span class="p">:</span> <span class="p">[</span><span class="n">RS2_L500_VISUAL_PRESET_CUSTOM</span> <span class="o">|</span> <span class="n">RS2_L500_VISUAL_PRESET_DEFAULT</span> <span class="o">|</span> <span class="n">RS2_L500_VISUAL_PRESET_LOW_AMBIENT</span> <span class="o">|</span> <span class="n">RS2_L500_VISUAL_PRESET_MAX_RANGE</span> <span class="o">|</span> <span class="n">RS2_L500_VISUAL_PRESET_NO_AMBIENT</span> <span class="o">|</span> <span class="n">RS2_L500_VISUAL_PRESET_SHORT_RANGE</span><span class="p">]</span>
+<span class="p">[</span><span class="n">CloudViewer</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">CloudViewer</span> <span class="n">only</span> <span class="n">supports</span> <span class="n">synchronized</span> <span class="n">color</span> <span class="ow">and</span> <span class="n">depth</span> <span class="n">capture</span> <span class="p">(</span><span class="n">color_fps</span> <span class="o">=</span> <span class="n">depth_fps</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>This data can also be obtained programmatically to configure a camera based on
+custom specifications (e.g.: resolution less than 720p) and to independently
+configure multiple cameras.</p>
 </section>
 <section id="realsense-camera-configuration">
 <h3>RealSense camera configuration<a class="headerlink" href="#realsense-camera-configuration" title="Permalink to this heading">#</a></h3>
 <p>RealSense cameras can be configured with a simple <code class="docutils literal notranslate"><span class="pre">json</span></code> configuration file.
 See <a class="reference external" href="https://intelrealsense.github.io/librealsense/doxygen/rs__option_8h.html">RealSense documentation</a> for
-the set of configuration values. Supported configuration options will depend
+the set of configuration values. Supported configuration options will be depend
 on the device and other chosen options. Here are the options supported by
 ACloudViewer:</p>
 <ul class="simple">
@@ -1222,7 +1276,9 @@ are specific to product line (SR300, RS400, L500). Leave empty to pick the
 default.</p></li>
 </ul>
 <p>Here is an example <code class="docutils literal notranslate"><span class="pre">json</span></code> configuration file to capture 30fps, 540p color and
-480p depth video from any connected RealSense camera:</p>
+480p depth video from any connected RealSense camera. The video width is picked
+by RealSense. We also set the <code class="docutils literal notranslate"><span class="pre">visual_preset</span></code> to
+<code class="docutils literal notranslate"><span class="pre">RS2_L500_VISUAL_PRESET_MAX_RANGE</span></code> to better capture far away objects.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;serial&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;color_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RS2_FORMAT_RGB8&quot;</span><span class="p">,</span>
@@ -1239,7 +1295,10 @@ default.</p></li>
 <h3>RealSense camera capture, processing and recording<a class="headerlink" href="#realsense-camera-capture-processing-and-recording" title="Permalink to this heading">#</a></h3>
 <p>The following code snippets show how to capture live RGBD video from a RealSense
 camera. They capture the first 150 frames and also record them to an RS bag
-file.</p>
+file. The bag file can be played back with CloudViewer tools, realsense-viewer. You
+can also use ROS tools such as <a class="reference external" href="http://wiki.ros.org/rosbag">rosbag</a>, <a class="reference external" href="http://wiki.ros.org/rqt_bag">rqt_bag</a> and <a class="reference external" href="https://wiki.ros.org/rviz">rviz</a> to
+examine, play and modify the bag file. You can adapt the snippets to your needs
+by processing or displaying the frames after capture.</p>
 <div class="highlight-C++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cloudViewer/CloudViewer.h&gt;</span>
 <span class="n">cloudViewer</span><span class="o">::</span><span class="n">t</span><span class="o">::</span><span class="n">io</span><span class="o">::</span><span class="n">RealSenseSensorConfig</span><span class="w"> </span><span class="n">rs_cfg</span><span class="p">;</span>
 <span class="n">cloudViewer</span><span class="o">::</span><span class="n">io</span><span class="o">::</span><span class="n">ReadIJsonConvertible</span><span class="p">(</span><span class="n">config_filename</span><span class="p">,</span><span class="w"> </span><span class="n">rs_cfg</span><span class="p">);</span>
@@ -1266,6 +1325,20 @@ file.</p>
     <span class="c1"># process im_rgbd.depth and im_rgbd.color</span>
 
 <span class="n">rs</span><span class="o">.</span><span class="n">stop_capture</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Note that for any real time application such as live capture and processing, it
+is important to complete frame processing in the frame interval (~33ms for 30fps
+recording). You may experience frame drops otherwise. For high resolution
+capture, you can defer frame alignment by setting <code class="docutils literal notranslate"><span class="pre">align_depth_to_color=false</span></code>
+during capture and performing it while reading the bad file instead.</p>
+<p>This is a complete C++ example that shows visualizing live capture and recording
+to a bag file. The recording can be paused / resumed with [SPACE]. Use [ESC] to
+stop capture and quit. You can download the
+<a class="reference external" href="https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/rs_default_config.json">rs_default_config.json</a>
+and use this example to capture your own dataset:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">RealSenseRecorder</span>
+<span class="nb">bin</span><span class="o">/</span><span class="n">examples</span><span class="o">/</span><span class="n">RealSenseRecorder</span> <span class="o">--</span><span class="n">config</span> <span class="n">config</span><span class="o">.</span><span class="n">json</span> <span class="o">--</span><span class="n">record</span> <span class="n">test_data</span><span class="o">.</span><span class="n">bag</span>
 </pre></div>
 </div>
 </section>
@@ -1343,10 +1416,18 @@ file.</p>
             <ul>
 <li><a class="reference internal" href="#">RealSense with ACloudViewer</a><ul>
 <li><a class="reference internal" href="#obtaining-acloudviewer-with-realsense-support">Obtaining ACloudViewer with RealSense support</a><ul>
+<li><a class="reference internal" href="#python">Python</a></li>
 <li><a class="reference internal" href="#compile-from-source-c">Compile from source (C++)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#reading-from-realsense-bag-files">Reading from RealSense bag files</a></li>
+<li><a class="reference internal" href="#reading-from-realsense-bag-files">Reading from RealSense bag files</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a><ul>
+<li><a class="reference internal" href="#c-rs-bag-file-viewer">C++ RS bag file viewer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-the-scene-reconstruction-pipeline">Running the scene reconstruction pipeline</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#realsense-camera-configuration-live-capture-processing-and-recording">RealSense camera configuration, live capture, processing and recording</a><ul>
 <li><a class="reference internal" href="#realsense-camera-discovery">RealSense camera discovery</a></li>
 <li><a class="reference internal" href="#realsense-camera-configuration">RealSense camera configuration</a></li>
@@ -1365,7 +1446,7 @@ file.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

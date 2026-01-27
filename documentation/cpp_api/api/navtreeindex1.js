@@ -1,5 +1,9 @@
 var NAVTREEINDEX1 =
 {
+"BinaryEW_8h.html":[4,0,1,0,0,1,6],
+"BinaryEW_8h.html#a20f1270704949f6d20448a1984ae59a4":[4,0,1,0,0,1,6,2],
+"BinaryEW_8h.html#a2a5fea461632c9cb4fe1fbbf52bd6fb7":[4,0,1,0,0,1,6,1],
+"BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132":[4,0,1,0,0,1,6,0],
 "BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132a086cb8308e5a36e7c4ed1f8873ad801f":[4,0,1,0,0,1,6,0,9],
 "BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132a103aa83df42877d5f9baeafdbf620b55":[4,0,1,0,0,1,6,0,6],
 "BinaryEW_8h.html#a5bcc1c1feae3436cea4437c96d6ec132a3718b5ecf60aa0dba49e150e96cb1fc3":[4,0,1,0,0,1,6,0,13],
@@ -245,9 +249,5 @@ var NAVTREEINDEX1 =
 "CVGeom_8h_source.html":[4,0,0,0,13],
 "CVKdTree_8h.html":[4,0,0,0,14],
 "CVKdTree_8h_source.html":[4,0,0,0,14],
-"CVLog_8h.html":[4,0,0,0,15],
-"CVLog_8h_source.html":[4,0,0,0,15],
-"CVMath_8h.html":[4,0,0,0,16],
-"CVMath_8h.html#a367777efc10c85e627658ee2ca1fa402":[4,0,0,0,16,11],
-"CVMath_8h.html#a40c4286c80bddd2f6f96f6d5f00137d8":[4,0,0,0,16,4]
+"CVLog_8h.html":[4,0,0,0,15]
 };

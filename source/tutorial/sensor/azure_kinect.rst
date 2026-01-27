@@ -3,7 +3,7 @@
 Azure Kinect with ACloudViewer
 -------------------------------
 
-Azure Kinect is supported on Windows and Linux (Ubuntu 18.04+).
+Azure Kinect is only officially supported on Windows and Ubuntu 18.04.
 
 Installation
 ============
@@ -23,6 +23,30 @@ After installation, you may run ``k4aviewer`` from the Linux terminal or
 
 Currently, ACloudViewer supports the Azure Kinect SDK version ``v1.4.1``, though future
 versions might also be compatible.
+
+Install ACloudViewer from Pip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you're using ACloudViewer installed via Pip, ACloudViewer's Azure Kinect features
+should work out-of-the box if K4A is installed in the system in the recommended
+way. ACloudViewer will try to load the K4A dynamic library automatically at runtime,
+when a K4A related feature within ACloudViewer is used.
+
+On Ubuntu, the default search path
+follows the Linux `convention <https://unix.stackexchange.com/a/22999/130082>`_.
+
+On Windows, ACloudViewer will try to load the shared library from the default
+installation path. For example, for K4A ``v1.4.1``, the default path is
+``C:\Program Files\Azure Kinect SDK v1.4.1``. If this doesn't work, copy
+``depthengine_x_x.dll``, ``k4a.dll`` and ``k4arecord.dll`` to where ACloudViewer
+Python module is installed if you're using ACloudViewer with Python, or to the same
+directory as your C++ executable.
+
+You can get ACloudViewer's Python module path with the following command:
+
+.. code-block:: sh
+
+    python -c "import cloudViewer as cv3d; import os; print(os.path.dirname(cv3d.__file__))"
 
 Compile from Source
 ~~~~~~~~~~~~~~~~~~~
@@ -50,6 +74,13 @@ We'll use the Python version as an example.
 .. code-block:: sh
 
     python examples/Python/reconstruction_system/sensors/azure_kinect_viewer.py --align_depth_to_color
+
+When recording at a higher resolution at a high framerate, sometimes it is
+helpful to use the raw depth image without transformation to reduce computation.
+
+.. code-block:: sh
+
+    python examples/Python/reconstruction_system/sensors/azure_kinect_viewer.py
 
 When the visualizer window is active, press ``ESC`` to quit the viewer.
 
@@ -102,10 +133,11 @@ ACloudViewer Azure Kinect MKV Reader
 ====================================
 
 The recorded MKV file uses K4A's custom format which contains both RGB and depth
-information. To view the customized MKV file, use the
+information. The regular video player may only support playing back the color channel
+or not supporting the format at all. To view the customized MKV file, use the
 ACloudViewer Azure Kinect MKV Reader.
 
-ACloudViewer provides Python and C++ example code of Azure Kinect MKV Reader.
+ACloudViewer provides Python and C++ example code of ACloudViewer Azure Kinect MKV Reader.
 Please see ``examples/Cpp/AzureKinectMKVReader.cpp`` and
 ``examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py``
 for details.
@@ -113,6 +145,9 @@ for details.
 .. code-block:: sh
 
     python examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py --input record.mkv
+
+Note that even though the recorder records the unaligned raw depth image, the
+reader can correctly wrap the depth image to align with the color image.
 
 To convert the MKV video to color and depth image frames, specify the ``--output``
 flag.

@@ -1,5 +1,9 @@
 var NAVTREEINDEX82 =
 {
+"classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#afd6349c44e80013849bf4bb94223da0d":[3,0,2,10,0,62,4],
+"classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html":[3,0,2,10,0,6],
+"classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a05762804d952af6d93d3bb64048bad49":[3,0,2,10,0,6,11],
+"classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a1a77f96ea6bc07d9fed80551addac433":[3,0,2,10,0,6,14],
 "classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a2ad1ca2e0f919ae997c5b01b87756e01":[3,0,2,10,0,6,6],
 "classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a31fb18a01227dd5d047b3f914f898eff":[3,0,2,10,0,6,15],
 "classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a32602d7fc416b92ad10b69ef0ef19914":[3,0,2,10,0,6,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX82 =
 "classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a5f3c8702c6afc7fc6d5a464f1a1f84da":[3,0,2,10,0,35,16],
 "classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a64738e3f5aa8c44a3ab41592e5d098a9":[3,0,2,10,0,35,3],
 "classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a6830677f3290df144a7dc782b38ca917":[3,0,2,10,0,35,19],
-"classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a6eca37805953c9f8d6fdf4bb7fcb9370":[3,0,2,10,0,35,5],
-"classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a79884f52270301edf9d056acc19009a9":[3,0,2,10,0,35,18],
-"classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a842bce5b8e1000b3e17f8048909437d4":[3,0,2,10,0,35,0],
-"classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#aabd161a40da92688518fbb7352ac56c8":[3,0,2,10,0,35,10],
-"classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#ad0a8a124ce2bcc50cd1c3c413f20347d":[3,0,2,10,0,35,11]
+"classcloudViewer_1_1visualization_1_1gui_1_1MenuBase.html#a6eca37805953c9f8d6fdf4bb7fcb9370":[3,0,2,10,0,35,5]
 };

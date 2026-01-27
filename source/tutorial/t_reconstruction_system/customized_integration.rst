@@ -6,7 +6,7 @@ You can prototype a new RGB-D volumetric reconstruction algorithm with additiona
 
 Activation
 ``````````
-The frustum **block** selection remains the same, but then we manually activate these blocks and obtain their buffer indices in the :doc:`/tutorial/core/hashmap`:
+The frustum **block** selection remains the same, but then we manually activate these blocks and obtain their buffer indices in the :ref:`/tutorial/core/hashmap.ipynb`:
 
 .. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate_custom.py
    :language: python
@@ -46,5 +46,4 @@ With the data association, we are able to conduct integration. In this example, 
    :lineno-start: 98
    :lines: 8,99-108,113-132
 
-You may follow the example and adapt it to your customized properties. ACloudViewer supports conversion from and to PyTorch tensors without any memory copy, see :doc:`/tutorial/core/tensor`. This can be used to leverage PyTorch's capabilities such as automatic differentiation and other operators.
-
+You may follow the example and adapt it to your customized properties. ACloudViewer supports conversion from and to PyTorch tensors without memory any copy, see :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`. This can be use to leverage PyTorch's capabilities such as automatic differentiation and other operators.

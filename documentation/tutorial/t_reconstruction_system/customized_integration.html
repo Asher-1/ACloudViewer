@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Ray Casting in a Voxel Block Grid" href="ray_casting.html" /><link rel="prev" title="TSDF Integration" href="integration.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Customized Integration - ACloudViewer primary (f4572cf50) documentation</title>
+        <title>Customized Integration - ACloudViewer primary (bbdf2f265) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (f4572cf50) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -1140,7 +1140,7 @@
 <p>You can prototype a new RGB-D volumetric reconstruction algorithm with additional properties (e.g. semantic labels) while maintaining a reasonable performance. An example can be found at <code class="docutils literal notranslate"><span class="pre">examples/Python/t_reconstruction_system/integrate_custom.py</span></code>.</p>
 <section id="activation">
 <h2>Activation<a class="headerlink" href="#activation" title="Permalink to this heading">#</a></h2>
-<p>The frustum <strong>block</strong> selection remains the same, but then we manually activate these blocks and obtain their buffer indices in the <a class="reference internal" href="../core/hashmap.html"><span class="doc">Hash map</span></a>:</p>
+<p>The frustum <strong>block</strong> selection remains the same, but then we manually activate these blocks and obtain their buffer indices in the <a class="reference internal" href="../core/hashmap.html"><span class="std std-ref">Hash map</span></a>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">60</span><span class="c1"># examples/python/t_reconstruction_system/integrate_custom.py</span>
 <span class="linenos">61</span>        <span class="c1"># Get active frustum block coordinates from input</span>
 <span class="linenos">62</span>        <span class="n">frustum_block_coords</span> <span class="o">=</span> <span class="n">vbg</span><span class="o">.</span><span class="n">compute_unique_block_coordinates</span><span class="p">(</span>
@@ -1229,7 +1229,7 @@
 <span class="linenos">128</span>        <span class="n">weight</span><span class="p">[</span><span class="n">valid_voxel_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">wp</span>
 </pre></div>
 </div>
-<p>You may follow the example and adapt it to your customized properties. ACloudViewer supports conversion from and to PyTorch tensors without any memory copy, see <a class="reference internal" href="../core/tensor.html"><span class="doc">Tensor</span></a>. This can be used to leverage PyTorch’s capabilities such as automatic differentiation and other operators.</p>
+<p>You may follow the example and adapt it to your customized properties. ACloudViewer supports conversion from and to PyTorch tensors without memory any copy, see <a class="reference internal" href="../core/tensor.html#PyTorch-I/O-with-DLPack-memory-map"><span class="std std-ref">PyTorch I/O with DLPack memory map</span></a>. This can be use to leverage PyTorch’s capabilities such as automatic differentiation and other operators.</p>
 </section>
 </section>
 
@@ -1304,7 +1304,7 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=463f0fab"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
