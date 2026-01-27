@@ -7,7 +7,7 @@ The first step of the scene reconstruction system is to create fragments from
 short RGBD sequences.
 
 Input arguments
-````````````````````````````````````
+````````````````````````
 
 The script runs with ``python run_system.py [config] --make``. In ``[config]``,
 ``["path_dataset"]`` should have subfolders ``image`` and ``depth`` to store the
@@ -82,7 +82,7 @@ Once the poses are estimated, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
 is used to reconstruct a colored fragment from each RGBD sequence.
 
 Batch processing
-````````````````````````````````````
+````````````````````````
 
 .. literalinclude:: ../../../../examples/Python/reconstruction_system/make_fragments.py
    :language: python
@@ -100,7 +100,7 @@ Furthermore, it leverages multiprocessing to speed up computation of all fragmen
 .. _reconstruction_system_make_fragments_results:
 
 Results
-````````````````````````````````````
+````````````````````````
 
 .. code-block:: sh
 

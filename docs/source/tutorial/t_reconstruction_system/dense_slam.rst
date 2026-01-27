@@ -2,7 +2,7 @@
 
 Dense RGB-D SLAM
 -------------------------------------
-Equipped with the fast volumetric reconstruction backend, we in addition provide a dense RGB-D SLAM system using frame-to-model tracking. The example can be found at ``examples/Python/t_reconstruction_system/dense_slam.py`` for the command line version and ``examples/Python/t_reconstruction_system/dense_slam_gui.py`` for a GUI demo.
+Equipped with the fast volumetric reconstruction backend, we in addition provide a dense RGB-D SLAM system using frame-to-model tracking. The example can be found at ``examples/Python/t_reconstruction_system/dense_slam.py`` for the command line version and ``examples/Python/t_reconstruction_system/dense_slam_gui.py`` for a GUI demo. Similar C++ versions can be found at ``examples/Cpp/OnlineSLAMRGBD.cpp`` and ``examples/Cpp/OnlineSLAMRealSense.cpp``.
 
 .. note::
    This SLAM prototype is mainly a showcase of the real-time volumetric processing. Please be aware that the tracking/RGB-D odometry module is **not fully optimized for accuracy**, and there is **no relocalization module** implemented currently. In general, it should work for room-scale scenes with relatively moderate motion, and may fail on more challenging sequences. More robust and reliable localization is our future work.
@@ -25,7 +25,7 @@ The frame-to-model tracking runs in a loop:
    :lineno-start: 38
    :lines: 8,39,42-61
 
-where we iteratively update the synthesized frame via ray-casting from the model, and perform the tensor version of RGB-D odometry between the input frame and the synthesized frame.
+where we iteratively update the synthesized frame via ray-casting from the model, and perform the tensor version of :ref:`/tutorial/pipelines/rgbd_odometry.ipynb` between the input frame and the synthesized frame.
 
 The reconstruction results can be saved following :ref:`optimized_integration`, and the trajectory of the camera pose in the world coordinate system can be obtained by accumulating ``T_frame_to_model``.
 
@@ -49,4 +49,3 @@ If all above have been correctly set but still no luck, please file an issue.
 **Q**: Why don't you implement loop closure or relocalization?
 
 **A**: Relocalization is challenging for volumetric reconstruction, as active real-time volume deformation and/or reintegration is needed. Since we are using direct odometry, we do not keep track of sparse features over the frames. A non-trivial system upgrade that addresses all the problems will be future work.
-
