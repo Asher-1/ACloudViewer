@@ -1033,7 +1033,7 @@ maximize_ubuntu_github_actions_build_space() {
     $SUDO rm -rf /opt/az                     # ~1GB
     $SUDO rm -rf /usr/local/.ghcup           # ~2GB
     $SUDO rm -rf /opt/microsoft              # ~1GB
-
+    
     # Configure Docker to use efficient storage
     echo "=== Stopping Docker service ==="
     $SUDO systemctl stop docker.socket || true
