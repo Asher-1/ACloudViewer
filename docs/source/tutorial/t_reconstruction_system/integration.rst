@@ -37,8 +37,8 @@ and CUDA
 
 .. literalinclude:: ../../../../libs/cloudViewer/t/geometry/kernel/VoxelBlockGridCUDA.cu
    :language: cpp
-   :lineno-start: 243
-   :lines: 243-249
+   :lineno-start: 238
+   :lines: 238-244
 
 For more generalized functionalities, you may extend the macros and/or the kernel functions and compile ACloudViewer from scratch to achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
@@ -49,7 +49,7 @@ You may use the provided APIs to extract surface points.
 .. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate.py
    :language: python
    :lineno-start: 105
-   :lines: 8, 105-109
+   :lines: 8, 106-110
 
 Note ``extract_triangle_mesh`` applies marching cubes and generates mesh. ``extract_point_cloud`` uses a similar algorithm, but skips the triangle face generation step.
 
@@ -57,10 +57,10 @@ Save and load
 ``````````````
 The voxel block grids can be saved to and loaded from `.npz` files that are accessible via numpy.
 
-.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate_custom.py
+.. literalinclude:: ../../../../examples/Python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 26
-   :lines: 8,27,30,137
+   :lineno-start: 47
+   :lines: 8,48,98
 
 The ``.npz`` file of the aforementioned voxel block grid contains the following entries:
 
@@ -74,4 +74,3 @@ The ``.npz`` file of the aforementioned voxel block grid contains the following 
 - ``block_resolution``: 8
 - ``voxel_size``: 0.0059 = 3.0 / 512
 - ``CUDA:0``: the device
-

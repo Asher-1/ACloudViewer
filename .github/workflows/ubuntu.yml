@@ -85,6 +85,38 @@ jobs:
           remove-docker-images: 'true'
           build-mount-path: '/var/lib/docker'
           build-mount-path-ownership: 'root:root'
+      - name: Clean runner logs and cache before checkout
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+          echo ""
+          echo "=== Cleaning GitHub Actions runner logs and cache ==="
+          # Clean runner diagnostic logs that cause "No space left on device" errors
+          sudo find /home/runner/actions-runner -name "*.log" -type f -delete 2>/dev/null || true
+          sudo rm -rf /home/runner/actions-runner/cached/_diag/* 2>/dev/null || true
+          sudo rm -rf /home/runner/.cache/* 2>/dev/null || true
+          sudo rm -rf /home/runner/.npm 2>/dev/null || true
+          sudo rm -rf /home/runner/.yarn 2>/dev/null || true
+          
+          # Clean system logs and temporary files
+          echo "=== Cleaning system logs and temporary files ==="
+          sudo journalctl --vacuum-time=1d --vacuum-size=100M 2>/dev/null || true
+          sudo rm -rf /tmp/* 2>/dev/null || true
+          sudo rm -rf /var/tmp/* 2>/dev/null || true
+          sudo find /var/log -type f -name "*.log" -mtime +1 -delete 2>/dev/null || true
+          sudo find /var/log -type f -name "*.gz" -delete 2>/dev/null || true
+          
+          # Clean package manager cache
+          echo "=== Cleaning package manager cache ==="
+          sudo apt-get clean 2>/dev/null || true
+          sudo rm -rf /var/lib/apt/lists/* 2>/dev/null || true
+          
+          echo ""
+          echo "=== Disk space after cleanup ==="
+          df -h
+          echo ""
+          echo "=== Largest directories on root filesystem ==="
+          sudo du -h --max-depth=1 / 2>/dev/null | sort -hr | head -20 || true
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -103,6 +135,11 @@ jobs:
           docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}
           
           ls -alh
+          
+          # Clean up Docker build cache to free space
+          echo "=== Cleaning Docker build cache ==="
+          docker builder prune -af --filter "until=1h" || true
+          docker system df
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4

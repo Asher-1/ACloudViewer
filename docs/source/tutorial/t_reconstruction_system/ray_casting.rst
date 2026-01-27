@@ -4,7 +4,7 @@ Ray Casting in a Voxel Block Grid
 ---------------------------------
 
 .. note::
-   This is NOT ray casting for triangle meshes. Please refer to the Python API documentation for RayCastingScene for that use case.
+   This is NOT ray casting for triangle meshes. Please refer to :ref:`/python_api/cloudViewer.t.geometry.RayCastingScene.rst` for that use case.
 
 Ray casting can be performed in a voxel block grid to generate depth and color images at specific view points without extracting the entire surface. It is useful for frame-to-model tracking, and for differentiable volume rendering.
 
@@ -35,5 +35,4 @@ In customized rendering, we manually perform trilinear-interpolation by accessin
    :lineno-start: 90
    :lines: 8,91-96,107-108
 
-Since the output is rendered via indices, the rendering process could be rewritten in differentiable engines like PyTorch seamlessly via :doc:`/tutorial/core/tensor`.
-
+Since the output is rendered via indices, the rendering process could be rewritten in differentiable engines like PyTorch seamlessly via :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`.

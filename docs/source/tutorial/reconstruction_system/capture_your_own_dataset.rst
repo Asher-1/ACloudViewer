@@ -13,7 +13,7 @@ capturing RGBD frames is easy by using ``sensors/realsense_recorder.py``.
     to install RealSense Python package.
 
 Input arguments
-````````````````````````````````````
+````````````````````````
 
 The script runs with one of the following three options:
 
