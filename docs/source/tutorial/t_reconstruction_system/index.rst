@@ -3,15 +3,16 @@
 Reconstruction system (Tensor)
 ===================================================================
 
-This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer :doc:`/tutorial/core/tensor` interface and the ACloudViewer :doc:`/tutorial/core/hashmap` backend.
+This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer :ref:`/tutorial/core/tensor.ipynb` interface and the ACloudViewer :ref:`/tutorial/core/hashmap.ipynb` backend.
 
-It is possible to run the tutorial with the minimalistic dataset ``SampleRedwoodRGBDImages``, but it is recommended to run the tutorial with real-world datasets with longer sequences to demonstrate its capability. Please refer to the :doc:`/tutorial/geometry/rgbd_image` for more available datasets. The ``Redwood`` dataset can be a good starting point.
+It is possible to run the tutorial with the minimalistic dataset ``SampleRedwoodRGBDImages``, but it is recommended to run the tutorial with real-world datasets with longer sequences to demonstrate its capability. Please refer to :ref:`/tutorial/geometry/rgbd_image.ipynb` for more available datasets. The ``Redwood`` dataset can be a good starting point.
+
 
 .. note::
-   As of now the tutorial is only for **online** dense SLAM, and **offline** integration **with** provided poses. The tutorials for tensor-based **offline** reconstruction system are still under construction. At current, please refer to :ref:`reconstruction_system` for the legacy versions.
+   As of now the tutorial is only for **online** dense SLAM, and **offline** integration **with** provided poses. The tutorials for tensor-based **offline** reconstruction system, Simultaneous localization and calibration (SLAC), and shape from shading (SfS) tutorials as mentioned in [Dong2021]_ are still under construction. At current, please refer to :ref:`reconstruction_system` for the legacy versions.
 
 Quick start
-``````````````````````````````````````
+````````````````````````
 Getting the example code
 
 .. code-block:: sh
@@ -51,7 +52,7 @@ Currently the following datasets are available:
 
 .. code-block:: sh
 
-    # Using bedroom as the default dataset.
+    # Using jack_jack as the default dataset.
     python dense_slam_gui.py --default_dataset 'bedroom'
 
 
@@ -71,8 +72,7 @@ Example config file for online reconstruction system has been provided in
    :linenos:
 
 Capture your own dataset
-``````````````````````````````````````
-
+````````````````````````
 This tutorial provides an example that can record synchronized and aligned RGBD
 images using the Intel RealSense camera. For more details, please see
 :ref:`capture_your_own_dataset`.
