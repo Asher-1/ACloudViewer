@@ -6,7 +6,7 @@ A voxel block grid is a globally sparse and locally dense data structure to repr
 
 To represent such a structure, we first coarsely divide the 3D space into **block** grids. Blocks containing surfaces are organized in a hash map by 3D coordinates (sparse globally), and are further divided into dense **voxels** that can be accessed by array indices (dense locally). The reason why we do not maintain a voxel hash map is that we can preserve the data locality instead of scattering adjacent data uniformly into the memory.
 
-Please first check the :doc:`/tutorial/core/hashmap`, especially the Multi-valued hash map section to acquire a basic understanding of the underlying data structure.
+Please first check the :ref:`/tutorial/core/hashmap.ipynb`, especially section the :ref:`/tutorial/core/hashmap.ipynb#Multi-valued-hash-map` to acquire a basic understanding of the underlying data structure. Please refer to [Dong2021]_ for more explanation.
 
 Construction
 ````````````````````
@@ -32,4 +32,3 @@ By convention, we use ``3.0 / 512`` as the voxel resolution. This spatial resolu
 The voxel block grid is optimized to run fast on GPU. On CPU, it runs slower. Empirically, we reserve ``50000`` such blocks for a living room-scale scene to avoid frequent rehashing.
 
 You can always customize your own properties, e.g., ``intensity`` of element shape ``(16, 16, 16, 1)`` in ``float32``, ``label`` of element shape ``(16, 16, 16, 1)`` in ``int32``, etc. To know how to process the data, please refer to :ref:`customized_integration`.
-
