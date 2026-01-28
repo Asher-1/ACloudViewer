@@ -1,9 +1,5 @@
 var NAVTREEINDEX167 =
 {
-"structVdbeFrame.html#a0e5670c52e8eeb7e66bf1e3bff8ce2b5":[3,0,883,3],
-"structVdbeFrame.html#a11de10011ea2164995c6b616bba8a576":[3,0,883,16],
-"structVdbeFrame.html#a199f005c277fcaeca33abf86c0a865bc":[3,0,883,13],
-"structVdbeFrame.html#a2d2900348092258d12eb71057812429a":[3,0,883,7],
 "structVdbeFrame.html#a2f6258356959c94398d1d006a740c4ce":[3,0,883,17],
 "structVdbeFrame.html#a5d373b3a195dbd1a31f5aa0dbe1822ee":[3,0,883,4],
 "structVdbeFrame.html#a77aacb67d627f4446dd50a795b5a2f0f":[3,0,883,6],
@@ -249,5 +245,9 @@ var NAVTREEINDEX167 =
 "structWhereInfo.html#a8d281ddf8ee87aa95200da9c73764026":[3,0,919,10],
 "structWhereInfo.html#a976db5ecfd4366411b97c113f4193b93":[3,0,919,5],
 "structWhereInfo.html#a98f12794aec775d30b51d9cbdec90801":[3,0,919,14],
-"structWhereInfo.html#aa4914362bf727fe37cbdcd79796bf5b9":[3,0,919,11]
+"structWhereInfo.html#aa4914362bf727fe37cbdcd79796bf5b9":[3,0,919,11],
+"structWhereInfo.html#ab5690a0fa9f78c25a79dd9e50d747fdf":[3,0,919,24],
+"structWhereInfo.html#abc7ead2e05361b942b4cd34047928f2c":[3,0,919,13],
+"structWhereInfo.html#abff60764e39a62d7ede2a5d8f1ce4fff":[3,0,919,20],
+"structWhereInfo.html#ac0c497c57f2b3121738806d3edd4fc09":[3,0,919,3]
 };

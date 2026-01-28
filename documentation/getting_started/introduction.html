@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Installation" href="installation.html" /><link rel="prev" title="ACloudViewer: A Modern Library for 3D Point Cloud Processing" href="../index.html" />
 
     <link rel="shortcut icon" href="../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Introduction - ACloudViewer primary (bbdf2f265) documentation</title>
+        <title>Introduction - ACloudViewer 3.9.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
+      <a href="../index.html"><div class="brand">ACloudViewer 3.9.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -157,7 +157,7 @@
 
 <div class="sidebar-brand">
   <a href="../index.html">
-    <span class="sidebar-brand-text">ACloudViewer</span>
+    <span class="sidebar-brand-text">ACloudViewer 3.9.4 documentation</span>
   </a>
 </div>
 
@@ -264,6 +264,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="build_from_source.html">Building from Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="builddocs.html">Build documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloudViewer_ml.html">CloudViewer-ML</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul>
@@ -307,7 +309,13 @@
 <li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/headless_rendering.html">Headless rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/cpu_rendering.html">CPU (Software) Rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html">CloudViewer for TensorBoard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html#simple-geometry-sequences">Simple geometry sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html#rich-3d-models-with-pbr-materials">Rich 3D models with PBR materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html#dml-models-training-and-inference">3DML models training and inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html#custom-properties-and-semantic-segmentation">Custom properties and semantic segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html#d-object-detection">3D object detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/visualization/tensorboard_plugin.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -344,8 +352,8 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../tutorial/sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tutorial/sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/sensor/azure_kinect.html">Azure Kinect with CloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/sensor/realsense.html">RealSense with CloudViewer</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/advanced/index.html">Advanced Topics</a></li>
@@ -1136,119 +1144,174 @@
         </div>
         <article role="main">
           <section id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h1>
-<section id="welcome-to-acloudviewer">
-<h2>Welcome to ACloudViewer<a class="headerlink" href="#welcome-to-acloudviewer" title="Permalink to this heading">#</a></h2>
-<p>ACloudViewer is an open-source 3D point cloud and triangular mesh processing software library. It supports rapid development of software for processing 3D data.</p>
-</section>
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
-<p>ACloudViewer is built on top of several well-established libraries:</p>
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h1>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/ACloudViewer_logo_horizontal.png">
+</p>
+<section id="acloudviewer-a-modern-system-for-3d-data-processing">
+<h2>ACloudViewer: A Modern System for 3D Data Processing<a class="headerlink" href="#acloudviewer-a-modern-system-for-3d-data-processing" title="Permalink to this heading">#</a></h2>
+<h4>
+    <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#about">About</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#quickstart">Quick Start</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#download">Download</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html">Build Guide</a> |
+    <a href="https://asher-1.github.io/ACloudViewer/#gallery">Gallery</a> |
+    <a href="https://github.com/Asher-1/CloudViewer-ML">CloudViewer-ML</a> |
+    <a href="https://github.com/Asher-1/ACloudViewer/releases">Releases</a> |
+    <a href="https://github.com/Asher-1/ACloudViewer/blob/main/CONTRIBUTING.md">Contribute</a> |
+    <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a>
+</h4>
+<p><a class="reference external" href="https://github.com/Asher-1/ACloudViewer/releases/"><img alt="GitHub release" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/version.svg" /></a>
+<a class="reference external" href="https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22Ubuntu+CI%22"><img alt="Ubuntu CI" src="https://github.com/Asher-1/ACloudViewer/actions/workflows/ubuntu.yml/badge.svg" /></a>
+<a class="reference external" href="https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22macOS+CI%22"><img alt="macOS CI" src="https://github.com/Asher-1/ACloudViewer/actions/workflows/macos.yml/badge.svg" /></a>
+<a class="reference external" href="https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22Windows+CI%22"><img alt="Windows CI" src="https://github.com/Asher-1/ACloudViewer/actions/workflows/windows.yml/badge.svg" /></a>
+<a class="reference external" href="https://github.com/Asher-1/ACloudViewer/releases/"><img alt="Releases" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/newRelease.svg" /></a></p>
+<section id="introduction">
+<h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h3>
+<p>ACloudViewer is an open-source library that supports rapid development of software that deals with 3D data
+which is highly based on CloudCompare, Open3D, Paraview and colmap with PCL. The ACloudViewer frontend exposes a set of
+carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and
+is set up for parallelization. We welcome contributions from the open-source community.</p>
+<hr class="docutils" />
+<p>ACloudViewer is a 3D point cloud (and triangular mesh) processing software. It was originally designed to perform
+comparison between two 3D points clouds
+(such as the ones obtained with a laser scanner) or between a point cloud and a triangular mesh. It relies on an octree
+structure that is highly optimized for this particular use-case. It was also meant to deal with huge point clouds (
+typically more than 10 millions points, and up to 120 millions with 2 Gb of memory).</p>
+<p>More on ACloudViewer <a class="reference external" href="https://asher-1.github.io/ACloudViewer/">here</a></p>
+<p><strong>Core features of ACloudViewer include:</strong></p>
 <ul class="simple">
-<li><p><strong>CloudCompare</strong>: For professional point cloud processing</p></li>
-<li><p><strong>Open3D</strong>: For modern 3D data processing algorithms</p></li>
-<li><p><strong>ParaView/VTK</strong>: For advanced visualization</p></li>
-<li><p><strong>COLMAP</strong>: For structure-from-motion reconstruction</p></li>
-<li><p><strong>PCL</strong>: For additional point cloud processing capabilities</p></li>
+<li><p>3D data structures</p></li>
+<li><p>3D data processing algorithms</p></li>
+<li><p>Scene reconstruction (based on colmap)</p></li>
+<li><p>Surface alignment</p></li>
+<li><p>3D visualization</p></li>
+<li><p>Physically based rendering (PBR)</p></li>
+<li><p>3D machine learning support with PyTorch and TensorFlow</p></li>
+<li><p>GPU acceleration for core 3D operations</p></li>
+<li><p>Available in C++ and Python</p></li>
+</ul>
+<p>Here’s a brief overview of the different components of ACloudViewer and how they fit
+together to enable full end to end pipelines:</p>
+<p><img alt="CloudViewer_layers" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/AbstractionLayers.png" /></p>
+<p>For more, please visit the <a class="reference external" href="https://asher-1.github.io/ACloudViewer/documentation/">ACloudViewer documentation</a>.</p>
+</section>
+<section id="python-quick-start">
+<h3>Python quick start<a class="headerlink" href="#python-quick-start" title="Permalink to this heading">#</a></h3>
+<p>Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+
+(64-bit) with Python 3.10-3.12 and cuda12.x.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install</span>
+pip<span class="w"> </span>install<span class="w"> </span>cloudViewer<span class="w">       </span><span class="c1"># or</span>
+pip<span class="w"> </span>install<span class="w"> </span>cloudViewer-cpu<span class="w">   </span><span class="c1"># Smaller CPU only wheel on x86_64 Linux (v3.9.1+)</span>
+
+<span class="c1"># Verify installation</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cloudViewer as cv3d; print(cv3d.__version__)&quot;</span>
+
+<span class="c1"># Python API</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cloudViewer as cv3d; \</span>
+<span class="s2">           mesh = cv3d.geometry.ccMesh.create_sphere(); \</span>
+<span class="s2">           mesh.compute_vertex_normals(); \</span>
+<span class="s2">           cv3d.visualization.draw(mesh, raw_mode=True)&quot;</span>
+
+<span class="c1"># CloudViewer CLI</span>
+cloudViewer<span class="w"> </span>example<span class="w"> </span>visualization/draw
+
+<span class="c1"># CloudViewer Reconstruction</span>
+cloudViewer<span class="w"> </span>example<span class="w"> </span>reconstruction/gui
+</pre></div>
+</div>
+</section>
+<section id="acloudviewer-system">
+<h3>ACloudViewer System<a class="headerlink" href="#acloudviewer-system" title="Permalink to this heading">#</a></h3>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/MainUI.png">
+</p>
+<p>ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
+Please stay tuned for MacOS. Download ACloudViewer from the <a class="reference external" href="https://github.com/Asher-1/ACloudViewer/releases">release page</a>.</p>
+<p>Semantic Annotation Tool:</p>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Annotaion.png">
+</p>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SemanticAnnotation.png" >
+</p>
+<p>Reconstruction Tool:</p>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Reconstruction.png" >
+</p>
+<p>Selection and Measurement Tools:</p>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/selection_tools.png">
+</p>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/ruler_measurement_tools.png">
+</p>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/protractor_measurement_tools.png">
+</p>
+</section>
+<section id="cloudviewer-app">
+<h3>CloudViewer app<a class="headerlink" href="#cloudviewer-app" title="Permalink to this heading">#</a></h3>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/CloudViewerApp.png">
+</p>
+<p>CloudViewer-Viewer is a standalone 3D viewer app available on Ubuntu and Windows.
+Please stay tuned for MacOS. Download CloudViewer app from the
+<a class="reference external" href="https://github.com/Asher-1/ACloudViewer/releases">release page</a>.</p>
+</section>
+<section id="cloudviewer-ml">
+<h3>CloudViewer-ML<a class="headerlink" href="#cloudviewer-ml" title="Permalink to this heading">#</a></h3>
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/gifs/getting_started_ml_visualizer.gif">
+</p>
+<p>CloudViewer-ML is an extension of CloudViewer for 3D machine learning tasks. It builds on
+top of the CloudViewer core library and extends it with machine learning tools for
+3D data processing. To try it out, install CloudViewer with PyTorch or TensorFlow and check out
+<a class="reference external" href="https://github.com/Asher-1/CloudViewer-ML">CloudViewer-ML</a>.</p>
+</section>
+<section id="compilation">
+<h3>Compilation<a class="headerlink" href="#compilation" title="Permalink to this heading">#</a></h3>
+<p>Supported OS: Windows, Linux, and Mac OS X</p>
+<p>Refer to the <a class="reference internal" href="#BUILD.md"><span class="xref myst">BUILD.md file</span></a> for detailed build instructions.</p>
+<p>Online compilation guides:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/build_from_source.html">Build from Source Guide</a></p></li>
+</ul>
+<p>Basically, you have to:</p>
+<ul class="simple">
+<li><p>clone this repository</p></li>
+<li><p>install mandatory dependencies (OpenGL, etc.) and optional ones if you really need them
+(mainly to support particular file formats, or for some plugins)</p></li>
+<li><p>launch CMake (from the trunk root)</p></li>
+<li><p>enjoy!</p></li>
 </ul>
 </section>
-<section id="key-features">
-<h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this heading">#</a></h2>
-<section id="data-processing">
-<h3>Data Processing<a class="headerlink" href="#data-processing" title="Permalink to this heading">#</a></h3>
+<section id="contributing-to-acloudviewer">
+<h3>Contributing to ACloudViewer<a class="headerlink" href="#contributing-to-acloudviewer" title="Permalink to this heading">#</a></h3>
+<p>If you want to help us improve ACloudViewer or create a new plugin you can start by reading
+this <a class="reference internal" href="#CONTRIBUTING.md"><span class="xref myst">guide</span></a></p>
+</section>
+<section id="supporting-the-project">
+<h3>Supporting the project<a class="headerlink" href="#supporting-the-project" title="Permalink to this heading">#</a></h3>
+<p>If you find ACloudViewer useful, please consider supporting its development:</p>
+<p><strong>💰 Financial Support:</strong></p>
+<div align="center">
+  <a href="https://asher-1.github.io/ACloudViewer/donation.html">
+    <img src="https://img.shields.io/badge/💝_Support_Development-Donate_Now-ff69b4?style=for-the-badge&logo=wechat" alt="Donate">
+  </a>
+  <p><em>Click to view donation options - Thank you for your support! 🙏</em></p>
+</div>
+<p><strong>🌟 Other Ways to Support:</strong></p>
 <ul class="simple">
-<li><p>Point cloud filtering and segmentation</p></li>
-<li><p>Surface reconstruction (Poisson, Ball Pivoting, Alpha Shapes)</p></li>
-<li><p>Mesh simplification and smoothing</p></li>
-<li><p>Normal estimation and feature extraction</p></li>
-<li><p>Voxelization and octree operations</p></li>
+<li><p>⭐ Star the project on <a class="reference external" href="https://github.com/Asher-1/ACloudViewer">GitHub</a></p></li>
+<li><p>🐛 Report bugs and suggest features</p></li>
+<li><p>📝 Contribute code or documentation</p></li>
+<li><p>📢 Share ACloudViewer with others</p></li>
 </ul>
+<p>For more information, see our <a class="reference external" href="https://asher-1.github.io/ACloudViewer/documentation/resources/support.html">Support page</a>.</p>
+<p>Thanks for your support!</p>
 </section>
-<section id="registration">
-<h3>Registration<a class="headerlink" href="#registration" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p>ICP (Iterative Closest Point) variants</p></li>
-<li><p>Colored point cloud registration</p></li>
-<li><p>Global registration (RANSAC, Fast Global Registration)</p></li>
-<li><p>Multiway registration</p></li>
-</ul>
-</section>
-<section id="reconstruction">
-<h3>Reconstruction<a class="headerlink" href="#reconstruction" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p>COLMAP-based photo reconstruction</p></li>
-<li><p>TSDF (Truncated Signed Distance Function) integration</p></li>
-<li><p>RGBD reconstruction</p></li>
-<li><p>Real-time reconstruction</p></li>
-</ul>
-</section>
-<section id="visualization">
-<h3>Visualization<a class="headerlink" href="#visualization" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p>Interactive 3D visualization</p></li>
-<li><p>Multiple rendering backends (VTK, OpenGL)</p></li>
-<li><p>Headless rendering support</p></li>
-<li><p>PBR (Physically Based Rendering) materials</p></li>
-</ul>
-</section>
-<section id="machine-learning">
-<h3>Machine Learning<a class="headerlink" href="#machine-learning" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p>Integration with PyTorch and TensorFlow</p></li>
-<li><p>3D semantic segmentation</p></li>
-<li><p>Point cloud classification</p></li>
-<li><p>Custom ML pipelines</p></li>
-</ul>
-</section>
-</section>
-<section id="system-requirements">
-<h2>System Requirements<a class="headerlink" href="#system-requirements" title="Permalink to this heading">#</a></h2>
-<section id="minimum-requirements">
-<h3>Minimum Requirements<a class="headerlink" href="#minimum-requirements" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p><strong>OS</strong>: Ubuntu 18.04+, macOS 10.15+, Windows 10+</p></li>
-<li><p><strong>RAM</strong>: 8 GB</p></li>
-<li><p><strong>CPU</strong>: Intel i5 or equivalent</p></li>
-<li><p><strong>GPU</strong>: Optional (recommended for large datasets)</p></li>
-</ul>
-</section>
-<section id="recommended-requirements">
-<h3>Recommended Requirements<a class="headerlink" href="#recommended-requirements" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p><strong>OS</strong>: Ubuntu 22.04, macOS 12+, Windows 11</p></li>
-<li><p><strong>RAM</strong>: 16 GB or more</p></li>
-<li><p><strong>CPU</strong>: Intel i7/i9 or AMD Ryzen 7/9</p></li>
-<li><p><strong>GPU</strong>: NVIDIA GPU with CUDA support (8GB+ VRAM)</p></li>
-</ul>
-</section>
-</section>
-<section id="supported-file-formats">
-<h2>Supported File Formats<a class="headerlink" href="#supported-file-formats" title="Permalink to this heading">#</a></h2>
-<section id="input-formats">
-<h3>Input Formats<a class="headerlink" href="#input-formats" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p>Point Cloud: PLY, PCD, PTS, XYZ, LAS, LAZ, E57</p></li>
-<li><p>Mesh: OBJ, STL, PLY, OFF, FBX, GLTF/GLB</p></li>
-<li><p>Image: PNG, JPG, BMP, TIFF</p></li>
-<li><p>RGBD: TUM, Redwood, SUN3D formats</p></li>
-</ul>
-</section>
-<section id="output-formats">
-<h3>Output Formats<a class="headerlink" href="#output-formats" title="Permalink to this heading">#</a></h3>
-<ul class="simple">
-<li><p>Point Cloud: PLY, PCD, XYZ, PTS</p></li>
-<li><p>Mesh: OBJ, STL, PLY, OFF, GLTF/GLB</p></li>
-<li><p>Image: PNG, JPG, BMP, TIFF</p></li>
-</ul>
-</section>
-</section>
-<section id="next-steps">
-<h2>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">#</a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="installation.html"><span class="doc">Installation</span></a> - Install ACloudViewer</p></li>
-<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quick Start</span></a> - Quick start guide</p></li>
-<li><p><a class="reference internal" href="build_from_source.html"><span class="doc">Building from Source</span></a> - Build from source</p></li>
-</ul>
 </section>
 </section>
 
@@ -1308,27 +1371,17 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Introduction</a><ul>
-<li><a class="reference internal" href="#welcome-to-acloudviewer">Welcome to ACloudViewer</a></li>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#key-features">Key Features</a><ul>
-<li><a class="reference internal" href="#data-processing">Data Processing</a></li>
-<li><a class="reference internal" href="#registration">Registration</a></li>
-<li><a class="reference internal" href="#reconstruction">Reconstruction</a></li>
-<li><a class="reference internal" href="#visualization">Visualization</a></li>
-<li><a class="reference internal" href="#machine-learning">Machine Learning</a></li>
+<li><a class="reference internal" href="#acloudviewer-a-modern-system-for-3d-data-processing">ACloudViewer: A Modern System for 3D Data Processing</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#python-quick-start">Python quick start</a></li>
+<li><a class="reference internal" href="#acloudviewer-system">ACloudViewer System</a></li>
+<li><a class="reference internal" href="#cloudviewer-app">CloudViewer app</a></li>
+<li><a class="reference internal" href="#cloudviewer-ml">CloudViewer-ML</a></li>
+<li><a class="reference internal" href="#compilation">Compilation</a></li>
+<li><a class="reference internal" href="#contributing-to-acloudviewer">Contributing to ACloudViewer</a></li>
+<li><a class="reference internal" href="#supporting-the-project">Supporting the project</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#system-requirements">System Requirements</a><ul>
-<li><a class="reference internal" href="#minimum-requirements">Minimum Requirements</a></li>
-<li><a class="reference internal" href="#recommended-requirements">Recommended Requirements</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#supported-file-formats">Supported File Formats</a><ul>
-<li><a class="reference internal" href="#input-formats">Input Formats</a></li>
-<li><a class="reference internal" href="#output-formats">Output Formats</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>
@@ -1340,7 +1393,7 @@
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=22126f0c"></script>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=2f328d19"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

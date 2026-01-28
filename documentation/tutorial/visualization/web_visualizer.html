@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="TensorBoard Plugin" href="tensorboard_plugin.html" /><link rel="prev" title="CPU (Software) Rendering" href="cpu_rendering.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="CloudViewer for TensorBoard" href="tensorboard_plugin.html" /><link rel="prev" title="CPU (Software) Rendering" href="cpu_rendering.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Web visualizer and Jupyter - ACloudViewer primary (bbdf2f265) documentation</title>
+        <title>Web visualizer and Jupyter - ACloudViewer 3.9.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer 3.9.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -157,7 +157,7 @@
 
 <div class="sidebar-brand">
   <a href="../../index.html">
-    <span class="sidebar-brand-text">ACloudViewer</span>
+    <span class="sidebar-brand-text">ACloudViewer 3.9.4 documentation</span>
   </a>
 </div>
 
@@ -264,6 +264,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_from_source.html">Building from Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/builddocs.html">Build documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/cloudViewer_ml.html">CloudViewer-ML</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
@@ -307,7 +309,13 @@
 <li class="toctree-l2"><a class="reference internal" href="headless_rendering.html">Headless rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cpu_rendering.html">CPU (Software) Rendering</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Web visualizer and Jupyter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html">CloudViewer for TensorBoard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#simple-geometry-sequences">Simple geometry sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#rich-3d-models-with-pbr-materials">Rich 3D models with PBR materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#dml-models-training-and-inference">3DML models training and inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#custom-properties-and-semantic-segmentation">Custom properties and semantic segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#d-object-detection">3D object detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -344,8 +352,8 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with CloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with CloudViewer</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
@@ -1139,7 +1147,7 @@
 <span id="web-visualizer"></span><h1>Web visualizer and Jupyter<a class="headerlink" href="#web-visualizer-and-jupyter" title="Permalink to this heading">#</a></h1>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h2>
-<p>ACloudViewer web visualizer enables advanced rendering and visualization of 3D models
+<p>CloudViewer web visualizer enables advanced rendering and visualization of 3D models
 in modern browsers. You first start the visualization server on a local
 or remote machine, and then the 3D models can be viewed from any device with
 a modern browser. The web visualizer server and client communicate via the
@@ -1147,14 +1155,14 @@ a modern browser. The web visualizer server and client communicate via the
 protocol.</p>
 <p>In this tutorial, we cover two common use cases:</p>
 <ul class="simple">
-<li><p>Standalone mode: Run ACloudViewer web visualizer server as a standalone application
+<li><p>Standalone mode: Run CloudViewer web visualizer server as a standalone application
 and view the 3D models in a browser. It supports both C++ and Python. You’ll
 only need add one line to your code to enable the server.</p></li>
-<li><p>Jupyter mode: Run ACloudViewer web visualizer as embedded Jupyter cells. It supports
+<li><p>Jupyter mode: Run CloudViewer web visualizer as embedded Jupyter cells. It supports
 both the Python Jupyter notebook and Jupyter lab environments. You’ll need
 to modify your code to use the non-blocking APIs and wrappers.</p></li>
 </ul>
-<p>As of the current release, ACloudViewer web visualizer is supported on the following
+<p>As of the current release, CloudViewer web visualizer is supported on the following
 platforms:</p>
 <a class="reference internal image-reference" href="../../_images/webrtc_visualizer.gif"><img alt="../../_images/webrtc_visualizer.gif" src="../../_images/webrtc_visualizer.gif" style="width: 960px;" /></a>
 <div class="table-wrapper docutils container">
@@ -1206,7 +1214,7 @@ graphics in Jupyter cells, you can set the environment variable
 </section>
 <section id="standalone-mode">
 <h2>Standalone mode<a class="headerlink" href="#standalone-mode" title="Permalink to this heading">#</a></h2>
-<p>In standalone mode, ACloudViewer web visualizer server runs as a standalone
+<p>In standalone mode, CloudViewer web visualizer server runs as a standalone
 application. It supports both C++ and Python. You’ll only need to make very
 minimal changes to your code to enable the server.</p>
 <section id="c-server">
@@ -1246,7 +1254,7 @@ for the complete source code.</p>
 </section>
 <section id="ip-port-binding">
 <h3>IP/port binding<a class="headerlink" href="#ip-port-binding" title="Permalink to this heading">#</a></h3>
-<p>Similar to other web servers, the ACloudViewer web visualizer server allows binding
+<p>Similar to other web servers, the CloudViewer web visualizer server allows binding
 to custom IP address and port. This is typically required for setting up remote
 servers.</p>
 <p>To set custom IP address, set the <code class="docutils literal notranslate"><span class="pre">WEBRTC_IP</span></code> environment variable. To set
@@ -1321,8 +1329,8 @@ the implementation of <code class="docutils literal notranslate"><span class="pr
 </section>
 <section id="build-jupyter-package-from-source">
 <h3>Build Jupyter package from source<a class="headerlink" href="#build-jupyter-package-from-source" title="Permalink to this heading">#</a></h3>
-<p>ACloudViewer official Python wheels come with Jupyter web visualizer support.
-To build ACloudViewer Python package from source with Jupyter web visualizer, you’ll
+<p>CloudViewer official Python wheels come with Jupyter web visualizer support.
+To build CloudViewer Python package from source with Jupyter web visualizer, you’ll
 need to :</p>
 <ol class="arabic">
 <li><p>Install <code class="docutils literal notranslate"><span class="pre">npm</span></code> and <code class="docutils literal notranslate"><span class="pre">yarn</span></code>. For example, you may
@@ -1334,7 +1342,7 @@ from the terminal.</p></li>
 </pre></div>
 </div>
 </li>
-<li><p>Build ACloudViewer Python package:</p>
+<li><p>Build CloudViewer Python package:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
 cmake<span class="w"> </span>-DBUILD_JUPYTER_EXTENSION<span class="o">=</span>ON<span class="w"> </span>..
 make<span class="w"> </span>install-pip-package<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
@@ -1425,7 +1433,7 @@ bandwidth or closer to your location.</p></li>
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">TensorBoard Plugin</div>
+                <div class="title">CloudViewer for TensorBoard</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -1497,7 +1505,7 @@ bandwidth or closer to your location.</p></li>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2f328d19"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

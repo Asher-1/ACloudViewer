@@ -1,9 +1,5 @@
 var NAVTREEINDEX84 =
 {
-"classcloudViewer_1_1visualization_1_1gui_1_1StackedWidget.html#a79fd0c87a1ef16c82cd2b89956ff79da":[3,0,2,10,0,54,5],
-"classcloudViewer_1_1visualization_1_1gui_1_1StackedWidget.html#a87e3f276c4b7ffc6e26289cb4b00cf9f":[3,0,2,10,0,54,4],
-"classcloudViewer_1_1visualization_1_1gui_1_1StackedWidget.html#a8a1e6674fa7af49f834ec1e749f3668e":[3,0,2,10,0,54,3],
-"classcloudViewer_1_1visualization_1_1gui_1_1StackedWidget.html#a9860644a8d74e905cb4532474ebb1c16":[3,0,2,10,0,54,7],
 "classcloudViewer_1_1visualization_1_1gui_1_1TabControl.html":[3,0,2,10,0,55],
 "classcloudViewer_1_1visualization_1_1gui_1_1TabControl.html#a02564012a670e0ee712df3e53c9ff356":[3,0,2,10,0,55,1],
 "classcloudViewer_1_1visualization_1_1gui_1_1TabControl.html#a07e224a3dabf498efce520702a90c46b":[3,0,2,10,0,55,5],
@@ -249,5 +245,9 @@ var NAVTREEINDEX84 =
 "classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ab70a77e6eed91419c7e7d64346251275":[3,0,2,10,0,72,9],
 "classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ab8e2a66d399b51cd5868c2732d329ed6":[3,0,2,10,0,72,27],
 "classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ac4554055d2587e9963947cfda33f3c94":[3,0,2,10,0,72,17],
-"classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ac4e7f09f13ff30064221ff69f220adbb":[3,0,2,10,0,72,14]
+"classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ac4e7f09f13ff30064221ff69f220adbb":[3,0,2,10,0,72,14],
+"classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#acaa65b431cb3de9746bc97e90d46c040":[3,0,2,10,0,72,26],
+"classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ad211622ee9f19a3f10ba4986aa50a19f":[3,0,2,10,0,72,24],
+"classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ad3e1a3ec51e5cbf3db32a49ef62862c8":[3,0,2,10,0,72,20],
+"classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html#ad60be8bd5b03e3766bbd8f18081ae89e":[3,0,2,10,0,72,1]
 };

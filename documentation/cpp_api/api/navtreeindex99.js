@@ -1,9 +1,5 @@
 var NAVTREEINDEX99 =
 {
-"classknncpp_1_1KDTreeMinkowski.html#a84b82a42c601d55ed05cf9cd23f387d1":[3,0,11,7,6],
-"classknncpp_1_1KDTreeMinkowski.html#a96dcf466bc4c2d8e7d8e00e8ea302195":[3,0,11,7,1],
-"classknncpp_1_1KDTreeMinkowski.html#a9f3603f98d11d5d35b6dfe54414d1627":[3,0,11,7,3],
-"classknncpp_1_1KDTreeMinkowski.html#aa51ff1ff8e91414cd8d5599dbd37af00":[3,0,11,7,18],
 "classknncpp_1_1KDTreeMinkowski.html#ab3e74d2ca0fe566f6e30b15fbc8d0e20":[3,0,11,7,15],
 "classknncpp_1_1KDTreeMinkowski.html#ab74545cd61b6c4c7920efa66381d20c2":[3,0,11,7,19],
 "classknncpp_1_1KDTreeMinkowski.html#ab9cb5d5603c0cb63066028f100f0eac8":[3,0,11,7,0],
@@ -249,5 +245,9 @@ var NAVTREEINDEX99 =
 "classpba_1_1SparseBundleCPU.html#a3fa0fa13031c6e9327ab83650460b756":[3,0,14,8,32],
 "classpba_1_1SparseBundleCPU.html#a4a9ef6e7def91d303a2cb177a1bb2ac1":[3,0,14,8,36],
 "classpba_1_1SparseBundleCPU.html#a4ab21970e7ab3d186dc2c80bc274688c":[3,0,14,8,8],
-"classpba_1_1SparseBundleCPU.html#a56c0f027c150e8f9bcc2f0121f036e77":[3,0,14,8,73]
+"classpba_1_1SparseBundleCPU.html#a56c0f027c150e8f9bcc2f0121f036e77":[3,0,14,8,73],
+"classpba_1_1SparseBundleCPU.html#a589d1b7bc3252055aa8f80484578cd9e":[3,0,14,8,48],
+"classpba_1_1SparseBundleCPU.html#a5960e273a93b11f4c617e9f23a4ba0d3":[3,0,14,8,66],
+"classpba_1_1SparseBundleCPU.html#a5cb62955a30955a8957941a3b618771b":[3,0,14,8,72],
+"classpba_1_1SparseBundleCPU.html#a60be4b050fe13c607019f6a066371044":[3,0,14,8,19]
 };

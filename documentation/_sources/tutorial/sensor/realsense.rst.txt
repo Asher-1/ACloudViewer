@@ -1,20 +1,20 @@
 .. _realsense:
 
-RealSense with ACloudViewer
+RealSense with CloudViewer
 ============================
 
-RealSense (``librealsense`` SDK v2) is integrated into ACloudViewer (v0.12+) and you
+RealSense (``librealsense`` SDK v2) is integrated into CloudViewer (v0.12+) and you
 can use it through both C++ and Python APIs without a separate ``librealsense``
-SDK installation on Linux, macOS and Windows. Older versions of ACloudViewer support
+SDK installation on Linux, macOS and Windows. Older versions of CloudViewer support
 RealSense through a separate install of ``librealsense`` SDK v1 and
 ``pyrealsense``.
 
-Obtaining ACloudViewer with RealSense support
+Obtaining CloudViewer with RealSense support
 ---------------------------------------------
 
 Python
 ^^^^^^
-Install ACloudViewer from PyPI (a virtual environment is recommended):
+Install CloudViewer from PyPI (a virtual environment is recommended):
 
 .. code-block:: sh
 
@@ -22,20 +22,20 @@ Install ACloudViewer from PyPI (a virtual environment is recommended):
 
 Compile from source (C++)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-To build ACloudViewer from source with RealSense support, set
+To build CloudViewer from source with RealSense support, set
 ``BUILD_LIBREALSENSE=ON`` at CMake config step. You can add other configuration
 options as well (e.g.: ``BUILD_GUI=ON`` and ``BUILD_PYTHON_MODULE=ON`` may be
 useful).
 
 .. code-block:: sh
 
-    cmake -D BUILD_LIBREALSENSE=ON -D <OTHER_FLAGS> /path/to/ACloudViewer/source/
+    cmake -D BUILD_LIBREALSENSE=ON -D <OTHER_FLAGS> /path/to/CloudViewer/source/
 
 Reading from RealSense bag files
 ---------------------------------
 
 Here is a C++ code snippet that shows how to read a RealSense bag file recorded
-with ACloudViewer or the ``realsense-viewer``. Note that general ROSbag files are not
+with CloudViewer or the ``realsense-viewer``. Note that general ROSbag files are not
 supported. See more details and available functionality (such as getting
 timestamps, aligning the depth stream to the color stream and getting intrinsic
 calibration) in the C++ API documentation.
@@ -137,7 +137,7 @@ See `RealSense documentation
 <https://intelrealsense.github.io/librealsense/doxygen/rs__option_8h.html>`_ for
 the set of configuration values. Supported configuration options will be depend
 on the device and other chosen options. Here are the options supported by
-ACloudViewer:
+CloudViewer:
 
 * **serial**: Pick a specific device, leave empty to pick the first available
   device.

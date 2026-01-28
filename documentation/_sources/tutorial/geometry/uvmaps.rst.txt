@@ -19,7 +19,7 @@ How to add custom UV maps ?
 * One may assume the UV map, maps a texture image of height and width of length 1.0 to the geometry. So, the range of U and V is from 0.0 to 1.0 (both inclusive).
 
 
-Quick Reference to default UV Maps for some primitive shapes provided by ACloudViewer
+Quick Reference to default UV Maps for some primitive shapes provided by CloudViewer
 ---------------------------------------------------------------------------------------
 
 The examples below all assume the following code preamble:

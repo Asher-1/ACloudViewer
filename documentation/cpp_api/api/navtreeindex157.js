@@ -1,9 +1,5 @@
 var NAVTREEINDEX157 =
 {
-"structBtCursor.html#a23f6a271258c109aaeda0ba19e808f92":[3,0,60,11],
-"structBtCursor.html#a2ad810542eaf99c9919c585624bead6f":[3,0,60,13],
-"structBtCursor.html#a2bab50aa26ac4b3f1ea259eceb4d5fba":[3,0,60,0],
-"structBtCursor.html#a30ab5e7109965b34a08562a7b7e6de15":[3,0,60,6],
 "structBtCursor.html#a37db7ea50e0f355ea6a3d8d3213722c3":[3,0,60,4],
 "structBtCursor.html#a3c979824f27f63678d7a2b02311bc330":[3,0,60,15],
 "structBtCursor.html#a61c245712549192f7644e5ac23c00b74":[3,0,60,12],
@@ -249,5 +245,9 @@ var NAVTREEINDEX157 =
 "structClassifier_1_1FileHeader.html#a90de673bd2f983eb21bb94dad4831a50":[3,0,210,0,1],
 "structClassifier_1_1FileHeader.html#ac897ab7eb268a81c7d904f167cccbf2e":[3,0,210,0,2],
 "structCloudDesc.html":[3,0,216],
-"structCloudDesc.html#a4428292f1ebf9c020153978987009a85":[3,0,216,0]
+"structCloudDesc.html#a4428292f1ebf9c020153978987009a85":[3,0,216,0],
+"structCloudDesc.html#aba2abdfacfae067a8e6c68a08c7f801f":[3,0,216,1],
+"structCollSeq.html":[3,0,226],
+"structCollSeq.html#a3cee924d41e730ccec7f686eb5b6f041":[3,0,226,1],
+"structCollSeq.html#a3f5a0c7eb4da9d8e396138719210f580":[3,0,226,2]
 };

@@ -1,9 +1,5 @@
 var NAVTREEINDEX164 =
 {
-"structPreUpdate.html#a6fccc7c418de1a789595f9814a4f5f81":[3,0,623,12],
-"structPreUpdate.html#a70c572bb14af1dfdff8a1d6619548de0":[3,0,623,8],
-"structPreUpdate.html#a7258663d158a1c21b62f30c9de685482":[3,0,623,9],
-"structPreUpdate.html#a8bb920205df3c43820a81dcd3c1cf5bb":[3,0,623,5],
 "structPreUpdate.html#aadbf462d0c2b3d64387f9ece92ad2ed1":[3,0,623,4],
 "structPreUpdate.html#aaecf3af9f7b62a4fd140d0d1300201cf":[3,0,623,6],
 "structPreUpdate.html#ab43a1f36e6ab8c9aa8b1e52f1d80d07f":[3,0,623,11],
@@ -249,5 +245,9 @@ var NAVTREEINDEX164 =
 "structShellState.html#a0752b36a74a875a1fff23b2ff0697518":[3,0,762,21],
 "structShellState.html#a08d5d59ae0d44497aca79e89a5b8f0fe":[3,0,762,16],
 "structShellState.html#a0afb65c2cd8e373535a1323770db0040":[3,0,762,23],
-"structShellState.html#a0f7472014f664d91e289615457a798d0":[3,0,762,5]
+"structShellState.html#a0f7472014f664d91e289615457a798d0":[3,0,762,5],
+"structShellState.html#a1019f63cae8d412dc13a06bb80562247":[3,0,762,49],
+"structShellState.html#a292b3fd337f4d4c3050d6282f6032516":[3,0,762,45],
+"structShellState.html#a2ff4d941ad9ef12844aa5281e98ef7c1":[3,0,762,7],
+"structShellState.html#a308c221cb2f11f68231232a18466c94f":[3,0,762,46]
 };

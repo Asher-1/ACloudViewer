@@ -1,9 +1,5 @@
 var NAVTREEINDEX19 =
 {
-"PythonEditor_8cpp.html#a7b11bb326b9155af1a16db611baeb713":[4,0,2,0,1,18,0,0,7,1],
-"PythonEditor_8cpp_source.html":[4,0,2,0,1,18,0,0,7],
-"PythonEditor_8h.html":[4,0,2,0,1,18,0,0,8],
-"PythonEditor_8h.html#ae1d4042b40636169185bbee2968b8d22":[4,0,2,0,1,18,0,0,8,1],
 "PythonEditor_8h_source.html":[4,0,2,0,1,18,0,0,8],
 "PythonHighlighter_8cpp.html":[4,0,2,0,1,18,0,14],
 "PythonHighlighter_8cpp.html#a393472c3ee7399cea6bd411251325ccc":[4,0,2,0,1,18,0,14,1],
@@ -249,5 +245,9 @@ var NAVTREEINDEX19 =
 "Reconstruction_2lib_2PoissonRecon_2Geometry_8h.html#adccb91ca4daf416ad7cad4c5c2cc09aa":[4,0,1,3,0,4,10,19],
 "Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html":[4,0,1,3,0,4,10],
 "Reconstruction_2lib_2PoissonRecon_2Octree_8h.html":[4,0,1,3,0,4,18],
-"Reconstruction_2lib_2PoissonRecon_2Octree_8h.html#a3e3a85f1fafbfe33386f1ff87ae1b1a5":[4,0,1,3,0,4,18,6]
+"Reconstruction_2lib_2PoissonRecon_2Octree_8h.html#a3e3a85f1fafbfe33386f1ff87ae1b1a5":[4,0,1,3,0,4,18,6],
+"Reconstruction_2lib_2PoissonRecon_2Octree_8h.html#aa1c0281395a97150474c058710b42bb2":[4,0,1,3,0,4,18,5],
+"Reconstruction_2lib_2PoissonRecon_2Octree_8h_source.html":[4,0,1,3,0,4,18],
+"ReduceSubarraysSum_8cuh.html":[4,0,1,0,4,1,1,6],
+"ReduceSubarraysSum_8cuh_source.html":[4,0,1,0,4,1,1,6]
 };

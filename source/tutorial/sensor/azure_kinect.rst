@@ -1,6 +1,6 @@
 .. _azure_kinect:
 
-Azure Kinect with ACloudViewer
+Azure Kinect with CloudViewer
 -------------------------------
 
 Azure Kinect is only officially supported on Windows and Ubuntu 18.04.
@@ -21,28 +21,28 @@ On Ubuntu, you'll need to set up a udev rule to use the Kinect camera without
 After installation, you may run ``k4aviewer`` from the Linux terminal or
 ``k4aviewer.exe`` on Windows to make sure that the device is working.
 
-Currently, ACloudViewer supports the Azure Kinect SDK version ``v1.4.1``, though future
+Currently, CloudViewer supports the Azure Kinect SDK version ``v1.4.1``, though future
 versions might also be compatible.
 
-Install ACloudViewer from Pip
+Install CloudViewer from Pip
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you're using ACloudViewer installed via Pip, ACloudViewer's Azure Kinect features
+If you're using CloudViewer installed via Pip, CloudViewer's Azure Kinect features
 should work out-of-the box if K4A is installed in the system in the recommended
-way. ACloudViewer will try to load the K4A dynamic library automatically at runtime,
-when a K4A related feature within ACloudViewer is used.
+way. CloudViewer will try to load the K4A dynamic library automatically at runtime,
+when a K4A related feature within CloudViewer is used.
 
 On Ubuntu, the default search path
 follows the Linux `convention <https://unix.stackexchange.com/a/22999/130082>`_.
 
-On Windows, ACloudViewer will try to load the shared library from the default
+On Windows, CloudViewer will try to load the shared library from the default
 installation path. For example, for K4A ``v1.4.1``, the default path is
 ``C:\Program Files\Azure Kinect SDK v1.4.1``. If this doesn't work, copy
-``depthengine_x_x.dll``, ``k4a.dll`` and ``k4arecord.dll`` to where ACloudViewer
-Python module is installed if you're using ACloudViewer with Python, or to the same
+``depthengine_x_x.dll``, ``k4a.dll`` and ``k4arecord.dll`` to where CloudViewer
+Python module is installed if you're using CloudViewer with Python, or to the same
 directory as your C++ executable.
 
-You can get ACloudViewer's Python module path with the following command:
+You can get CloudViewer's Python module path with the following command:
 
 .. code-block:: sh
 
@@ -51,20 +51,20 @@ You can get ACloudViewer's Python module path with the following command:
 Compile from Source
 ~~~~~~~~~~~~~~~~~~~
 
-To build ACloudViewer from source with K4A support, set ``BUILD_AZURE_KINECT=ON`` at
+To build CloudViewer from source with K4A support, set ``BUILD_AZURE_KINECT=ON`` at
 CMake config step. That is,
 
 .. code-block:: sh
 
     cmake -DBUILD_AZURE_KINECT=ON -DOTHER_FLAGS ..
 
-ACloudViewer Azure Kinect Viewer
+CloudViewer Azure Kinect Viewer
 =================================
 
-ACloudViewer Azure Kinect Viewer is used for previewing RGB and depth image stream
+CloudViewer Azure Kinect Viewer is used for previewing RGB and depth image stream
 captured by the Azure Kinect sensor.
 
-ACloudViewer provides Python and C++ example code of Azure Kinect viewer. Please
+CloudViewer provides Python and C++ example code of Azure Kinect viewer. Please
 see ``examples/Cpp/AzureKinectViewer.cpp`` and
 ``examples/Python/reconstruction_system/sensors/azure_kinect_viewer.py``
 for details.
@@ -107,13 +107,13 @@ configs, refer to `this file <https://github.com/microsoft/Azure-Kinect-Sensor-S
         "wired_sync_mode" : "K4A_WIRED_SYNC_MODE_STANDALONE"
     }
 
-ACloudViewer Azure Kinect Recorder
+CloudViewer Azure Kinect Recorder
 ===================================
 
-ACloudViewer Azure Kinect Recorder is used for recording RGB and depth image stream
+CloudViewer Azure Kinect Recorder is used for recording RGB and depth image stream
 to an MKV file.
 
-ACloudViewer provides Python and C++ example code of Azure Kinect recorder. Please
+CloudViewer provides Python and C++ example code of Azure Kinect recorder. Please
 see ``examples/Cpp/AzureKinectRecord.cpp`` and
 ``examples/Python/reconstruction_system/sensors/azure_kinect_recorder.py``
 for details.
@@ -129,15 +129,15 @@ You may optionally specify the camera config when running the recorder script.
 When the visualizer window is active, press ``SPACE`` to start or pause the
 recording or press ``ESC`` to quit the recorder.
 
-ACloudViewer Azure Kinect MKV Reader
+CloudViewer Azure Kinect MKV Reader
 ====================================
 
 The recorded MKV file uses K4A's custom format which contains both RGB and depth
 information. The regular video player may only support playing back the color channel
 or not supporting the format at all. To view the customized MKV file, use the
-ACloudViewer Azure Kinect MKV Reader.
+CloudViewer Azure Kinect MKV Reader.
 
-ACloudViewer provides Python and C++ example code of ACloudViewer Azure Kinect MKV Reader.
+CloudViewer provides Python and C++ example code of CloudViewer Azure Kinect MKV Reader.
 Please see ``examples/Cpp/AzureKinectMKVReader.cpp`` and
 ``examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py``
 for details.

@@ -3,7 +3,7 @@
 Reconstruction system (Tensor)
 ===================================================================
 
-This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the ACloudViewer :ref:`/tutorial/core/tensor.ipynb` interface and the ACloudViewer :ref:`/tutorial/core/hashmap.ipynb` backend.
+This tutorial demonstrates volumetric RGB-D reconstruction and dense RGB-D SLAM with the CloudViewer :ref:`/tutorial/core/tensor.ipynb` interface and the CloudViewer :ref:`/tutorial/core/hashmap.ipynb` backend.
 
 It is possible to run the tutorial with the minimalistic dataset ``SampleRedwoodRGBDImages``, but it is recommended to run the tutorial with real-world datasets with longer sequences to demonstrate its capability. Please refer to :ref:`/tutorial/geometry/rgbd_image.ipynb` for more available datasets. The ``Redwood`` dataset can be a good starting point.
 
@@ -18,7 +18,7 @@ Getting the example code
 .. code-block:: sh
 
     # Activate your conda environment, where you have installed cloudViewer pip package.
-    # Clone the ACloudViewer github repository and go to the example.
+    # Clone the CloudViewer github repository and go to the example.
     cd examples/Python/t_reconstruction_system/
 
     # Show CLI help for ``dense_slam_gui.py``

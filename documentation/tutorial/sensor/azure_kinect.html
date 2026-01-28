@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="RealSense with ACloudViewer" href="realsense.html" /><link rel="prev" title="Sensor" href="index.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="RealSense with CloudViewer" href="realsense.html" /><link rel="prev" title="Sensor" href="index.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>Azure Kinect with ACloudViewer - ACloudViewer primary (bbdf2f265) documentation</title>
+        <title>Azure Kinect with CloudViewer - ACloudViewer 3.9.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer 3.9.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -157,7 +157,7 @@
 
 <div class="sidebar-brand">
   <a href="../../index.html">
-    <span class="sidebar-brand-text">ACloudViewer</span>
+    <span class="sidebar-brand-text">ACloudViewer 3.9.4 documentation</span>
   </a>
 </div>
 
@@ -264,6 +264,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_from_source.html">Building from Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/builddocs.html">Build documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/cloudViewer_ml.html">CloudViewer-ML</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
@@ -307,7 +309,13 @@
 <li class="toctree-l2"><a class="reference internal" href="../visualization/headless_rendering.html">Headless rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../visualization/cpu_rendering.html">CPU (Software) Rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../visualization/web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html">CloudViewer for TensorBoard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html#simple-geometry-sequences">Simple geometry sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html#rich-3d-models-with-pbr-materials">Rich 3D models with PBR materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html#dml-models-training-and-inference">3DML models training and inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html#custom-properties-and-semantic-segmentation">Custom properties and semantic segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html#d-object-detection">3D object detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization/tensorboard_plugin.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -344,8 +352,8 @@
 </ul>
 </li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Sensor</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Azure Kinect with CloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realsense.html">RealSense with CloudViewer</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
@@ -1135,8 +1143,8 @@
           </label>
         </div>
         <article role="main">
-          <section id="azure-kinect-with-acloudviewer">
-<span id="azure-kinect"></span><h1>Azure Kinect with ACloudViewer<a class="headerlink" href="#azure-kinect-with-acloudviewer" title="Permalink to this heading">#</a></h1>
+          <section id="azure-kinect-with-cloudviewer">
+<span id="azure-kinect"></span><h1>Azure Kinect with CloudViewer<a class="headerlink" href="#azure-kinect-with-cloudviewer" title="Permalink to this heading">#</a></h1>
 <p>Azure Kinect is only officially supported on Windows and Ubuntu 18.04.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">#</a></h2>
@@ -1149,42 +1157,42 @@ to install the Azure Kinect SDK (K4A).</p>
 <a class="reference external" href="https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md#linux-device-setup">these instructions</a>.</p>
 <p>After installation, you may run <code class="docutils literal notranslate"><span class="pre">k4aviewer</span></code> from the Linux terminal or
 <code class="docutils literal notranslate"><span class="pre">k4aviewer.exe</span></code> on Windows to make sure that the device is working.</p>
-<p>Currently, ACloudViewer supports the Azure Kinect SDK version <code class="docutils literal notranslate"><span class="pre">v1.4.1</span></code>, though future
+<p>Currently, CloudViewer supports the Azure Kinect SDK version <code class="docutils literal notranslate"><span class="pre">v1.4.1</span></code>, though future
 versions might also be compatible.</p>
 </section>
-<section id="install-acloudviewer-from-pip">
-<h3>Install ACloudViewer from Pip<a class="headerlink" href="#install-acloudviewer-from-pip" title="Permalink to this heading">#</a></h3>
-<p>If you’re using ACloudViewer installed via Pip, ACloudViewer’s Azure Kinect features
+<section id="install-cloudviewer-from-pip">
+<h3>Install CloudViewer from Pip<a class="headerlink" href="#install-cloudviewer-from-pip" title="Permalink to this heading">#</a></h3>
+<p>If you’re using CloudViewer installed via Pip, CloudViewer’s Azure Kinect features
 should work out-of-the box if K4A is installed in the system in the recommended
-way. ACloudViewer will try to load the K4A dynamic library automatically at runtime,
-when a K4A related feature within ACloudViewer is used.</p>
+way. CloudViewer will try to load the K4A dynamic library automatically at runtime,
+when a K4A related feature within CloudViewer is used.</p>
 <p>On Ubuntu, the default search path
 follows the Linux <a class="reference external" href="https://unix.stackexchange.com/a/22999/130082">convention</a>.</p>
-<p>On Windows, ACloudViewer will try to load the shared library from the default
+<p>On Windows, CloudViewer will try to load the shared library from the default
 installation path. For example, for K4A <code class="docutils literal notranslate"><span class="pre">v1.4.1</span></code>, the default path is
 <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\Azure</span> <span class="pre">Kinect</span> <span class="pre">SDK</span> <span class="pre">v1.4.1</span></code>. If this doesn’t work, copy
-<code class="docutils literal notranslate"><span class="pre">depthengine_x_x.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">k4a.dll</span></code> and <code class="docutils literal notranslate"><span class="pre">k4arecord.dll</span></code> to where ACloudViewer
-Python module is installed if you’re using ACloudViewer with Python, or to the same
+<code class="docutils literal notranslate"><span class="pre">depthengine_x_x.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">k4a.dll</span></code> and <code class="docutils literal notranslate"><span class="pre">k4arecord.dll</span></code> to where CloudViewer
+Python module is installed if you’re using CloudViewer with Python, or to the same
 directory as your C++ executable.</p>
-<p>You can get ACloudViewer’s Python module path with the following command:</p>
+<p>You can get CloudViewer’s Python module path with the following command:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cloudViewer as cv3d; import os; print(os.path.dirname(cv3d.__file__))&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="compile-from-source">
 <h3>Compile from Source<a class="headerlink" href="#compile-from-source" title="Permalink to this heading">#</a></h3>
-<p>To build ACloudViewer from source with K4A support, set <code class="docutils literal notranslate"><span class="pre">BUILD_AZURE_KINECT=ON</span></code> at
+<p>To build CloudViewer from source with K4A support, set <code class="docutils literal notranslate"><span class="pre">BUILD_AZURE_KINECT=ON</span></code> at
 CMake config step. That is,</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DBUILD_AZURE_KINECT<span class="o">=</span>ON<span class="w"> </span>-DOTHER_FLAGS<span class="w"> </span>..
 </pre></div>
 </div>
 </section>
 </section>
-<section id="acloudviewer-azure-kinect-viewer">
-<h2>ACloudViewer Azure Kinect Viewer<a class="headerlink" href="#acloudviewer-azure-kinect-viewer" title="Permalink to this heading">#</a></h2>
-<p>ACloudViewer Azure Kinect Viewer is used for previewing RGB and depth image stream
+<section id="cloudviewer-azure-kinect-viewer">
+<h2>CloudViewer Azure Kinect Viewer<a class="headerlink" href="#cloudviewer-azure-kinect-viewer" title="Permalink to this heading">#</a></h2>
+<p>CloudViewer Azure Kinect Viewer is used for previewing RGB and depth image stream
 captured by the Azure Kinect sensor.</p>
-<p>ACloudViewer provides Python and C++ example code of Azure Kinect viewer. Please
+<p>CloudViewer provides Python and C++ example code of Azure Kinect viewer. Please
 see <code class="docutils literal notranslate"><span class="pre">examples/Cpp/AzureKinectViewer.cpp</span></code> and
 <code class="docutils literal notranslate"><span class="pre">examples/Python/reconstruction_system/sensors/azure_kinect_viewer.py</span></code>
 for details.</p>
@@ -1218,11 +1226,11 @@ configs, refer to <a class="reference external" href="https://github.com/microso
 </pre></div>
 </div>
 </section>
-<section id="acloudviewer-azure-kinect-recorder">
-<h2>ACloudViewer Azure Kinect Recorder<a class="headerlink" href="#acloudviewer-azure-kinect-recorder" title="Permalink to this heading">#</a></h2>
-<p>ACloudViewer Azure Kinect Recorder is used for recording RGB and depth image stream
+<section id="cloudviewer-azure-kinect-recorder">
+<h2>CloudViewer Azure Kinect Recorder<a class="headerlink" href="#cloudviewer-azure-kinect-recorder" title="Permalink to this heading">#</a></h2>
+<p>CloudViewer Azure Kinect Recorder is used for recording RGB and depth image stream
 to an MKV file.</p>
-<p>ACloudViewer provides Python and C++ example code of Azure Kinect recorder. Please
+<p>CloudViewer provides Python and C++ example code of Azure Kinect recorder. Please
 see <code class="docutils literal notranslate"><span class="pre">examples/Cpp/AzureKinectRecord.cpp</span></code> and
 <code class="docutils literal notranslate"><span class="pre">examples/Python/reconstruction_system/sensors/azure_kinect_recorder.py</span></code>
 for details.</p>
@@ -1234,13 +1242,13 @@ for details.</p>
 <p>When the visualizer window is active, press <code class="docutils literal notranslate"><span class="pre">SPACE</span></code> to start or pause the
 recording or press <code class="docutils literal notranslate"><span class="pre">ESC</span></code> to quit the recorder.</p>
 </section>
-<section id="acloudviewer-azure-kinect-mkv-reader">
-<h2>ACloudViewer Azure Kinect MKV Reader<a class="headerlink" href="#acloudviewer-azure-kinect-mkv-reader" title="Permalink to this heading">#</a></h2>
+<section id="cloudviewer-azure-kinect-mkv-reader">
+<h2>CloudViewer Azure Kinect MKV Reader<a class="headerlink" href="#cloudviewer-azure-kinect-mkv-reader" title="Permalink to this heading">#</a></h2>
 <p>The recorded MKV file uses K4A’s custom format which contains both RGB and depth
 information. The regular video player may only support playing back the color channel
 or not supporting the format at all. To view the customized MKV file, use the
-ACloudViewer Azure Kinect MKV Reader.</p>
-<p>ACloudViewer provides Python and C++ example code of ACloudViewer Azure Kinect MKV Reader.
+CloudViewer Azure Kinect MKV Reader.</p>
+<p>CloudViewer provides Python and C++ example code of CloudViewer Azure Kinect MKV Reader.
 Please see <code class="docutils literal notranslate"><span class="pre">examples/Cpp/AzureKinectMKVReader.cpp</span></code> and
 <code class="docutils literal notranslate"><span class="pre">examples/Python/reconstruction_system/sensors/azure_kinect_mkv_reader.py</span></code>
 for details.</p>
@@ -1301,7 +1309,7 @@ flag.</p>
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">RealSense with ACloudViewer</div>
+                <div class="title">RealSense with CloudViewer</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -1346,16 +1354,16 @@ flag.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Azure Kinect with ACloudViewer</a><ul>
+<li><a class="reference internal" href="#">Azure Kinect with CloudViewer</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#install-the-azure-kinect-sdk">Install the Azure Kinect SDK</a></li>
-<li><a class="reference internal" href="#install-acloudviewer-from-pip">Install ACloudViewer from Pip</a></li>
+<li><a class="reference internal" href="#install-cloudviewer-from-pip">Install CloudViewer from Pip</a></li>
 <li><a class="reference internal" href="#compile-from-source">Compile from Source</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#acloudviewer-azure-kinect-viewer">ACloudViewer Azure Kinect Viewer</a></li>
-<li><a class="reference internal" href="#acloudviewer-azure-kinect-recorder">ACloudViewer Azure Kinect Recorder</a></li>
-<li><a class="reference internal" href="#acloudviewer-azure-kinect-mkv-reader">ACloudViewer Azure Kinect MKV Reader</a></li>
+<li><a class="reference internal" href="#cloudviewer-azure-kinect-viewer">CloudViewer Azure Kinect Viewer</a></li>
+<li><a class="reference internal" href="#cloudviewer-azure-kinect-recorder">CloudViewer Azure Kinect Recorder</a></li>
+<li><a class="reference internal" href="#cloudviewer-azure-kinect-mkv-reader">CloudViewer Azure Kinect MKV Reader</a></li>
 <li><a class="reference internal" href="#python-api-example">Python API Example</a></li>
 </ul>
 </li>
@@ -1368,7 +1376,7 @@ flag.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2f328d19"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Web visualizer and Jupyter" href="web_visualizer.html" /><link rel="prev" title="Headless rendering" href="headless_rendering.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>CPU (Software) Rendering - ACloudViewer primary (bbdf2f265) documentation</title>
+        <title>CPU (Software) Rendering - ACloudViewer 3.9.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer 3.9.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -157,7 +157,7 @@
 
 <div class="sidebar-brand">
   <a href="../../index.html">
-    <span class="sidebar-brand-text">ACloudViewer</span>
+    <span class="sidebar-brand-text">ACloudViewer 3.9.4 documentation</span>
   </a>
 </div>
 
@@ -264,6 +264,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_from_source.html">Building from Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/builddocs.html">Build documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/cloudViewer_ml.html">CloudViewer-ML</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
@@ -307,7 +309,13 @@
 <li class="toctree-l2"><a class="reference internal" href="headless_rendering.html">Headless rendering</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">CPU (Software) Rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html">TensorBoard Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html">CloudViewer for TensorBoard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#simple-geometry-sequences">Simple geometry sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#rich-3d-models-with-pbr-materials">Rich 3D models with PBR materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#dml-models-training-and-inference">3DML models training and inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#custom-properties-and-semantic-segmentation">Custom properties and semantic segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#d-object-detection">3D object detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorboard_plugin.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -344,8 +352,8 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with CloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with CloudViewer</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
@@ -1137,7 +1145,7 @@
         <article role="main">
           <section id="cpu-software-rendering">
 <span id="cpu-rendering"></span><h1>CPU (Software) Rendering<a class="headerlink" href="#cpu-software-rendering" title="Permalink to this heading">#</a></h1>
-<p>ACloudViewer’s new visualization functionality (<a class="reference internal" href="../../python_api/cloudViewer.visualization.O3DVisualizer.html#cloudViewer.visualization.O3DVisualizer" title="cloudViewer.visualization.O3DVisualizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">O3DVisualizer</span></code></a> class,
+<p>CloudViewer’s new visualization functionality (<a class="reference internal" href="../../python_api/cloudViewer.visualization.O3DVisualizer.html#cloudViewer.visualization.O3DVisualizer" title="cloudViewer.visualization.O3DVisualizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">O3DVisualizer</span></code></a> class,
 <a class="reference internal" href="../../python_api/cloudViewer.visualization.draw.html#cloudViewer.visualization.draw" title="cloudViewer.visualization.draw"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw()</span></code></a> function and <a class="reference internal" href="../../python_api/cloudViewer.visualization.gui.html#module-cloudViewer.visualization.gui" title="cloudViewer.visualization.gui"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cloudViewer.visualization.gui</span></code></a> and
 <a class="reference internal" href="../../python_api/cloudViewer.visualization.rendering.html#module-cloudViewer.visualization.rendering" title="cloudViewer.visualization.rendering"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cloudViewer.visualization.rendering</span></code></a> modules) requires a recent GPU with
 support for OpenGL 4.1 or higher. This is not available in certain situations:</p>
@@ -1153,7 +1161,7 @@ is a common scenario for cloud based Jupyter notebooks deployed in docker
 containers.</p></li>
 </ul>
 </div></blockquote>
-<p>ACloudViewer supports CPU or software rendering in such situations. Note that this
+<p>CloudViewer supports CPU or software rendering in such situations. Note that this
 usually produces slower and less responsive rendering, so a GPU is recommended.
 Currently, this is available only for Linux. There are two separate ways to
 use CPU rendering depending on whether interactive or headless rendering is
@@ -1162,7 +1170,7 @@ desired. Both methods are described below.</p>
 <h2>Headless CPU Rendering<a class="headerlink" href="#headless-cpu-rendering" title="Permalink to this heading">#</a></h2>
 <p>For Python code, you can enable CPU rendering for headless rendering when using
 the :class: <cite>.OffscreenRenderer</cite> for a process by setting an environment
-variable  before importing ACloudViewer:</p>
+variable  before importing CloudViewer:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- ``EGL_PLATFORM=surfaceless`` for Ubuntu 20.04+ (Mesa v20.2 or newer)
 </pre></div>
 </div>
@@ -1204,9 +1212,9 @@ Intel GPUs and some AMD and Nvidia GPUs. You should be running a recent Linux
 OS, such as Ubuntu 20.04. Check your Mesa version from your package manager
 (e.g. run <code class="docutils literal notranslate"><span class="pre">dpkg</span> <span class="pre">-s</span> <span class="pre">libglx-mesa0</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">Version</span></code> in Debian or Ubuntu). In this
 case, you can switch to CPU rendering by simply setting an environment
-variable before starting your application. For example, start the ACloudViewer
+variable before starting your application. For example, start the CloudViewer
 visualizer app in CPU rendering mode with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">LIBGL_ALWAYS_SOFTWARE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>ACloudViewer
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">LIBGL_ALWAYS_SOFTWARE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>CloudViewer
 </pre></div>
 </div>
 <p>Or for Python code:</p>
@@ -1224,10 +1232,10 @@ them installed is not sufficient. You can check the drivers in use with the
 <ol class="arabic" start="2">
 <li><p><strong>You use Nvidia or AMD drivers, but your OS comes with recent Mesa drivers (&gt;= v20.2).</strong>
 Install Mesa drivers if they are not installed in your system (e.g. <cite>sudo apt install libglx0-mesa</cite>
-in Ubuntu). Preload the Mesa driver library before running any ACloudViewer application requiring CPU rendering.
+in Ubuntu). Preload the Mesa driver library before running any CloudViewer application requiring CPU rendering.
 For example:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span>/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
-ACloudViewer
+CloudViewer
 </pre></div>
 </div>
 <p>Or with Python code:</p>
@@ -1309,7 +1317,7 @@ python<span class="w"> </span>examples/Python/visualization/draw.py
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2f328d19"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

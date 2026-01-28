@@ -1,9 +1,5 @@
 var NAVTREEINDEX81 =
 {
-"classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a89a1f6608adbaee05a454b67d5392a01":[3,0,2,10,31,7],
-"classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a9050faad708fed36b0f130a92f879b57":[3,0,2,10,31,14],
-"classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a96a433653cfe7296ce3ffd6bb47f040c":[3,0,2,10,31,8],
-"classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a972ae7bf80532bf76e2824be36710e28":[3,0,2,10,31,26],
 "classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a9bb7e6ed62250c9ea4f82ceabc9ff72c":[3,0,2,10,31,28],
 "classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#aa28da76022b382c8b0f3b2bc49be0e65":[3,0,2,10,31,10],
 "classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#aa747fd2b90a74c334c857d9e20c9da4f":[3,0,2,10,31,32],
@@ -249,5 +245,9 @@ var NAVTREEINDEX81 =
 "classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#ad8406c29ebca81c164c81ec6eaeb4ea2":[3,0,2,10,0,62,2],
 "classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#ae4d98595a3a6991e44a83a3d4323b222":[3,0,2,10,0,62,1],
 "classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#aeabad0898329b21b5fb4a19e8391dc2a":[3,0,2,10,0,62,5],
-"classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#af22ae46cbd91d0fd1342053f50cdb8d9":[3,0,2,10,0,62,3]
+"classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#af22ae46cbd91d0fd1342053f50cdb8d9":[3,0,2,10,0,62,3],
+"classcloudViewer_1_1visualization_1_1gui_1_1ColormapTreeCell.html#afd6349c44e80013849bf4bb94223da0d":[3,0,2,10,0,62,4],
+"classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html":[3,0,2,10,0,6],
+"classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a05762804d952af6d93d3bb64048bad49":[3,0,2,10,0,6,11],
+"classcloudViewer_1_1visualization_1_1gui_1_1Combobox.html#a1a77f96ea6bc07d9fed80551addac433":[3,0,2,10,0,6,14]
 };

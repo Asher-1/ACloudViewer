@@ -1,9 +1,5 @@
 var NAVTREEINDEX172 =
 {
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a6949d0e5dda6fb83f8fb5d8704d94b57":[3,0,2,1,3,0,0],
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a9f2870f4e6ac62244d1be06228846ee5":[3,0,2,1,3,0,2],
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ab68bae0d78c99b5a8ef1d92bf507f2cd":[3,0,2,1,3,0,4],
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ae33a27a6b2262c2ce499b4195e6cd22e":[3,0,2,1,3,0,1],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#aed36972a617be33b6c0337908c61a285":[3,0,2,1,3,0,5],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#aefc9114e7ddba257cd939ca41b6c7fa1":[3,0,2,1,3,0,6],
 "structcloudViewer_1_1core_1_1tensor__init_1_1InitializerDim.html":[3,0,2,1,4,2],
@@ -249,5 +245,9 @@ var NAVTREEINDEX172 =
 "structcloudViewer_1_1ml_1_1op__util_1_1DimXPlus.html#a73f35c4c8d31bcfa7ff0401d245b6764":[3,0,2,5,2,2,1],
 "structcloudViewer_1_1ml_1_1op__util_1_1DimXPlus.html#a93cf72c40a5a1b909f63228bae968f89":[3,0,2,5,2,2,0],
 "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html":[3,0,2,6,0,1],
-"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a0cebaa0377e8033a8747167ddb42cd57":[3,0,2,6,0,1,6]
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a0cebaa0377e8033a8747167ddb42cd57":[3,0,2,6,0,1,6],
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a3b6aae1de4525ed4fee5428a1817e50a":[3,0,2,6,0,1,8],
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a498ee13302709032dd9e93c97b6aecdc":[3,0,2,6,0,1,9],
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a6bcd1a5dafc26a3bcd55f84557a72334":[3,0,2,6,0,1,1],
+"structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html#a9bf60d10b0395b11bb09659b6fc78419":[3,0,2,6,0,1,7]
 };

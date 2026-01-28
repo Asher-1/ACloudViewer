@@ -9,7 +9,8 @@
 #   make livehtml    - Live rebuild with auto-refresh (requires sphinx-autobuild)
 
 PYTHON       ?= python3
-MAKE_DOCS    = $(PYTHON) make_docs.py
+SCRIPT_DIR   := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+MAKE_DOCS    = $(PYTHON) $(SCRIPT_DIR)/make_docs.py
 BUILDDIR     = _out
 SOURCEDIR    = source
 
@@ -31,10 +32,12 @@ help:
 	@echo "  $(PYTHON) make_docs.py --help"
 
 # Build both Sphinx and Doxygen documentation
+# Note: make_docs.py automatically processes .in.rst templates
 docs:
 	$(MAKE_DOCS) --sphinx --doxygen
 
 # Build Sphinx documentation only
+# Note: make_docs.py automatically processes .in.rst templates
 html:
 	$(MAKE_DOCS) --sphinx
 

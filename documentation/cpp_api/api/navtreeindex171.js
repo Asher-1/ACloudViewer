@@ -1,9 +1,5 @@
 var NAVTREEINDEX171 =
 {
-"structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a1d9f77852fff01f5a9430bc18e4ab24e":[3,0,2,23,0,0],
-"structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a2f9dc5453802f11ceea079187dc42f00":[3,0,2,23,0,12],
-"structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a53b1258a94275992453102b74b987103":[3,0,2,23,0,9],
-"structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a6d5086ae88aa4433182fa94cd3ee4e88":[3,0,2,23,0,10],
 "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a7ecb3c3ec0cf3647cea646328c1e8336":[3,0,2,23,0,3],
 "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#a9f6ba6cbbe6b0a27ce5bfb42cfcb39a7":[3,0,2,23,0,2],
 "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2CloudDistancesComputationParams.html#aa5bbb56eb5bac494da353f88ba495349":[3,0,2,23,0,6],
@@ -249,5 +245,9 @@ var NAVTREEINDEX171 =
 "structcloudViewer_1_1core_1_1nns_1_1NanoFlannIndexHolder_1_1SelectNanoflannAdaptor_3_01L2_00_01fake_01_4.html#a4ed534c621bd6f53eeb27014aebb4383":[3,0,2,1,2,3,3,0],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html":[3,0,2,1,3,0],
 "structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a3057e2abffd0f3631e2ee34896280f12":[3,0,2,1,3,0,7],
-"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a384c0208a879a386f27942165eac4fbb":[3,0,2,1,3,0,3]
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a384c0208a879a386f27942165eac4fbb":[3,0,2,1,3,0,3],
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a6949d0e5dda6fb83f8fb5d8704d94b57":[3,0,2,1,3,0,0],
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a9f2870f4e6ac62244d1be06228846ee5":[3,0,2,1,3,0,2],
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ab68bae0d78c99b5a8ef1d92bf507f2cd":[3,0,2,1,3,0,4],
+"structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#ae33a27a6b2262c2ce499b4195e6cd22e":[3,0,2,1,3,0,1]
 };

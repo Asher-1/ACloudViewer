@@ -1,9 +1,5 @@
 var NAVTREEINDEX2 =
 {
-"CVLog_8h_source.html":[4,0,0,0,15],
-"CVMath_8h.html":[4,0,0,0,16],
-"CVMath_8h.html#a367777efc10c85e627658ee2ca1fa402":[4,0,0,0,16,11],
-"CVMath_8h.html#a40c4286c80bddd2f6f96f6d5f00137d8":[4,0,0,0,16,4],
 "CVMath_8h.html#a4612aeb8d3e0224139879de42367a0ce":[4,0,0,0,16,8],
 "CVMath_8h.html#a4e00e5c8adf7cbd348d485ab02749d63":[4,0,0,0,16,10],
 "CVMath_8h.html#a5b368846021b257211a2b7b0c623add2":[4,0,0,0,16,3],
@@ -249,5 +245,9 @@ var NAVTREEINDEX2 =
 "Chi2Helper_8h.html#a276b191f2853bff68b02e86987df72cc":[4,0,0,0,3,1],
 "Chi2Helper_8h.html#a6fd0e258fd8bf9af7e11663b0a045c97":[4,0,0,0,3,2],
 "Chi2Helper_8h_source.html":[4,0,0,0,3],
-"ClassMap_8h.html":[4,0,0,0,4]
+"ClassMap_8h.html":[4,0,0,0,4],
+"ClassMap_8h.html#a0b59a216f1dd8ccc6a91ffd8a1a795d0":[4,0,0,0,4,0],
+"ClassMap_8h.html#a29bde1246f63e987cc15749e8a58e4dc":[4,0,0,0,4,2],
+"ClassMap_8h.html#a9bda493ae72cf15cbf780ccd7293b380":[4,0,0,0,4,1],
+"ClassMap_8h_source.html":[4,0,0,0,4]
 };

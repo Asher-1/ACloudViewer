@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-27T08:53:39.286746Z",
-     "iopub.status.busy": "2026-01-27T08:53:39.286563Z",
-     "iopub.status.idle": "2026-01-27T08:53:39.999211Z",
-     "shell.execute_reply": "2026-01-27T08:53:39.998664Z"
+     "iopub.execute_input": "2026-01-28T10:07:32.522987Z",
+     "iopub.status.busy": "2026-01-28T10:07:32.522792Z",
+     "iopub.status.idle": "2026-01-28T10:07:33.203413Z",
+     "shell.execute_reply": "2026-01-28T10:07:33.202815Z"
     },
     "nbsphinx": "hidden"
    },
@@ -69,10 +69,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-27T08:53:40.001616Z",
-     "iopub.status.busy": "2026-01-27T08:53:40.001380Z",
-     "iopub.status.idle": "2026-01-27T08:53:40.006400Z",
-     "shell.execute_reply": "2026-01-27T08:53:40.005882Z"
+     "iopub.execute_input": "2026-01-28T10:07:33.205687Z",
+     "iopub.status.busy": "2026-01-28T10:07:33.205439Z",
+     "iopub.status.idle": "2026-01-28T10:07:33.210219Z",
+     "shell.execute_reply": "2026-01-28T10:07:33.209726Z"
     }
    },
    "outputs": [],
@@ -108,10 +108,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-27T08:53:40.008567Z",
-     "iopub.status.busy": "2026-01-27T08:53:40.008124Z",
-     "iopub.status.idle": "2026-01-27T08:53:40.298278Z",
-     "shell.execute_reply": "2026-01-27T08:53:40.297620Z"
+     "iopub.execute_input": "2026-01-28T10:07:33.212131Z",
+     "iopub.status.busy": "2026-01-28T10:07:33.211953Z",
+     "iopub.status.idle": "2026-01-28T10:07:33.717833Z",
+     "shell.execute_reply": "2026-01-28T10:07:33.717378Z"
     }
    },
    "outputs": [
@@ -122,13 +122,7 @@
       "[CloudViewer INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/SampleRedwoodRGBDImages.zip\n",
       "[CloudViewer INFO] Downloaded to /root/cloudViewer_data/download/SampleRedwoodRGBDImages/SampleRedwoodRGBDImages.zip\n",
       "[CloudViewer INFO] Created directory /root/cloudViewer_data/extract/SampleRedwoodRGBDImages.\n",
-      "[CloudViewer INFO] Extracting /root/cloudViewer_data/download/SampleRedwoodRGBDImages/SampleRedwoodRGBDImages.zip.\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "[CloudViewer INFO] Extracting /root/cloudViewer_data/download/SampleRedwoodRGBDImages/SampleRedwoodRGBDImages.zip.\n",
       "[CloudViewer INFO] Extracted to /root/cloudViewer_data/extract/SampleRedwoodRGBDImages.\n"
      ]
     }
@@ -153,10 +147,10 @@
    "execution_count": 4,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-27T08:53:40.300681Z",
-     "iopub.status.busy": "2026-01-27T08:53:40.300312Z",
-     "iopub.status.idle": "2026-01-27T08:53:40.864595Z",
-     "shell.execute_reply": "2026-01-27T08:53:40.864015Z"
+     "iopub.execute_input": "2026-01-28T10:07:33.720126Z",
+     "iopub.status.busy": "2026-01-28T10:07:33.719704Z",
+     "iopub.status.idle": "2026-01-28T10:07:34.373652Z",
+     "shell.execute_reply": "2026-01-28T10:07:34.373018Z"
     }
    },
    "outputs": [
@@ -171,14 +165,21 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Integrate 1-th image into the volume.\n"
+      "Integrate 1-th image into the volume."
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Integrate 2-th image into the volume.\n",
+      "\n",
+      "Integrate 2-th image into the volume.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "Integrate 3-th image into the volume.\n"
      ]
     },
@@ -222,10 +223,10 @@
    "execution_count": 5,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-27T08:53:40.867693Z",
-     "iopub.status.busy": "2026-01-27T08:53:40.867170Z",
-     "iopub.status.idle": "2026-01-27T08:53:41.610043Z",
-     "shell.execute_reply": "2026-01-27T08:53:41.609380Z"
+     "iopub.execute_input": "2026-01-28T10:07:34.376223Z",
+     "iopub.status.busy": "2026-01-28T10:07:34.375711Z",
+     "iopub.status.idle": "2026-01-28T10:07:35.107472Z",
+     "shell.execute_reply": "2026-01-28T10:07:35.106691Z"
     }
    },
    "outputs": [

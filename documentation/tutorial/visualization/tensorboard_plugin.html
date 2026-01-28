@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Pipelines" href="../pipelines/index.html" /><link rel="prev" title="Web visualizer and Jupyter" href="web_visualizer.html" />
 
     <link rel="shortcut icon" href="../../_static/ACloudViewer.svg"/><!-- Generated with Sphinx 7.1.2 and Furo 2023.09.10 -->
-        <title>TensorBoard Plugin - ACloudViewer primary (bbdf2f265) documentation</title>
+        <title>CloudViewer for TensorBoard - ACloudViewer 3.9.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -132,7 +132,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">ACloudViewer primary (bbdf2f265) documentation</div></a>
+      <a href="../../index.html"><div class="brand">ACloudViewer 3.9.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -143,7 +143,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -157,7 +157,7 @@
 
 <div class="sidebar-brand">
   <a href="../../index.html">
-    <span class="sidebar-brand-text">ACloudViewer</span>
+    <span class="sidebar-brand-text">ACloudViewer 3.9.4 documentation</span>
   </a>
 </div>
 
@@ -264,6 +264,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_from_source.html">Building from Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/builddocs.html">Build documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/cloudViewer_ml.html">CloudViewer-ML</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
 <ul class="current">
@@ -307,7 +309,13 @@
 <li class="toctree-l2"><a class="reference internal" href="headless_rendering.html">Headless rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cpu_rendering.html">CPU (Software) Rendering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="web_visualizer.html">Web visualizer and Jupyter</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">TensorBoard Plugin</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">CloudViewer for TensorBoard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simple-geometry-sequences">Simple geometry sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rich-3d-models-with-pbr-materials">Rich 3D models with PBR materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dml-models-training-and-inference">3DML models training and inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-properties-and-semantic-segmentation">Custom properties and semantic segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#d-object-detection">3D object detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../pipelines/index.html">Pipelines</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of Pipelines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -344,8 +352,8 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../sensor/index.html">Sensor</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of Sensor</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with ACloudViewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with ACloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/azure_kinect.html">Azure Kinect with CloudViewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sensor/realsense.html">RealSense with CloudViewer</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../advanced/index.html">Advanced Topics</a></li>
@@ -1129,16 +1137,14 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <section id="tensorboard-plugin">
-<span id="id1"></span><h1>TensorBoard Plugin<a class="headerlink" href="#tensorboard-plugin" title="Permalink to this heading">#</a></h1>
-<section id="cloudviewer-for-tensorboard">
-<h2>CloudViewer for TensorBoard<a class="headerlink" href="#cloudviewer-for-tensorboard" title="Permalink to this heading">#</a></h2>
+          <section id="cloudviewer-for-tensorboard">
+<span id="tensorboard-plugin"></span><h1>CloudViewer for TensorBoard<a class="headerlink" href="#cloudviewer-for-tensorboard" title="Permalink to this heading">#</a></h1>
 <p>Now you can use CloudViewer within TensorBoard for interactive 3D visualization. Here
 are some of the exciting features:</p>
 <ul class="simple">
@@ -1156,10 +1162,10 @@ algorithms easily.</p></li>
 <li><p>Easily compare results from different runs of your algorithm with features
 such as synchronized time step and viewpoint.</p></li>
 </ul>
-<p><span class="raw-html-m2r"><img src="https://github.com/Asher-1/CloudViewer-ML/raw/main/docs/images/tensorboard_demo_scene.jpg"
+<p><img src="https://github.com/Asher-1/CloudViewer-ML/raw/main/docs/images/tensorboard_demo_scene.jpg"
 title="Tensorboard demo scene"
 alt="Tensorboard demo scene"
-style="width:80%;display:block;margin:auto"></img></span></p>
+style="width:80%;display:block;margin:auto"></img></p>
 <p>You can save 3D data as TensorBoard summary when working with either TensorFlow
 or PyTorch. The 3D data is saved as ‘.msgpack’ files (serialized CloudViewer geometry
 data) in the <code class="docutils literal notranslate"><span class="pre">plugins/CloudViewer</span></code> sub-folder with the event files. The examples
@@ -1174,8 +1180,10 @@ geometry and material properties.</p>
 <p>Summary writing works on all platforms, and the visualization can be accessed
 from a browser on any platform. Running the tensorboard process is not supported
 on macOS as yet.</p>
-</div><section id="simple-geometry-sequences">
-<h3>Simple geometry sequences<a class="headerlink" href="#simple-geometry-sequences" title="Permalink to this heading">#</a></h3>
+</div>
+</section>
+<section id="simple-geometry-sequences">
+<h1>Simple geometry sequences<a class="headerlink" href="#simple-geometry-sequences" title="Permalink to this heading">#</a></h1>
 <p>To get started, let’s save and visualize simple geometry data such as a cube and
 cylinder. The color of the model changes at each step. First, we will setup the
 required imports and create some simple geometry data.</p>
@@ -1207,7 +1215,7 @@ required imports and create some simple geometry data.</p>
 </pre></div>
 </div>
 <section id="tensorflow-users">
-<h4>TensorFlow users<a class="headerlink" href="#tensorflow-users" title="Permalink to this heading">#</a></h4>
+<h2>TensorFlow users<a class="headerlink" href="#tensorflow-users" title="Permalink to this heading">#</a></h2>
 <p>The repository contains code examples for both PyTorch and TensorFlow. Here is
 the corresponding TensorFlow code. The main differences to note are that
 <code class="docutils literal notranslate"><span class="pre">add_3d()</span></code> is an independent function in the module
@@ -1244,10 +1252,10 @@ running the example as:</p>
 <span class="o">%</span><span class="n">tensorboard</span> <span class="o">--</span><span class="n">logdir</span> <span class="n">demo_logs</span><span class="o">/</span><span class="n">pytorch</span>
 </pre></div>
 </div>
-<p><span class="raw-html-m2r"><img src=https://github.com/Asher-1/CloudViewer-ML/raw/main/docs/images/tensorboard_small_scale.gif
+<p><img src=https://github.com/Asher-1/CloudViewer-ML/raw/main/docs/images/tensorboard_small_scale.gif
 title="Tensorboard small_scale example"
 alt="Tensorboard small_scale example"
-style="width:80%;display:block;margin:auto"></img></span></p>
+style="width:80%;display:block;margin:auto"></img></p>
 <p>The widget showing each run is an <code class="docutils literal notranslate"><span class="pre">O3DVisualizer</span></code> window displayed over WebRTC,
 so all CloudViewer controls (such as zoom, pan, rotate view, change Sunlight
 direction, etc.) are available. Click the gear icon on the top right of the
@@ -1256,19 +1264,19 @@ window to access more controls such as the background color and point size.</p>
 normals are the same at each step. We can instruct CloudViewer to reuse geometry
 properties from an earlier step, instead of writing redundant data to the
 summary files. Replace the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop above with:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-       <span class="n">cube</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">step</span><span class="p">])</span>
-       <span class="n">cube_summary</span> <span class="o">=</span> <span class="n">to_dict_batch</span><span class="p">([</span><span class="n">cube</span><span class="p">])</span>
-       <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-           <span class="n">cube_summary</span><span class="p">[</span><span class="s1">&#39;vertex_positions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-           <span class="n">cube_summary</span><span class="p">[</span><span class="s1">&#39;vertex_normals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-       <span class="n">writer</span><span class="o">.</span><span class="n">add_3d</span><span class="p">(</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">cube_summary</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
-       <span class="n">cylinder</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">step</span><span class="p">])</span>
-       <span class="n">cylinder_summary</span> <span class="o">=</span> <span class="n">to_dict_batch</span><span class="p">([</span><span class="n">cylinder</span><span class="p">])</span>
-       <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-           <span class="n">cylinder_summary</span><span class="p">[</span><span class="s1">&#39;vertex_positions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-           <span class="n">cylinder_summary</span><span class="p">[</span><span class="s1">&#39;vertex_normals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-       <span class="n">writer</span><span class="o">.</span><span class="n">add_3d</span><span class="p">(</span><span class="s1">&#39;cylinder&#39;</span><span class="p">,</span> <span class="n">cylinder_summary</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">cube</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">step</span><span class="p">])</span>
+        <span class="n">cube_summary</span> <span class="o">=</span> <span class="n">to_dict_batch</span><span class="p">([</span><span class="n">cube</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cube_summary</span><span class="p">[</span><span class="s1">&#39;vertex_positions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">cube_summary</span><span class="p">[</span><span class="s1">&#39;vertex_normals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">add_3d</span><span class="p">(</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">cube_summary</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+        <span class="n">cylinder</span><span class="o">.</span><span class="n">paint_uniform_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">step</span><span class="p">])</span>
+        <span class="n">cylinder_summary</span> <span class="o">=</span> <span class="n">to_dict_batch</span><span class="p">([</span><span class="n">cylinder</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cylinder_summary</span><span class="p">[</span><span class="s1">&#39;vertex_positions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">cylinder_summary</span><span class="p">[</span><span class="s1">&#39;vertex_normals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">add_3d</span><span class="p">(</span><span class="s1">&#39;cylinder&#39;</span><span class="p">,</span> <span class="n">cylinder_summary</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The geometry property tensor is replaced with an integer (step reference)
@@ -1282,7 +1290,7 @@ displayed in tensorboard.</p>
 </section>
 </section>
 <section id="rich-3d-models-with-pbr-materials">
-<h3>Rich 3D models with PBR materials<a class="headerlink" href="#rich-3d-models-with-pbr-materials" title="Permalink to this heading">#</a></h3>
+<h1>Rich 3D models with PBR materials<a class="headerlink" href="#rich-3d-models-with-pbr-materials" title="Permalink to this heading">#</a></h1>
 <p>In addition to geometry properties, we can save and visualize rich 3D models
 using PBR material properties.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model_dir</span> <span class="o">=</span> <span class="s2">&quot;examples/test_data/monkey&quot;</span>
@@ -1317,10 +1325,10 @@ using PBR material properties.</p>
 <span class="n">writer</span><span class="o">.</span><span class="n">add_3d</span><span class="p">(</span><span class="s2">&quot;monkey&quot;</span><span class="p">,</span> <span class="n">summary_3d</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><span class="raw-html-m2r"><img src=https://github.com/Asher-1/CloudViewer-ML/raw/main/docs/images/tensorboard_monkey.jpg
+<p><img src=https://github.com/Asher-1/CloudViewer-ML/raw/main/docs/images/tensorboard_monkey.jpg
 title="Tensorboard materials example"
 alt="Tensorboard materials example"
-style="width:80%;display:block;margin:auto"></img></span></p>
+style="width:80%;display:block;margin:auto"></img></p>
 <p>PBR material properties may be either scalar (such as <code class="docutils literal notranslate"><span class="pre">metallic</span></code>) or a 4 element
 vector (such as <code class="docutils literal notranslate"><span class="pre">base_color</span></code>) for properties that are uniform for the entire
 geometry. Spatially varying material properties are represented as texture map
@@ -1335,7 +1343,7 @@ provided with any texture map. The keys for the properties are of the form
 specifies the CloudViewer material shader used.</p>
 </section>
 <section id="dml-models-training-and-inference">
-<h3>3DML models training and inference<a class="headerlink" href="#dml-models-training-and-inference" title="Permalink to this heading">#</a></h3>
+<h1>3DML models training and inference<a class="headerlink" href="#dml-models-training-and-inference" title="Permalink to this heading">#</a></h1>
 <p>3DML models from CloudViewer have built in support for visualizing input data, ground
 truth and network predictions. Edit the YAML configuration files for your
 model+dataset combination in the <code class="docutils literal notranslate"><span class="pre">ml3d/configs</span></code> folder in the CloudViewer-ML
@@ -1369,32 +1377,35 @@ and exploring predictions and intermediate network features.  Scalar network
 features can be visualized with custom user editable colormaps, and 3D features
 can be visualized as RGB colors. Here is a video showing the different ways in
 which semantic segmentation summary data can be visualized in TensorBoard.</p>
-<video controls title="Tensorboard semantic segmentation and custom data example"
+<p><video controls title="Tensorboard semantic segmentation and custom data example"
 alt="Tensorboard semantic segmentation and custom data example"
-style="width:100%;display:block;margin:auto">
+style="width:100%;display:block;margin:auto"></p>
 <source src="https://user-images.githubusercontent.com/41028320/142569952-1c358cec-1632-409e-992b-cd62f792d81e.mov" type="video/webm">
-</video><p><a class="reference external" href="https://user-images.githubusercontent.com/41028320/142569952-1c358cec-1632-409e-992b-cd62f792d81e.mov">[download]</a></p>
+</video>
+<p><a class="reference external" href="https://user-images.githubusercontent.com/41028320/142569952-1c358cec-1632-409e-992b-cd62f792d81e.mov">[download]</a></p>
 <p>And this one shows different ways of visualizing object detection data,
 including bounding boxes.</p>
-<video controls title="Tensorboard object detection example"
+<p><video controls title="Tensorboard object detection example"
 alt="Tensorboard object detection example"
-style="width:100%;display:block;margin:auto">
+style="width:100%;display:block;margin:auto"></p>
 <source src="https://user-images.githubusercontent.com/41028320/142569965-786fafde-17b6-4adb-8e23-388d9bb4aac9.mov" type="video/webm">
-</video><p><a class="reference external" href="https://user-images.githubusercontent.com/41028320/142569965-786fafde-17b6-4adb-8e23-388d9bb4aac9.mov">[download]</a></p>
+</video>
+<p><a class="reference external" href="https://user-images.githubusercontent.com/41028320/142569965-786fafde-17b6-4adb-8e23-388d9bb4aac9.mov">[download]</a></p>
 <p>You can also visualize multiple runs in side by side widgets. To make it easy to
 compare data from different runs, The step,batch index and viewpoint of different
 runs can also be synchronized.</p>
-<video controls title="Tensorboard synchronized view example"
+<p><video controls title="Tensorboard synchronized view example"
 alt="Tensorboard synchronized view example"
-style="width:100%;display:block;margin:auto">
+style="width:100%;display:block;margin:auto"></p>
 <source src="https://user-images.githubusercontent.com/41028320/142570826-5b09b3a4-e153-4d34-98c0-31caf529c3fe.mov" type="video/webm">
-</video><p><a class="reference external" href="https://user-images.githubusercontent.com/41028320/142570826-5b09b3a4-e153-4d34-98c0-31caf529c3fe.mov">[download]</a></p>
+</video>
+<p><a class="reference external" href="https://user-images.githubusercontent.com/41028320/142570826-5b09b3a4-e153-4d34-98c0-31caf529c3fe.mov">[download]</a></p>
 <p>Next lets look at how to save 3D summaries from your own training code. The
 examples below are in the <code class="docutils literal notranslate"><span class="pre">examples/</span></code> folder in the CloudViewer-ML
 repository.</p>
 </section>
 <section id="custom-properties-and-semantic-segmentation">
-<h3>Custom properties and semantic segmentation<a class="headerlink" href="#custom-properties-and-semantic-segmentation" title="Permalink to this heading">#</a></h3>
+<h1>Custom properties and semantic segmentation<a class="headerlink" href="#custom-properties-and-semantic-segmentation" title="Permalink to this heading">#</a></h1>
 <p>We will read sample 3D point clouds and labels from disk and write them to a 3D
 summary. We will also write some random scores and features to disk. The
 workflow is the same when you want to write data during model training. Data may
@@ -1441,7 +1452,7 @@ CloudViewer-ML repository for the complete example.</p>
 </div>
 </section>
 <section id="d-object-detection">
-<h3>3D object detection<a class="headerlink" href="#d-object-detection" title="Permalink to this heading">#</a></h3>
+<h1>3D object detection<a class="headerlink" href="#d-object-detection" title="Permalink to this heading">#</a></h1>
 <p>Similar to semantic segmentation, we can save and visualize input point clouds,
 and output bounding box ground truth and predictions from object detection
 models.  In the next example, we will read sample 3D point clouds and bounding
@@ -1475,15 +1486,13 @@ TensorFlow, or CloudViewer tensors or Numpy arrays.</p>
 </div>
 </section>
 <section id="troubleshooting">
-<h3>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">#</a></h3>
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">#</a></h1>
 <p>If you cannot interact with the 3D model, or use controls in the WebRTC widget,
 make sure that Allow Autoplay is enabled for the Tensorboard web site and reload.</p>
-<p><span class="raw-html-m2r"><img src=https://user-images.githubusercontent.com/41028320/180485249-5233b65e-11b1-44ff-bfc4-35f390ef51f2.png
+<p><img src=https://user-images.githubusercontent.com/41028320/180485249-5233b65e-11b1-44ff-bfc4-35f390ef51f2.png
 title="Allow Autoplay for correct behavior."
 alt="Allow Autoplay for correct behavior."
-style="width:80%;display:block;margin:auto"></img></span></p>
-</section>
-</section>
+style="width:80%;display:block;margin:auto"></img></p>
 </section>
 
         </article>
@@ -1529,43 +1538,13 @@ style="width:80%;display:block;margin:auto"></img></span></p>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">TensorBoard Plugin</a><ul>
-<li><a class="reference internal" href="#cloudviewer-for-tensorboard">CloudViewer for TensorBoard</a><ul>
-<li><a class="reference internal" href="#simple-geometry-sequences">Simple geometry sequences</a><ul>
-<li><a class="reference internal" href="#tensorflow-users">TensorFlow users</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#rich-3d-models-with-pbr-materials">Rich 3D models with PBR materials</a></li>
-<li><a class="reference internal" href="#dml-models-training-and-inference">3DML models training and inference</a></li>
-<li><a class="reference internal" href="#custom-properties-and-semantic-segmentation">Custom properties and semantic segmentation</a></li>
-<li><a class="reference internal" href="#d-object-detection">3D object detection</a></li>
-<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=22126f0c"></script>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2f328d19"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

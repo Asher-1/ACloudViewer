@@ -29,7 +29,7 @@ Crop geometry
 
 This function simply reads a point cloud and calls ``draw_geometries_with_editing``. This function provides vertex selection and cropping.
 
-.. Note:: ACloudViewer has a ``VisualizerWithEditing`` class that inherits ``Visualizer`` class. It adds graphic user interaction features. Likewise examples in :ref:`customized_visualization`, ``VisualizerWithEditing()`` can be explicitly used instead of ``draw_geometries_with_editing([pcd])``.
+.. Note:: CloudViewer has a ``VisualizerWithEditing`` class that inherits ``Visualizer`` class. It adds graphic user interaction features. Likewise examples in :ref:`customized_visualization`, ``VisualizerWithEditing()`` can be explicitly used instead of ``draw_geometries_with_editing([pcd])``.
 
 Once a geometry is displayed, press ``Y`` twice to align geometry with negative direction of y-axis. After adjusting viewing orientation, press ``K`` to lock screen and to switch to the selection mode.
 
