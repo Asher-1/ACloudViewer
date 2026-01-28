@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -160,7 +169,7 @@ $(document).ready(function(){initNavTree('ccPointDescriptor_8cpp_source.html',''
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;            <a class="code" href="classcloudViewer_1_1SquareMatrixTpl.html">cloudViewer::SquareMatrixd</a> eigVectors;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;            std::vector&lt;double&gt; eigValues;</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="classJacobi.html">Jacobi&lt;double&gt;::ComputeEigenValuesAndVectors</a>(</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                        Z.<a class="code" href="classcloudViewer_1_1Neighbourhood.html#a3de02e167d9726263d3b348394d18455">computeCovarianceMatrix</a>(), eigVectors, eigValues,</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                        Z.<a class="code" href="classcloudViewer_1_1Neighbourhood.html#a0dc0c010a07010a7b97e3f0015208413">computeCovarianceMatrix</a>(), eigVectors, eigValues,</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                        <span class="keyword">true</span>)) {</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                <a class="code" href="classJacobi.html#ab7298aeed675a78945ad38ba9cd1263f">Jacobi&lt;double&gt;::SortEigenValuesAndVectors</a>(</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                        eigVectors, eigValues);  <span class="comment">// decreasing order of their</span></div>
@@ -656,13 +665,13 @@ $(document).ready(function(){initNavTree('ccPointDescriptor_8cpp_source.html',''
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;}</div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160; </div>
-<div class="line"><a name="l00588"></a><span class="lineno"><a class="line" href="classCorePointDescSet.html#afc6fea295db49b1f2cc9bdaec21d25d2">  588</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classCorePointDescSet.html#afc6fea295db49b1f2cc9bdaec21d25d2">CorePointDescSet::loadFromMSC</a>(QString filename,</div>
+<div class="line"><a name="l00588"></a><span class="lineno"><a class="line" href="classCorePointDescSet.html#afc6fea295db49b1f2cc9bdaec21d25d2">  588</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classCorePointDescSet.html#afc6fea295db49b1f2cc9bdaec21d25d2">CorePointDescSet::loadFromMSC</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;                                   QString&amp; <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>,</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;                                   <a class="code" href="classccPointCloud.html">ccPointCloud</a>* <a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a> <span class="comment">/*=0*/</span>) {</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;    <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>.clear();</div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160; </div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;    <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve &quot;local&quot; characters</span></div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    std::ifstream mscfile(qPrintable(filename), std::ifstream::binary);</div>
+<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    std::ifstream mscfile(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), std::ifstream::binary);</div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160; </div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;    <span class="keywordflow">if</span> (!mscfile.is_open()) {</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="stringliteral">&quot;Failed to open input file&quot;</span>;</div>
@@ -803,6 +812,7 @@ $(document).ready(function(){initNavTree('ccPointDescriptor_8cpp_source.html',''
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;}</div>
 <div class="ttc" id="aCVGeom_8h_html_aba743094ac3c5f78d2814b141438015c"><div class="ttname"><a href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a></div><div class="ttdeci">Vector3Tpl&lt; PointCoordinateType &gt; CCVector3</div><div class="ttdoc">Default 3D Vector.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00798">CVGeom.h:798</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aJacobi_8h_html"><div class="ttname"><a href="Jacobi_8h.html">Jacobi.h</a></div></div>
 <div class="ttc" id="aNeighbourhood_8h_html"><div class="ttname"><a href="Neighbourhood_8h.html">Neighbourhood.h</a></div></div>
@@ -850,7 +860,7 @@ $(document).ready(function(){initNavTree('ccPointDescriptor_8cpp_source.html',''
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; double &gt;</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Neighbourhood_html"><div class="ttname"><a href="classcloudViewer_1_1Neighbourhood.html">cloudViewer::Neighbourhood</a></div><div class="ttdef"><b>Definition:</b> <a href="Neighbourhood_8h_source.html#l00025">Neighbourhood.h:25</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1Neighbourhood_html_a3de02e167d9726263d3b348394d18455"><div class="ttname"><a href="classcloudViewer_1_1Neighbourhood.html#a3de02e167d9726263d3b348394d18455">cloudViewer::Neighbourhood::computeCovarianceMatrix</a></div><div class="ttdeci">cloudViewer::SquareMatrixd computeCovarianceMatrix()</div><div class="ttdoc">Computes the covariance matrix.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1Neighbourhood_html_a0dc0c010a07010a7b97e3f0015208413"><div class="ttname"><a href="classcloudViewer_1_1Neighbourhood.html#a0dc0c010a07010a7b97e3f0015208413">cloudViewer::Neighbourhood::computeCovarianceMatrix</a></div><div class="ttdeci">cloudViewer::SquareMatrixd computeCovarianceMatrix()</div><div class="ttdoc">Computes the covariance matrix.</div><div class="ttdef"><b>Definition:</b> <a href="Neighbourhood_8cpp_source.html#l00144">Neighbourhood.cpp:144</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Neighbourhood_html_ab2c490204e9760c571b10eb4d3685ab1acf6bc7416c2285045e6b4a0d2cf91ea6"><div class="ttname"><a href="classcloudViewer_1_1Neighbourhood.html#ab2c490204e9760c571b10eb4d3685ab1acf6bc7416c2285045e6b4a0d2cf91ea6">cloudViewer::Neighbourhood::GAUSSIAN_CURV</a></div><div class="ttdeci">@ GAUSSIAN_CURV</div><div class="ttdef"><b>Definition:</b> <a href="Neighbourhood_8h_source.html#l00042">Neighbourhood.h:42</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
@@ -875,7 +885,7 @@ $(document).ready(function(){initNavTree('ccPointDescriptor_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_039c29ee5c0bf40195ae620976ff5812.html">qCanupo</a></li><li class="navelem"><a class="el" href="dir_542eadb58e0ca435419187144cb8aca4.html">src</a></li><li class="navelem"><a class="el" href="ccPointDescriptor_8cpp.html">ccPointDescriptor.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

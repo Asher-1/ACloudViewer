@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -147,10 +156,10 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                    QStringList{<span class="stringliteral">&quot;Snavely&#39;s Bundler output (*.out)&quot;</span>},</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                    QStringList(), <a class="code" href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">Import</a>}) {}</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classBundlerFilter.html#a588d20b4d57e891ea3f82ceeb2f5d55e">   67</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classBundlerFilter.html#a588d20b4d57e891ea3f82ceeb2f5d55e">BundlerFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classBundlerFilter.html#a588d20b4d57e891ea3f82ceeb2f5d55e">   67</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classBundlerFilter.html#a588d20b4d57e891ea3f82ceeb2f5d55e">BundlerFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                                      <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                                      <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classBundlerFilter.html#a00d2b0bb78a6b863d1069e635c7921d7">loadFileExtended</a>(filename, container, parameters);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classBundlerFilter.html#a00d2b0bb78a6b863d1069e635c7921d7">loadFileExtended</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, container, parameters);</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">// ortho-rectified image related information</span></div>
@@ -161,7 +170,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;};</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="classBundlerFilter.html#a00d2b0bb78a6b863d1069e635c7921d7">   80</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classBundlerFilter.html#a00d2b0bb78a6b863d1069e635c7921d7">BundlerFilter::loadFileExtended</a>(</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters,</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keyword">const</span> QString&amp; _altKeypointsFilename <span class="comment">/*=QString()*/</span>,</div>
@@ -170,7 +179,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordtype">unsigned</span> _coloredDTMVerticesCount <span class="comment">/*=1000000*/</span>,</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordtype">float</span> _scaleFactor <span class="comment">/*=1.0f*/</span>) {</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="comment">// opening file (ASCII)</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    QFile f(filename);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    QFile f(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">if</span> (!f.open(QIODevice::ReadOnly)) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee">CC_FERR_READING</a>;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    QTextStream stream(&amp;f);</div>
@@ -178,14 +187,14 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="comment">// read header (should be &quot;# Bundle file vX.Y&quot;)</span></div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    QString currentLine = stream.readLine();</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keywordflow">if</span> (!currentLine.startsWith(<span class="stringliteral">&quot;# Bundle file&quot;</span>, <a class="code" href="namespaceQtCompatRegExpOption.html#aef3543c60166ecb59e406c1fc2c29950">Qt::CaseInsensitive</a>)) {</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;File should start by &#39;# Bundle file vX.Y&#39;!&quot;</span>);</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;File should start by &#39;# Bundle file vX.Y&#39;!&quot;</span>);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    }</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordtype">unsigned</span> majorVer = 0, minorVer = 0;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    sscanf(qPrintable(currentLine), <span class="stringliteral">&quot;# Bundle file v%u.%u&quot;</span>, &amp;majorVer,</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;           &amp;minorVer);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keywordflow">if</span> (majorVer != 0 || (minorVer != 3 &amp;&amp; minorVer != 4)) {</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                <span class="stringliteral">&quot;Only version 0.3 and 0.4 of Bundler files are supported!&quot;</span>);</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795afd8299651c6d80dc1d0acea8602c5a5a">CC_FERR_WRONG_FILE_TYPE</a>;</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    }</div>
@@ -195,17 +204,17 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    QStringList list =</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            <a class="code" href="QtCompat_8h.html#a0da543c610d95a9c0726e068ea744090">qtCompatSplitRegex</a>(currentLine, <span class="stringliteral">&quot;\\s+&quot;</span>, <a class="code" href="namespaceQtCompat.html#a2d9f30935c99da4eabe7ee9b8ca503d1">QtCompat::SkipEmptyParts</a>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="keywordflow">if</span> (list.size() != 2) {</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                <span class="stringliteral">&quot;[Bundler] Second line should be &lt;num_cameras&gt; &lt;num_points&gt;!&quot;</span>);</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    }</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keywordtype">unsigned</span> camCount = list[0].toInt();</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keywordflow">if</span> (camCount == 0)</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[Bundler] No camera defined in Bundler file!&quot;</span>);</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[Bundler] No camera defined in Bundler file!&quot;</span>);</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordtype">unsigned</span> ptsCount = list[1].toInt();</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keywordflow">if</span> (ptsCount == 0)</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[Bundler] No keypoints defined in Bundler file!&quot;</span>);</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[Bundler] No keypoints defined in Bundler file!&quot;</span>);</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="comment">// parameters</span></div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">bool</span> importKeypoints = <span class="keyword">false</span>;</div>
@@ -338,7 +347,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                }</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            }</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            <span class="keywordflow">if</span> (importImages &amp;&amp; <a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">cloudViewer::LessThanEpsilon</a>(sum)) {</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[Bundler] Camera #%i is invalid!&quot;</span>,</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[Bundler] Camera #%i is invalid!&quot;</span>,</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                               camIndex + 1);</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                it-&gt;isValid = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            }</div>
@@ -357,7 +366,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                <span class="keywordflow">if</span> (!ok[0] || !ok[1] || !ok[2]) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            }</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordflow">if</span> (pDlg &amp;&amp; !nprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>())  <span class="comment">// cancel requested?</span></div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordflow">if</span> (pDlg &amp;&amp; !nprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>())  <span class="comment">// cancel requested?</span></div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            {</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a425fd0ad6d502712c66a042927902cc1">CC_FERR_CANCELED_BY_USER</a>;</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            }</div>
@@ -376,7 +385,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;            <span class="keywordflow">if</span> (importKeypoints) {</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                hasColors = keypointsCloud-&gt;<a class="code" href="classccPointCloud.html#aa9333aaf6255b952902a8d4129922a02">reserveTheRGBTable</a>();</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                <span class="keywordflow">if</span> (!hasColors)</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                            <span class="stringliteral">&quot;[Bundler] Not enough memory to load colors!&quot;</span>);</div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                    keypointsCloud-&gt;<a class="code" href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">showColors</a>(<span class="keyword">true</span>);</div>
@@ -444,7 +453,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;                                trans.<a class="code" href="classccGLMatrixTpl.html#a7f8f6d54127fa268070ae5dc607c9996">invert</a>();</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                            }</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                        }</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                                <span class="stringliteral">&quot;[Bundler] Cloud has been recentered! &quot;</span></div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;                                <span class="stringliteral">&quot;Translation: (%.2f ; %.2f ; %.2f)&quot;</span>,</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;                                Pshift.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, Pshift.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, Pshift.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
@@ -485,7 +494,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;                    <span class="comment">// sometimes, it appears that keypoints has no associated</span></div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;                    <span class="comment">// color! so we skip the line and assume it&#39;s in fact the</span></div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;                    <span class="comment">// keypoint description...</span></div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;                            <span class="stringliteral">&quot;[Bundler] Keypoint #%i has no associated color!&quot;</span>,</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;                            i);</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                    <span class="keywordflow">if</span> (hasColors)</div>
@@ -510,7 +519,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;                        <span class="keywordtype">unsigned</span> nviews = parts[0].toInt(&amp;ok);</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;                        <span class="keywordflow">if</span> (!ok || nviews * 4 + 1 &gt; <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                                                            parts.size())) {</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;                                    <span class="stringliteral">&quot;[Bundler] View list for point #%i is &quot;</span></div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;                                    <span class="stringliteral">&quot;invalid!&quot;</span>,</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;                                    i);</div>
@@ -565,7 +574,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;                                        keypointsDescriptors.push_back(</div>
 <div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;                                                lastKeyPoint);</div>
 <div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;                                    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;                                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;                                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;                                                <span class="stringliteral">&quot;[Bundler] Not enough memory &quot;</span></div>
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;                                                <span class="stringliteral">&quot;to store keypoints!&quot;</span>);</div>
 <div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;                                        keypointsDescriptors.clear();</div>
@@ -578,7 +587,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;                    }</div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;                }</div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160; </div>
-<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;                <span class="keywordflow">if</span> (pDlg &amp;&amp; !nprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>())  <span class="comment">// cancel requested?</span></div>
+<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;                <span class="keywordflow">if</span> (pDlg &amp;&amp; !nprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>())  <span class="comment">// cancel requested?</span></div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;                {</div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                    <span class="keyword">delete</span> keypointsCloud;</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a425fd0ad6d502712c66a042927902cc1">CC_FERR_CANCELED_BY_USER</a>;</div>
@@ -588,7 +597,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;            <span class="keywordflow">if</span> (!camUsage.empty()) {</div>
 <div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; camUsage.size(); ++i) {</div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;                    <span class="keywordflow">if</span> (!camUsage[i])</div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Camera #%1 has no &quot;</span></div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Camera #%1 has no &quot;</span></div>
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;                                               <span class="stringliteral">&quot;associated keypoints!&quot;</span>)</div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;                                               .arg(i + 1));</div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;                }</div>
@@ -598,7 +607,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;            <span class="keywordflow">if</span> (applyOptMatrix) {</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;                keypointsCloud-&gt;<a class="code" href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">applyGLTransformation_recursive</a>(</div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;                        &amp;orthoOptMatrix);</div>
-<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;                <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;                <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;                        <span class="stringliteral">&quot;[Bundler] Keypoints cloud has been transformed with &quot;</span></div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;                        <span class="stringliteral">&quot;input matrix!&quot;</span>);</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;                <span class="comment">// this transformation is of no interest for the user</span></div>
@@ -626,11 +635,11 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;                     <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>) &amp;&amp;</div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;             !altKeypointsContainer-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(0)-&gt;<a class="code" href="classccObject.html#adff379c59998e63806c1097136fa16ab">isKindOf</a>(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a>))) {</div>
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;            <span class="keywordflow">if</span> (!altKeypointsContainer)</div>
-<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to load alternative &quot;</span></div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to load alternative &quot;</span></div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;                                     <span class="stringliteral">&quot;keypoints file:\n&#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;                                     .arg(altKeypointsFilename));</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;            <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;                        <span class="stringliteral">&quot;[Bundler] Can&#39;t use this kind of entities as &quot;</span></div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;                        <span class="stringliteral">&quot;keypoints (need one and only one cloud or mesh)&quot;</span>);</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160; </div>
@@ -657,7 +666,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;        QFile imageListFile(imageListFilename);</div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;        <span class="keywordflow">if</span> (!imageListFile.exists() ||</div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;            !imageListFile.open(QIODevice::ReadOnly)) {</div>
-<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(</div>
+<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;                    QString(<span class="stringliteral">&quot;[Bundler] Failed to open image list file! (%1)&quot;</span>)</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;                            .arg(imageListFilename));</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;            <span class="keywordflow">if</span> (!importKeypoints &amp;&amp; keypointsCloud) <span class="keyword">delete</span> keypointsCloud;</div>
@@ -678,7 +687,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;            <span class="keywordflow">if</span> (parts.size() &gt; 0)</div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;                imageFilenames &lt;&lt; parts[0];</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;            <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] Couldn&#39;t extract image name &quot;</span></div>
+<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] Couldn&#39;t extract image name &quot;</span></div>
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;                                     <span class="stringliteral">&quot;from line %1 in file &#39;%2&#39;!&quot;</span>)</div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;                                     .arg(lineIndex)</div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;                                     .arg(imageListFilename));</div>
@@ -691,11 +700,11 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(camCount))  <span class="comment">// not enough images!</span></div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;    {</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;        <span class="keywordflow">if</span> (imageFilenames.isEmpty())</div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] No filename could be extracted &quot;</span></div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] No filename could be extracted &quot;</span></div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;                                 <span class="stringliteral">&quot;from file &#39;%1&#39;!&quot;</span>)</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;                                 .arg(imageListFilename));</div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] Only %1 filenames (out of %2) &quot;</span></div>
+<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] Only %1 filenames (out of %2) &quot;</span></div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;                                 <span class="stringliteral">&quot;could be extracted\nfrom file &#39;%3&#39;!&quot;</span>)</div>
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;                                 .arg(imageFilenames.size())</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;                                 .arg(camCount)</div>
@@ -744,18 +753,18 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;                    (altEntity ? <a class="code" href="classccHObjectCaster.html#a96541989ce2e27a395f3b95bdf14d42a">ccHObjectCaster::ToGenericPointCloud</a>(altEntity)</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;                               : 0);</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            std::string errorStr;</div>
-<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;            dummyMesh = <a class="code" href="classcloudViewer_1_1PointProjectionTools.html#a9a4a567089fd1e4b08b541e1c2e1a454">cloudViewer::PointProjectionTools::computeTriangulation</a>(</div>
+<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;            dummyMesh = <a class="code" href="classcloudViewer_1_1PointProjectionTools.html#ac304881d95a77c5454f63e509af852e7">cloudViewer::PointProjectionTools::computeTriangulation</a>(</div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;                    altKeypoints ? altKeypoints : keypointsCloud,</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;                    <a class="code" href="namespacecloudViewer.html#a84d21d5f0aea6470ef648dbba98a924caa445188b6e2086eb9ab6de86863da249">cloudViewer::DELAUNAY_2D_BEST_LS_PLANE</a>, 0, 0, errorStr);</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;            <span class="keywordflow">if</span> (!dummyMesh) {</div>
-<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to generate DTM! (%1)&quot;</span>)</div>
+<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to generate DTM! (%1)&quot;</span>)</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;                                       .arg(QString::fromStdString(errorStr)));</div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;            }</div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;        }</div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160; </div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        <span class="keywordflow">if</span> (dummyMesh) {</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;            <span class="comment">// 2nd step: samples points on resulting mesh</span></div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;            mntSamples = <a class="code" href="classcloudViewer_1_1MeshSamplingTools.html#aa9bbf73055a458a1ba8d270c7f3706c5">cloudViewer::MeshSamplingTools::samplePointsOnMesh</a>(</div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;            mntSamples = <a class="code" href="classcloudViewer_1_1MeshSamplingTools.html#a7530277de7b09733e7fa1ed392fce71b">cloudViewer::MeshSamplingTools::samplePointsOnMesh</a>(</div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;                    (<a class="code" href="classcloudViewer_1_1GenericMesh.html">cloudViewer::GenericMesh</a>*)dummyMesh,</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;                    coloredDTMVerticesCount);</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;            <span class="keywordflow">if</span> (!baseDTMMesh) <span class="keyword">delete</span> dummyMesh;</div>
@@ -768,7 +777,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;                mntColors = <span class="keyword">new</span> <span class="keywordtype">int</span>[4 * <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>];  <span class="comment">// R + G + B + accum count</span></div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;                <span class="keywordflow">if</span> (!mntColors) {</div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;                    <span class="comment">// not enough memory</span></div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;                    <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(</div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;                    <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;                            <span class="stringliteral">&quot;Not enough memory to store DTM colors! DTM &quot;</span></div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;                            <span class="stringliteral">&quot;generation cancelled&quot;</span>);</div>
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;                    <span class="keyword">delete</span> mntSamples;</div>
@@ -805,7 +814,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;        QString errorStr;</div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>-&gt;load(imageDir.absoluteFilePath(imageFilenames[i]),</div>
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;                         errorStr)) {</div>
-<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] %1 (image &#39;%2&#39;)&quot;</span>)</div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;[Bundler] %1 (image &#39;%2&#39;)&quot;</span>)</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                                 .arg(errorStr, imageFilenames[i]));</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;            <span class="keyword">delete</span> <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>;</div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a> = 0;</div>
@@ -923,12 +932,12 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;            }</div>
 <div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160; </div>
 <div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;            <span class="keywordflow">if</span> (keypointsImage.size() &lt; 4) {</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Not enough keypoints &quot;</span></div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Not enough keypoints &quot;</span></div>
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;                                       <span class="stringliteral">&quot;descriptors for image &#39;%1&#39;!&quot;</span>)</div>
 <div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;                                       .arg(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>-&gt;getName()));</div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!keypointsImageBB.<a class="code" href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">isValid</a>() ||</div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                       keypointsImageBB.<a class="code" href="classcloudViewer_1_1BoundingBoxTpl.html#a68eec2164cc1d0363fd25b9108c2475e">getDiagNorm</a>() &lt; <a class="code" href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a>) {</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                        QString(<span class="stringliteral">&quot;[Bundler] Keypoints descriptors for image &quot;</span></div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;                                <span class="stringliteral">&quot;&#39;%1&#39; are invalid (= all the same)&quot;</span>)</div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                                .arg(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>-&gt;getName()));</div>
@@ -972,7 +981,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;                        info.<a class="code" href="structORImageInfo.html#aedb1bdd2b023b73fffdd9ac44d193962">h</a> = orthoImage-&gt;<a class="code" href="classccImage.html#a39e17ac4807c61d930bcef247ae3f47e">getH</a>();</div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;                        orthoImage-&gt;<a class="code" href="classccImage.html#a950a14f202518abd2dceb95581a98933">data</a>().save(</div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;                                imageDir.absoluteFilePath(info.<a class="code" href="structORImageInfo.html#a0c86d750f456fa456940aed31e175957">name</a>));</div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;                        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;                        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;                                QString(<span class="stringliteral">&quot;[Bundler] Ortho-rectified version of &quot;</span></div>
 <div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;                                        <span class="stringliteral">&quot;image &#39;%1&#39; (%2 x %3) saved to &#39;%4&#39;&quot;</span>)</div>
 <div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;                                        .arg(imageFilenames[i])</div>
@@ -1108,7 +1117,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;                        <span class="keywordflow">if</span> (OR_globalCorners[3] &lt; info.<a class="code" href="structORImageInfo.html#a723a0e7418fb6e04f206a31a729c7274">maxC</a>[1])</div>
 <div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;                            OR_globalCorners[3] = info.<a class="code" href="structORImageInfo.html#a723a0e7418fb6e04f206a31a729c7274">maxC</a>[1];</div>
 <div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to &quot;</span></div>
+<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to &quot;</span></div>
 <div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;                                               <span class="stringliteral">&quot;ortho-rectify image &#39;%1&#39;!&quot;</span>)</div>
 <div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;                                               .arg(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>-&gt;getName()));</div>
 <div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;                    }</div>
@@ -1124,7 +1133,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;                                _keypointsCloud-&gt;getGlobalShift());</div>
 <div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;                        container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(orthoCloud);</div>
 <div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;                                QString(<span class="stringliteral">&quot;[Bundler] Failed to ortho-rectify &quot;</span></div>
 <div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;                                        <span class="stringliteral">&quot;image &#39;%1&#39; as a cloud!&quot;</span>)</div>
 <div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;                                        .arg(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>-&gt;getName()));</div>
@@ -1136,7 +1145,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;        <span class="comment">// undistortion</span></div>
 <div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;        <span class="keywordflow">if</span> (sensor &amp;&amp; undistortImages)</div>
 <div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;            <span class="keywordflow">if</span> (!sensor-&gt;<a class="code" href="classccCameraSensor.html#acb99f1a6934497af6d391a8024b2b68f">undistort</a>(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, <span class="keyword">true</span>))</div>
-<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;                        QString(<span class="stringliteral">&quot;[Bundler] Failed to undistort image &#39;%1&#39;!&quot;</span>)</div>
 <div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;                                .arg(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>-&gt;getName()));</div>
 <div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160; </div>
@@ -1193,7 +1202,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160; </div>
 <div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160;        QApplication::processEvents();</div>
 <div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160; </div>
-<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;        <span class="keywordflow">if</span> (ipDlg &amp;&amp; !inprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>()) {</div>
+<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;        <span class="keywordflow">if</span> (ipDlg &amp;&amp; !inprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>()) {</div>
 <div class="line"><a name="l01114"></a><span class="lineno"> 1114</span>&#160;            cancelledByUser = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01116"></a><span class="lineno"> 1116</span>&#160;        }</div>
@@ -1245,7 +1254,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;                       &lt;&lt; <a class="code" href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a>;</div>
 <div class="line"><a name="l01163"></a><span class="lineno"> 1163</span>&#160;            }</div>
 <div class="line"><a name="l01164"></a><span class="lineno"> 1164</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01166"></a><span class="lineno"> 1166</span>&#160;                    <span class="stringliteral">&quot;Failed to save orthorectification log file! &quot;</span></div>
 <div class="line"><a name="l01167"></a><span class="lineno"> 1167</span>&#160;                    <span class="stringliteral">&quot;(ortho_rectification_log.txt)&quot;</span>);</div>
 <div class="line"><a name="l01168"></a><span class="lineno"> 1168</span>&#160;        }</div>
@@ -1284,7 +1293,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160; </div>
 <div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160;                    mntCloud-&gt;<a class="code" href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">showColors</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;                    container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(mntCloud);</div>
-<div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;                            <span class="stringliteral">&quot;[Bundler] DTM vertices successfully generated: &quot;</span></div>
 <div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;                            <span class="stringliteral">&quot;clean it if necessary then use &#39;Edit &gt; Mesh &gt; &quot;</span></div>
 <div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;                            <span class="stringliteral">&quot;Compute Delaunay 2D (Best LS plane)&#39; then &quot;</span></div>
@@ -1299,21 +1308,21 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;                        { parameters.<a class="code" href="structFileIOFilter_1_1SaveParameters.html#ad928fcc5779c1f6eca5b42214f7ca440">alwaysDisplaySaveDialog</a> = <span class="keyword">false</span>; }</div>
 <div class="line"><a name="l01217"></a><span class="lineno"> 1217</span>&#160;                        <span class="keywordflow">if</span> (bf.<a class="code" href="classBinFilter.html#a8f3c0afd0d1af537276cbae2fbea96b7">saveToFile</a>(mntCloud, outputFile, parameters) ==</div>
 <div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;                            <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>)</div>
-<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;                            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[Bundler] Color DTM vertices &quot;</span></div>
+<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;                            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[Bundler] Color DTM vertices &quot;</span></div>
 <div class="line"><a name="l01220"></a><span class="lineno"> 1220</span>&#160;                                                 <span class="stringliteral">&quot;automatically saved to &#39;%2&#39;&quot;</span>)</div>
 <div class="line"><a name="l01221"></a><span class="lineno"> 1221</span>&#160;                                                 .arg(outputFile));</div>
 <div class="line"><a name="l01222"></a><span class="lineno"> 1222</span>&#160;                        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to save &quot;</span></div>
+<div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Bundler] Failed to save &quot;</span></div>
 <div class="line"><a name="l01224"></a><span class="lineno"> 1224</span>&#160;                                                   <span class="stringliteral">&quot;DTM vertices to &#39;%2&#39;&quot;</span>)</div>
 <div class="line"><a name="l01225"></a><span class="lineno"> 1225</span>&#160;                                                   .arg(outputFile));</div>
 <div class="line"><a name="l01226"></a><span class="lineno"> 1226</span>&#160;                    }</div>
 <div class="line"><a name="l01227"></a><span class="lineno"> 1227</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01228"></a><span class="lineno"> 1228</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01228"></a><span class="lineno"> 1228</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01229"></a><span class="lineno"> 1229</span>&#160;                            <span class="stringliteral">&quot;[Bundler] Failed to generate DTM! (no point &quot;</span></div>
 <div class="line"><a name="l01230"></a><span class="lineno"> 1230</span>&#160;                            <span class="stringliteral">&quot;viewed in images?)&quot;</span>);</div>
 <div class="line"><a name="l01231"></a><span class="lineno"> 1231</span>&#160;                }</div>
 <div class="line"><a name="l01232"></a><span class="lineno"> 1232</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01234"></a><span class="lineno"> 1234</span>&#160;                        <span class="stringliteral">&quot;[Bundler] Failed to generate DTM vertices cloud! (not &quot;</span></div>
 <div class="line"><a name="l01235"></a><span class="lineno"> 1235</span>&#160;                        <span class="stringliteral">&quot;enough memory?)&quot;</span>);</div>
 <div class="line"><a name="l01236"></a><span class="lineno"> 1236</span>&#160;                <span class="keyword">delete</span> mntCloud;</div>
@@ -1336,6 +1345,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="ttc" id="aCVGeom_8h_html_aba743094ac3c5f78d2814b141438015c"><div class="ttname"><a href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a></div><div class="ttdeci">Vector3Tpl&lt; PointCoordinateType &gt; CCVector3</div><div class="ttdoc">Default 3D Vector.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00798">CVGeom.h:798</a></div></div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFilamentRenderer_8cpp_html_a60b0c69b08810766e366c4b90031cd0d"><div class="ttname"><a href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a></div><div class="ttdeci">std::shared_ptr&lt; core::Tensor &gt; image</div><div class="ttdef"><b>Definition:</b> <a href="FilamentRenderer_8cpp_source.html#l00184">FilamentRenderer.cpp:184</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
@@ -1383,9 +1393,9 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="ttc" id="aclassBundlerImportDlg_html_aca8842777b99fcb290958fa04cf8bec0a7186b2e5251fb3bf8e0635bcb4edbd7d"><div class="ttname"><a href="classBundlerImportDlg.html#aca8842777b99fcb290958fa04cf8bec0a7186b2e5251fb3bf8e0635bcb4edbd7d">BundlerImportDlg::OPTIMIZED</a></div><div class="ttdeci">@ OPTIMIZED</div><div class="ttdef"><b>Definition:</b> <a href="BundlerImportDlg_8h_source.html#l00048">BundlerImportDlg.h:48</a></div></div>
 <div class="ttc" id="aclassBundlerImportDlg_html_aca8842777b99fcb290958fa04cf8bec0accca153cda5e1a154c68dc239839beb1"><div class="ttname"><a href="classBundlerImportDlg.html#aca8842777b99fcb290958fa04cf8bec0accca153cda5e1a154c68dc239839beb1">BundlerImportDlg::DIRECT_UNDISTORTED</a></div><div class="ttdeci">@ DIRECT_UNDISTORTED</div><div class="ttdef"><b>Definition:</b> <a href="BundlerImportDlg_8h_source.html#l00048">BundlerImportDlg.h:48</a></div></div>
 <div class="ttc" id="aclassBundlerImportDlg_html_ad1602f380f4e863d0f9164051d6ce5e9"><div class="ttname"><a href="classBundlerImportDlg.html#ad1602f380f4e863d0f9164051d6ce5e9">BundlerImportDlg::getImageListFilename</a></div><div class="ttdeci">QString getImageListFilename() const</div><div class="ttdoc">Gets image list filename (full path)</div><div class="ttdef"><b>Definition:</b> <a href="BundlerImportDlg_8cpp_source.html#l00223">BundlerImportDlg.cpp:223</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a056c88c7d5d4c012ca3daf0c515675c9"><div class="ttname"><a href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">FileIOFilter::DEFAULT_PRIORITY</a></div><div class="ttdeci">static constexpr float DEFAULT_PRIORITY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00313">FileIOFilter.h:313</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">FileIOFilter::Import</a></div><div class="ttdeci">@ Import</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00302">FileIOFilter.h:302</a></div></div>
@@ -1461,14 +1471,14 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_afab9103ed8446816839045941182103e"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#afab9103ed8446816839045941182103e">cloudViewer::BoundingBoxTpl::add</a></div><div class="ttdeci">void add(const Vector3Tpl&lt; T &gt; &amp;P)</div><div class="ttdoc">'Enlarges' the bounding box with a point</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00131">BoundingBox.h:131</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericIndexedMesh_html"><div class="ttname"><a href="classcloudViewer_1_1GenericIndexedMesh.html">cloudViewer::GenericIndexedMesh</a></div><div class="ttdoc">A generic mesh with index-based vertex access.</div><div class="ttdef"><b>Definition:</b> <a href="GenericIndexedMesh_8h_source.html#l00037">GenericIndexedMesh.h:37</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericMesh_html"><div class="ttname"><a href="classcloudViewer_1_1GenericMesh.html">cloudViewer::GenericMesh</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericMesh_8h_source.html#l00021">GenericMesh.h:21</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1MeshSamplingTools_html_aa9bbf73055a458a1ba8d270c7f3706c5"><div class="ttname"><a href="classcloudViewer_1_1MeshSamplingTools.html#aa9bbf73055a458a1ba8d270c7f3706c5">cloudViewer::MeshSamplingTools::samplePointsOnMesh</a></div><div class="ttdeci">static PointCloud * samplePointsOnMesh(GenericMesh *mesh, double samplingDensity, GenericProgressCallback *progressCb=nullptr, std::vector&lt; unsigned &gt; *triIndices=nullptr)</div><div class="ttdoc">Samples points on a mesh.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1MeshSamplingTools_html_a7530277de7b09733e7fa1ed392fce71b"><div class="ttname"><a href="classcloudViewer_1_1MeshSamplingTools.html#a7530277de7b09733e7fa1ed392fce71b">cloudViewer::MeshSamplingTools::samplePointsOnMesh</a></div><div class="ttdeci">static PointCloud * samplePointsOnMesh(GenericMesh *mesh, double samplingDensity, GenericProgressCallback *progressCb=nullptr, std::vector&lt; unsigned &gt; *triIndices=nullptr)</div><div class="ttdoc">Samples points on a mesh.</div><div class="ttdef"><b>Definition:</b> <a href="MeshSamplingTools_8cpp_source.html#l00230">MeshSamplingTools.cpp:230</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00078">GenericProgressCallback.h:78</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_acb12b90f38ce4214da186cb2d5d0b764"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_a6e75fa9a0a99931ed3ed2835e142d2d5"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div><div class="ttdef"><b>Definition:</b> <a href="NormalizedProgress_8cpp_source.html#l00099">NormalizedProgress.cpp:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a695e06ffe6cbf01221a8c21e9da9bed6"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a695e06ffe6cbf01221a8c21e9da9bed6">cloudViewer::PointCloudTpl::getPointPersistentPtr</a></div><div class="ttdeci">const CCVector3 * getPointPersistentPtr(unsigned index) override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00160">PointCloudTpl.h:160</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloud_html"><div class="ttname"><a href="classcloudViewer_1_1PointCloud.html">cloudViewer::PointCloud</a></div><div class="ttdef"><b>Definition:</b> <a href="CVPointCloud_8h_source.html#l00018">CVPointCloud.h:19</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1PointProjectionTools_html_a9a4a567089fd1e4b08b541e1c2e1a454"><div class="ttname"><a href="classcloudViewer_1_1PointProjectionTools.html#a9a4a567089fd1e4b08b541e1c2e1a454">cloudViewer::PointProjectionTools::computeTriangulation</a></div><div class="ttdeci">static GenericIndexedMesh * computeTriangulation(GenericIndexedCloudPersist *cloud, TRIANGULATION_TYPES type, PointCoordinateType maxEdgeLength, unsigned char dim, std::string &amp;outputErrorStr)</div><div class="ttdoc">Applys a geometrical transformation to a single point.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1PointProjectionTools_html_ac304881d95a77c5454f63e509af852e7"><div class="ttname"><a href="classcloudViewer_1_1PointProjectionTools.html#ac304881d95a77c5454f63e509af852e7">cloudViewer::PointProjectionTools::computeTriangulation</a></div><div class="ttdeci">static GenericIndexedMesh * computeTriangulation(GenericIndexedCloudPersist *cloud, TRIANGULATION_TYPES type, PointCoordinateType maxEdgeLength, unsigned char dim, std::string &amp;outputErrorStr)</div><div class="ttdoc">Applys a geometrical transformation to a single point.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2PointProjectionTools_8cpp_source.html#l00275">PointProjectionTools.cpp:275</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
 <div class="ttc" id="aclassecvProgressDialog_html"><div class="ttname"><a href="classecvProgressDialog.html">ecvProgressDialog</a></div><div class="ttdoc">Graphical progress indicator (thread-safe)</div><div class="ttdef"><b>Definition:</b> <a href="ecvProgressDialog_8h_source.html#l00027">ecvProgressDialog.h:29</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_aad6a2701675cd2a4bc1b1da7b79948ae"><div class="ttname"><a href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a></div><div class="ttdeci">__host__ __device__ float2 fabs(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01254">cutil_math.h:1254</a></div></div>
@@ -1492,7 +1502,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div class="ttc" id="anamespacecloudViewer_html_a84d21d5f0aea6470ef648dbba98a924caa445188b6e2086eb9ab6de86863da249"><div class="ttname"><a href="namespacecloudViewer.html#a84d21d5f0aea6470ef648dbba98a924caa445188b6e2086eb9ab6de86863da249">cloudViewer::DELAUNAY_2D_BEST_LS_PLANE</a></div><div class="ttdeci">@ DELAUNAY_2D_BEST_LS_PLANE</div><div class="ttdef"><b>Definition:</b> <a href="PointProjectionTools_8h_source.html#l00026">PointProjectionTools.h:25</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_aeb8a3b0235e7f430fd7de83a10580b2d"><div class="ttname"><a href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">cloudViewer::LessThanEpsilon</a></div><div class="ttdeci">bool LessThanEpsilon(float x)</div><div class="ttdoc">Test a floating point number against our epsilon (a very small number).</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00023">CVMath.h:23</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a33d9b27b9a0560ed19602d36a47fadca"><div class="ttname"><a href="namespaceecvColor.html#a33d9b27b9a0560ed19602d36a47fadca">ecvColor::MAX</a></div><div class="ttdeci">constexpr ColorCompType MAX</div><div class="ttdoc">Max value of a single color component (default type)</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00034">ecvColorTypes.h:34</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="aqColorimetricSegmenter_8cpp_html_a9d7f143d849b9fad6dd88a0bb3b3058e"><div class="ttname"><a href="qColorimetricSegmenter_8cpp.html#a9d7f143d849b9fad6dd88a0bb3b3058e">TD</a></div><div class="ttdeci">static const double TD</div><div class="ttdef"><b>Definition:</b> <a href="qColorimetricSegmenter_8cpp_source.html#l00724">qColorimetricSegmenter.cpp:724</a></div></div>
 <div class="ttc" id="astructBundlerCamera_html"><div class="ttname"><a href="structBundlerCamera.html">BundlerCamera</a></div><div class="ttdoc">Bundler camera.</div><div class="ttdef"><b>Definition:</b> <a href="BundlerFilter_8cpp_source.html#l00044">BundlerFilter.cpp:44</a></div></div>
 <div class="ttc" id="astructBundlerCamera_html_a0def130c29436e314b4803e25bdde6a9"><div class="ttname"><a href="structBundlerCamera.html#a0def130c29436e314b4803e25bdde6a9">BundlerCamera::k2</a></div><div class="ttdeci">float k2</div><div class="ttdoc">Second radial distortion coef.</div><div class="ttdef"><b>Definition:</b> <a href="BundlerFilter_8cpp_source.html#l00053">BundlerFilter.cpp:53</a></div></div>
@@ -1527,7 +1537,7 @@ $(document).ready(function(){initNavTree('BundlerFilter_8cpp_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_148eb1bec32389d620143c4e90e6b93c.html">qAdditionalIO</a></li><li class="navelem"><a class="el" href="dir_b14736cabb2734d269d4858bfda65e89.html">src</a></li><li class="navelem"><a class="el" href="BundlerFilter_8cpp.html">BundlerFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

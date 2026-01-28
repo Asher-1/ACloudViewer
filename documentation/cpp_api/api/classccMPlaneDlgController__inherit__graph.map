@@ -1,5 +1,5 @@
 <map id="ccMPlaneDlgController" name="ccMPlaneDlgController">
 <area shape="rect" id="node1" title=" " alt="" coords="21,80,192,107"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="105,5,239,32"/>
+<area shape="rect" id="node3" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="105,5,239,32"/>
 </map>

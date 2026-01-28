@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -104,9 +113,11 @@ Inheritance diagram for qSRA:</div>
 <div class="dyncontent">
 <div class="center"><img src="classqSRA__inherit__graph.png" border="0" usemap="#aqSRA_inherit__map" alt="Inheritance graph"/></div>
 <map name="aqSRA_inherit__map" id="aqSRA_inherit__map">
-<area shape="rect" title="Surface of Revolution Analysis plugin." alt="" coords="84,80,140,107"/>
-<area shape="rect" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" title=" " alt="" coords="104,5,259,32"/>
+<area shape="rect" title="Surface of Revolution Analysis plugin." alt="" coords="84,229,140,256"/>
+<area shape="rect" title=" " alt="" coords="5,155,80,181"/>
+<area shape="rect" href="classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="104,155,259,181"/>
+<area shape="rect" href="classccDefaultPluginInterface.html" title=" " alt="" coords="90,80,273,107"/>
+<area shape="rect" href="classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="114,5,249,32"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -114,9 +125,12 @@ Collaboration diagram for qSRA:</div>
 <div class="dyncontent">
 <div class="center"><img src="classqSRA__coll__graph.png" border="0" usemap="#aqSRA_coll__map" alt="Collaboration graph"/></div>
 <map name="aqSRA_coll__map" id="aqSRA_coll__map">
-<area shape="rect" title="Surface of Revolution Analysis plugin." alt="" coords="84,80,140,107"/>
-<area shape="rect" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" title=" " alt="" coords="104,5,259,32"/>
+<area shape="rect" title="Surface of Revolution Analysis plugin." alt="" coords="82,247,138,273"/>
+<area shape="rect" title=" " alt="" coords="57,171,131,197"/>
+<area shape="rect" href="classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="155,171,310,197"/>
+<area shape="rect" href="classccDefaultPluginInterface.html" title=" " alt="" coords="5,81,188,108"/>
+<area shape="rect" href="classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="29,5,164,32"/>
+<area shape="rect" href="classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="213,81,373,108"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -130,7 +144,64 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a184cf8224d4c42ef48ff0115372beb2d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classqSRA.html#a184cf8224d4c42ef48ff0115372beb2d">onNewSelection</a> (const <a class="el" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> &amp;selectedEntities) override</td></tr>
 <tr class="separator:a184cf8224d4c42ef48ff0115372beb2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac39c1c17c86364175ad26c7d6fd9cd2b"><td class="memItemLeft" align="right" valign="top">virtual QList&lt; QAction * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classqSRA.html#ac39c1c17c86364175ad26c7d6fd9cd2b">getActions</a> () override</td></tr>
+<tr class="memdesc:ac39c1c17c86364175ad26c7d6fd9cd2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a list of actions for this plugin.  <a href="classqSRA.html#ac39c1c17c86364175ad26c7d6fd9cd2b">More...</a><br /></td></tr>
 <tr class="separator:ac39c1c17c86364175ad26c7d6fd9cd2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccStdPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccStdPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccStdPluginInterface.html">ccStdPluginInterface</a></td></tr>
+<tr class="memitem:a45874923d7f525e48c277247af9eb1cb inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a45874923d7f525e48c277247af9eb1cb">ccStdPluginInterface</a> (const QString &amp;resourcePath=QString())</td></tr>
+<tr class="memdesc:a45874923d7f525e48c277247af9eb1cb inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="classccStdPluginInterface.html#a45874923d7f525e48c277247af9eb1cb">More...</a><br /></td></tr>
+<tr class="separator:a45874923d7f525e48c277247af9eb1cb inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9152bda404ca65ca5dc07422c8050ce inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#af9152bda404ca65ca5dc07422c8050ce">~ccStdPluginInterface</a> () override=default</td></tr>
+<tr class="memdesc:af9152bda404ca65ca5dc07422c8050ce inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="classccStdPluginInterface.html#af9152bda404ca65ca5dc07422c8050ce">More...</a><br /></td></tr>
+<tr class="separator:af9152bda404ca65ca5dc07422c8050ce inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5701c33006c1d973071b17a610a7543d inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="ecvPluginInterface_8h.html#ad54a8f3d5ead901036a146e0800f1777">CC_PLUGIN_TYPE</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a5701c33006c1d973071b17a610a7543d">getType</a> () const override</td></tr>
+<tr class="memdesc:a5701c33006c1d973071b17a610a7543d inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns plugin type (standard or OpenGL filter)  <a href="classccStdPluginInterface.html#a5701c33006c1d973071b17a610a7543d">More...</a><br /></td></tr>
+<tr class="separator:a5701c33006c1d973071b17a610a7543d inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81a906999348affa15b28cd8d6bfc714 inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a81a906999348affa15b28cd8d6bfc714">setMainAppInterface</a> (<a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *app)</td></tr>
+<tr class="memdesc:a81a906999348affa15b28cd8d6bfc714 inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets application entry point.  <a href="classccStdPluginInterface.html#a81a906999348affa15b28cd8d6bfc714">More...</a><br /></td></tr>
+<tr class="separator:a81a906999348affa15b28cd8d6bfc714 inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8dbc342471770ca51be02d711b2caaab inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a8dbc342471770ca51be02d711b2caaab">getMainAppInterface</a> ()</td></tr>
+<tr class="memdesc:a8dbc342471770ca51be02d711b2caaab inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">A callback pointer to the main app interface for use by plugins.  <a href="classccStdPluginInterface.html#a8dbc342471770ca51be02d711b2caaab">More...</a><br /></td></tr>
+<tr class="separator:a8dbc342471770ca51be02d711b2caaab inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20b4bf8734bbab25b6115616ba472c2c inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a20b4bf8734bbab25b6115616ba472c2c">dispToConsole</a> (QString message, <a class="el" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25">ecvMainAppInterface::ConsoleMessageLevel</a> level=<a class="el" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>)</td></tr>
+<tr class="memdesc:a20b4bf8734bbab25b6115616ba472c2c inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shortcut to <a class="el" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a>.  <a href="classccStdPluginInterface.html#a20b4bf8734bbab25b6115616ba472c2c">More...</a><br /></td></tr>
+<tr class="separator:a20b4bf8734bbab25b6115616ba472c2c inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccDefaultPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccDefaultPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccDefaultPluginInterface.html">ccDefaultPluginInterface</a></td></tr>
+<tr class="memitem:ab4cbd488cf4aae8217f5d6194f300be0 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ab4cbd488cf4aae8217f5d6194f300be0">~ccDefaultPluginInterface</a> ()</td></tr>
+<tr class="separator:ab4cbd488cf4aae8217f5d6194f300be0 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae463b251ed6700b4510e0689d0e960ae inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ae463b251ed6700b4510e0689d0e960ae">isCore</a> () const override</td></tr>
+<tr class="memdesc:ae463b251ed6700b4510e0689d0e960ae inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is this plugin a core plugin?  <a href="classccDefaultPluginInterface.html#ae463b251ed6700b4510e0689d0e960ae">More...</a><br /></td></tr>
+<tr class="separator:ae463b251ed6700b4510e0689d0e960ae inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a1a1767db7a925da80ee8a356ce423b inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a> () const override</td></tr>
+<tr class="memdesc:a8a1a1767db7a925da80ee8a356ce423b inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (short) name (for menu entry, etc.)  <a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">More...</a><br /></td></tr>
+<tr class="separator:a8a1a1767db7a925da80ee8a356ce423b inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae6336c05f8e7de1be072565b8d6256c inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a> () const override</td></tr>
+<tr class="memdesc:aae6336c05f8e7de1be072565b8d6256c inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns long name/description (for tooltip, etc.)  <a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">More...</a><br /></td></tr>
+<tr class="separator:aae6336c05f8e7de1be072565b8d6256c inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9d5f749c5b30b78dab3cc78812e8d8e inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual QIcon&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a> () const override</td></tr>
+<tr class="memdesc:ac9d5f749c5b30b78dab3cc78812e8d8e inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns icon.  <a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">More...</a><br /></td></tr>
+<tr class="separator:ac9d5f749c5b30b78dab3cc78812e8d8e inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d22e238d5714d9cbdc4818c014fafe2 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccPluginInterface.html#a332370f9ecfa67f1fa96d37d3de3e140">ReferenceList</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a3d22e238d5714d9cbdc4818c014fafe2">getReferences</a> () const override</td></tr>
+<tr class="separator:a3d22e238d5714d9cbdc4818c014fafe2 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c7e655f0af6852419242e1b9a481514 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccPluginInterface.html#af78704bf3b703f3c9026781408d10c8d">ContactList</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a0c7e655f0af6852419242e1b9a481514">getAuthors</a> () const override</td></tr>
+<tr class="separator:a0c7e655f0af6852419242e1b9a481514 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7eacb28c4e2b287008e8b90c5c4ee06 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccPluginInterface.html#af78704bf3b703f3c9026781408d10c8d">ContactList</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ac7eacb28c4e2b287008e8b90c5c4ee06">getMaintainers</a> () const override</td></tr>
+<tr class="separator:ac7eacb28c4e2b287008e8b90c5c4ee06 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccPluginInterface.html">ccPluginInterface</a></td></tr>
+<tr class="memitem:a5b6d0c71bb22372ea7aff45489693766 inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a5b6d0c71bb22372ea7aff45489693766">~ccPluginInterface</a> ()=default</td></tr>
+<tr class="memdesc:a5b6d0c71bb22372ea7aff45489693766 inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Virtual destructor.  <a href="classccPluginInterface.html#a5b6d0c71bb22372ea7aff45489693766">More...</a><br /></td></tr>
+<tr class="separator:a5b6d0c71bb22372ea7aff45489693766 inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d67ba00a2e3df9d701e1653de1ba7db inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a1d67ba00a2e3df9d701e1653de1ba7db">start</a> ()</td></tr>
+<tr class="memdesc:a1d67ba00a2e3df9d701e1653de1ba7db inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts the plugin.  <a href="classccPluginInterface.html#a1d67ba00a2e3df9d701e1653de1ba7db">More...</a><br /></td></tr>
+<tr class="separator:a1d67ba00a2e3df9d701e1653de1ba7db inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a184a580d35944ffc67231b3ea58c3f inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a6a184a580d35944ffc67231b3ea58c3f">stop</a> ()</td></tr>
+<tr class="memdesc:a6a184a580d35944ffc67231b3ea58c3f inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stops the plugin.  <a href="classccPluginInterface.html#a6a184a580d35944ffc67231b3ea58c3f">More...</a><br /></td></tr>
+<tr class="separator:a6a184a580d35944ffc67231b3ea58c3f inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad926804a4eaa5cdbc9e686ab71ccc720 inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccExternalFactory.html">ccExternalFactory</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#ad926804a4eaa5cdbc9e686ab71ccc720">getCustomObjectsFactory</a> () const</td></tr>
+<tr class="memdesc:ad926804a4eaa5cdbc9e686ab71ccc720 inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the plugin's custom object factory (if any)  <a href="classccPluginInterface.html#ad926804a4eaa5cdbc9e686ab71ccc720">More...</a><br /></td></tr>
+<tr class="separator:ad926804a4eaa5cdbc9e686ab71ccc720 inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a86584af99d29165624d778c016b05a inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">registerCommands</a> (<a class="el" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *cmd)</td></tr>
+<tr class="memdesc:a7a86584af99d29165624d778c016b05a inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional: registers commands (for the command line mode)  <a href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">More...</a><br /></td></tr>
+<tr class="separator:a7a86584af99d29165624d778c016b05a inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-slots"></a>
 Protected Slots</h2></td></tr>
@@ -151,6 +222,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a3bf30e26c76c882e87c9e97bd8642fc9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classqSRA.html#a3bf30e26c76c882e87c9e97bd8642fc9">doComputeRadialDists</a> (<a class="el" href="classccPointCloud.html">ccPointCloud</a> *cloud, <a class="el" href="classccPolyline.html">ccPolyline</a> *polyline) const</td></tr>
 <tr class="memdesc:a3bf30e26c76c882e87c9e97bd8642fc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes cloud-to-profile radial distances.  <a href="classqSRA.html#a3bf30e26c76c882e87c9e97bd8642fc9">More...</a><br /></td></tr>
 <tr class="separator:a3bf30e26c76c882e87c9e97bd8642fc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_methods_classccDefaultPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classccDefaultPluginInterface')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classccDefaultPluginInterface.html">ccDefaultPluginInterface</a></td></tr>
+<tr class="memitem:a097c0bb9d433b5b43146f35e29981218 inherit pro_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a097c0bb9d433b5b43146f35e29981218">ccDefaultPluginInterface</a> (const QString &amp;resourcePath=QString())</td></tr>
+<tr class="separator:a097c0bb9d433b5b43146f35e29981218 inherit pro_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -163,6 +237,18 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a820e09b68ce362d9c9ae5366389ba31f"><td class="memItemLeft" align="right" valign="top">QAction *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classqSRA.html#a820e09b68ce362d9c9ae5366389ba31f">m_doProjectCloudDists</a></td></tr>
 <tr class="memdesc:a820e09b68ce362d9c9ae5366389ba31f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associated action.  <a href="classqSRA.html#a820e09b68ce362d9c9ae5366389ba31f">More...</a><br /></td></tr>
 <tr class="separator:a820e09b68ce362d9c9ae5366389ba31f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_classccStdPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classccStdPluginInterface')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classccStdPluginInterface.html">ccStdPluginInterface</a></td></tr>
+<tr class="memitem:af46bcfd10da04c21300a7f1a59b29d86 inherit pro_attribs_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a></td></tr>
+<tr class="memdesc:af46bcfd10da04c21300a7f1a59b29d86 inherit pro_attribs_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main application interface.  <a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">More...</a><br /></td></tr>
+<tr class="separator:af46bcfd10da04c21300a7f1a59b29d86 inherit pro_attribs_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classccPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classccPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classccPluginInterface.html">ccPluginInterface</a></td></tr>
+<tr class="memitem:af78704bf3b703f3c9026781408d10c8d inherit pub_types_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">typedef QList&lt; <a class="el" href="structccPluginInterface_1_1Contact.html">Contact</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#af78704bf3b703f3c9026781408d10c8d">ContactList</a></td></tr>
+<tr class="separator:af78704bf3b703f3c9026781408d10c8d inherit pub_types_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a332370f9ecfa67f1fa96d37d3de3e140 inherit pub_types_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a332370f9ecfa67f1fa96d37d3de3e140">ReferenceList</a> = QList&lt; <a class="el" href="structccPluginInterface_1_1Reference.html">Reference</a> &gt;</td></tr>
+<tr class="separator:a332370f9ecfa67f1fa96d37d3de3e140 inherit pub_types_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Surface of Revolution Analysis plugin. </p>
@@ -252,7 +338,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00304">304</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild()</a>, <a class="el" href="CVTypes_8h_source.html#l00123">CV_TYPES::CONE</a>, <a class="el" href="qSRA_8cpp_source.html#l00382">doComputeRadialDists()</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">doProjectCloudDistsInGrid()</a>, <a class="el" href="qSRA_8cpp_source.html#l00240">GetConeProfile()</a>, <a class="el" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green()</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="CVTypes_8h_source.html#l00112">CV_TYPES::POLY_LINE</a>, <a class="el" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">ccPolyline::set2DMode()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00081">ccPolyline::setColor()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00040">ccDrawableObject::setVisible()</a>, <a class="el" href="classccPolyline.html#afa5cd7899b0e778f6773080e70f7b3e9">ccPolyline::setWidth()</a>, and <a class="el" href="ecvDrawableObject_8h_source.html#l00084">ccDrawableObject::showColors()</a>.</p>
+<p class="reference">References <a class="el" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild()</a>, <a class="el" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB()</a>, <a class="el" href="CVTypes_8h_source.html#l00123">CV_TYPES::CONE</a>, <a class="el" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole()</a>, <a class="el" href="qSRA_8cpp_source.html#l00382">doComputeRadialDists()</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">doProjectCloudDistsInGrid()</a>, <a class="el" href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>, <a class="el" href="qSRA_8cpp_source.html#l00240">GetConeProfile()</a>, <a class="el" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow()</a>, <a class="el" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities()</a>, <a class="el" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00085">ccStdPluginInterface::m_app</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="CVTypes_8h_source.html#l00112">CV_TYPES::POLY_LINE</a>, <a class="el" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">ccPolyline::set2DMode()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00081">ccPolyline::setColor()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00040">ccDrawableObject::setVisible()</a>, <a class="el" href="classccPolyline.html#afa5cd7899b0e778f6773080e70f7b3e9">ccPolyline::setWidth()</a>, and <a class="el" href="ecvDrawableObject_8h_source.html#l00084">ccDrawableObject::showColors()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="qSRA_8cpp_source.html#l00047">getActions()</a>.</p>
 
@@ -296,7 +382,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00382">382</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00219">DistanceMapGenerationTool::ComputeRadialDist()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00048">ccDrawableObject::setRedraw()</a>, and <a class="el" href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive()</a>.</p>
+<p class="reference">References <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00219">DistanceMapGenerationTool::ComputeRadialDist()</a>, <a class="el" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00085">ccStdPluginInterface::m_app</a>, <a class="el" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">ecvMainAppInterface::refreshAll()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00048">ccDrawableObject::setRedraw()</a>, <a class="el" href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive()</a>, <a class="el" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">ecvMainAppInterface::updateUI()</a>, and <a class="el" href="ecvMainAppInterface_8h_source.html#l00118">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="qSRA_8cpp_source.html#l00304">computeCloud2ProfileRadialDist()</a>.</p>
 
@@ -339,7 +425,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00456">456</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error()</a>, <a class="el" href="classccPointCloud.html#ac8086d3f8ddd39e2295db4750e760f7b">ccPointCloud::getCurrentDisplayedScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00354">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00375">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarFieldIndexByName()</a>, <a class="el" href="qSRA_8h_source.html#l00055">m_doCompareCloudToProfile</a>, <a class="el" href="distanceMapGenerationTool_8h_source.html#l00031">RADIAL_DIST_SF_NAME</a>, and <a class="el" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning()</a>.</p>
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00143">CVLog::Error()</a>, <a class="el" href="classccPointCloud.html#ac8086d3f8ddd39e2295db4750e760f7b">ccPointCloud::getCurrentDisplayedScalarField()</a>, <a class="el" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00354">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00375">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarFieldIndexByName()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00085">ccStdPluginInterface::m_app</a>, <a class="el" href="qSRA_8h_source.html#l00055">m_doCompareCloudToProfile</a>, <a class="el" href="distanceMapGenerationTool_8h_source.html#l00031">RADIAL_DIST_SF_NAME</a>, and <a class="el" href="CVLog_8cpp_source.html#l00133">CVLog::Warning()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="qSRA_8cpp_source.html#l00304">computeCloud2ProfileRadialDist()</a>, and <a class="el" href="qSRA_8cpp_source.html#l00408">projectCloudDistsInGrid()</a>.</p>
 
@@ -367,6 +453,10 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Get a list of actions for this plugin. </p>
+
+<p>Implements <a class="el" href="classccStdPluginInterface.html#aa418ce1ee9864a94cc5990d628c8aa31">ccStdPluginInterface</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00047">47</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
@@ -401,7 +491,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00146">146</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00053">ProfileImportDlg::absoluteHeightValues()</a>, <a class="el" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00810">ccGLMatrixTpl&lt; T &gt;::data()</a>, <a class="el" href="ecvFileUtils_8h_source.html#l00030">ecvFileUtils::defaultDocPath()</a>, <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00024">ProfileImportDlg::getAxisDimension()</a>, <a class="el" href="qSRA_8cpp_source.html#l00123">GetDefaultContainer()</a>, <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00049">ProfileImportDlg::getFilename()</a>, <a class="el" href="profileLoader_8cpp_source.html#l00025">ProfileLoader::Load()</a>, <a class="el" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">ccPolyline::set2DMode()</a>, <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00045">ProfileImportDlg::setDefaultFilename()</a>, <a class="el" href="classccDrawableObject.html#ae3b78df637291448db4fbf79e7c9640b">ccDrawableObject::setGLTransformation()</a>, <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00169">DistanceMapGenerationTool::SetPolylineHeightShift()</a>, <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00147">DistanceMapGenerationTool::SetPoylineOrigin()</a>, <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00122">DistanceMapGenerationTool::SetPoylineRevolDim()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00836">ccGLMatrixTpl&lt; T &gt;::setTranslation()</a>, and <a class="el" href="CVGeom_8h_source.html#l00139">Tuple3Tpl&lt; Type &gt;::u</a>.</p>
+<p class="reference">References <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00053">ProfileImportDlg::absoluteHeightValues()</a>, <a class="el" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild()</a>, <a class="el" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00810">ccGLMatrixTpl&lt; T &gt;::data()</a>, <a class="el" href="ecvFileUtils_8h_source.html#l00030">ecvFileUtils::defaultDocPath()</a>, <a class="el" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole()</a>, <a class="el" href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00024">ProfileImportDlg::getAxisDimension()</a>, <a class="el" href="qSRA_8cpp_source.html#l00123">GetDefaultContainer()</a>, <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00049">ProfileImportDlg::getFilename()</a>, <a class="el" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow()</a>, <a class="el" href="profileLoader_8cpp_source.html#l00025">ProfileLoader::Load()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00085">ccStdPluginInterface::m_app</a>, <a class="el" href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">cloudViewer::t::geometry::path</a>, <a class="el" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">ccPolyline::set2DMode()</a>, <a class="el" href="qMasonry_2qManualSeg_2profileImportDlg_8cpp_source.html#l00045">ProfileImportDlg::setDefaultFilename()</a>, <a class="el" href="classccDrawableObject.html#ae3b78df637291448db4fbf79e7c9640b">ccDrawableObject::setGLTransformation()</a>, <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00169">DistanceMapGenerationTool::SetPolylineHeightShift()</a>, <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00147">DistanceMapGenerationTool::SetPoylineOrigin()</a>, <a class="el" href="distanceMapGenerationTool_8cpp_source.html#l00122">DistanceMapGenerationTool::SetPoylineRevolDim()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00836">ccGLMatrixTpl&lt; T &gt;::setTranslation()</a>, <a class="el" href="ecvMainAppInterface_8h_source.html#l00117">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>, and <a class="el" href="CVGeom_8h_source.html#l00139">Tuple3Tpl&lt; Type &gt;::u</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="qSRA_8cpp_source.html#l00047">getActions()</a>.</p>
 
@@ -430,6 +520,14 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+<p>This method is called by the main application whenever the entity selection changes Does nothing by default. Should be re-implemented by the plugin if necessary.</p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">selectedEntities</td><td>currently selected entities </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Reimplemented from <a class="el" href="classccStdPluginInterface.html#a8e9a3a2425114ca14d3693d4c0612a39">ccStdPluginInterface</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00092">92</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
@@ -464,7 +562,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="qSRA_8cpp_source.html#l00408">408</a> of file <a class="el" href="qSRA_8cpp_source.html">qSRA.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00123">CV_TYPES::CONE</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">doProjectCloudDistsInGrid()</a>, <a class="el" href="qSRA_8cpp_source.html#l00240">GetConeProfile()</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, and <a class="el" href="CVTypes_8h_source.html#l00112">CV_TYPES::POLY_LINE</a>.</p>
+<p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00123">CV_TYPES::CONE</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">doProjectCloudDistsInGrid()</a>, <a class="el" href="qSRA_8cpp_source.html#l00240">GetConeProfile()</a>, <a class="el" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00085">ccStdPluginInterface::m_app</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, and <a class="el" href="CVTypes_8h_source.html#l00112">CV_TYPES::POLY_LINE</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="qSRA_8cpp_source.html#l00047">getActions()</a>.</p>
 
@@ -565,7 +663,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classqSRA.html">qSRA</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:14 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

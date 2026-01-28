@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -115,7 +124,7 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">class </span><a class="code" href="classccMesh.html">ccMesh</a>;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">class </span><a class="code" href="classccPolyline.html">ccPolyline</a>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">class </span><a class="code" href="classccScalarField.html">ccScalarField</a>;</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">class </span>ecvMainAppInterface;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">class </span><a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>;</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment">// Default radial distance scalar field name</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="distanceMapGenerationTool_8h.html#a77cbc1722df70b96db89a091ae32d3bc">   31</a></span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> <a class="code" href="distanceMapGenerationTool_8h.html#a77cbc1722df70b96db89a091ae32d3bc">RADIAL_DIST_SF_NAME</a>[] = <span class="stringliteral">&quot;Radial distance&quot;</span>;</div>
@@ -175,7 +184,7 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classDistanceMapGenerationTool.html#a8a0fb91e2ba4a8cba345402191e76723">ComputeRadialDist</a>(<a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud,</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                                  <a class="code" href="classccPolyline.html">ccPolyline</a>* <a class="code" href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a>,</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                                  <span class="keywordtype">bool</span> storeRadiiAsSF = <span class="keyword">false</span>,</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                                  ecvMainAppInterface* app = 0);</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                                  <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app = 0);</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
 <div class="line"><a name="l00121"></a><span class="lineno"><a class="line" href="structDistanceMapGenerationTool_1_1MapCell.html">  121</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structDistanceMapGenerationTool_1_1MapCell.html">MapCell</a> {</div>
 <div class="line"><a name="l00123"></a><span class="lineno"><a class="line" href="structDistanceMapGenerationTool_1_1MapCell.html#a3c745e3bd12a38c9bb0cb4a8caa669c5">  123</a></span>&#160;        <a class="code" href="structDistanceMapGenerationTool_1_1MapCell.html#a3c745e3bd12a38c9bb0cb4a8caa669c5">MapCell</a>() : <a class="code" href="structDistanceMapGenerationTool_1_1MapCell.html#a99b7890256f878a2d5176dfa13f4dab8">value</a>(0), <a class="code" href="structDistanceMapGenerationTool_1_1MapCell.html#aec6ef14c883aeda65d2e961e1fa9c011">count</a>(0) {}</div>
@@ -253,7 +262,7 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;            <span class="keywordtype">bool</span> counterclockwise,</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            <a class="code" href="classDistanceMapGenerationTool.html#ade24c4886bab1ac925c8d5d936eff0b1">FillStrategyType</a> fillStrategy,</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            <a class="code" href="classDistanceMapGenerationTool.html#a1076c65c43cf318267cc0a58bd4cb5df">EmptyCellFillOption</a> emptyCellfillOption,</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;            ecvMainAppInterface* app = 0);</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;            <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app = 0);</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160; </div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keyword">static</span> <a class="code" href="classccMesh.html">ccMesh</a>* <a class="code" href="classDistanceMapGenerationTool.html#afa9aa84050869a3af21775e1c98a5e98">ConvertConicalMapToMesh</a>(<span class="keyword">const</span> QSharedPointer&lt;Map&gt;&amp; map,</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;                                           <span class="keywordtype">bool</span> counterclockwise,</div>
@@ -297,12 +306,12 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;            <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> revolutionAxisDim);</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160; </div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classDistanceMapGenerationTool.html#a2839852ca6156e1e4ab0d3c778415976">SaveMapAsCSVMatrix</a>(<span class="keyword">const</span> QSharedPointer&lt;Map&gt;&amp; map,</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                                   QString filename,</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                                   QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                                   QString xUnit,</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                                   QString yUnit,</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                                   <span class="keywordtype">double</span> xConversionFactor = 1.0,</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                                   <span class="keywordtype">double</span> yConversionFactor = 1.0,</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                                   ecvMainAppInterface* app = 0);</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                                   <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app = 0);</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160; </div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <span class="keyword">static</span> QImage <a class="code" href="classDistanceMapGenerationTool.html#a96237aba10075cc4addd1f560f43262d">ConvertMapToImage</a>(</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            <span class="keyword">const</span> QSharedPointer&lt;Map&gt;&amp; map,</div>
@@ -339,6 +348,7 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;};</div>
 <div class="ttc" id="aCVGeom_8h_html"><div class="ttname"><a href="CVGeom_8h.html">CVGeom.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aO3DVisualizer_8cpp_html_a0bbf218724b31893cbaf637fc7ce5798"><div class="ttname"><a href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a></div><div class="ttdeci">CloudViewerScene::LightingProfile profile</div><div class="ttdef"><b>Definition:</b> <a href="O3DVisualizer_8cpp_source.html#l00271">O3DVisualizer.cpp:271</a></div></div>
 <div class="ttc" id="aclassDistanceMapGenerationTool_1_1Map_html"><div class="ttname"><a href="classDistanceMapGenerationTool_1_1Map.html">DistanceMapGenerationTool::Map</a></div><div class="ttdoc">&quot;Distance&quot; map</div><div class="ttdef"><b>Definition:</b> <a href="distanceMapGenerationTool_8h_source.html#l00132">distanceMapGenerationTool.h:132</a></div></div>
 <div class="ttc" id="aclassDistanceMapGenerationTool_1_1Map_html_a28d5c6b86e5b41a44a88c3381f73d284"><div class="ttname"><a href="classDistanceMapGenerationTool_1_1Map.html#a28d5c6b86e5b41a44a88c3381f73d284">DistanceMapGenerationTool::Map::xSteps</a></div><div class="ttdeci">unsigned xSteps</div><div class="ttdef"><b>Definition:</b> <a href="distanceMapGenerationTool_8h_source.html#l00149">distanceMapGenerationTool.h:149</a></div></div>
@@ -396,6 +406,7 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPolyline_html"><div class="ttname"><a href="classccPolyline.html">ccPolyline</a></div><div class="ttdoc">Colored polyline.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00023">ecvPolyline.h:24</a></div></div>
 <div class="ttc" id="aclassccScalarField_html"><div class="ttname"><a href="classccScalarField.html">ccScalarField</a></div><div class="ttdoc">A scalar field associated to display-related parameters.</div><div class="ttdef"><b>Definition:</b> <a href="ecvScalarField_8h_source.html#l00019">ecvScalarField.h:20</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="adistanceMapGenerationTool_8h_html_a77cbc1722df70b96db89a091ae32d3bc"><div class="ttname"><a href="distanceMapGenerationTool_8h.html#a77cbc1722df70b96db89a091ae32d3bc">RADIAL_DIST_SF_NAME</a></div><div class="ttdeci">const char RADIAL_DIST_SF_NAME[]</div><div class="ttdef"><b>Definition:</b> <a href="distanceMapGenerationTool_8h_source.html#l00031">distanceMapGenerationTool.h:31</a></div></div>
 <div class="ttc" id="adistanceMapGenerationTool_8h_html_ae6f903b7868dd1c9e2d5fbed0499501b"><div class="ttname"><a href="distanceMapGenerationTool_8h.html#ae6f903b7868dd1c9e2d5fbed0499501b">RADII_SF_NAME</a></div><div class="ttdeci">const char RADII_SF_NAME[]</div><div class="ttdef"><b>Definition:</b> <a href="distanceMapGenerationTool_8h_source.html#l00033">distanceMapGenerationTool.h:33</a></div></div>
 <div class="ttc" id="aecvColorScale_8h_html"><div class="ttname"><a href="ecvColorScale_8h.html">ecvColorScale.h</a></div></div>
@@ -425,7 +436,7 @@ $(document).ready(function(){initNavTree('distanceMapGenerationTool_8h_source.ht
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_6825a0132d045bbc984f455ea40d2f9f.html">qSRA</a></li><li class="navelem"><a class="el" href="dir_c0f1ca12a6fb3a20e5947809ffabe404.html">include</a></li><li class="navelem"><a class="el" href="distanceMapGenerationTool_8h.html">distanceMapGenerationTool.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

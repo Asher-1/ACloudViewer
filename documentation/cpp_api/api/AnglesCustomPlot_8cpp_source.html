@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -158,7 +167,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            m_histogram.resize(numberOfBins);</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[computeHistogram] Failed to allocate histogram!&quot;</span>);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[computeHistogram] Failed to allocate histogram!&quot;</span>);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        }</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        std::fill(m_histogram.begin(), m_histogram.end(), 0);</div>
@@ -238,7 +247,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="ttc" id="aclassAnglesCustomPlot_html_ad92445169f46054cc1339bc3f92360b5"><div class="ttname"><a href="classAnglesCustomPlot.html#ad92445169f46054cc1339bc3f92360b5">AnglesCustomPlot::~AnglesCustomPlot</a></div><div class="ttdeci">~AnglesCustomPlot()</div><div class="ttdef"><b>Definition:</b> <a href="AnglesCustomPlot_8cpp_source.html#l00036">AnglesCustomPlot.cpp:36</a></div></div>
 <div class="ttc" id="aclassAnglesCustomPlot_html_ada244d1126c442c1602b59d825e00144"><div class="ttname"><a href="classAnglesCustomPlot.html#ada244d1126c442c1602b59d825e00144">AnglesCustomPlot::mouseDoubleClickEvent</a></div><div class="ttdeci">void mouseDoubleClickEvent(QMouseEvent *event) override</div><div class="ttdef"><b>Definition:</b> <a href="AnglesCustomPlot_8cpp_source.html#l00119">AnglesCustomPlot.cpp:119</a></div></div>
 <div class="ttc" id="aclassAnglesCustomPlot_html_adf729f33646bff94b8c58394b2a88b12"><div class="ttname"><a href="classAnglesCustomPlot.html#adf729f33646bff94b8c58394b2a88b12">AnglesCustomPlot::createQCPBars</a></div><div class="ttdeci">void createQCPBars(const QString &amp;xLabel)</div><div class="ttdef"><b>Definition:</b> <a href="AnglesCustomPlot_8cpp_source.html#l00092">AnglesCustomPlot.cpp:92</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_abd71c5d761aba8eaba9c4b6d5754e16e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a></div><div class="ttdeci">static bool ValidValue(ScalarType value)</div><div class="ttdoc">Returns whether a scalar value is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00061">ScalarField.h:61</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
@@ -250,7 +259,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_b07c9c898a41c3da2da9db5ccc16b042.html">qG3Point</a></li><li class="navelem"><a class="el" href="dir_d6e948405f28496c7e780d79209d7e4f.html">src</a></li><li class="navelem"><a class="el" href="AnglesCustomPlot_8cpp.html">AnglesCustomPlot.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,7 @@
 <map id="/root/ACloudViewer/libs/CV_db/include/ecvQuadric.h" name="/root/ACloudViewer/libs/CV_db/include/ecvQuadric.h">
-<area shape="rect" id="node1" title=" " alt="" coords="43,5,190,61"/>
-<area shape="rect" id="node2" href="$ccQuadric_8cpp.html" title=" " alt="" coords="5,109,228,180"/>
+<area shape="rect" id="node1" title=" " alt="" coords="331,5,477,61"/>
+<area shape="rect" id="node2" href="$geometry_2geometry_8cpp.html" title=" " alt="" coords="5,117,187,173"/>
+<area shape="rect" id="node3" href="$primitives_8cpp.html" title=" " alt="" coords="211,117,397,173"/>
+<area shape="rect" id="node4" href="$MainWindow_8cpp.html" title=" " alt="" coords="422,124,586,165"/>
+<area shape="rect" id="node5" href="$ccQuadric_8cpp.html" title=" " alt="" coords="610,109,833,180"/>
 </map>

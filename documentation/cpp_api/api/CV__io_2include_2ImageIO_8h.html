@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -165,28 +174,28 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a4fa3c3e5ebdb992ab07acf1c0780db68"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; geometry::Image &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a4fa3c3e5ebdb992ab07acf1c0780db68">cloudViewer::io::CreateImageFromFile</a> (const std::string &amp;filename)</td></tr>
+<tr class="memitem:a4fa3c3e5ebdb992ab07acf1c0780db68"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; geometry::Image &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a4fa3c3e5ebdb992ab07acf1c0780db68">cloudViewer::io::CreateImageFromFile</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)</td></tr>
 <tr class="separator:a4fa3c3e5ebdb992ab07acf1c0780db68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a04c4a61de6444e950069d3e2394d2f3c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; geometry::Image &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a04c4a61de6444e950069d3e2394d2f3c">cloudViewer::io::CreateImageFromMemory</a> (const std::string &amp;<a class="el" href="FilamentResourceManager_8cpp.html#a27b4a364f4a7e9f506635361987fe8bc">image_format</a>, const unsigned char *image_data_ptr, size_t image_data_size)</td></tr>
 <tr class="memdesc:a04c4a61de6444e950069d3e2394d2f3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factory function to create an image from memory.  <a href="namespacecloudViewer_1_1io.html#a04c4a61de6444e950069d3e2394d2f3c">More...</a><br /></td></tr>
 <tr class="separator:a04c4a61de6444e950069d3e2394d2f3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a56dfc1aba535afeae63e077019d01b29"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a56dfc1aba535afeae63e077019d01b29">cloudViewer::io::ReadImage</a> (const std::string &amp;filename, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
+<tr class="memitem:a56dfc1aba535afeae63e077019d01b29"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a56dfc1aba535afeae63e077019d01b29">cloudViewer::io::ReadImage</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
 <tr class="separator:a56dfc1aba535afeae63e077019d01b29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac2d20de8018acc5b95370952ffd890ee"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#ac2d20de8018acc5b95370952ffd890ee">cloudViewer::io::ReadImageFromMemory</a> (const std::string &amp;<a class="el" href="FilamentResourceManager_8cpp.html#a27b4a364f4a7e9f506635361987fe8bc">image_format</a>, const unsigned char *image_data_ptr, size_t image_data_size, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
 <tr class="separator:ac2d20de8018acc5b95370952ffd890ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1bab392a3210598a6eb903f135f2a28a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage</a> (const std::string &amp;filename, const geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, int quality=kCloudViewerImageIODefaultQuality)</td></tr>
+<tr class="memitem:a1bab392a3210598a6eb903f135f2a28a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, const geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, int quality=kCloudViewerImageIODefaultQuality)</td></tr>
 <tr class="separator:a1bab392a3210598a6eb903f135f2a28a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a321fbef308ee8e46ccdf1ceedb0c793a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a321fbef308ee8e46ccdf1ceedb0c793a">cloudViewer::io::ReadImageFromPNG</a> (const std::string &amp;filename, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
+<tr class="memitem:a321fbef308ee8e46ccdf1ceedb0c793a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a321fbef308ee8e46ccdf1ceedb0c793a">cloudViewer::io::ReadImageFromPNG</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
 <tr class="separator:a321fbef308ee8e46ccdf1ceedb0c793a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a41b0fbf9253568e139e3b477746102f2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a41b0fbf9253568e139e3b477746102f2">cloudViewer::io::ReadPNGFromMemory</a> (const unsigned char *image_data_ptr, size_t image_data_size, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
 <tr class="separator:a41b0fbf9253568e139e3b477746102f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1e87f1a36ddbfded0583874d151cfc1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#ac1e87f1a36ddbfded0583874d151cfc1">cloudViewer::io::WriteImageToPNG</a> (const std::string &amp;filename, const geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, int quality=kCloudViewerImageIODefaultQuality)</td></tr>
+<tr class="memitem:ac1e87f1a36ddbfded0583874d151cfc1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#ac1e87f1a36ddbfded0583874d151cfc1">cloudViewer::io::WriteImageToPNG</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, const geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, int quality=kCloudViewerImageIODefaultQuality)</td></tr>
 <tr class="separator:ac1e87f1a36ddbfded0583874d151cfc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2afde9445577e3a9fba6d2f5df4dfcf2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a2afde9445577e3a9fba6d2f5df4dfcf2">cloudViewer::io::ReadImageFromJPG</a> (const std::string &amp;filename, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
+<tr class="memitem:a2afde9445577e3a9fba6d2f5df4dfcf2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a2afde9445577e3a9fba6d2f5df4dfcf2">cloudViewer::io::ReadImageFromJPG</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
 <tr class="separator:a2afde9445577e3a9fba6d2f5df4dfcf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30155535bf298b62473280359bf5c56c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#a30155535bf298b62473280359bf5c56c">cloudViewer::io::ReadJPGFromMemory</a> (const unsigned char *image_data_ptr, size_t image_data_size, geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>)</td></tr>
 <tr class="separator:a30155535bf298b62473280359bf5c56c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4b083e8ce9ab1333f989d25047e1fa1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#ae4b083e8ce9ab1333f989d25047e1fa1">cloudViewer::io::WriteImageToJPG</a> (const std::string &amp;filename, const geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, int quality=kCloudViewerImageIODefaultQuality)</td></tr>
+<tr class="memitem:ae4b083e8ce9ab1333f989d25047e1fa1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1io.html#ae4b083e8ce9ab1333f989d25047e1fa1">cloudViewer::io::WriteImageToJPG</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, const geometry::Image &amp;<a class="el" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, int quality=kCloudViewerImageIODefaultQuality)</td></tr>
 <tr class="separator:ae4b083e8ce9ab1333f989d25047e1fa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
@@ -200,7 +209,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_3886bc5fbdde051dbb667d23ac4e3d40.html">CV_io</a></li><li class="navelem"><a class="el" href="dir_e4c5393be4f54449f4c55d38d92d28ac.html">include</a></li><li class="navelem"><a class="el" href="CV__io_2include_2ImageIO_8h.html">ImageIO.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

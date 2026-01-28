@@ -1,0 +1,4 @@
+<map id="cloudViewer::pipelines::registration::PyCorrespondenceChecker&lt; CorrespondenceCheckerBase &gt;" name="cloudViewer::pipelines::registration::PyCorrespondenceChecker&lt; CorrespondenceCheckerBase &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="5,109,299,165"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceChecker.html" title="Base class that checks if two (small) point clouds can be aligned." alt="" coords="43,5,261,61"/>
+</map>

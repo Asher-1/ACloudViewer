@@ -1,5 +1,7 @@
 <map id="BasePclModule" name="BasePclModule">
-<area shape="rect" id="node1" title="Base abstract class for each implemented PCL filter." alt="" coords="53,95,174,121"/>
+<area shape="rect" id="node1" title="Base abstract class for each implemented PCL filter." alt="" coords="211,95,333,121"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
 <area shape="rect" id="node3" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" id="node4" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="291,5,426,32"/>
+<area shape="rect" id="node5" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="451,5,611,32"/>
 </map>

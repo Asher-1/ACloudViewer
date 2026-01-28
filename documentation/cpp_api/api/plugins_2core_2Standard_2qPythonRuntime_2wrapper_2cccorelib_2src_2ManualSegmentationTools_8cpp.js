@@ -1,0 +1,4 @@
+var plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ManualSegmentationTools_8cpp =
+[
+    [ "define_ManualSegmentationTools", "plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ManualSegmentationTools_8cpp.html#ab037b9b9883d0324650a37edabfb1d77", null ]
+];

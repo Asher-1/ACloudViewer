@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -142,7 +151,7 @@ $(document).ready(function(){initNavTree('Utilities_8h_source.html',''); initRes
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classccLogger.html#a8935f3457fd13711fccbb49523018e41">   60</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccLogger.html#a8935f3457fd13711fccbb49523018e41">flush</a>()</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    {</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">CVLog::LogMessage</a>(<a class="code" href="classccLogger.html#a4180f0b9fcb7a36fb99825a39dcdc9c2">m_message</a>, level);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">CVLog::LogMessage</a>(<a class="code" href="classccLogger.html#a4180f0b9fcb7a36fb99825a39dcdc9c2">m_message</a>, level);</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <a class="code" href="classccLogger.html#a4180f0b9fcb7a36fb99825a39dcdc9c2">m_message</a>.clear();</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
@@ -194,17 +203,17 @@ $(document).ready(function(){initNavTree('Utilities_8h_source.html',''); initRes
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        <span class="keywordtype">char</span> *cPythonPath = Py_EncodeLocale(pythonPath, &amp;errPos);</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <span class="keywordflow">if</span> (cPythonPath)</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        {</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonPath is set to: %s&quot;</span>, cPythonPath);</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonPath is set to: %s&quot;</span>, cPythonPath);</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;            PyMem_Free(cPythonPath);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        }</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        {</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] Failed to convert the PythonPath&quot;</span>);</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] Failed to convert the PythonPath&quot;</span>);</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        }</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    }</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    {</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonPath is not set&quot;</span>);</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonPath is not set&quot;</span>);</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    }</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;}</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
@@ -217,17 +226,17 @@ $(document).ready(function(){initNavTree('Utilities_8h_source.html',''); initRes
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keywordtype">char</span> *cPythonHome = Py_EncodeLocale(pythonHome, &amp;errPos);</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keywordflow">if</span> (cPythonHome)</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        {</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonHome is set to: %s&quot;</span>, cPythonHome);</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonHome is set to: %s&quot;</span>, cPythonHome);</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;            PyMem_Free(cPythonHome);</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        }</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        {</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime]Failed to convert the PythonHome path&quot;</span>);</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime]Failed to convert the PythonHome path&quot;</span>);</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        }</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    }</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    {</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonHome is not set&quot;</span>);</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[PythonRuntime] PythonHome is not set&quot;</span>);</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    }</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
@@ -235,8 +244,8 @@ $(document).ready(function(){initNavTree('Utilities_8h_source.html',''); initRes
 <div class="ttc" id="aUtilities_8h_html_a2b2850c5d7d50d2ab1eda3d59e44080a"><div class="ttname"><a href="Utilities_8h.html#a2b2850c5d7d50d2ab1eda3d59e44080a">LogPythonPath</a></div><div class="ttdeci">void LogPythonPath()</div><div class="ttdoc">Logs the PYTHON_PATH the log console of ACloudViewer.</div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00116">Utilities.h:116</a></div></div>
 <div class="ttc" id="aUtilities_8h_html_a68e4476d9431bfe7bf243da4f2edee25"><div class="ttname"><a href="Utilities_8h.html#a68e4476d9431bfe7bf243da4f2edee25">QStringToWcharArray</a></div><div class="ttdeci">wchar_t * QStringToWcharArray(const QString &amp;string)</div><div class="ttdoc">Returns a newly allocated wchar_t array (null terminated) from a QString.</div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00106">Utilities.h:106</a></div></div>
 <div class="ttc" id="aUtilities_8h_html_a8b4c119842b4b6e1d9c898ea23dbd7c2"><div class="ttname"><a href="Utilities_8h.html#a8b4c119842b4b6e1d9c898ea23dbd7c2">LogPythonHome</a></div><div class="ttdeci">void LogPythonHome()</div><div class="ttdoc">Logs the PYTHON_HOME the log console of ACloudViewer.</div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00140">Utilities.h:140</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af2ed33e05ca3cab1aa8d9292b87765ca"><div class="ttname"><a href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">CVLog::LogMessage</a></div><div class="ttdeci">static void LogMessage(const QString &amp;message, int level)</div><div class="ttdoc">Static shortcut to CVLog::logMessage.</div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a98c01f821dbb91ecb6c735b600f78de7"><div class="ttname"><a href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">CVLog::LogMessage</a></div><div class="ttdeci">static void LogMessage(const QString &amp;message, int level)</div><div class="ttdoc">Static shortcut to CVLog::logMessage.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00064">CVLog.cpp:64</a></div></div>
 <div class="ttc" id="aclassPluginLogger_html"><div class="ttname"><a href="classPluginLogger.html">PluginLogger</a></div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00085">Utilities.h:86</a></div></div>
 <div class="ttc" id="aclassPluginLogger_html_ae1e57792ff71d3ca552a0ffadaf91307"><div class="ttname"><a href="classPluginLogger.html#ae1e57792ff71d3ca552a0ffadaf91307">PluginLogger::PluginLogger</a></div><div class="ttdeci">PluginLogger()</div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00088">Utilities.h:88</a></div></div>
 <div class="ttc" id="aclassccLogger_html"><div class="ttname"><a href="classccLogger.html">ccLogger</a></div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00023">Utilities.h:24</a></div></div>
@@ -254,7 +263,7 @@ $(document).ready(function(){initNavTree('Utilities_8h_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="Utilities_8h.html">Utilities.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

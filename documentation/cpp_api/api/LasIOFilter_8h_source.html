@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -130,7 +139,7 @@ $(document).ready(function(){initNavTree('LasIOFilter_8h_source.html',''); initR
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="comment">// Inherited from FileIOFilter</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classLasIOFilter.html#a740600c5c4f435651d225a86bb6604d6">loadFile</a>(<span class="keyword">const</span> QString&amp; fileName, <a class="code" href="classccHObject.html">ccHObject</a>&amp; container, <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">bool</span>          <a class="code" href="classLasIOFilter.html#a9aefb7f9d47efc561946750c98fb5c9f">canSave</a>(<a class="code" href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>, <span class="keywordtype">bool</span>&amp; multiple, <span class="keywordtype">bool</span>&amp; exclusive) <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classLasIOFilter.html#ad95f16bd841747eb058e975c560c9f93">saveToFile</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity, <span class="keyword">const</span> QString&amp; filename, <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a>&amp; parameters) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classLasIOFilter.html#ad95f16bd841747eb058e975c560c9f93">saveToFile</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity, <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a>&amp; parameters) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">struct </span>FileInfo</div>
@@ -138,7 +147,7 @@ $(document).ready(function(){initNavTree('LasIOFilter_8h_source.html',''); initR
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <a class="code" href="structLasDetails_1_1LasVersion.html">LasDetails::LasVersion</a>           <a class="code" href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        std::vector&lt;LasExtraScalarField&gt; extraScalarFields;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">operator==</a>(<span class="keyword">const</span> FileInfo&amp; other)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">operator==</a>(<span class="keyword">const</span> FileInfo&amp; other)</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        {</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <span class="keywordtype">bool</span> versionIsSame = <a class="code" href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a>.minorVersion == other.version.minorVersion &amp;&amp; <a class="code" href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a>.pointFormat == other.version.pointFormat;</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="keywordflow">if</span> (!versionIsSame)</div>
@@ -168,7 +177,7 @@ $(document).ready(function(){initNavTree('LasIOFilter_8h_source.html',''); initR
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        }</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">operator!=</a>(<span class="keyword">const</span> FileInfo&amp; other)</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">operator!=</a>(<span class="keyword">const</span> FileInfo&amp; other)</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        {</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            <span class="keywordflow">return</span> !(*<span class="keyword">this</span> == other);</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        }</div>
@@ -178,6 +187,7 @@ $(document).ready(function(){initNavTree('LasIOFilter_8h_source.html',''); initR
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <a class="code" href="classLasOpenDialog.html">LasOpenDialog</a>             m_openDialog{};</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;};</div>
 <div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a728b969e374aba4020e39aea7e02e64f"><div class="ttname"><a href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a></div><div class="ttdeci">std::string version</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00140">FileIOFactory.cpp:140</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html"><div class="ttname"><a href="FileIOFilter_8h.html">FileIOFilter.h</a></div></div>
@@ -194,8 +204,8 @@ $(document).ready(function(){initNavTree('LasIOFilter_8h_source.html',''); initR
 <div class="ttc" id="aclassLasIOFilter_html_ad95f16bd841747eb058e975c560c9f93"><div class="ttname"><a href="classLasIOFilter.html#ad95f16bd841747eb058e975c560c9f93">LasIOFilter::saveToFile</a></div><div class="ttdeci">CC_FILE_ERROR saveToFile(ccHObject *entity, const QString &amp;filename, const SaveParameters &amp;parameters) override</div><div class="ttdoc">Saves an entity (or a group of) to a file.</div><div class="ttdef"><b>Definition:</b> <a href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter.cpp:444</a></div></div>
 <div class="ttc" id="aclassLasOpenDialog_html"><div class="ttname"><a href="classLasOpenDialog.html">LasOpenDialog</a></div><div class="ttdoc">Dialog shown to the user when opening a LAS file.</div><div class="ttdef"><b>Definition:</b> <a href="LasOpenDialog_8h_source.html#l00044">LasOpenDialog.h:46</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1ml_1_1contrib_html_a316e251ba53455adb251fefdc79baf23"><div class="ttname"><a href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">cloudViewer::ml::contrib::operator==</a></div><div class="ttdeci">bool operator==(const PointXYZ A, const PointXYZ B)</div><div class="ttdef"><b>Definition:</b> <a href="Cloud_8h_source.html#l00116">Cloud.h:116</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a959d489eaede13ea64ad2bf7bf4e6d8a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">cloudViewer::utility::operator!=</a></div><div class="ttdeci">MiniVec&lt; bool, N &gt; operator!=(const MiniVec&lt; T, N &gt; &amp;a, const MiniVec&lt; T, N &gt; &amp;b)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00184">MiniVec.h:184</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_ad6dc9b6b533094ad312fc0a398a30333"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">cloudViewer::utility::operator!=</a></div><div class="ttdeci">constexpr bool operator!=(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00620">Optional.h:620</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_afdf4d48647db5d5512ba844470381384"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">cloudViewer::utility::operator==</a></div><div class="ttdeci">constexpr bool operator==(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00615">Optional.h:615</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a></div><div class="ttdoc">Generic loading parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00051">FileIOFilter.h:51</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1SaveParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1SaveParameters.html">FileIOFilter::SaveParameters</a></div><div class="ttdoc">Generic saving parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00084">FileIOFilter.h:84</a></div></div>
 <div class="ttc" id="astructLasDetails_1_1LasVersion_html"><div class="ttname"><a href="structLasDetails_1_1LasVersion.html">LasDetails::LasVersion</a></div><div class="ttdoc">See SelectBestVersion</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00177">LasDetails.h:178</a></div></div>
@@ -205,7 +215,7 @@ $(document).ready(function(){initNavTree('LasIOFilter_8h_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_b9ddb730e02511c7bbbb68a6f4192fdc.html">include</a></li><li class="navelem"><a class="el" href="LasIOFilter_8h.html">LasIOFilter.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

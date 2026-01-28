@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -95,7 +104,7 @@ $(document).ready(function(){initNavTree('MemoryManagerSYCL_8cpp_source.html',''
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;sycl/sycl.hpp&gt;</span></div>
@@ -109,7 +118,7 @@ $(document).ready(function(){initNavTree('MemoryManagerSYCL_8cpp_source.html',''
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">namespace </span>core {</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keywordtype">void</span>* MemoryManagerSYCL::Malloc(<span class="keywordtype">size_t</span> byte_size, <span class="keyword">const</span> Device&amp; device) {</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keywordtype">void</span>* <a class="code" href="namespacecloudViewer_1_1core.html#a28926e22b249d7c7f634f8d235b7c9cf">MemoryManagerSYCL::Malloc</a>(<span class="keywordtype">size_t</span> byte_size, <span class="keyword">const</span> Device&amp; device) {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keyword">const</span> sycl::queue&amp; queue =</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;            <a class="code" href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#a1d55cc98c90938fd2481defadcb6dca4">sy::SYCLContext::GetInstance</a>().<a class="code" href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#aa8fa687c457e1c7642d01ef7a6679b28">GetDefaultQueue</a>(device);</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
@@ -120,7 +129,7 @@ $(document).ready(function(){initNavTree('MemoryManagerSYCL_8cpp_source.html',''
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;}</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keywordtype">void</span> MemoryManagerSYCL::Free(<span class="keywordtype">void</span>* ptr, <span class="keyword">const</span> Device&amp; device) {</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1core.html#a19bb9e4e18c48601b3881656b1531220">MemoryManagerSYCL::Free</a>(<span class="keywordtype">void</span>* ptr, <span class="keyword">const</span> Device&amp; device) {</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">if</span> (ptr) {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <span class="keyword">const</span> sycl::queue&amp; queue =</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                <a class="code" href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#a1d55cc98c90938fd2481defadcb6dca4">sy::SYCLContext::GetInstance</a>().<a class="code" href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#aa8fa687c457e1c7642d01ef7a6679b28">GetDefaultQueue</a>(device);</div>
@@ -164,16 +173,18 @@ $(document).ready(function(){initNavTree('MemoryManagerSYCL_8cpp_source.html',''
 <div class="ttc" id="aSYCLUtils_8h_html"><div class="ttname"><a href="SYCLUtils_8h.html">SYCLUtils.h</a></div><div class="ttdoc">Common SYCL utilities.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1sy_1_1SYCLContext_html_a1d55cc98c90938fd2481defadcb6dca4"><div class="ttname"><a href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#a1d55cc98c90938fd2481defadcb6dca4">cloudViewer::core::sy::SYCLContext::GetInstance</a></div><div class="ttdeci">static SYCLContext &amp; GetInstance()</div><div class="ttdoc">Get singleton instance.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8cpp_source.html#l00025">SYCLContext.cpp:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1sy_1_1SYCLContext_html_aa8fa687c457e1c7642d01ef7a6679b28"><div class="ttname"><a href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#aa8fa687c457e1c7642d01ef7a6679b28">cloudViewer::core::sy::SYCLContext::GetDefaultQueue</a></div><div class="ttdeci">sycl::queue GetDefaultQueue(const Device &amp;device)</div><div class="ttdoc">Get the default SYCL queue given an CloudViewer device.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8cpp_source.html#l00043">SYCLContext.cpp:43</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_html_a19bb9e4e18c48601b3881656b1531220"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a19bb9e4e18c48601b3881656b1531220">cloudViewer::core::Free</a></div><div class="ttdeci">void Free(benchmark::State &amp;state, int size, const Device &amp;device, const MemoryManagerBackend &amp;backend)</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2core_2MemoryManager_8cpp_source.html#l00075">MemoryManager.cpp:75</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_html_a28926e22b249d7c7f634f8d235b7c9cf"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a28926e22b249d7c7f634f8d235b7c9cf">cloudViewer::core::Malloc</a></div><div class="ttdeci">void Malloc(benchmark::State &amp;state, int size, const Device &amp;device, const MemoryManagerBackend &amp;backend)</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2core_2MemoryManager_8cpp_source.html#l00047">MemoryManager.cpp:47</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="MemoryManagerSYCL_8cpp.html">MemoryManagerSYCL.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

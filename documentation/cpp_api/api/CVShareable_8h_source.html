@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -111,13 +120,13 @@ $(document).ready(function(){initNavTree('CVShareable_8h_source.html',''); initR
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">// CCShareable object (with counter)</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classCCShareable.html">   22</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a> <a class="code" href="classCCShareable.html">CCShareable</a> {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classCCShareable.html#ad890958b8ff424328ff30876aef16078">   25</a></span>&#160;    <a class="code" href="classCCShareable.html#ad890958b8ff424328ff30876aef16078">CCShareable</a>();</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <a class="code" href="classCCShareable.html">CCShareable</a>();</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="classCCShareable.html#a092121c292278646a23fa14308f6a357">   30</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classCCShareable.html#a092121c292278646a23fa14308f6a357">link</a>();</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> link();</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">   35</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> release();</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="classCCShareable.html#a9f7d61ca2d105ce3f30b3413b814e134">   40</a></span>&#160;    <span class="keyword">inline</span> <span class="keyword">virtual</span> <span class="keywordtype">unsigned</span> <a class="code" href="classCCShareable.html#a9f7d61ca2d105ce3f30b3413b814e134">getLinkCount</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_linkCount; }</div>
@@ -128,26 +137,22 @@ $(document).ready(function(){initNavTree('CVShareable_8h_source.html',''); initR
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classCCShareable.html#a2039a67b7292687ed27c7ac69a8ef750">   51</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classCCShareable.html#a2039a67b7292687ed27c7ac69a8ef750">~CCShareable</a>();</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classCCShareable.html">CCShareable</a>();</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classCCShareable.html#ad7656e426882a403fa741dde1b455327">   54</a></span>&#160;    <span class="keywordtype">unsigned</span> <a class="code" href="classCCShareable.html#ad7656e426882a403fa741dde1b455327">m_linkCount</a>;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;};</div>
 <div class="ttc" id="aCVCoreLibWin_8h_html_a1dafbf7307681e0ae43ca1905b2d2e5c"><div class="ttname"><a href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a></div><div class="ttdeci">#define CV_CORE_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CVCoreLibWin_8h_source.html#l00015">CVCoreLibWin.h:15</a></div></div>
 <div class="ttc" id="aCVCoreLib_8h_html"><div class="ttname"><a href="CVCoreLib_8h.html">CVCoreLib.h</a></div></div>
 <div class="ttc" id="aclassCCShareable_html"><div class="ttname"><a href="classCCShareable.html">CCShareable</a></div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8h_source.html#l00022">CVShareable.h:22</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_a092121c292278646a23fa14308f6a357"><div class="ttname"><a href="classCCShareable.html#a092121c292278646a23fa14308f6a357">CCShareable::link</a></div><div class="ttdeci">virtual void link()</div><div class="ttdoc">Increase counter.</div></div>
-<div class="ttc" id="aclassCCShareable_html_a2039a67b7292687ed27c7ac69a8ef750"><div class="ttname"><a href="classCCShareable.html#a2039a67b7292687ed27c7ac69a8ef750">CCShareable::~CCShareable</a></div><div class="ttdeci">virtual ~CCShareable()</div><div class="ttdoc">Destructor.</div></div>
 <div class="ttc" id="aclassCCShareable_html_a9f7d61ca2d105ce3f30b3413b814e134"><div class="ttname"><a href="classCCShareable.html#a9f7d61ca2d105ce3f30b3413b814e134">CCShareable::getLinkCount</a></div><div class="ttdeci">virtual unsigned getLinkCount() const</div><div class="ttdoc">Returns the current link count.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8h_source.html#l00040">CVShareable.h:40</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_ab8ad53d1acfbe69894cd01504d42b0a1"><div class="ttname"><a href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div></div>
 <div class="ttc" id="aclassCCShareable_html_ad7656e426882a403fa741dde1b455327"><div class="ttname"><a href="classCCShareable.html#ad7656e426882a403fa741dde1b455327">CCShareable::m_linkCount</a></div><div class="ttdeci">unsigned m_linkCount</div><div class="ttdoc">Links counter.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8h_source.html#l00054">CVShareable.h:54</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_ad890958b8ff424328ff30876aef16078"><div class="ttname"><a href="classCCShareable.html#ad890958b8ff424328ff30876aef16078">CCShareable::CCShareable</a></div><div class="ttdeci">CCShareable()</div><div class="ttdoc">Default constructor.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="CVShareable_8h.html">CVShareable.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

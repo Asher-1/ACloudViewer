@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -134,9 +143,9 @@ $(document).ready(function(){initNavTree('quazipdir_8h_source.html',''); initRes
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classQuaZipDir.html">QuaZipDir</a>(<a class="code" href="classQuaZip.html">QuaZip</a> *zip, <span class="keyword">const</span> QString &amp;dir = QString());</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    ~<a class="code" href="classQuaZipDir.html">QuaZipDir</a>();</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">operator==</a>(<span class="keyword">const</span> <a class="code" href="classQuaZipDir.html">QuaZipDir</a> &amp;that);</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">operator==</a>(<span class="keyword">const</span> <a class="code" href="classQuaZipDir.html">QuaZipDir</a> &amp;that);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#a6e60d858d05774c958215ee7741eceed">   77</a></span>&#160;    <span class="keyword">inline</span> <span class="keywordtype">bool</span> <a class="code" href="classQuaZipDir.html#a6e60d858d05774c958215ee7741eceed">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classQuaZipDir.html">QuaZipDir</a> &amp;that) { <span class="keywordflow">return</span> !<a class="code" href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">operator==</a>(that); }</div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#a6e60d858d05774c958215ee7741eceed">   77</a></span>&#160;    <span class="keyword">inline</span> <span class="keywordtype">bool</span> <a class="code" href="classQuaZipDir.html#a6e60d858d05774c958215ee7741eceed">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classQuaZipDir.html">QuaZipDir</a> &amp;that) { <span class="keywordflow">return</span> !<a class="code" href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">operator==</a>(that); }</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <a class="code" href="classQuaZipDir.html">QuaZipDir</a> &amp;operator=(<span class="keyword">const</span> <a class="code" href="classQuaZipDir.html">QuaZipDir</a> &amp;that);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    QString operator[](<span class="keywordtype">int</span> pos) <span class="keyword">const</span>;</div>
@@ -182,14 +191,14 @@ $(document).ready(function(){initNavTree('quazipdir_8h_source.html',''); initRes
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">bool</span> isRoot() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    QStringList nameFilters() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160; </div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    QString path() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    QString <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160; </div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    QString relativeFilePath(<span class="keyword">const</span> QString &amp;fileName) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="keywordtype">void</span> setCaseSensitivity(<a class="code" href="classQuaZip.html#a6053a1d249ed210a85c9d5eb7cf9cdbe">QuaZip::CaseSensitivity</a> caseSensitivity);</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="keywordtype">void</span> setFilter(QDir::Filters filters);</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="keywordtype">void</span> setNameFilters(<span class="keyword">const</span> QStringList &amp;nameFilters);</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160; </div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordtype">void</span> setPath(<span class="keyword">const</span> QString &amp;path);</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordtype">void</span> setPath(<span class="keyword">const</span> QString &amp;<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    <span class="keywordtype">void</span> setSorting(QDir::SortFlags sort);</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    QDir::SortFlags sorting() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;};</div>
@@ -201,7 +210,8 @@ $(document).ready(function(){initNavTree('quazipdir_8h_source.html',''); initRes
 <div class="ttc" id="aclassQuaZip_html"><div class="ttname"><a href="classQuaZip.html">QuaZip</a></div><div class="ttdoc">ZIP archive.</div><div class="ttdef"><b>Definition:</b> <a href="quazip_8h_source.html#l00128">quazip.h:128</a></div></div>
 <div class="ttc" id="aclassQuaZip_html_a6053a1d249ed210a85c9d5eb7cf9cdbe"><div class="ttname"><a href="classQuaZip.html#a6053a1d249ed210a85c9d5eb7cf9cdbe">QuaZip::CaseSensitivity</a></div><div class="ttdeci">CaseSensitivity</div><div class="ttdoc">Case sensitivity for the file names.</div><div class="ttdef"><b>Definition:</b> <a href="quazip_8h_source.html#l00159">quazip.h:159</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_a91ad9478d81a7aaf2593e8d9c3d06a14"><div class="ttname"><a href="cutil__math_8h.html#a91ad9478d81a7aaf2593e8d9c3d06a14">uint</a></div><div class="ttdeci">unsigned int uint</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00028">cutil_math.h:28</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1ml_1_1contrib_html_a316e251ba53455adb251fefdc79baf23"><div class="ttname"><a href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">cloudViewer::ml::contrib::operator==</a></div><div class="ttdeci">bool operator==(const PointXYZ A, const PointXYZ B)</div><div class="ttdef"><b>Definition:</b> <a href="Cloud_8h_source.html#l00116">Cloud.h:116</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_afdf4d48647db5d5512ba844470381384"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">cloudViewer::utility::operator==</a></div><div class="ttdeci">constexpr bool operator==(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00615">Optional.h:615</a></div></div>
 <div class="ttc" id="aquazip_8h_html"><div class="ttname"><a href="quazip_8h.html">quazip.h</a></div></div>
 <div class="ttc" id="aquazip__global_8h_html_aa6a0e4d2629cd63664ecbf9fa8eccdf4"><div class="ttname"><a href="quazip__global_8h.html#aa6a0e4d2629cd63664ecbf9fa8eccdf4">QUAZIP_EXPORT</a></div><div class="ttdeci">#define QUAZIP_EXPORT</div><div class="ttdef"><b>Definition:</b> <a href="quazip__global_8h_source.html#l00046">quazip_global.h:46</a></div></div>
 <div class="ttc" id="aquazipfileinfo_8h_html"><div class="ttname"><a href="quazipfileinfo_8h.html">quazipfileinfo.h</a></div></div>
@@ -211,7 +221,7 @@ $(document).ready(function(){initNavTree('quazipdir_8h_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="quazipdir_8h.html">quazipdir.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

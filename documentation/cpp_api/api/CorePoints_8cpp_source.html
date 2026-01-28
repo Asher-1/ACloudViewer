@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -127,7 +136,7 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;            <span class="comment">// we&#39;ll need an octree</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;            <span class="keywordflow">if</span> (!<a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>-&gt;<a class="code" href="classccGenericPointCloud.html#accfd073e6344928840a5b5ed1e1eda0e">getOctree</a>()) {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                <span class="keywordflow">if</span> (!<a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>-&gt;<a class="code" href="classccGenericPointCloud.html#a19b41a8c3c4c87c821ca447a1fad5484">computeOctree</a>(progressCb)) {</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                            <span class="stringliteral">&quot;[CorePoints::prepare] Failed to compute the &quot;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                            <span class="stringliteral">&quot;octree&quot;</span>);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -136,7 +145,7 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;            <a class="code" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html">cloudViewer::CloudSamplingTools::SFModulationParams</a> modParams;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;            modParams.<a class="code" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html#a932144e36bdef40a1551bdd8b476fc9f">enabled</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            ref = <a class="code" href="classcloudViewer_1_1CloudSamplingTools.html#a591467ceb89e66a5e47b3704be90ebdd">cloudViewer::CloudSamplingTools::resampleCloudSpatially</a>(</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            ref = <a class="code" href="classcloudViewer_1_1CloudSamplingTools.html#affa13b6550b751549294682aeb774aab">cloudViewer::CloudSamplingTools::resampleCloudSpatially</a>(</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                    <a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>, <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(<a class="code" href="structmasc_1_1CorePoints.html#a264301d9b96f44354fcadc2a59437cf7">selectionParam</a>),</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                    modParams, <a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>-&gt;<a class="code" href="classccGenericPointCloud.html#accfd073e6344928840a5b5ed1e1eda0e">getOctree</a>().data(), progressCb);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
@@ -145,13 +154,13 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="structmasc_1_1CorePoints.html#a6d827a5bae2d523f6cda865689842db8a817a25344dcceba702bfce94553dc6a9">RANDOM</a>: {</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keywordflow">if</span> (selectionParam &lt;= 0.0 || selectionParam &gt;= 1.0) {</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                        <span class="stringliteral">&quot;[CorePoints::prepare] Random subsampling ration must &quot;</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                        <span class="stringliteral">&quot;be between 0 and 1 (excluded)&quot;</span>);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            }</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <span class="keywordtype">int</span> targetCount = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() * <a class="code" href="structmasc_1_1CorePoints.html#a264301d9b96f44354fcadc2a59437cf7">selectionParam</a>);</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;            ref = <a class="code" href="classcloudViewer_1_1CloudSamplingTools.html#acd06e5ead6b2f563531a134d55b4b732">cloudViewer::CloudSamplingTools::subsampleCloudRandomly</a>(</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;            ref = <a class="code" href="classcloudViewer_1_1CloudSamplingTools.html#aa6001f5fc3933ea5cabc764156478456">cloudViewer::CloudSamplingTools::subsampleCloudRandomly</a>(</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                    <a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>, targetCount, progressCb);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        }</div>
@@ -168,7 +177,7 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="comment">// store the references</span></div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">if</span> (!ref) {</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                <span class="stringliteral">&quot;[CorePoints::prepare] Failed to subsampled the origin cloud&quot;</span>);</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    }</div>
@@ -177,7 +186,7 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="comment">// and create the subsampled version of the cloud</span></div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <a class="code" href="structmasc_1_1CorePoints.html#a47549af7427d22ea5e8311dd73535d40">cloud</a> = <a class="code" href="structmasc_1_1CorePoints.html#a8f7c921ba673c703f9e3a0eaf4c24b73">origin</a>-&gt;<a class="code" href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">partialClone</a>(ref);</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="structmasc_1_1CorePoints.html#a47549af7427d22ea5e8311dd73535d40">cloud</a>) {</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="stringliteral">&quot;[CorePoints::prepare] Failed to subsampled the origin cloud &quot;</span></div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                <span class="stringliteral">&quot;(not enough memory)&quot;</span>);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -188,12 +197,12 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aCloudSamplingTools_8h_html"><div class="ttname"><a href="CloudSamplingTools_8h.html">CloudSamplingTools.h</a></div></div>
 <div class="ttc" id="aCorePoints_8h_html"><div class="ttname"><a href="CorePoints_8h.html">CorePoints.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html_a19b41a8c3c4c87c821ca447a1fad5484"><div class="ttname"><a href="classccGenericPointCloud.html#a19b41a8c3c4c87c821ca447a1fad5484">ccGenericPointCloud::computeOctree</a></div><div class="ttdeci">virtual ccOctree::Shared computeOctree(cloudViewer::GenericProgressCallback *progressCb=nullptr, bool autoAddChild=true)</div><div class="ttdoc">Computes the cloud octree.</div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html_accfd073e6344928840a5b5ed1e1eda0e"><div class="ttname"><a href="classccGenericPointCloud.html#accfd073e6344928840a5b5ed1e1eda0e">ccGenericPointCloud::getOctree</a></div><div class="ttdeci">virtual ccOctree::Shared getOctree() const</div><div class="ttdoc">Returns the associated octree (if any)</div></div>
 <div class="ttc" id="aclassccPointCloud_html_ae38119ce382d4781aedcddd422e9d0c3"><div class="ttname"><a href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">ccPointCloud::partialClone</a></div><div class="ttdeci">ccPointCloud * partialClone(const cloudViewer::ReferenceCloud *selection, int *warnings=nullptr, bool withChildEntities=true) const</div><div class="ttdoc">Creates a new point cloud object from a ReferenceCloud (selection)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CloudSamplingTools_html_a591467ceb89e66a5e47b3704be90ebdd"><div class="ttname"><a href="classcloudViewer_1_1CloudSamplingTools.html#a591467ceb89e66a5e47b3704be90ebdd">cloudViewer::CloudSamplingTools::resampleCloudSpatially</a></div><div class="ttdeci">static ReferenceCloud * resampleCloudSpatially(GenericIndexedCloudPersist *cloud, PointCoordinateType minDistance, const SFModulationParams &amp;modParams, DgmOctree *octree=nullptr, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Resamples a point cloud (process based on inter point distance)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CloudSamplingTools_html_acd06e5ead6b2f563531a134d55b4b732"><div class="ttname"><a href="classcloudViewer_1_1CloudSamplingTools.html#acd06e5ead6b2f563531a134d55b4b732">cloudViewer::CloudSamplingTools::subsampleCloudRandomly</a></div><div class="ttdeci">static ReferenceCloud * subsampleCloudRandomly(GenericIndexedCloudPersist *cloud, unsigned newNumberOfPoints, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Subsamples a point cloud (process based on random selections)</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1CloudSamplingTools_html_aa6001f5fc3933ea5cabc764156478456"><div class="ttname"><a href="classcloudViewer_1_1CloudSamplingTools.html#aa6001f5fc3933ea5cabc764156478456">cloudViewer::CloudSamplingTools::subsampleCloudRandomly</a></div><div class="ttdeci">static ReferenceCloud * subsampleCloudRandomly(GenericIndexedCloudPersist *cloud, unsigned newNumberOfPoints, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Subsamples a point cloud (process based on random selections)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2CloudSamplingTools_8cpp_source.html#l00202">CloudSamplingTools.cpp:202</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1CloudSamplingTools_html_affa13b6550b751549294682aeb774aab"><div class="ttname"><a href="classcloudViewer_1_1CloudSamplingTools.html#affa13b6550b751549294682aeb774aab">cloudViewer::CloudSamplingTools::resampleCloudSpatially</a></div><div class="ttdeci">static ReferenceCloud * resampleCloudSpatially(GenericIndexedCloudPersist *cloud, PointCoordinateType minDistance, const SFModulationParams &amp;modParams, DgmOctree *octree=nullptr, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Resamples a point cloud (process based on inter point distance)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2CloudSamplingTools_8cpp_source.html#l00256">CloudSamplingTools.cpp:256</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00020">GenericProgressCallback.h:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
@@ -216,7 +225,7 @@ $(document).ready(function(){initNavTree('CorePoints_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="CorePoints_8cpp.html">CorePoints.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

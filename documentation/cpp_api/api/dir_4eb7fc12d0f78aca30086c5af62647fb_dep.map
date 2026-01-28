@@ -1,11 +1,11 @@
 <map id="/root/ACloudViewer/plugins/core/Standard/qPCL/PclAlgorithms/Filters" name="/root/ACloudViewer/plugins/core/Standard/qPCL/PclAlgorithms/Filters">
 <area shape="rect" id="node2" href="dir_b2ac1677663d7b06cff70e32d6da4ea3.html" title="dialogs" alt="" coords="37,159,109,207"/>
-<area shape="rect" id="edge4-headlabel" href="dir_000050_000197.html" title="5" alt="" coords="77,133,86,148"/>
+<area shape="rect" id="edge4-headlabel" href="dir_000108_000280.html" title="5" alt="" coords="77,133,86,148"/>
 <area shape="rect" id="node3" href="dir_4270bfced15e0e73154b13468c7c9ad9.html" title="core" alt="" coords="36,351,108,399"/>
-<area shape="rect" id="edge2-headlabel" href="dir_000197_000000.html" title="1" alt="" coords="68,324,78,339"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000280_000046.html" title="1" alt="" coords="68,324,78,339"/>
 <area shape="rect" id="node4" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html" title="libs" alt="" coords="73,255,145,303"/>
-<area shape="rect" id="edge3-headlabel" href="dir_000197_000002.html" title="5" alt="" coords="97,227,107,242"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000002_000000.html" title="441" alt="" coords="83,330,108,344"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000280_000048.html" title="7" alt="" coords="97,227,107,242"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000048_000046.html" title="495" alt="" coords="83,330,108,344"/>
 <area shape="rect" id="clust2" href="dir_4eb7fc12d0f78aca30086c5af62647fb.html" alt="" coords="27,52,120,217"/>
 <area shape="rect" id="clust1" href="dir_46e48b6c258079a5b839bd3cff5e4729.html" title="PclAlgorithms" alt="" coords="16,16,131,228"/>
 </map>

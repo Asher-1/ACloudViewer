@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -165,8 +174,8 @@ $(document).ready(function(){initNavTree('ccMeasurementDevice_8cpp_source.html',
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> equation[4] = {N.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, N.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, N.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>, 0};</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    plane-&gt;<a class="code" href="classccPlane.html#ad376328afa133732fec53eb67377c210">getEquation</a>(N, equation[3]);</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">if</span> (signedMeasurement) {</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a6c1162d5062dd92363a28cd33eac0d71">cloudViewer::DistanceComputationTools::</a></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a6c1162d5062dd92363a28cd33eac0d71">                computePoint2PlaneDistance</a>(&amp;<a class="code" href="structpoint.html">point</a>, equation);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a199e392c46ee14e56dcb9d083c33a330">cloudViewer::DistanceComputationTools::</a></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a199e392c46ee14e56dcb9d083c33a330">                computePoint2PlaneDistance</a>(&amp;<a class="code" href="structpoint.html">point</a>, equation);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a>(<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html">cloudViewer::DistanceComputationTools</a>::</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                           computePoint2PlaneDistance(&amp;<a class="code" href="structpoint.html">point</a>, equation));</div>
@@ -259,7 +268,7 @@ $(document).ready(function(){initNavTree('ccMeasurementDevice_8cpp_source.html',
 <div class="ttc" id="aclassccScalarField_html"><div class="ttname"><a href="classccScalarField.html">ccScalarField</a></div><div class="ttdoc">A scalar field associated to display-related parameters.</div><div class="ttdef"><b>Definition:</b> <a href="ecvScalarField_8h_source.html#l00019">ecvScalarField.h:20</a></div></div>
 <div class="ttc" id="aclassccScalarField_html_aba27f37dfea092ad7fa07682e21c99a6"><div class="ttname"><a href="classccScalarField.html#aba27f37dfea092ad7fa07682e21c99a6">ccScalarField::computeMinAndMax</a></div><div class="ttdeci">void computeMinAndMax() override</div><div class="ttdoc">Determines the min and max values.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1DistanceComputationTools_html"><div class="ttname"><a href="classcloudViewer_1_1DistanceComputationTools.html">cloudViewer::DistanceComputationTools</a></div><div class="ttdef"><b>Definition:</b> <a href="DistanceComputationTools_8h_source.html#l00031">DistanceComputationTools.h:31</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DistanceComputationTools_html_a6c1162d5062dd92363a28cd33eac0d71"><div class="ttname"><a href="classcloudViewer_1_1DistanceComputationTools.html#a6c1162d5062dd92363a28cd33eac0d71">cloudViewer::DistanceComputationTools::computePoint2PlaneDistance</a></div><div class="ttdeci">static ScalarType computePoint2PlaneDistance(const CCVector3 *P, const PointCoordinateType *planeEquation)</div><div class="ttdoc">Computes the (signed) distance between a point and a plane.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DistanceComputationTools_html_a199e392c46ee14e56dcb9d083c33a330"><div class="ttname"><a href="classcloudViewer_1_1DistanceComputationTools.html#a199e392c46ee14e56dcb9d083c33a330">cloudViewer::DistanceComputationTools::computePoint2PlaneDistance</a></div><div class="ttdeci">static ScalarType computePoint2PlaneDistance(const CCVector3 *P, const PointCoordinateType *planeEquation)</div><div class="ttdoc">Computes the (signed) distance between a point and a plane.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DistanceComputationTools_8cpp_source.html#l02858">DistanceComputationTools.cpp:2858</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a1c41893330b17710a7f6e4c7c4df9187"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">cloudViewer::PointCloudTpl::getScalarFieldIndexByName</a></div><div class="ttdeci">int getScalarFieldIndexByName(const char *name) const</div><div class="ttdoc">Returns the index of a scalar field represented by its name.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00375">PointCloudTpl.h:375</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a4184d316a52e83046216dd14bd0204df"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a4184d316a52e83046216dd14bd0204df">cloudViewer::PointCloudTpl::getScalarField</a></div><div class="ttdeci">ScalarField * getScalarField(int index) const</div><div class="ttdoc">Returns a pointer to a specific scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00354">PointCloudTpl.h:354</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
@@ -274,7 +283,7 @@ $(document).ready(function(){initNavTree('ccMeasurementDevice_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_ce629cbf5f85d13a133a531751423446.html">qMPlane</a></li><li class="navelem"><a class="el" href="dir_da5442ed587cf661d9135e485e58e5ce.html">src</a></li><li class="navelem"><a class="el" href="ccMeasurementDevice_8cpp.html">ccMeasurementDevice.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,8 +106,8 @@ $(document).ready(function(){initNavTree('GeometryIndexer_8h_source.html',''); i
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Helper_8h.html">Helper.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Timer_8h.html">Timer.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;unordered_map&gt;</span></div>
@@ -477,20 +486,20 @@ $(document).ready(function(){initNavTree('GeometryIndexer_8h_source.html',''); i
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1kernel_1_1TransformIndexer_html_a7531f6d61f2a95e6c5bdf37edbf96b3a"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1kernel_1_1TransformIndexer.html#a7531f6d61f2a95e6c5bdf37edbf96b3a">cloudViewer::t::geometry::kernel::TransformIndexer::RigidTransform</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE void RigidTransform(float x_in, float y_in, float z_in, float *x_out, float *y_out, float *z_out) const</div><div class="ttdoc">Transform a 3D coordinate in camera coordinate to world coordinate.</div><div class="ttdef"><b>Definition:</b> <a href="GeometryIndexer_8h_source.html#l00063">GeometryIndexer.h:63</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1kernel_1_1TransformIndexer_html_aa99d26e37010be8a18aaff2cbb786e18"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1kernel_1_1TransformIndexer.html#aa99d26e37010be8a18aaff2cbb786e18">cloudViewer::t::geometry::kernel::TransformIndexer::GetCameraPosition</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE void GetCameraPosition(float *x, float *y, float *z) const</div><div class="ttdef"><b>Definition:</b> <a href="GeometryIndexer_8h_source.html#l00128">GeometryIndexer.h:128</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1kernel_1_1TransformIndexer_html_ad81d42cf6911af57bd48962fd89777eb"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1kernel_1_1TransformIndexer.html#ad81d42cf6911af57bd48962fd89777eb">cloudViewer::t::geometry::kernel::TransformIndexer::Project</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE void Project(float x_in, float y_in, float z_in, float *u_out, float *v_out) const</div><div class="ttdoc">Project a 3D coordinate in camera coordinate to a 2D uv coordinate.</div><div class="ttdef"><b>Definition:</b> <a href="GeometryIndexer_8h_source.html#l00101">GeometryIndexer.h:101</a></div></div>
-<div class="ttc" id="acore_2include_2Helper_8h_html"><div class="ttname"><a href="core_2include_2Helper_8h.html">Helper.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ac3cffb00a043ee494bd2887c4a6fba78"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ac3cffb00a043ee494bd2887c4a6fba78">cloudViewer::core::Float64</a></div><div class="ttdeci">const Dtype Float64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00043">Dtype.cpp:43</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid_html_af00f6d278d096777e4605d2271168dde"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">cloudViewer::t::geometry::kernel::voxel_grid::index_t</a></div><div class="ttdeci">int index_t</div><div class="ttdef"><b>Definition:</b> <a href="kernel_2VoxelBlockGrid_8h_source.html#l00023">VoxelBlockGrid.h:23</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_html_ae8d51f6b8626e22fb9952ac28773f807"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel.html#ae8d51f6b8626e22fb9952ac28773f807">cloudViewer::t::geometry::kernel::MAX_RESOLUTION_DIMS</a></div><div class="ttdeci">const int64_t MAX_RESOLUTION_DIMS</div><div class="ttdef"><b>Definition:</b> <a href="GeometryIndexer_8h_source.html#l00159">GeometryIndexer.h:159</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="GeometryIndexer_8h.html">GeometryIndexer.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

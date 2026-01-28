@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -111,7 +120,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ccThickness_8h.html">ccThickness.h</a>&quot;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ccTrace_8h.html">ccTrace.h</a>&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvFacet_8h.html">ecvFacet.h</a>&quot;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;ecvMainAppInterface.h&quot;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&quot;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">namespace </span>{</div>
@@ -707,7 +716,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160; </div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceccCompassExport.html">ccCompassExport</a> {</div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160; </div>
-<div class="line"><a name="l00620"></a><span class="lineno"><a class="line" href="namespaceccCompassExport.html#a23186d20445f0172762d0ef4631bb5b7">  620</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassExport.html#a23186d20445f0172762d0ef4631bb5b7">saveCSV</a>(ecvMainAppInterface* app, <span class="keyword">const</span> QString&amp; filename) {</div>
+<div class="line"><a name="l00620"></a><span class="lineno"><a class="line" href="namespaceccCompassExport.html#a23186d20445f0172762d0ef4631bb5b7">  620</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassExport.html#a23186d20445f0172762d0ef4631bb5b7">saveCSV</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app, <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;    <span class="comment">// write a whole bunch of .csv files</span></div>
 <div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160; </div>
 <div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;    <span class="keywordtype">int</span> planes = 0;  <span class="comment">// keep track of how many objects are being written (used</span></div>
@@ -717,7 +726,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;    <span class="keywordtype">int</span> thicknesses = 0;</div>
 <div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160; </div>
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;    <span class="comment">// build filenames</span></div>
-<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;    QFileInfo fi(filename);</div>
+<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;    QFileInfo fi(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160; </div>
 <div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;    QString baseName = fi.absolutePath() + <span class="stringliteral">&quot;/&quot;</span> + fi.completeBaseName();</div>
 <div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;    QString ext = fi.suffix();</div>
@@ -761,9 +770,9 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;        <span class="comment">// write data for all objects in the db tree (n.b. we loop through the</span></div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        <span class="comment">// dbRoots children rathern than just passing db_root so the naming is</span></div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        <span class="comment">// correct)</span></div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; app-&gt;dbRootObject()-&gt;getChildrenNumber();</div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; app-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;getChildrenNumber();</div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;             i++) {</div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            <a class="code" href="classccHObject.html">ccHObject</a>* rootObject = app-&gt;dbRootObject();</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            <a class="code" href="classccHObject.html">ccHObject</a>* rootObject = app-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>();</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;            <a class="code" href="classccHObject.html">ccHObject</a>* o = rootObject-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(i);</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160; </div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;            planes += _writePlanes(rootObject, o, &amp;plane_stream);</div>
@@ -786,53 +795,53 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160; </div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;        <span class="comment">// ensure data has been written (and if not, delete the file)</span></div>
 <div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;        <span class="keywordflow">if</span> (planes) {</div>
-<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;            app-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] Successfully exported plane data.&quot;</span>,</div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;                               ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] Successfully exported plane data.&quot;</span>,</div>
+<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;            app-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] No plane data found.&quot;</span>,</div>
-<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;                               ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] No plane data found.&quot;</span>,</div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;            plane_file.remove();</div>
 <div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;        }</div>
 <div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;        <span class="keywordflow">if</span> (traces) {</div>
-<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;            app-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] Successfully exported trace data.&quot;</span>,</div>
-<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;                               ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] Successfully exported trace data.&quot;</span>,</div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;            app-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] No trace data found.&quot;</span>,</div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;                               ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] No trace data found.&quot;</span>,</div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;            trace_file.remove();</div>
 <div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;        }</div>
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;        <span class="keywordflow">if</span> (lineations) {</div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;            app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;                    <span class="stringliteral">&quot;[ccCompass] Successfully exported lineation data.&quot;</span>,</div>
-<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;            app-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] No lineation data found.&quot;</span>,</div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;                               ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] No lineation data found.&quot;</span>,</div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;            lineation_file.remove();</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;        }</div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;        <span class="keywordflow">if</span> (thicknesses) {</div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;                    <span class="stringliteral">&quot;[ccCompass] Successfully exported thickness data.&quot;</span>,</div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            app-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] No thickness data found.&quot;</span>,</div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                               ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] No thickness data found.&quot;</span>,</div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;            thickness_file.remove();</div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        }</div>
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                <span class="stringliteral">&quot;[ccCompass] Could not open output files... ensure CC has &quot;</span></div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                <span class="stringliteral">&quot;write access to this location.&quot;</span>,</div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;    }</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;}</div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160; </div>
-<div class="line"><a name="l00740"></a><span class="lineno"><a class="line" href="namespaceccCompassExport.html#a0f809ec828ad83aed7beb42e5f93db34">  740</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassExport.html#a0f809ec828ad83aed7beb42e5f93db34">saveSVG</a>(ecvMainAppInterface* app, <span class="keyword">const</span> QString&amp; filename, <span class="keywordtype">float</span> zoom) {</div>
+<div class="line"><a name="l00740"></a><span class="lineno"><a class="line" href="namespaceccCompassExport.html#a0f809ec828ad83aed7beb42e5f93db34">  740</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassExport.html#a0f809ec828ad83aed7beb42e5f93db34">saveSVG</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app, <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keywordtype">float</span> zoom) {</div>
 <div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;    <span class="comment">// set all objects except the point clouds invisible</span></div>
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;    std::vector&lt;ccHObject*&gt;</div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;            hidden;  <span class="comment">// store objects we hide so we can turn them back on after!</span></div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;    <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> objects;</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    app-&gt;dbRootObject()-&gt;filterChildren(objects, <span class="keyword">true</span>, <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434af0e2b685b4da26a2f5f2269fcfaa4783">CV_TYPES::OBJECT</a>,</div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    app-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">filterChildren</a>(objects, <span class="keyword">true</span>, <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434af0e2b685b4da26a2f5f2269fcfaa4783">CV_TYPES::OBJECT</a>,</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;                                        <span class="keyword">false</span>);  <span class="comment">// get list of all children!</span></div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;    <span class="keywordflow">for</span> (<a class="code" href="classccHObject.html">ccHObject</a>* o : objects) {</div>
 <div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;        <span class="keywordflow">if</span> (!o-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
@@ -845,7 +854,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160; </div>
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    <span class="comment">// render the scene</span></div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;    <span class="comment">// QImage img = app-&gt;getActiveWindow()-&gt;renderToImage(zoom);</span></div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    QFileInfo fileInfo(filename);</div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    QFileInfo fileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;    QString pngFile = QString(<span class="stringliteral">&quot;%1/%2.png&quot;</span>)</div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;                              .arg(fileInfo.absolutePath())</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;                              .arg(fileInfo.baseName());</div>
@@ -871,7 +880,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;    QFile(pngFile).remove();</div>
 <div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160; </div>
 <div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;    <span class="comment">// create .svg file</span></div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;    QFile svg_file(filename);</div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;    QFile svg_file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;    <span class="comment">// open file &amp; create text stream</span></div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;    <span class="keywordflow">if</span> (svg_file.open(QIODevice::WriteOnly)) {</div>
 <div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;        QTextStream svg_stream(&amp;svg_file);</div>
@@ -903,7 +912,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>);  <span class="comment">// get updated params</span></div>
 <div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;        }</div>
 <div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160; </div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = _writeTracesSVG(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>, app-&gt;dbRootObject(), &amp;svg_stream,</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = _writeTracesSVG(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>, app-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>(), &amp;svg_stream,</div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;                                    <a class="code" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>, zoom);</div>
 <div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160; </div>
 <div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;        <span class="comment">// TODO: write scale bar</span></div>
@@ -916,23 +925,23 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;        svg_file.close();</div>
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160; </div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> &gt; 0) {</div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;            app-&gt;dispToConsole(QString::asprintf(</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString::asprintf(</div>
 <div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;                    <span class="stringliteral">&quot;[ccCompass] Successfully saved %d polylines to .svg file.&quot;</span>,</div>
 <div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;                    <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>));</div>
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;            <span class="comment">// remove file</span></div>
 <div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;            svg_file.remove();</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;            app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;                    <span class="stringliteral">&quot;[ccCompass] Could not write polylines to .svg - no &quot;</span></div>
 <div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;                    <span class="stringliteral">&quot;polylines found!&quot;</span>,</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                    ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        }</div>
 <div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;    }</div>
 <div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;}</div>
 <div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160; </div>
-<div class="line"><a name="l00843"></a><span class="lineno"><a class="line" href="namespaceccCompassExport.html#a88fe49fe011612b6d8388c01bdf93ea7">  843</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassExport.html#a88fe49fe011612b6d8388c01bdf93ea7">saveXML</a>(ecvMainAppInterface* app, <span class="keyword">const</span> QString&amp; filename) {</div>
+<div class="line"><a name="l00843"></a><span class="lineno"><a class="line" href="namespaceccCompassExport.html#a88fe49fe011612b6d8388c01bdf93ea7">  843</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassExport.html#a88fe49fe011612b6d8388c01bdf93ea7">saveXML</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app, <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;    <span class="comment">// open output stream</span></div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160; </div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;    <span class="keywordflow">if</span> (file.open(QIODevice::WriteOnly))  <span class="comment">// open the file</span></div>
 <div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;    {</div>
@@ -942,7 +951,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;        xmlWriter.writeStartDocument();</div>
 <div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160; </div>
 <div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;        <span class="comment">// find root node</span></div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;        <a class="code" href="classccHObject.html">ccHObject</a>* rootObject = app-&gt;dbRootObject();</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;        <a class="code" href="classccHObject.html">ccHObject</a>* rootObject = app-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>();</div>
 <div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;        <span class="keywordflow">if</span> (rootObject-&gt;<a class="code" href="classccHObject.html#a7c3df2a6b013186cdc2470451c47877d">getChildrenNumber</a>() == 1) {</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;            rootObject = rootObject-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(</div>
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;                    0);  <span class="comment">// HACK - often the root only has one child (a .bin</span></div>
@@ -963,17 +972,18 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;        file.flush();</div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;        file.close();</div>
 <div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160; </div>
-<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;                <span class="stringliteral">&quot;[ccCompass] Successfully exported data-tree to xml.&quot;</span>,</div>
-<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;                ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;                <span class="stringliteral">&quot;[ccCompass] Could not open output files... ensure CC has &quot;</span></div>
 <div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;                <span class="stringliteral">&quot;write access to this location.&quot;</span>,</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;    }</div>
 <div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;}</div>
 <div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;}  <span class="comment">// namespace ccCompassExport</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
@@ -1050,10 +1060,17 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div class="ttc" id="aclassecvDisplayTools_html_a6515466545e94d0d7f253af37aa7164a"><div class="ttname"><a href="classecvDisplayTools.html#a6515466545e94d0d7f253af37aa7164a">ecvDisplayTools::GlWidth</a></div><div class="ttdeci">static int GlWidth()</div><div class="ttdoc">Returns the OpenGL context width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l02038">ecvDisplayTools.h:2038</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a81b87365bab8f91587bbaa4445cd2eba"><div class="ttname"><a href="classecvDisplayTools.html#a81b87365bab8f91587bbaa4445cd2eba">ecvDisplayTools::GlHeight</a></div><div class="ttdeci">static int GlHeight()</div><div class="ttdoc">Returns the OpenGL context height.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l02040">ecvDisplayTools.h:2040</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_aafe3fd4ef297d293e007c1eb56572498"><div class="ttname"><a href="classecvDisplayTools.html#aafe3fd4ef297d293e007c1eb56572498">ecvDisplayTools::SetPerspectiveState</a></div><div class="ttdeci">static void SetPerspectiveState(bool state, bool objectCenteredView)</div><div class="ttdoc">Set perspective state/mode.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ WRN_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00118">ecvMainAppInterface.h:118</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ STD_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00117">ecvMainAppInterface.h:117</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
 <div class="ttc" id="aecvFacet_8h_html"><div class="ttname"><a href="ecvFacet_8h.html">ecvFacet.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a0ebdf737fbe4be3770f717335acd9e52"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a0ebdf737fbe4be3770f717335acd9e52">CV_TYPES::HIERARCHY_OBJECT</a></div><div class="ttdeci">@ HIERARCHY_OBJECT</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00103">CVTypes.h:103</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
@@ -1074,7 +1091,7 @@ $(document).ready(function(){initNavTree('ccCompassExport_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccCompassExport_8cpp.html">ccCompassExport.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

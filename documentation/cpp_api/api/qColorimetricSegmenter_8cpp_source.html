@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -126,7 +135,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                               .count();</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="comment">// Print duration of execution</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;Time to execute: &quot;</span> + QString::number(duration_ms) +</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;Time to execute: &quot;</span> + QString::number(duration_ms) +</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                 <span class="stringliteral">&quot; milliseconds&quot;</span>);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;}</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
@@ -139,7 +148,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;ColorimetricSegmenter::ColorimetricSegmenter(QObject* parent)</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      ccStdPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/ColorimetricSegmenter/info.json&quot;</span>),</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/ColorimetricSegmenter/info.json&quot;</span>),</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;      m_action_filterRgb(nullptr)</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      <span class="comment">/*, m_action_filterRgbWithSegmentation(nullptr)*/</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      ,</div>
@@ -273,14 +282,14 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="comment">// Get all point clouds that are selected in CC</span></div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="comment">// return a vector with ccPointCloud objects</span></div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;std::vector&lt;ccPointCloud*&gt; ColorimetricSegmenter::getSelectedPointClouds() {</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keywordflow">if</span> (m_app == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        <span class="comment">// loaded</span></div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        Q_ASSERT(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;        <span class="keywordflow">return</span> std::vector&lt;ccPointCloud*&gt;{};</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    }</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> selectedEntities = m_app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> selectedEntities = <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    std::vector&lt;ccPointCloud*&gt; clouds;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; selectedEntities.size(); ++i) {</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="keywordflow">if</span> (selectedEntities[i]-&gt;isKindOf(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
@@ -295,7 +304,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="comment">// It uses a color range with RGB values, and keeps the points with a color</span></div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="comment">// within that range.</span></div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="keywordtype">void</span> ColorimetricSegmenter::filterRgb() {</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordflow">if</span> (m_app == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="comment">// loaded</span></div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        Q_ASSERT(<span class="keyword">false</span>);</div>
@@ -304,9 +313,9 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    }</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160; </div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    <span class="comment">// check valid window</span></div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="keywordflow">if</span> (!m_app-&gt;getActiveWindow()) {</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;[ColorimetricSegmenter] No active 3D view&quot;</span>,</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>()) {</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ColorimetricSegmenter] No active 3D view&quot;</span>,</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;    }</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160; </div>
@@ -317,7 +326,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    }</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160; </div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    <span class="comment">// Retrieve parameters from dialog</span></div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <a class="code" href="classRgbDialog.html">RgbDialog</a> rgbDlg(m_app-&gt;pickingHub(), m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <a class="code" href="classRgbDialog.html">RgbDialog</a> rgbDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ae8198d9c751c240ab07f682de6223ba3">pickingHub</a>(), <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    rgbDlg.show();  <span class="comment">// necessary for setModal to be retained</span></div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160; </div>
@@ -397,9 +406,9 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            createClouds&lt;const RgbDialog&amp;&gt;(rgbDlg, cloud, filteredCloudInside,</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                                           filteredCloudOutside, <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>);</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160; </div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                    <span class="stringliteral">&quot;[ColorimetricSegmenter] Cloud successfully filtered ! &quot;</span>,</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        }</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    }</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
@@ -407,7 +416,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;}</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160; </div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="keywordtype">void</span> ColorimetricSegmenter::filterScalar() {</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keywordflow">if</span> (m_app == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        <span class="comment">// loaded</span></div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        Q_ASSERT(<span class="keyword">false</span>);</div>
@@ -416,14 +425,14 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    }</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="comment">// check valid window</span></div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="keywordflow">if</span> (!m_app-&gt;getActiveWindow()) {</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;[ColorimetricSegmenter] No active 3D view&quot;</span>,</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>()) {</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ColorimetricSegmenter] No active 3D view&quot;</span>,</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    }</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160; </div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <span class="comment">// Retrieve parameters from dialog</span></div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <a class="code" href="classScalarDialog.html">ScalarDialog</a> scalarDlg(m_app-&gt;pickingHub(), m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <a class="code" href="classScalarDialog.html">ScalarDialog</a> scalarDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ae8198d9c751c240ab07f682de6223ba3">pickingHub</a>(), <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160; </div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    scalarDlg.show();  <span class="comment">// necessary for setModal to be retained</span></div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
@@ -463,9 +472,9 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        createClouds&lt;const ScalarDialog&amp;&gt;(scalarDlg, cloud, filteredCloudInside,</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;                                          filteredCloudOutside, <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>);</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160; </div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;                <span class="stringliteral">&quot;[ColorimetricSegmenter] Cloud successfully filtered ! &quot;</span>,</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;                ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    }</div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160; </div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    <a class="code" href="qColorimetricSegmenter_8cpp.html#ad5e8b84082eb85d01ebd5285ad97ae38">ShowDurationNow</a>(startTime);</div>
@@ -510,8 +519,8 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        <span class="comment">// DGM: warning, the computeCloud2CloudDistances method doesn&#39;t return a</span></div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;        <span class="comment">// distance value (but a status / error) distances are stored in the</span></div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;        <span class="comment">// active scalar field (one per point!)</span></div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a8176a220ca46992774e9be5133d95340">cloudViewer::DistanceComputationTools::</a></div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a8176a220ca46992774e9be5133d95340">                computeCloud2CloudDistances</a>(neighbourCloud.data(),</div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a5302d128c5f1dd23e9772928382d2734">cloudViewer::DistanceComputationTools::</a></div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#a5302d128c5f1dd23e9772928382d2734">                computeCloud2CloudDistances</a>(neighbourCloud.data(),</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                                            regionCloud.data(), <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>);</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> &gt;= 0) {</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;            <span class="keywordtype">double</span> meanDistance = 0.0;</div>
@@ -624,7 +633,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160; </div>
 <div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;        <a class="code" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a>* <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a> = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a>(</div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;                pointCloud);  <span class="comment">// used to search nearest neighbors</span></div>
-<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;        <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a6e67181f7aaa384b68ed3e487a017b90">build</a>();</div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;        <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#aa9f40c89d5af9aee9f0742a64ca4132f">build</a>();</div>
 <div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160; </div>
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;        <span class="comment">// while there is points in {P} that haven’t been labeled</span></div>
 <div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;        <span class="keywordflow">while</span> (!unlabeledPoints.empty()) {</div>
@@ -648,14 +657,14 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;                {</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;                    nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#a480b21994a74aa3e5058900683849328">level</a> = 1;</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;                    nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#ad4d5ff59f05b1fe28143cc1afa5b5601">queryPoint</a> = *(pointCloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">getPoint</a>(tPointIndex));</div>
-<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;                    <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a57bb2d235d50a0351618a052b005af50">getCellPos</a>(<a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#ac3995a6a5d1dcf0b0f7d9c10daa948e3">getCellCode</a>(tPointIndex), 1,</div>
+<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;                    <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a22b74b454d3e876255c98d28af6612bc">getCellPos</a>(<a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#ac3995a6a5d1dcf0b0f7d9c10daa948e3">getCellCode</a>(tPointIndex), 1,</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;                                       nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#ab3f66f3fcb5cf0406d4a242e76ca224f">cellPos</a>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;                    <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a9990f3005573b39a289f7e2a38c591ce">computeCellCenter</a>(<a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#ac3995a6a5d1dcf0b0f7d9c10daa948e3">getCellCode</a>(tPointIndex),</div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;                                              1, nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#ab56a47a8fa78444a9f0e6aae8c2d0f25">cellCenter</a>);</div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;                    nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#a6477f50cd2ea6a0a8bb3c106336abb90">maxSearchSquareDistd</a> = <a class="code" href="qColorimetricSegmenter_8cpp.html#a9d7f143d849b9fad6dd88a0bb3b3058e">TD</a>;</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;                    nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#abcc49b86fbe93de6aa334e9ae411eb49">minNumberOfNeighbors</a> = <a class="code" href="qColorimetricSegmenter_8cpp.html#a57e521e12477e3b061104c4a4512eae2">TNN</a>;</div>
 <div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;                }</div>
-<div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;                <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a24e5d5dfc55229df4d8b852f4a41b500">findNearestNeighborsStartingFromCell</a>(nNSS);</div>
+<div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;                <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a311af75b349c839c87d8ccedc7567d2f">findNearestNeighborsStartingFromCell</a>(nNSS);</div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160; </div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#acff325118aec9be88ecfd8e59cbe92da">pointsInNeighbourhood</a>.size();</div>
 <div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;                     i++) {</div>
@@ -779,7 +788,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00726"></a><span class="lineno"><a class="line" href="qColorimetricSegmenter_8cpp.html#a050ae4258838898d095e001531806ce4">  726</a></span>&#160;<span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <a class="code" href="qColorimetricSegmenter_8cpp.html#a050ae4258838898d095e001531806ce4">Min</a> = 2;</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160; </div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;<span class="keywordtype">void</span> ColorimetricSegmenter::filterRgbWithSegmentation() {</div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;    <span class="keywordflow">if</span> (m_app == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        <span class="comment">// loaded</span></div>
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;        Q_ASSERT(<span class="keyword">false</span>);</div>
@@ -794,7 +803,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;    }</div>
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160; </div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;    <span class="comment">// Retrieve parameters from dialog</span></div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;    <a class="code" href="classRgbDialog.html">RgbDialog</a> rgbDlg(m_app-&gt;pickingHub(), m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;    <a class="code" href="classRgbDialog.html">RgbDialog</a> rgbDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ae8198d9c751c240ab07f682de6223ba3">pickingHub</a>(), <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160; </div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;    rgbDlg.show();  <span class="comment">// necessary for setModal to be retained</span></div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160; </div>
@@ -837,7 +846,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;        <span class="keywordflow">if</span> (cloud-&gt;hasColors()) {</div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;            RegionSet regions;</div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;            <span class="keywordflow">if</span> (!RegionGrowing(regions, cloud, <a class="code" href="qColorimetricSegmenter_8cpp.html#a57e521e12477e3b061104c4a4512eae2">TNN</a>, <a class="code" href="qColorimetricSegmenter_8cpp.html#a45d1f46a457fb87f20b2fe7d81dfa5ac">TPP</a>, <a class="code" href="qColorimetricSegmenter_8cpp.html#a9d7f143d849b9fad6dd88a0bb3b3058e">TD</a>)) {</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Process failed (not enough memory?)&quot;</span>);</div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Process failed (not enough memory?)&quot;</span>);</div>
 <div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;                <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;            }</div>
 <div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160; </div>
@@ -864,16 +873,16 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;                            cloud-&gt;getParent()-&gt;addChild(newCloud);</div>
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;                        }</div>
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160; </div>
-<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;                        m_app-&gt;addToDB(newCloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;                        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(newCloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160; </div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                        m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;                                <span class="stringliteral">&quot;[ColorimetricSegmenter] Cloud successfully &quot;</span></div>
 <div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                                <span class="stringliteral">&quot;filtered with segmentation!&quot;</span>,</div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                                ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                        m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                                <span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;                    }</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                }</div>
@@ -887,7 +896,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;<span class="comment">// Algorithm for the HSV filter</span></div>
 <div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;<span class="comment">// It uses the Hue-Saturation-Value (HSV) color space to filter the point cloud</span></div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;<span class="keywordtype">void</span> ColorimetricSegmenter::filterHSV() {</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;    <span class="keywordflow">if</span> (m_app == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        <span class="comment">// loaded</span></div>
 <div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;        Q_ASSERT(<span class="keyword">false</span>);</div>
@@ -895,9 +904,9 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;    }</div>
 <div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160; </div>
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;    <span class="comment">// Check valid window</span></div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    <span class="keywordflow">if</span> (!m_app-&gt;getActiveWindow()) {</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;[ColorimetricSegmenter] No active 3D view&quot;</span>,</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>()) {</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ColorimetricSegmenter] No active 3D view&quot;</span>,</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;    }</div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160; </div>
@@ -908,7 +917,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;    }</div>
 <div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160; </div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;    <span class="comment">// Retrieve parameters from dialog</span></div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;    <a class="code" href="classHSVDialog.html">HSVDialog</a> hsvDlg(m_app-&gt;pickingHub(), m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;    <a class="code" href="classHSVDialog.html">HSVDialog</a> hsvDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ae8198d9c751c240ab07f682de6223ba3">pickingHub</a>(), <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160; </div>
 <div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;    hsvDlg.show();  <span class="comment">// necessary for setModal to be retained</span></div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160; </div>
@@ -1007,9 +1016,9 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;            createClouds&lt;const HSVDialog&amp;&gt;(hsvDlg, cloud, filteredCloudInside,</div>
 <div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;                                           filteredCloudOutside, <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>);</div>
 <div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160; </div>
-<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;            m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;                    <span class="stringliteral">&quot;[ColorimetricSegmenter] Cloud successfully filtered ! &quot;</span>,</div>
-<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;        }</div>
 <div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;    }</div>
 <div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160; </div>
@@ -1019,11 +1028,11 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;<span class="comment">// Method to add point to a ReferenceCloud*</span></div>
 <div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;<span class="keywordtype">bool</span> ColorimetricSegmenter::addPoint(<a class="code" href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a>&amp; filteredCloud,</div>
 <div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;                                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j) {</div>
-<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;    m_addPointError = !filteredCloud.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(j);</div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;    m_addPointError = !filteredCloud.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(j);</div>
 <div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160; </div>
 <div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;    <span class="keywordflow">if</span> (m_addPointError) {</div>
 <div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;        <span class="comment">// not enough memory</span></div>
-<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;[ColorimetricSegmenter] Error, filter canceled.&quot;</span>);</div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ColorimetricSegmenter] Error, filter canceled.&quot;</span>);</div>
 <div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;    }</div>
 <div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160; </div>
 <div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;    <span class="keywordflow">return</span> m_addPointError;</div>
@@ -1059,7 +1068,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01006"></a><span class="lineno"> 1006</span>&#160; </div>
 <div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* newCloud = cloud-&gt;<a class="code" href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">partialClone</a>(&amp;referenceCloud);</div>
 <div class="line"><a name="l01008"></a><span class="lineno"> 1008</span>&#160;    <span class="keywordflow">if</span> (!newCloud) {</div>
-<div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l01010"></a><span class="lineno"> 1010</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01011"></a><span class="lineno"> 1011</span>&#160;    }</div>
 <div class="line"><a name="l01012"></a><span class="lineno"> 1012</span>&#160; </div>
@@ -1069,7 +1078,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;        cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(newCloud);</div>
 <div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;    }</div>
 <div class="line"><a name="l01018"></a><span class="lineno"> 1018</span>&#160; </div>
-<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;    m_app-&gt;addToDB(newCloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(newCloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160;}</div>
 <div class="line"><a name="l01021"></a><span class="lineno"> 1021</span>&#160; </div>
 <div class="line"><a name="l01029"></a><span class="lineno"><a class="line" href="qColorimetricSegmenter_8cpp.html#a03cd62b828e37a6555a2027d34e8d82e"> 1029</a></span>&#160;<span class="keyword">typedef</span> std::map&lt;size_t, std::vector&lt;unsigned&gt;&gt; <a class="code" href="qColorimetricSegmenter_8cpp.html#a03cd62b828e37a6555a2027d34e8d82e">ClusterMap</a>;</div>
@@ -1138,7 +1147,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01102"></a><span class="lineno"> 1102</span>&#160;}</div>
 <div class="line"><a name="l01103"></a><span class="lineno"> 1103</span>&#160; </div>
 <div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160;<span class="keywordtype">void</span> ColorimetricSegmenter::HistogramClustering() {</div>
-<div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;    <span class="keywordflow">if</span> (m_app == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160;        <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160;        <span class="comment">// loaded</span></div>
 <div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;        Q_ASSERT(<span class="keyword">false</span>);</div>
@@ -1154,7 +1163,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01123"></a><span class="lineno"> 1123</span>&#160;    }</div>
 <div class="line"><a name="l01124"></a><span class="lineno"> 1124</span>&#160; </div>
 <div class="line"><a name="l01125"></a><span class="lineno"> 1125</span>&#160;    <span class="comment">// creation of the window</span></div>
-<div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;    <a class="code" href="classQuantiDialog.html">QuantiDialog</a> quantiDlg(m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;    <a class="code" href="classQuantiDialog.html">QuantiDialog</a> quantiDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l01127"></a><span class="lineno"> 1127</span>&#160;    <span class="keywordflow">if</span> (!quantiDlg.exec()) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01128"></a><span class="lineno"> 1128</span>&#160; </div>
 <div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;    <span class="comment">// Start timer</span></div>
@@ -1172,15 +1181,15 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01141"></a><span class="lineno"> 1141</span>&#160;            <span class="keywordflow">if</span> (!<a class="code" href="qColorimetricSegmenter_8cpp.html#ae9c7368c21e19322a222e447ca5d42e8">GetKeyCluster</a>(*cloud,</div>
 <div class="line"><a name="l01142"></a><span class="lineno"> 1142</span>&#160;                               <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(nbClusterByComponent),</div>
 <div class="line"><a name="l01143"></a><span class="lineno"> 1143</span>&#160;                               clusterMap)) {</div>
-<div class="line"><a name="l01144"></a><span class="lineno"> 1144</span>&#160;                m_app-&gt;dispToConsole(<span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
-<div class="line"><a name="l01145"></a><span class="lineno"> 1145</span>&#160;                                     ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l01144"></a><span class="lineno"> 1144</span>&#160;                <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
+<div class="line"><a name="l01145"></a><span class="lineno"> 1145</span>&#160;                                     <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l01146"></a><span class="lineno"> 1146</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01147"></a><span class="lineno"> 1147</span>&#160;            }</div>
 <div class="line"><a name="l01148"></a><span class="lineno"> 1148</span>&#160; </div>
 <div class="line"><a name="l01149"></a><span class="lineno"> 1149</span>&#160;            <a class="code" href="classccPointCloud.html">ccPointCloud</a>* histCloud = cloud-&gt;<a class="code" href="classccPointCloud.html#ab24fc31f20fab1cc972c7c714a0aa829">cloneThis</a>();</div>
 <div class="line"><a name="l01150"></a><span class="lineno"> 1150</span>&#160;            <span class="keywordflow">if</span> (!histCloud) {</div>
-<div class="line"><a name="l01151"></a><span class="lineno"> 1151</span>&#160;                m_app-&gt;dispToConsole(<span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
-<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;                                     ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l01151"></a><span class="lineno"> 1151</span>&#160;                <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
+<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;                                     <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l01153"></a><span class="lineno"> 1153</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01154"></a><span class="lineno"> 1154</span>&#160;            }</div>
 <div class="line"><a name="l01155"></a><span class="lineno"> 1155</span>&#160; </div>
@@ -1204,11 +1213,11 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01173"></a><span class="lineno"> 1173</span>&#160;                cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(histCloud);</div>
 <div class="line"><a name="l01174"></a><span class="lineno"> 1174</span>&#160;            }</div>
 <div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160; </div>
-<div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;            m_app-&gt;addToDB(histCloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(histCloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160; </div>
-<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;            m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;                    <span class="stringliteral">&quot;[ColorimetricSegmenter] Cloud successfully clustered!&quot;</span>,</div>
-<div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;                    ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;        }</div>
 <div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;    }</div>
 <div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160; </div>
@@ -1228,7 +1237,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;    <span class="keywordflow">if</span> (pointCount == 0) <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160; </div>
 <div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;    <span class="keywordflow">if</span> (K &gt;= pointCount) {</div>
-<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;                <span class="stringliteral">&quot;Cloud %1 has less point than the expected number of classes.&quot;</span>);</div>
 <div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;    }</div>
@@ -1286,7 +1295,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160;                clusters[index].push_back(i);</div>
 <div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;            }</div>
 <div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160; </div>
-<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;Iteration &quot;</span> + QString::number(iteration));</div>
+<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;Iteration &quot;</span> + QString::number(iteration));</div>
 <div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> j = 0; j &lt; K; ++j) {</div>
 <div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;                <span class="keyword">const</span> std::vector&lt;unsigned&gt;&amp; cluster = clusters[j];</div>
 <div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;                <span class="keywordflow">if</span> (cluster.empty()) {</div>
@@ -1337,7 +1346,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01315"></a><span class="lineno"> 1315</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01316"></a><span class="lineno"> 1316</span>&#160;    }</div>
 <div class="line"><a name="l01317"></a><span class="lineno"> 1317</span>&#160; </div>
-<div class="line"><a name="l01318"></a><span class="lineno"> 1318</span>&#160;    <a class="code" href="classKmeansDlg.html">KmeansDlg</a> kmeansDlg(m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l01318"></a><span class="lineno"> 1318</span>&#160;    <a class="code" href="classKmeansDlg.html">KmeansDlg</a> kmeansDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l01319"></a><span class="lineno"> 1319</span>&#160;    <span class="keywordflow">if</span> (!kmeansDlg.exec()) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01320"></a><span class="lineno"> 1320</span>&#160; </div>
 <div class="line"><a name="l01321"></a><span class="lineno"> 1321</span>&#160;    assert(kmeansDlg.spinBox_k-&gt;value() &gt;= 0);</div>
@@ -1351,10 +1360,10 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01329"></a><span class="lineno"> 1329</span>&#160;        <a class="code" href="classccPointCloud.html">ccPointCloud</a>* kcloud =</div>
 <div class="line"><a name="l01330"></a><span class="lineno"> 1330</span>&#160;                <a class="code" href="qColorimetricSegmenter_8cpp.html#a0e8bf3034eabf9edaed870761c440967">ComputeKmeansClustering</a>(cloud, K, iterationCount);</div>
 <div class="line"><a name="l01331"></a><span class="lineno"> 1331</span>&#160;        <span class="keywordflow">if</span> (!kcloud) {</div>
-<div class="line"><a name="l01332"></a><span class="lineno"> 1332</span>&#160;            m_app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;[ColorimetricSegmenter] Failed to &quot;</span></div>
+<div class="line"><a name="l01332"></a><span class="lineno"> 1332</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;[ColorimetricSegmenter] Failed to &quot;</span></div>
 <div class="line"><a name="l01333"></a><span class="lineno"> 1333</span>&#160;                                         <span class="stringliteral">&quot;cluster cloud %1&quot;</span>)</div>
 <div class="line"><a name="l01334"></a><span class="lineno"> 1334</span>&#160;                                         .arg(cloud-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>()),</div>
-<div class="line"><a name="l01335"></a><span class="lineno"> 1335</span>&#160;                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l01335"></a><span class="lineno"> 1335</span>&#160;                                 <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l01336"></a><span class="lineno"> 1336</span>&#160;            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l01337"></a><span class="lineno"> 1337</span>&#160;        }</div>
 <div class="line"><a name="l01338"></a><span class="lineno"> 1338</span>&#160; </div>
@@ -1363,10 +1372,10 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="line"><a name="l01341"></a><span class="lineno"> 1341</span>&#160;            cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(kcloud);</div>
 <div class="line"><a name="l01342"></a><span class="lineno"> 1342</span>&#160;        }</div>
 <div class="line"><a name="l01343"></a><span class="lineno"> 1343</span>&#160; </div>
-<div class="line"><a name="l01344"></a><span class="lineno"> 1344</span>&#160;        m_app-&gt;addToDB(kcloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
-<div class="line"><a name="l01345"></a><span class="lineno"> 1345</span>&#160;        m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l01344"></a><span class="lineno"> 1344</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(kcloud, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l01345"></a><span class="lineno"> 1345</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l01346"></a><span class="lineno"> 1346</span>&#160;                <span class="stringliteral">&quot;[ColorimetricSegmenter] Cloud successfully clustered!&quot;</span>,</div>
-<div class="line"><a name="l01347"></a><span class="lineno"> 1347</span>&#160;                ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l01347"></a><span class="lineno"> 1347</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l01348"></a><span class="lineno"> 1348</span>&#160;    }</div>
 <div class="line"><a name="l01349"></a><span class="lineno"> 1349</span>&#160; </div>
 <div class="line"><a name="l01350"></a><span class="lineno"> 1350</span>&#160;    <a class="code" href="qColorimetricSegmenter_8cpp.html#ad5e8b84082eb85d01ebd5285ad97ae38">ShowDurationNow</a>(startTime);</div>
@@ -1384,9 +1393,9 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="ttc" id="aScalarDialog_8h_html"><div class="ttname"><a href="ScalarDialog_8h.html">ScalarDialog.h</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassHSVDialog_html"><div class="ttname"><a href="classHSVDialog.html">HSVDialog</a></div><div class="ttdef"><b>Definition:</b> <a href="HSVDialog_8h_source.html#l00038">HSVDialog.h:40</a></div></div>
 <div class="ttc" id="aclassKmeansDlg_html"><div class="ttname"><a href="classKmeansDlg.html">KmeansDlg</a></div><div class="ttdef"><b>Definition:</b> <a href="KmeansDlg_8h_source.html#l00032">KmeansDlg.h:32</a></div></div>
 <div class="ttc" id="aclassQuantiDialog_html"><div class="ttname"><a href="classQuantiDialog.html">QuantiDialog</a></div><div class="ttdef"><b>Definition:</b> <a href="QuantiDialog_8h_source.html#l00032">QuantiDialog.h:32</a></div></div>
@@ -1406,23 +1415,34 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div class="ttc" id="aclassccPointCloud_html_ac2438867a8a520b68123dca3d2ecd398"><div class="ttname"><a href="classccPointCloud.html#ac2438867a8a520b68123dca3d2ecd398">ccPointCloud::setPointColor</a></div><div class="ttdeci">void setPointColor(size_t pointIndex, const ecvColor::Rgb &amp;col)</div><div class="ttdoc">Sets a particular point color.</div></div>
 <div class="ttc" id="aclassccPointCloud_html_aca853e10304f926c3746270c29c7434b"><div class="ttname"><a href="classccPointCloud.html#aca853e10304f926c3746270c29c7434b">ccPointCloud::getPointColor</a></div><div class="ttdeci">const ecvColor::Rgb &amp; getPointColor(unsigned pointIndex) const override</div><div class="ttdoc">Returns color corresponding to a given point.</div></div>
 <div class="ttc" id="aclassccPointCloud_html_ae38119ce382d4781aedcddd422e9d0c3"><div class="ttname"><a href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">ccPointCloud::partialClone</a></div><div class="ttdeci">ccPointCloud * partialClone(const cloudViewer::ReferenceCloud *selection, int *warnings=nullptr, bool withChildEntities=true) const</div><div class="ttdoc">Creates a new point cloud object from a ReferenceCloud (selection)</div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_af46bcfd10da04c21300a7f1a59b29d86"><div class="ttname"><a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">ccStdPluginInterface::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Main application interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00085">ecvStdPluginInterface.h:85</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html">cloudViewer::DgmOctree</a></div><div class="ttdoc">The octree structure used throughout the library.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00039">DgmOctree.h:39</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a24e5d5dfc55229df4d8b852f4a41b500"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a24e5d5dfc55229df4d8b852f4a41b500">cloudViewer::DgmOctree::findNearestNeighborsStartingFromCell</a></div><div class="ttdeci">unsigned findNearestNeighborsStartingFromCell(NearestNeighboursSearchStruct &amp;nNSS, bool getOnlyPointsWithValidScalar=false) const</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a57bb2d235d50a0351618a052b005af50"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a57bb2d235d50a0351618a052b005af50">cloudViewer::DgmOctree::getCellPos</a></div><div class="ttdeci">void getCellPos(CellCode code, unsigned char level, Tuple3i &amp;cellPos, bool isCodeTruncated) const</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a6e67181f7aaa384b68ed3e487a017b90"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a6e67181f7aaa384b68ed3e487a017b90">cloudViewer::DgmOctree::build</a></div><div class="ttdeci">int build(GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Builds the structure.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a22b74b454d3e876255c98d28af6612bc"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a22b74b454d3e876255c98d28af6612bc">cloudViewer::DgmOctree::getCellPos</a></div><div class="ttdeci">void getCellPos(CellCode code, unsigned char level, Tuple3i &amp;cellPos, bool isCodeTruncated) const</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DgmOctree_8cpp_source.html#l00498">DgmOctree.cpp:498</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a311af75b349c839c87d8ccedc7567d2f"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a311af75b349c839c87d8ccedc7567d2f">cloudViewer::DgmOctree::findNearestNeighborsStartingFromCell</a></div><div class="ttdeci">unsigned findNearestNeighborsStartingFromCell(NearestNeighboursSearchStruct &amp;nNSS, bool getOnlyPointsWithValidScalar=false) const</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DgmOctree_8cpp_source.html#l01655">DgmOctree.cpp:1655</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a9990f3005573b39a289f7e2a38c591ce"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a9990f3005573b39a289f7e2a38c591ce">cloudViewer::DgmOctree::computeCellCenter</a></div><div class="ttdeci">void computeCellCenter(CellCode code, unsigned char level, CCVector3 &amp;center, bool isCodeTruncated=false) const</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00862">DgmOctree.h:862</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_aa9f40c89d5af9aee9f0742a64ca4132f"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#aa9f40c89d5af9aee9f0742a64ca4132f">cloudViewer::DgmOctree::build</a></div><div class="ttdeci">int build(GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Builds the structure.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DgmOctree_8cpp_source.html#l00196">DgmOctree.cpp:196</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_ac3995a6a5d1dcf0b0f7d9c10daa948e3"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#ac3995a6a5d1dcf0b0f7d9c10daa948e3">cloudViewer::DgmOctree::getCellCode</a></div><div class="ttdeci">const CellCode &amp; getCellCode(unsigned index) const</div><div class="ttdoc">Returns the ith cell code.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00963">DgmOctree.h:963</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DistanceComputationTools_html_a8176a220ca46992774e9be5133d95340"><div class="ttname"><a href="classcloudViewer_1_1DistanceComputationTools.html#a8176a220ca46992774e9be5133d95340">cloudViewer::DistanceComputationTools::computeCloud2CloudDistances</a></div><div class="ttdeci">static int computeCloud2CloudDistances(GenericIndexedCloudPersist *comparedCloud, GenericIndexedCloudPersist *referenceCloud, Cloud2CloudDistancesComputationParams &amp;params, GenericProgressCallback *progressCb=nullptr, DgmOctree *compOctree=nullptr, DgmOctree *refOctree=nullptr)</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DistanceComputationTools_html_a5302d128c5f1dd23e9772928382d2734"><div class="ttname"><a href="classcloudViewer_1_1DistanceComputationTools.html#a5302d128c5f1dd23e9772928382d2734">cloudViewer::DistanceComputationTools::computeCloud2CloudDistances</a></div><div class="ttdeci">static int computeCloud2CloudDistances(GenericIndexedCloudPersist *comparedCloud, GenericIndexedCloudPersist *referenceCloud, Cloud2CloudDistancesComputationParams &amp;params, GenericProgressCallback *progressCb=nullptr, DgmOctree *compOctree=nullptr, DgmOctree *refOctree=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DistanceComputationTools_8cpp_source.html#l00112">DistanceComputationTools.cpp:112</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ae034bad005881269d7a571c144185d6d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">cloudViewer::PointCloudTpl::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00143">PointCloudTpl.h:143</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a7cb77c5efad6ba874f0732fe1fe26682"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a7cb77c5efad6ba874f0732fe1fe26682">cloudViewer::ReferenceCloud::getPointGlobalIndex</a></div><div class="ttdeci">virtual unsigned getPointGlobalIndex(unsigned localIndex) const</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00103">ReferenceCloud.h:103</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a0f0db28e58d97db3711841616dc01464"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a0f0db28e58d97db3711841616dc01464">ecvColor::RgbTpl::g</a></div><div class="ttdeci">Type g</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a1f61925054e683444965627c90976b39"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a1f61925054e683444965627c90976b39">ecvColor::RgbTpl::b</a></div><div class="ttdeci">Type b</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a71bdb7daa072e90e889b98ee0ab70c04"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a71bdb7daa072e90e889b98ee0ab70c04">ecvColor::RgbTpl::r</a></div><div class="ttdeci">Type r</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ WRN_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00118">ecvMainAppInterface.h:118</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ STD_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00117">ecvMainAppInterface.h:117</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ae8198d9c751c240ab07f682de6223ba3"><div class="ttname"><a href="classecvMainAppInterface.html#ae8198d9c751c240ab07f682de6223ba3">ecvMainAppInterface::pickingHub</a></div><div class="ttdeci">virtual ccPickingHub * pickingHub()</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00201">ecvMainAppInterface.h:201</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
@@ -1472,7 +1492,7 @@ $(document).ready(function(){initNavTree('qColorimetricSegmenter_8cpp_source.htm
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_861f8ab3a75efd6c1a4bc468dceb871c.html">qColorimetricSegmenter</a></li><li class="navelem"><a class="el" href="qColorimetricSegmenter_8cpp.html">qColorimetricSegmenter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -328,7 +337,7 @@ $(document).ready(function(){initNavTree('PlyFile_8cpp_source.html',''); initRes
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;<span class="comment">******************************************************************************/</span></div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>
 <div class="line"><a name="l00240"></a><span class="lineno"><a class="line" href="Ply_8h.html#a2d2d9f9321ec68a8bea3ac355060a04d">  240</a></span>&#160;<a class="code" href="structPlyFile.html">PlyFile</a> *<a class="code" href="PlyFile_8cpp.html#a11dd648ce82501d45479893b1cc4c563">ply_open_for_writing</a>(</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                              <span class="keywordtype">char</span> *filename,</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                              <span class="keywordtype">char</span> *<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                              <span class="keywordtype">int</span> nelems,</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                              <span class="keyword">const</span> <span class="keywordtype">char</span> **elem_names,</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                              <span class="keywordtype">int</span> file_type,</div>
@@ -341,8 +350,8 @@ $(document).ready(function(){initNavTree('PlyFile_8cpp_source.html',''); initRes
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    </div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="comment">/* tack on the extension .ply, if necessary */</span></div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    </div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> = (<span class="keywordtype">char</span> *) <a class="code" href="Ply_8h.html#a63a66598e264179cd8920e0beb1814f2">myalloc</a> (<span class="keywordtype">int</span>(<span class="keyword">sizeof</span> (<span class="keywordtype">char</span>) * (strlen (filename)) + 5));</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    strcpy (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, filename);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> = (<span class="keywordtype">char</span> *) <a class="code" href="Ply_8h.html#a63a66598e264179cd8920e0beb1814f2">myalloc</a> (<span class="keywordtype">int</span>(<span class="keyword">sizeof</span> (<span class="keywordtype">char</span>) * (strlen (<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)) + 5));</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    strcpy (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    <span class="keywordflow">if</span> (strlen (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) &lt; 4 ||</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        strcmp (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> + strlen (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) - 4, <span class="stringliteral">&quot;.ply&quot;</span>) != 0)</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        strcat (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <span class="stringliteral">&quot;.ply&quot;</span>);</div>
@@ -948,7 +957,7 @@ $(document).ready(function(){initNavTree('PlyFile_8cpp_source.html',''); initRes
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;<span class="comment">  ******************************************************************************/</span></div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160; </div>
 <div class="line"><a name="l00860"></a><span class="lineno"><a class="line" href="Ply_8h.html#a8682c6045994d8907cd6117fac9ff741">  860</a></span>&#160;  <a class="code" href="structPlyFile.html">PlyFile</a> *<a class="code" href="PlyFile_8cpp.html#af6ff071ecdc41fefb8072b535f88ee6e">ply_open_for_reading</a>(</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;      <span class="keywordtype">char</span> *filename,</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;      <span class="keywordtype">char</span> *<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;      <span class="keywordtype">int</span> *nelems,</div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;      <span class="keywordtype">char</span> ***elem_names,</div>
 <div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;      <span class="keywordtype">int</span> *file_type,</div>
@@ -961,8 +970,8 @@ $(document).ready(function(){initNavTree('PlyFile_8cpp_source.html',''); initRes
 <div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160; </div>
 <div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;      <span class="comment">/* tack on the extension .ply, if necessary */</span></div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160; </div>
-<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;      <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> = (<span class="keywordtype">char</span> *) <a class="code" href="Ply_8h.html#a63a66598e264179cd8920e0beb1814f2">myalloc</a> (<span class="keywordtype">int</span>(<span class="keyword">sizeof</span> (<span class="keywordtype">char</span>) * (strlen (filename) + 5)));</div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;      strcpy (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, filename);</div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;      <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> = (<span class="keywordtype">char</span> *) <a class="code" href="Ply_8h.html#a63a66598e264179cd8920e0beb1814f2">myalloc</a> (<span class="keywordtype">int</span>(<span class="keyword">sizeof</span> (<span class="keywordtype">char</span>) * (strlen (<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) + 5)));</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;      strcpy (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;      <span class="keywordflow">if</span> (strlen (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) &lt; 4 ||</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;          strcmp (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> + strlen (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) - 4, <span class="stringliteral">&quot;.ply&quot;</span>) != 0)</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;          strcat (<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <span class="stringliteral">&quot;.ply&quot;</span>);</div>
@@ -2818,6 +2827,7 @@ $(document).ready(function(){initNavTree('PlyFile_8cpp_source.html',''); initRes
 <div class="line"><a name="l02728"></a><span class="lineno"> 2728</span>&#160;      <span class="keywordflow">return</span> (ptr);</div>
 <div class="line"><a name="l02729"></a><span class="lineno"> 2729</span>&#160;  }</div>
 <div class="line"><a name="l02730"></a><span class="lineno"> 2730</span>&#160;  </div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a728b969e374aba4020e39aea7e02e64f"><div class="ttname"><a href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a></div><div class="ttdeci">std::string version</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00140">FileIOFactory.cpp:140</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
@@ -2968,7 +2978,7 @@ $(document).ready(function(){initNavTree('PlyFile_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_550c509dcfd15517971c4d29b99072aa.html">PoissonRecon</a></li><li class="navelem"><a class="el" href="PlyFile_8cpp.html">PlyFile.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

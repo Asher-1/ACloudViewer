@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -672,7 +681,7 @@ $(document).ready(function(){initNavTree('LasSaveDialog_8cpp_source.html',''); i
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;        <a class="code" href="classLasExtraScalarField.html">LasExtraScalarField</a> field;</div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;        <span class="keywordflow">if</span> (!card-&gt;fillField(field, *m_cloud))</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;        {</div>
-<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;failed to convert scalar field info to something writable&quot;</span>);</div>
+<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;failed to convert scalar field info to something writable&quot;</span>);</div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;        }</div>
 <div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;        extraScalarFields.push_back(field);</div>
@@ -692,7 +701,7 @@ $(document).ready(function(){initNavTree('LasSaveDialog_8cpp_source.html',''); i
 <div class="ttc" id="aLasSaveDialog_8h_html"><div class="ttname"><a href="LasSaveDialog_8h.html">LasSaveDialog.h</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html_a7fd1f72c9b1884a63f18ede6408b81d6"><div class="ttname"><a href="QtCompat_8h.html#a7fd1f72c9b1884a63f18ede6408b81d6">qtCompatSplitRefChar</a></div><div class="ttdeci">QtCompatStringRefList qtCompatSplitRefChar(const QString &amp;str, QChar sep)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00430">QtCompat.h:430</a></div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassLasExtraScalarFieldCard_html"><div class="ttname"><a href="classLasExtraScalarFieldCard.html">LasExtraScalarFieldCard</a></div><div class="ttdef"><b>Definition:</b> <a href="LasExtraScalarFieldCard_8h_source.html#l00030">LasExtraScalarFieldCard.h:32</a></div></div>
 <div class="ttc" id="aclassLasExtraScalarField_html"><div class="ttname"><a href="classLasExtraScalarField.html">LasExtraScalarField</a></div><div class="ttdoc">This serves the same purpose as LasScalarField but for extra bytes.</div><div class="ttdef"><b>Definition:</b> <a href="LasExtraScalarField_8h_source.html#l00041">LasExtraScalarField.h:42</a></div></div>
 <div class="ttc" id="aclassLasSaveDialog_html_a0de7cf1bd4f94fcd324b8031b7b81ff4"><div class="ttname"><a href="classLasSaveDialog.html#a0de7cf1bd4f94fcd324b8031b7b81ff4">LasSaveDialog::setExtraScalarFields</a></div><div class="ttdeci">void setExtraScalarFields(const std::vector&lt; LasExtraScalarField &gt; &amp;extraScalarFields)</div><div class="ttdoc">Set the extra LAS scalar fields saved from the original file.</div><div class="ttdef"><b>Definition:</b> <a href="LasSaveDialog_8cpp_source.html#l00451">LasSaveDialog.cpp:451</a></div></div>
@@ -741,8 +750,8 @@ $(document).ready(function(){initNavTree('LasSaveDialog_8cpp_source.html',''); i
 <div class="ttc" id="anamespaceLasDetails_html_a402ae1d3258b3789ba9b68f65c10e60a"><div class="ttname"><a href="namespaceLasDetails.html#a402ae1d3258b3789ba9b68f65c10e60a">LasDetails::HasRGB</a></div><div class="ttdeci">bool HasRGB(unsigned pointFormatId)</div><div class="ttdoc">Returns whether the point format supports RGB.</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00132">LasDetails.h:132</a></div></div>
 <div class="ttc" id="anamespaceLasDetails_html_aadeeebd068f7de97b290b35b18cce302"><div class="ttname"><a href="namespaceLasDetails.html#aadeeebd068f7de97b290b35b18cce302">LasDetails::HasWaveform</a></div><div class="ttdeci">bool HasWaveform(unsigned pointFormatId)</div><div class="ttdoc">Returns whether the point format supports Waveforms.</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00143">LasDetails.h:143</a></div></div>
 <div class="ttc" id="anamespaceLasDetails_html_aeeea9e38f69c44751739f7678a1eef0d"><div class="ttname"><a href="namespaceLasDetails.html#aeeea9e38f69c44751739f7678a1eef0d">LasDetails::PointFormatsAvailableForVersion</a></div><div class="ttdeci">const std::vector&lt; unsigned &gt; * PointFormatsAvailableForVersion(QString version)</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8cpp_source.html#l00155">LasDetails.cpp:155</a></div></div>
-<div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00678">DLPack.h:678</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8h_source.html#l00086">IJsonConvertible.h:86</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="astructLasDetails_1_1LasVersion_html"><div class="ttname"><a href="structLasDetails_1_1LasVersion.html">LasDetails::LasVersion</a></div><div class="ttdoc">See SelectBestVersion</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00177">LasDetails.h:178</a></div></div>
 <div class="ttc" id="astructLasDetails_1_1LasVersion_html_a2abbd05c6d0e9777bd0fe168197c7e82"><div class="ttname"><a href="structLasDetails_1_1LasVersion.html#a2abbd05c6d0e9777bd0fe168197c7e82">LasDetails::LasVersion::minorVersion</a></div><div class="ttdeci">int minorVersion</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00180">LasDetails.h:180</a></div></div>
 <div class="ttc" id="astructLasDetails_1_1LasVersion_html_a4e9705fb8528d5eff19da387addc7f70"><div class="ttname"><a href="structLasDetails_1_1LasVersion.html#a4e9705fb8528d5eff19da387addc7f70">LasDetails::LasVersion::pointFormat</a></div><div class="ttdeci">int pointFormat</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00179">LasDetails.h:179</a></div></div>
@@ -761,7 +770,7 @@ $(document).ready(function(){initNavTree('LasSaveDialog_8cpp_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasSaveDialog_8cpp.html">LasSaveDialog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

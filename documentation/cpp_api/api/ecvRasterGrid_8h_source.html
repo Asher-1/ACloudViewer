@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -167,7 +176,7 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="structccRasterGrid.html#aade9ea87a74d77ad5bdb556fc5d26ba8">   97</a></span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* <a class="code" href="structccRasterGrid.html#aade9ea87a74d77ad5bdb556fc5d26ba8">convertToCloud</a>(</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <span class="keyword">const</span> std::vector&lt;ExportableFields&gt;&amp; exportedFields,</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            <span class="keywordtype">bool</span> interpolateSF,</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            <span class="keywordtype">bool</span> interpolateColors,</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            <span class="keywordtype">bool</span> <a class="code" href="namespaceccEntityAction.html#a43d5c256c74a2631c7e5841fad1df82e">interpolateColors</a>,</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <span class="keywordtype">bool</span> resampleInputCloudXY,</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <span class="keywordtype">bool</span> resampleInputCloudZ,  <span class="comment">// only considered if</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                                       <span class="comment">// resampleInputCloudXY is true!</span></div>
@@ -280,7 +289,8 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassecvProgressDialog_html"><div class="ttname"><a href="classecvProgressDialog.html">ecvProgressDialog</a></div><div class="ttdoc">Graphical progress indicator (thread-safe)</div><div class="ttdef"><b>Definition:</b> <a href="ecvProgressDialog_8h_source.html#l00027">ecvProgressDialog.h:29</a></div></div>
 <div class="ttc" id="aecvBBox_8h_html"><div class="ttname"><a href="ecvBBox_8h.html">ecvBBox.h</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespaceccEntityAction_html_a43d5c256c74a2631c7e5841fad1df82e"><div class="ttname"><a href="namespaceccEntityAction.html#a43d5c256c74a2631c7e5841fad1df82e">ccEntityAction::interpolateColors</a></div><div class="ttdeci">bool interpolateColors(const ccHObject::Container &amp;selectedEntities, QWidget *parent)</div><div class="ttdoc">Interpolate colors from on entity and transfer them to another one.</div><div class="ttdef"><b>Definition:</b> <a href="ecvEntityAction_8cpp_source.html#l00292">ecvEntityAction.cpp:292</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="astructccRasterCell_html"><div class="ttname"><a href="structccRasterCell.html">ccRasterCell</a></div><div class="ttdoc">Raster grid cell.</div><div class="ttdef"><b>Definition:</b> <a href="ecvRasterGrid_8h_source.html#l00022">ecvRasterGrid.h:22</a></div></div>
 <div class="ttc" id="astructccRasterCell_html_a2d8783112e80e4311a4bf39ec4b58cee"><div class="ttname"><a href="structccRasterCell.html#a2d8783112e80e4311a4bf39ec4b58cee">ccRasterCell::avgHeight</a></div><div class="ttdeci">double avgHeight</div><div class="ttdoc">Average height value.</div><div class="ttdef"><b>Definition:</b> <a href="ecvRasterGrid_8h_source.html#l00037">ecvRasterGrid.h:37</a></div></div>
 <div class="ttc" id="astructccRasterCell_html_a32100eafd7cdd5fa70d43d3a3e824b88"><div class="ttname"><a href="structccRasterCell.html#a32100eafd7cdd5fa70d43d3a3e824b88">ccRasterCell::color</a></div><div class="ttdeci">CCVector3d color</div><div class="ttdoc">Color.</div><div class="ttdef"><b>Definition:</b> <a href="ecvRasterGrid_8h_source.html#l00049">ecvRasterGrid.h:49</a></div></div>
@@ -345,7 +355,7 @@ $(document).ready(function(){initNavTree('ecvRasterGrid_8h_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvRasterGrid_8h.html">ecvRasterGrid.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

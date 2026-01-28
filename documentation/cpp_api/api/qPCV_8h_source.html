@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,12 +107,12 @@ $(document).ready(function(){initNavTree('qPCV_8h_source.html',''); initResizabl
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PCVCommand_8h.html">PCVCommand.h</a>&quot;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;ecvStdPluginInterface.h&quot;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classqPCV.html">   20</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqPCV.html">qPCV</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> ccStdPluginInterface {</div>
+<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classqPCV.html">   20</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqPCV.html">qPCV</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a> {</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    Q_OBJECT</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    Q_INTERFACES(<a class="code" href="classccPluginInterface.html">ccPluginInterface</a> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>)</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    Q_PLUGIN_METADATA(IID <span class="stringliteral">&quot;ecvcorp.cloudviewer.plugin.qPCV&quot;</span> FILE <span class="stringliteral">&quot;../info.json&quot;</span>)</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">public</span>:</div>
@@ -115,7 +124,7 @@ $(document).ready(function(){initNavTree('qPCV_8h_source.html',''); initResizabl
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classqPCV.html#ac2e3c482eb6dd912edc2a1f7f878477b">onNewSelection</a>(</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;            <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keyword">virtual</span> QList&lt;QAction*&gt; <a class="code" href="classqPCV.html#a1fa76e462348b0248d6ec0bac0434cf3">getActions</a>() <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classqPCV.html#af9da36e93bada51ec8c6ccd20b47fde5">registerCommands</a>(ccCommandLineInterface* cmd) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classqPCV.html#af9da36e93bada51ec8c6ccd20b47fde5">registerCommands</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>* cmd) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">protected</span> <a class="code" href="PythonPlugin_8cpp.html#aa2ad9c27624efec8c3fce893e35bbc81">slots</a>:</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
@@ -126,22 +135,26 @@ $(document).ready(function(){initNavTree('qPCV_8h_source.html',''); initResizabl
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;};</div>
 <div class="ttc" id="aPCVCommand_8h_html"><div class="ttname"><a href="PCVCommand_8h.html">PCVCommand.h</a></div></div>
 <div class="ttc" id="aPythonPlugin_8cpp_html_aa2ad9c27624efec8c3fce893e35bbc81"><div class="ttname"><a href="PythonPlugin_8cpp.html#aa2ad9c27624efec8c3fce893e35bbc81">slots</a></div><div class="ttdeci">#define slots</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00025">PythonPlugin.cpp:25</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
 <div class="ttc" id="aclassqPCV_html"><div class="ttname"><a href="classqPCV.html">qPCV</a></div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8h_source.html#l00020">qPCV.h:20</a></div></div>
-<div class="ttc" id="aclassqPCV_html_a1fa76e462348b0248d6ec0bac0434cf3"><div class="ttname"><a href="classqPCV.html#a1fa76e462348b0248d6ec0bac0434cf3">qPCV::getActions</a></div><div class="ttdeci">virtual QList&lt; QAction * &gt; getActions() override</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00056">qPCV.cpp:56</a></div></div>
+<div class="ttc" id="aclassqPCV_html_a1fa76e462348b0248d6ec0bac0434cf3"><div class="ttname"><a href="classqPCV.html#a1fa76e462348b0248d6ec0bac0434cf3">qPCV::getActions</a></div><div class="ttdeci">virtual QList&lt; QAction * &gt; getActions() override</div><div class="ttdoc">Get a list of actions for this plugin.</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00056">qPCV.cpp:56</a></div></div>
 <div class="ttc" id="aclassqPCV_html_a6b646c447c3d8df7fd7912d0b2b6371c"><div class="ttname"><a href="classqPCV.html#a6b646c447c3d8df7fd7912d0b2b6371c">qPCV::doAction</a></div><div class="ttdeci">void doAction()</div><div class="ttdoc">Slot called when associated ation is triggered.</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00069">qPCV.cpp:69</a></div></div>
 <div class="ttc" id="aclassqPCV_html_a81c87c0d78d2e5a5c84c20ba71459404"><div class="ttname"><a href="classqPCV.html#a81c87c0d78d2e5a5c84c20ba71459404">qPCV::m_action</a></div><div class="ttdeci">QAction * m_action</div><div class="ttdoc">Associated action.</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8h_source.html#l00044">qPCV.h:44</a></div></div>
 <div class="ttc" id="aclassqPCV_html_a995851bce9fce0b1fcd82b0309ded255"><div class="ttname"><a href="classqPCV.html#a995851bce9fce0b1fcd82b0309ded255">qPCV::qPCV</a></div><div class="ttdeci">qPCV(QObject *parent=nullptr)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00037">qPCV.cpp:37</a></div></div>
 <div class="ttc" id="aclassqPCV_html_ac2e3c482eb6dd912edc2a1f7f878477b"><div class="ttname"><a href="classqPCV.html#ac2e3c482eb6dd912edc2a1f7f878477b">qPCV::onNewSelection</a></div><div class="ttdeci">virtual void onNewSelection(const ccHObject::Container &amp;selectedEntities) override</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00042">qPCV.cpp:42</a></div></div>
 <div class="ttc" id="aclassqPCV_html_ac52828ccc492f7038d0d65b5e985363a"><div class="ttname"><a href="classqPCV.html#ac52828ccc492f7038d0d65b5e985363a">qPCV::~qPCV</a></div><div class="ttdeci">virtual ~qPCV()=default</div></div>
-<div class="ttc" id="aclassqPCV_html_af9da36e93bada51ec8c6ccd20b47fde5"><div class="ttname"><a href="classqPCV.html#af9da36e93bada51ec8c6ccd20b47fde5">qPCV::registerCommands</a></div><div class="ttdeci">virtual void registerCommands(ccCommandLineInterface *cmd) override</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00291">qPCV.cpp:291</a></div></div>
+<div class="ttc" id="aclassqPCV_html_af9da36e93bada51ec8c6ccd20b47fde5"><div class="ttname"><a href="classqPCV.html#af9da36e93bada51ec8c6ccd20b47fde5">qPCV::registerCommands</a></div><div class="ttdeci">virtual void registerCommands(ccCommandLineInterface *cmd) override</div><div class="ttdoc">Optional: registers commands (for the command line mode)</div><div class="ttdef"><b>Definition:</b> <a href="qPCV_8cpp_source.html#l00291">qPCV.cpp:291</a></div></div>
+<div class="ttc" id="aecvStdPluginInterface_8h_html"><div class="ttname"><a href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_6e622d7ee0f251e945e771685b64ba9d.html">qPCV</a></li><li class="navelem"><a class="el" href="dir_31d621e8e38ecd2edb208e1f04ed0806.html">include</a></li><li class="navelem"><a class="el" href="qPCV_8h.html">qPCV.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

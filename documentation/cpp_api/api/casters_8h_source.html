@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -116,7 +125,7 @@ $(document).ready(function(){initNavTree('casters_8h_source.html',''); initResiz
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacepybind11.html">pybind11</a></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;{</div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="namespacepybind11_1_1detail.html">   29</a></span>&#160;<span class="keyword">namespace </span>detail</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">namespace </span>detail</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;{</div>
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="structpybind11_1_1detail_1_1type__caster_3_01QString_01_4.html">   31</a></span>&#160;<span class="keyword">template</span> &lt;&gt; <span class="keyword">struct </span>type_caster&lt;QString&gt;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;{</div>
@@ -326,7 +335,7 @@ $(document).ready(function(){initNavTree('casters_8h_source.html',''); initResiz
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <span class="keywordflow">case</span> QVariant::Matrix:</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            Q_FALLTHROUGH();</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keywordflow">case</span> QVariant::Transform:</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#ab4543e3a3ff87eca2f161d05d1cde171">QVariant::Transform</a>:</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            Q_FALLTHROUGH();</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        <span class="keywordflow">case</span> QVariant::Matrix4x4:</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            Q_FALLTHROUGH();</div>
@@ -365,8 +374,9 @@ $(document).ready(function(){initNavTree('casters_8h_source.html',''); initResiz
 <div class="ttc" id="acasters_8h_html_ac6c3bee7a6b1d511d351e2f62b26bc0c"><div class="ttname"><a href="casters_8h.html#ac6c3bee7a6b1d511d351e2f62b26bc0c">PYBIND11_DECLARE_HOLDER_TYPE</a></div><div class="ttdeci">PYBIND11_DECLARE_HOLDER_TYPE(T, QSharedPointer&lt; T &gt;)</div></div>
 <div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
 <div class="ttc" id="aecvColorScale_8h_html"><div class="ttname"><a href="ecvColorScale_8h.html">ecvColorScale.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_ab4543e3a3ff87eca2f161d05d1cde171"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#ab4543e3a3ff87eca2f161d05d1cde171">cloudViewer::t::geometry::Transform</a></div><div class="ttdeci">void Transform(benchmark::State &amp;state, const core::Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00127">PointCloud.cpp:127</a></div></div>
 <div class="ttc" id="anamespacee57_html_ae10972d72a9068d0a441f08af14d283e"><div class="ttname"><a href="namespacee57.html#ae10972d72a9068d0a441f08af14d283e">e57::StringList</a></div><div class="ttdeci">std::vector&lt; std::string &gt; StringList</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00193">Common.h:193</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="asqlite3_8c_html_a2f520588d7cfd47c237231e103dbeb78"><div class="ttname"><a href="sqlite3_8c.html#a2f520588d7cfd47c237231e103dbeb78">Bool</a></div><div class="ttdeci">unsigned Bool</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l20710">sqlite3.c:20710</a></div></div>
 <div class="ttc" id="asqlite3_8c_html_a5bf69c1b786774d9f43f3bb281e0ff76"><div class="ttname"><a href="sqlite3_8c.html#a5bf69c1b786774d9f43f3bb281e0ff76">DateTime</a></div><div class="ttdeci">struct DateTime DateTime</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l21470">sqlite3.c:21730</a></div></div>
 <div class="ttc" id="asqlite3_8c_html_abe8fc99d29c0275271cbacd81d67ee07"><div class="ttname"><a href="sqlite3_8c.html#abe8fc99d29c0275271cbacd81d67ee07">Hash</a></div><div class="ttdeci">struct Hash Hash</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l12671">sqlite3.c:13845</a></div></div>
@@ -385,7 +395,7 @@ $(document).ready(function(){initNavTree('casters_8h_source.html',''); initResiz
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="casters_8h.html">casters.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

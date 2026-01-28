@@ -1,8 +1,9 @@
 <map id="/root/ACloudViewer/libs/cloudViewer/core/linalg/Solve.h" name="/root/ACloudViewer/libs/cloudViewer/core/linalg/Solve.h">
-<area shape="rect" id="node1" title=" " alt="" coords="385,5,551,61"/>
+<area shape="rect" id="node1" title=" " alt="" coords="480,5,645,61"/>
 <area shape="rect" id="node2" href="$Solve_8cpp.html" title=" " alt="" coords="5,109,171,165"/>
 <area shape="rect" id="node3" href="$SolveCPU_8cpp.html" title=" " alt="" coords="195,109,360,165"/>
 <area shape="rect" id="node4" href="$SolveCUDA_8cpp.html" title=" " alt="" coords="385,109,551,165"/>
 <area shape="rect" id="node5" href="$SolveSYCL_8cpp.html" title=" " alt="" coords="576,109,741,165"/>
 <area shape="rect" id="node6" href="$Tensor_8cpp.html" title=" " alt="" coords="765,109,931,165"/>
+<area shape="rect" id="node7" href="$linalg_8cpp.html" title=" " alt="" coords="955,109,1101,165"/>
 </map>

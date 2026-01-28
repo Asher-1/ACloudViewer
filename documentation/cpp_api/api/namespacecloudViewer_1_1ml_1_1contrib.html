@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -176,6 +185,22 @@ Functions</h2></td></tr>
 <tr class="separator:a3783106ed8273ebf0208fa88656bfcde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae778b6fbab80e97fe5194082a3afc821"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#ae778b6fbab80e97fe5194082a3afc821">NmsCPUKernel</a> (const float *boxes, const float *scores, int n, double nms_overlap_thresh)</td></tr>
 <tr class="separator:ae778b6fbab80e97fe5194082a3afc821"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7d9ec55271aa2a64c2b85a0259f8439"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#ae7d9ec55271aa2a64c2b85a0259f8439">pybind_contrib</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ae7d9ec55271aa2a64c2b85a0259f8439"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1979ca80ee88e25ab98cc0085c7e9a3e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#a1979ca80ee88e25ab98cc0085c7e9a3e">pybind_contrib_subsample</a> (py::module &amp;m_contrib)</td></tr>
+<tr class="separator:a1979ca80ee88e25ab98cc0085c7e9a3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa7d6c31e7ef60d4915cabe4d95b88f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#aaa7d6c31e7ef60d4915cabe4d95b88f9">pybind_contrib_nns</a> (py::module &amp;m_contrib)</td></tr>
+<tr class="separator:aaa7d6c31e7ef60d4915cabe4d95b88f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cc8ffbc0f55e890f1eb56fd5ae108aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#a8cc8ffbc0f55e890f1eb56fd5ae108aa">pybind_contrib_iou</a> (py::module &amp;m_contrib)</td></tr>
+<tr class="separator:a8cc8ffbc0f55e890f1eb56fd5ae108aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afabf7a79fb6ba7db4d2eb93c1abf6baa"><td class="memItemLeft" align="right" valign="top">const py::tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#afabf7a79fb6ba7db4d2eb93c1abf6baa">SubsampleBatch</a> (py::array <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, py::array batches, <a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt; features, <a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt; classes, float sampleDl, const std::string &amp;method, int max_p, int verbose)</td></tr>
+<tr class="separator:afabf7a79fb6ba7db4d2eb93c1abf6baa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a57b8c88ff01701a4993e79e6c1cc1e"><td class="memItemLeft" align="right" valign="top">const py::object&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#a3a57b8c88ff01701a4993e79e6c1cc1e">Subsample</a> (py::array <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt; features, <a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt; classes, float sampleDl, int verbose)</td></tr>
+<tr class="separator:a3a57b8c88ff01701a4993e79e6c1cc1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a312b0dcc96569085543a464438f0271c"><td class="memItemLeft" align="right" valign="top">py::array&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#a312b0dcc96569085543a464438f0271c">IouBevCPU</a> (py::array boxes_a, py::array boxes_b)</td></tr>
+<tr class="separator:a312b0dcc96569085543a464438f0271c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1223008879968fb924ce76e30c9b9adb"><td class="memItemLeft" align="right" valign="top">py::array&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html#a1223008879968fb924ce76e30c9b9adb">Iou3dCPU</a> (py::array boxes_a, py::array boxes_b)</td></tr>
+<tr class="separator:a1223008879968fb924ce76e30c9b9adb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -329,6 +354,8 @@ Variables</h2></td></tr>
 
 <p class="reference">References <a class="el" href="GridSubsampling_8cpp_source.html#l00014">grid_subsampling()</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="contrib__subsample_8cpp_source.html#l00019">SubsampleBatch()</a>.</p>
+
 </div>
 </div>
 <a id="a7fa774cf745ea13192931fa2a44982f2"></a>
@@ -384,8 +411,6 @@ Variables</h2></td></tr>
 <p>Nearest neighbours withing a radius with batching. queries and supports are sliced with their respective batch elements. Uses nanoflann to build a <a class="el" href="classcloudViewer_1_1KDTree.html">KDTree</a> and find neighbors. </p>
 
 <p class="definition">Definition at line <a class="el" href="neighbors_8cpp_source.html#l00125">125</a> of file <a class="el" href="neighbors_8cpp_source.html">neighbors.cpp</a>.</p>
-
-<p class="reference">References <a class="el" href="Cloud_8h_source.html#l00124">cloudViewer::ml::contrib::PointCloud::pts</a>.</p>
 
 </div>
 </div>
@@ -731,7 +756,7 @@ Variables</h2></td></tr>
 
 <p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="MiniVec_8h_source.html#l00075">cloudViewer::utility::floor()</a>, <a class="el" href="Cloud_8h_source.html#l00088">cloudViewer::ml::contrib::PointXYZ::floor()</a>, <a class="el" href="Cloud_8cpp_source.html#l00021">max_point()</a>, <a class="el" href="Cloud_8cpp_source.html#l00037">min_point()</a>, <a class="el" href="Cloud_8h_source.html#l00033">cloudViewer::ml::contrib::PointXYZ::x</a>, <a class="el" href="Cloud_8h_source.html#l00033">cloudViewer::ml::contrib::PointXYZ::y</a>, and <a class="el" href="Cloud_8h_source.html#l00033">cloudViewer::ml::contrib::PointXYZ::z</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="GridSubsampling_8cpp_source.html#l00122">batch_grid_subsampling()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="GridSubsampling_8cpp_source.html#l00122">batch_grid_subsampling()</a>, and <a class="el" href="contrib__subsample_8cpp_source.html#l00204">Subsample()</a>.</p>
 
 </div>
 </div>
@@ -795,6 +820,40 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a1223008879968fb924ce76e30c9b9adb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1223008879968fb924ce76e30c9b9adb">&#9670;&nbsp;</a></span>Iou3dCPU()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">py::array cloudViewer::ml::contrib::Iou3dCPU </td>
+          <td>(</td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>boxes_a</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>boxes_b</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="iou_8cpp_source.html#l00047">47</a> of file <a class="el" href="iou_8cpp_source.html">iou.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="TensorCheck_8h_source.html#l00021">AssertTensorDtype</a>, <a class="el" href="TensorCheck_8h_source.html#l00061">AssertTensorShape</a>, <a class="el" href="Tensor_8cpp_source.html#l00772">cloudViewer::core::Tensor::Contiguous()</a>, <a class="el" href="Dtype_8cpp_source.html#l00042">cloudViewer::core::Float32</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="IoU_8cpp_source.html#l00033">IoU3dCPUKernel()</a>, <a class="el" href="Optional_8h_source.html#l00136">cloudViewer::utility::nullopt</a>, <a class="el" href="tensor__converter_8cpp_source.html#l00098">cloudViewer::core::PyArrayToTensor()</a>, and <a class="el" href="tensor__converter_8cpp_source.html#l00036">cloudViewer::core::TensorToPyArray()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="iou_8cpp_source.html#l00121">pybind_contrib_iou()</a>.</p>
+
+</div>
+</div>
 <a id="ab6a0b93821a942bfda93d0b8206b7343"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab6a0b93821a942bfda93d0b8206b7343">&#9670;&nbsp;</a></span>IoU3dCPUKernel()</h2>
 
@@ -850,6 +909,8 @@ Variables</h2></td></tr>
 </dl>
 
 <p class="definition">Definition at line <a class="el" href="IoU_8cpp_source.html#l00033">33</a> of file <a class="el" href="IoU_8cpp_source.html">IoU.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="iou_8cpp_source.html#l00047">Iou3dCPU()</a>.</p>
 
 </div>
 </div>
@@ -995,6 +1056,40 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a312b0dcc96569085543a464438f0271c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a312b0dcc96569085543a464438f0271c">&#9670;&nbsp;</a></span>IouBevCPU()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">py::array cloudViewer::ml::contrib::IouBevCPU </td>
+          <td>(</td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>boxes_a</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>boxes_b</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="iou_8cpp_source.html#l00023">23</a> of file <a class="el" href="iou_8cpp_source.html">iou.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="TensorCheck_8h_source.html#l00021">AssertTensorDtype</a>, <a class="el" href="TensorCheck_8h_source.html#l00061">AssertTensorShape</a>, <a class="el" href="Tensor_8cpp_source.html#l00772">cloudViewer::core::Tensor::Contiguous()</a>, <a class="el" href="Dtype_8cpp_source.html#l00042">cloudViewer::core::Float32</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="IoU_8cpp_source.html#l00018">IoUBevCPUKernel()</a>, <a class="el" href="Optional_8h_source.html#l00136">cloudViewer::utility::nullopt</a>, <a class="el" href="tensor__converter_8cpp_source.html#l00098">cloudViewer::core::PyArrayToTensor()</a>, and <a class="el" href="tensor__converter_8cpp_source.html#l00036">cloudViewer::core::TensorToPyArray()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="iou_8cpp_source.html#l00121">pybind_contrib_iou()</a>.</p>
+
+</div>
+</div>
 <a id="a60446dcd0b6351012e3a8fa56649e5db"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a60446dcd0b6351012e3a8fa56649e5db">&#9670;&nbsp;</a></span>IoUBevCPUKernel()</h2>
 
@@ -1051,6 +1146,8 @@ Variables</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="IoU_8cpp_source.html#l00018">18</a> of file <a class="el" href="IoU_8cpp_source.html">IoU.cpp</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="iou_8cpp_source.html#l00023">IouBevCPU()</a>.</p>
+
 </div>
 </div>
 <a id="ae9de468a1436c7f14702e4787d613508"></a>
@@ -1095,9 +1192,11 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Tensor of shape (n_query_points, knn), dtype Int32. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="contrib__nns_8cpp_source.html#l00018">18</a> of file <a class="el" href="contrib__nns_8cpp_source.html">contrib_nns.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2ml_2contrib_2contrib__nns_8cpp_source.html#l00018">18</a> of file <a class="el" href="cloudViewer_2ml_2contrib_2contrib__nns_8cpp_source.html">contrib_nns.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, <a class="el" href="NearestNeighborSearch_8cpp_source.html#l00023">cloudViewer::core::nns::NearestNeighborSearch::KnnIndex()</a>, <a class="el" href="NearestNeighborSearch_8cpp_source.html#l00079">cloudViewer::core::nns::NearestNeighborSearch::KnnSearch()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="Tensor_8h_source.html#l01172">cloudViewer::core::Tensor::NumDims()</a>, <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>, and <a class="el" href="Dtype_8h_source.html#l00065">cloudViewer::core::Dtype::ToString()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="Python_2pybind_2ml_2contrib_2contrib__nns_8cpp_source.html#l00019">pybind_contrib_nns()</a>.</p>
 
 </div>
 </div>
@@ -1441,8 +1540,6 @@ Variables</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Cloud_8h_source.html#l00033">cloudViewer::ml::contrib::PointXYZ::x</a>, <a class="el" href="Cloud_8h_source.html#l00033">cloudViewer::ml::contrib::PointXYZ::y</a>, and <a class="el" href="Cloud_8h_source.html#l00033">cloudViewer::ml::contrib::PointXYZ::z</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="E57SimpleData_8h_source.html#l00132">e57::CartesianBounds::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00223">e57::ColorLimits::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00599">e57::CylindricalRepresentation::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00247">e57::DateTime::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00185">e57::IndexBounds::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00201">e57::IntensityLimits::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00546">e57::PinholeRepresentation::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00083">e57::Quaternion::operator!=()</a>, <a class="el" href="quazipdir_8h_source.html#l00077">QuaZipDir::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00106">e57::RigidBodyTransform::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00155">e57::SphericalBounds::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00570">e57::SphericalRepresentation::operator!=()</a>, <a class="el" href="E57SimpleData_8h_source.html#l00060">e57::Translation::operator!=()</a>, and <a class="el" href="E57SimpleData_8h_source.html#l00515">e57::VisualReferenceRepresentation::operator!=()</a>.</p>
-
 </div>
 </div>
 <a id="a7147d5078c8325dee64ada71f7423ff3"></a>
@@ -1611,6 +1708,102 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="ae7d9ec55271aa2a64c2b85a0259f8439"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7d9ec55271aa2a64c2b85a0259f8439">&#9670;&nbsp;</a></span>pybind_contrib()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::ml::contrib::pybind_contrib </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="contrib_8cpp_source.html#l00018">18</a> of file <a class="el" href="contrib_8cpp_source.html">contrib.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="iou_8cpp_source.html#l00121">pybind_contrib_iou()</a>, <a class="el" href="Python_2pybind_2ml_2contrib_2contrib__nns_8cpp_source.html#l00019">pybind_contrib_nns()</a>, and <a class="el" href="contrib__subsample_8cpp_source.html#l00346">pybind_contrib_subsample()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ml_8cpp_source.html#l00016">cloudViewer::ml::pybind_ml()</a>.</p>
+
+</div>
+</div>
+<a id="a8cc8ffbc0f55e890f1eb56fd5ae108aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cc8ffbc0f55e890f1eb56fd5ae108aa">&#9670;&nbsp;</a></span>pybind_contrib_iou()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::ml::contrib::pybind_contrib_iou </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m_contrib</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="iou_8cpp_source.html#l00121">121</a> of file <a class="el" href="iou_8cpp_source.html">iou.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="iou_8cpp_source.html#l00047">Iou3dCPU()</a>, and <a class="el" href="iou_8cpp_source.html#l00023">IouBevCPU()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="contrib_8cpp_source.html#l00018">pybind_contrib()</a>.</p>
+
+</div>
+</div>
+<a id="aaa7d6c31e7ef60d4915cabe4d95b88f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa7d6c31e7ef60d4915cabe4d95b88f9">&#9670;&nbsp;</a></span>pybind_contrib_nns()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::ml::contrib::pybind_contrib_nns </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m_contrib</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Python_2pybind_2ml_2contrib_2contrib__nns_8cpp_source.html#l00019">19</a> of file <a class="el" href="Python_2pybind_2ml_2contrib_2contrib__nns_8cpp_source.html">contrib_nns.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="cloudViewer_2ml_2contrib_2contrib__nns_8cpp_source.html#l00018">KnnSearch()</a>, and <a class="el" href="cloudViewer_2ml_2contrib_2contrib__nns_8cpp_source.html#l00051">RadiusSearch()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="contrib_8cpp_source.html#l00018">pybind_contrib()</a>.</p>
+
+</div>
+</div>
+<a id="a1979ca80ee88e25ab98cc0085c7e9a3e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1979ca80ee88e25ab98cc0085c7e9a3e">&#9670;&nbsp;</a></span>pybind_contrib_subsample()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::ml::contrib::pybind_contrib_subsample </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m_contrib</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="contrib__subsample_8cpp_source.html#l00346">346</a> of file <a class="el" href="contrib__subsample_8cpp_source.html">contrib_subsample.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="contrib__subsample_8cpp_source.html#l00204">Subsample()</a>, and <a class="el" href="contrib__subsample_8cpp_source.html#l00019">SubsampleBatch()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="contrib_8cpp_source.html#l00018">pybind_contrib()</a>.</p>
+
+</div>
+</div>
 <a id="a97571882800426d3bbf26816eca30c5c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a97571882800426d3bbf26816eca30c5c">&#9670;&nbsp;</a></span>RadiusSearch()</h2>
 
@@ -1667,9 +1860,11 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Tensor of shape {n_query_points, max_neighbor}, dtype Int32, where max_neighbor is the maximum number neighbor of neighbors for all query points. For query points with less than max_neighbor neighbors, the neighbor index will be padded by -1. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="contrib__nns_8cpp_source.html#l00051">51</a> of file <a class="el" href="contrib__nns_8cpp_source.html">contrib_nns.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2ml_2contrib_2contrib__nns_8cpp_source.html#l00051">51</a> of file <a class="el" href="cloudViewer_2ml_2contrib_2contrib__nns_8cpp_source.html">contrib_nns.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Tensor_8cpp_source.html#l01097">cloudViewer::core::Tensor::Add()</a>, <a class="el" href="Tensor_8h_source.html#l00558">cloudViewer::core::Tensor::AsRvalue()</a>, <a class="el" href="NearestNeighborSearch_8cpp_source.html#l00040">cloudViewer::core::nns::NearestNeighborSearch::FixedRadiusIndex()</a>, <a class="el" href="NearestNeighborSearch_8cpp_source.html#l00098">cloudViewer::core::nns::NearestNeighborSearch::FixedRadiusSearch()</a>, <a class="el" href="Tensor_8h_source.html#l00253">cloudViewer::core::Tensor::Full()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, <a class="el" href="Tensor_8h_source.html#l00618">cloudViewer::core::Tensor::Item()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="Tensor_8h_source.html#l01172">cloudViewer::core::Tensor::NumDims()</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="Tensor_8cpp_source.html#l00857">cloudViewer::core::Tensor::Slice()</a>, <a class="el" href="Tensor_8cpp_source.html#l01133">cloudViewer::core::Tensor::Sub()</a>, <a class="el" href="Tensor_8cpp_source.html#l01240">cloudViewer::core::Tensor::Sum()</a>, <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>, <a class="el" href="Dtype_8h_source.html#l00065">cloudViewer::core::Dtype::ToString()</a>, and <a class="el" href="Tensor_8cpp_source.html#l00721">cloudViewer::core::Tensor::View()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="Python_2pybind_2ml_2contrib_2contrib__nns_8cpp_source.html#l00019">pybind_contrib_nns()</a>.</p>
 
 </div>
 </div>
@@ -1775,6 +1970,128 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a id="a3a57b8c88ff01701a4993e79e6c1cc1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a57b8c88ff01701a4993e79e6c1cc1e">&#9670;&nbsp;</a></span>Subsample()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const py::object cloudViewer::ml::contrib::Subsample </td>
+          <td>(</td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>points</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt;&#160;</td>
+          <td class="paramname"><em>features</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt;&#160;</td>
+          <td class="paramname"><em>classes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sampleDl</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>verbose</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="contrib__subsample_8cpp_source.html#l00204">204</a> of file <a class="el" href="contrib__subsample_8cpp_source.html">contrib_subsample.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="Tensor_8cpp_source.html#l00772">cloudViewer::core::Tensor::Contiguous()</a>, <a class="el" href="Dtype_8cpp_source.html#l00042">cloudViewer::core::Float32</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="GridSubsampling_8cpp_source.html#l00014">grid_subsampling()</a>, <a class="el" href="Optional_8h_source.html#l00440">cloudViewer::utility::optional&lt; T &gt;::has_value()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="Tensor_8h_source.html#l01172">cloudViewer::core::Tensor::NumDims()</a>, <a class="el" href="Tensor_8h_source.html#l01170">cloudViewer::core::Tensor::NumElements()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00144">points</a>, <a class="el" href="tensor__converter_8cpp_source.html#l00098">cloudViewer::core::PyArrayToTensor()</a>, <a class="el" href="tensor__converter_8cpp_source.html#l00036">cloudViewer::core::TensorToPyArray()</a>, <a class="el" href="Tensor_8h_source.html#l01025">cloudViewer::core::Tensor::ToFlatVector()</a>, <a class="el" href="SizeVector_8cpp_source.html#l00132">cloudViewer::core::SizeVector::ToString()</a>, and <a class="el" href="Optional_8h_source.html#l00465">cloudViewer::utility::optional&lt; T &gt;::value()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="contrib__subsample_8cpp_source.html#l00346">pybind_contrib_subsample()</a>.</p>
+
+</div>
+</div>
+<a id="afabf7a79fb6ba7db4d2eb93c1abf6baa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afabf7a79fb6ba7db4d2eb93c1abf6baa">&#9670;&nbsp;</a></span>SubsampleBatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const py::tuple cloudViewer::ml::contrib::SubsampleBatch </td>
+          <td>(</td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>points</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">py::array&#160;</td>
+          <td class="paramname"><em>batches</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt;&#160;</td>
+          <td class="paramname"><em>features</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; py::array &gt;&#160;</td>
+          <td class="paramname"><em>classes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sampleDl</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>method</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>max_p</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>verbose</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="contrib__subsample_8cpp_source.html#l00019">19</a> of file <a class="el" href="contrib__subsample_8cpp_source.html">contrib_subsample.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="GridSubsampling_8cpp_source.html#l00122">batch_grid_subsampling()</a>, <a class="el" href="Tensor_8cpp_source.html#l00772">cloudViewer::core::Tensor::Contiguous()</a>, <a class="el" href="Dtype_8cpp_source.html#l00042">cloudViewer::core::Float32</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="Optional_8h_source.html#l00440">cloudViewer::utility::optional&lt; T &gt;::has_value()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, <a class="el" href="Tensor_8h_source.html#l00618">cloudViewer::core::Tensor::Item()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="Tensor_8h_source.html#l01172">cloudViewer::core::Tensor::NumDims()</a>, <a class="el" href="Tensor_8h_source.html#l01170">cloudViewer::core::Tensor::NumElements()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00144">points</a>, <a class="el" href="tensor__converter_8cpp_source.html#l00098">cloudViewer::core::PyArrayToTensor()</a>, <a class="el" href="Tensor_8cpp_source.html#l01240">cloudViewer::core::Tensor::Sum()</a>, <a class="el" href="tensor__converter_8cpp_source.html#l00036">cloudViewer::core::TensorToPyArray()</a>, <a class="el" href="Tensor_8h_source.html#l01025">cloudViewer::core::Tensor::ToFlatVector()</a>, <a class="el" href="SizeVector_8cpp_source.html#l00132">cloudViewer::core::SizeVector::ToString()</a>, and <a class="el" href="Optional_8h_source.html#l00465">cloudViewer::utility::optional&lt; T &gt;::value()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="contrib__subsample_8cpp_source.html#l00346">pybind_contrib_subsample()</a>.</p>
+
+</div>
+</div>
 <h2 class="groupheader">Variable Documentation</h2>
 <a id="a3602ef7c554626b78cf5c67f4efc79f6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3602ef7c554626b78cf5c67f4efc79f6">&#9670;&nbsp;</a></span>EPS</h2>
@@ -1798,7 +2115,7 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="IoUImpl_8h_source.html#l00020">20</a> of file <a class="el" href="IoUImpl_8h_source.html">IoUImpl.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Factor_8cpp_source.html#l00034">Factor()</a>, <a class="el" href="IoUImpl_8h_source.html#l00078">Intersection()</a>, <a class="el" href="IoUImpl_8h_source.html#l00230">IoUBev2DWithMinAndMax()</a>, and <a class="el" href="TriangleMesh_8cpp_source.html#l01471">cloudViewer::t::geometry::TriangleMesh::ProjectImagesToAlbedo()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Factor_8cpp_source.html#l00034">Factor()</a>, <a class="el" href="IoUImpl_8h_source.html#l00078">Intersection()</a>, <a class="el" href="IoUImpl_8h_source.html#l00230">IoUBev2DWithMinAndMax()</a>, <a class="el" href="IntersectionTest_8cpp_source.html#l00076">cloudViewer::utility::IntersectionTest::LinesMinimumDistance()</a>, and <a class="el" href="cloudViewer_2t_2geometry_2TriangleMesh_8cpp_source.html#l01471">cloudViewer::t::geometry::TriangleMesh::ProjectImagesToAlbedo()</a>.</p>
 
 </div>
 </div>
@@ -1834,7 +2151,7 @@ template&lt;typename T &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1ml.html">ml</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1ml_1_1contrib.html">contrib</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

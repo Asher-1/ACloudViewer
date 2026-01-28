@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -619,7 +628,7 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160; </div>
 <div class="line"><a name="l00537"></a><span class="lineno"><a class="line" href="classPdmsTools_1_1PdmsCommands_1_1ElementCreation.html#a0b278fc49c4c01eeb18d21f20a5b4c2c">  537</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classPdmsTools_1_1PdmsCommands_1_1ElementCreation.html#a0b278fc49c4c01eeb18d21f20a5b4c2c">ElementCreation::handle</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *str) {</div>
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;    <span class="keywordflow">if</span> (!elementType) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;    <span class="keywordflow">if</span> (path.size() &gt; 0) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.size() &gt; 0) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;    <span class="keywordflow">return</span> splitPath(str);</div>
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;}</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160; </div>
@@ -759,15 +768,15 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;    }</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160; </div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;    <span class="comment">// If the path is changed during the creation, do it now</span></div>
-<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;    <span class="keywordflow">if</span> (path.size() &gt; 1) {</div>
+<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.size() &gt; 1) {</div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;        <span class="keywordflow">if</span> (!item) {</div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;            <span class="comment">// delete newElement;</span></div>
 <div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;            <a class="code" href="classPdmsTools_1_1PdmsObjects_1_1Stack.html#ad25d474a1092789e795338d364f52033">PdmsObjects::Stack::Destroy</a>(newElement);</div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        }</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        <a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html">PdmsObjects::GenericItem</a> *mitem = item-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a0247a38ae013cfe03c3220eda3ce43f6">getRoot</a>();</div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i + 1 &lt; path.size(); i++) {</div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;            mitem = mitem-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9dcd767155272746c0ba1a7b03c4028d">scan</a>(path[i].c_str());</div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i + 1 &lt; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.size(); i++) {</div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;            mitem = mitem-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9dcd767155272746c0ba1a7b03c4028d">scan</a>(<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>[i].c_str());</div>
 <div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;            <span class="keywordflow">if</span> (!mitem) {</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;                <span class="comment">// delete newElement;</span></div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;                <a class="code" href="classPdmsTools_1_1PdmsObjects_1_1Stack.html#ad25d474a1092789e795338d364f52033">PdmsObjects::Stack::Destroy</a>(newElement);</div>
@@ -785,8 +794,8 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;    }</div>
 <div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160; </div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;    newElement-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a9291738b6c114ab461128b4fd0ba9b81">creator</a> = newElement-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a5b821b6e0f613ba4bd6090b6b4d6c695">owner</a>;</div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;    <span class="keywordflow">if</span> (path.size()) {</div>
-<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;        strcpy(newElement-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a55854859e90ef8bb8b4aba129a433aa7">name</a>, path.back().c_str());</div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.size()) {</div>
+<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;        strcpy(newElement-&gt;<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html#a55854859e90ef8bb8b4aba129a433aa7">name</a>, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.back().c_str());</div>
 <div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;    }</div>
 <div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160; </div>
 <div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;    <span class="keywordflow">try</span> {</div>
@@ -836,13 +845,13 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;}</div>
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160; </div>
 <div class="line"><a name="l00755"></a><span class="lineno"><a class="line" href="classPdmsTools_1_1PdmsCommands_1_1ElementCreation.html#a690ff5e04adf6e3b78ba1b77ecdea8a7">  755</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classPdmsTools_1_1PdmsCommands_1_1ElementCreation.html#a690ff5e04adf6e3b78ba1b77ecdea8a7">ElementCreation::splitPath</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *str) {</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    path.clear();</div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.clear();</div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160; </div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    <span class="comment">// Each time a new &#39;/&#39; is met, we create a new entry in the path</span></div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;    <span class="keywordtype">unsigned</span> i = 0;</div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;    <span class="keywordflow">while</span> (str[i]) {</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;        <span class="keywordflow">if</span> (str[i] == <span class="charliteral">&#39;/&#39;</span>) {</div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;            <span class="keywordflow">if</span> (i != 0) path.push_back(std::string(str, i));</div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;            <span class="keywordflow">if</span> (i != 0) <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.push_back(std::string(str, i));</div>
 <div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;            str = &amp;str[i + 1];</div>
 <div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;            i = 0;</div>
 <div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        } <span class="keywordflow">else</span> {</div>
@@ -851,9 +860,9 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;    }</div>
 <div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160; </div>
 <div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;    <span class="comment">// At the end, we have to create an entry for the last word</span></div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;    <span class="keywordflow">if</span> (i != 0) path.push_back(std::string(str, i));</div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;    <span class="keywordflow">if</span> (i != 0) <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.push_back(std::string(str, i));</div>
 <div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160; </div>
-<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;    <span class="keywordflow">return</span> (path.size() != 0);</div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;    <span class="keywordflow">return</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.size() != 0);</div>
 <div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;}</div>
 <div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160; </div>
 <div class="line"><a name="l00776"></a><span class="lineno"><a class="line" href="classPdmsTools_1_1PdmsCommands_1_1HierarchyNavigation.html#ac3961f5b3db706837f4c63fb89e19f4b">  776</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classPdmsTools_1_1PdmsCommands_1_1HierarchyNavigation.html#ac3961f5b3db706837f4c63fb89e19f4b">HierarchyNavigation::execute</a>(<a class="code" href="classPdmsTools_1_1PdmsObjects_1_1GenericItem.html">PdmsObjects::GenericItem</a> *&amp;item)<span class="keyword"> const </span>{</div>
@@ -2115,6 +2124,7 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aaf555c0043c6cafd54cc8eb584a4b84cb"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aaf555c0043c6cafd54cc8eb584a4b84cb">PdmsTools::PDMS_XLENGTH</a></div><div class="ttdeci">@ PDMS_XLENGTH</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00095">PdmsTools.h:95</a></div></div>
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aaf9de9278413c67dd2d57df5ce053e761"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aaf9de9278413c67dd2d57df5ce053e761">PdmsTools::PDMS_ANGLE</a></div><div class="ttdeci">@ PDMS_ANGLE</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00098">PdmsTools.h:98</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a367777efc10c85e627658ee2ca1fa402"><div class="ttname"><a href="namespacecloudViewer.html#a367777efc10c85e627658ee2ca1fa402">cloudViewer::RadiansToDegrees</a></div><div class="ttdeci">float RadiansToDegrees(int radians)</div><div class="ttdoc">Convert radians to degrees.</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00071">CVMath.h:71</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a40c4286c80bddd2f6f96f6d5f00137d8"><div class="ttname"><a href="namespacecloudViewer.html#a40c4286c80bddd2f6f96f6d5f00137d8">cloudViewer::GreaterThanEpsilon</a></div><div class="ttdeci">bool GreaterThanEpsilon(float x)</div><div class="ttdoc">Test a floating point number against our epsilon (a very small number).</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00037">CVMath.h:37</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a6286aab37e15a37234bcb5ba345062e2"><div class="ttname"><a href="namespacecloudViewer.html#a6286aab37e15a37234bcb5ba345062e2">cloudViewer::DegreesToRadians</a></div><div class="ttdeci">float DegreesToRadians(int degrees)</div><div class="ttdoc">Convert degrees to radians.</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00098">CVMath.h:98</a></div></div>
@@ -2126,7 +2136,7 @@ $(document).ready(function(){initNavTree('PdmsTools_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_ecc24ebe7d89572f9933707fe88b528d.html">qCoreIO</a></li><li class="navelem"><a class="el" href="dir_2a139ce821a92c61dda917a8bd29b4ab.html">src</a></li><li class="navelem"><a class="el" href="dir_934b9f4fd228aae511ffbf78cc10a18d.html">PDMS</a></li><li class="navelem"><a class="el" href="PdmsTools_8cpp.html">PdmsTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

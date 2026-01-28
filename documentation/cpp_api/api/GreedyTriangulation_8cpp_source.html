@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -108,7 +117,7 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">// ECV_PLUGINS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">// QT</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;QMainWindow&gt;</span></div>
@@ -150,7 +159,7 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classGreedyTriangulation.html#a01f84f9a3326f2597089f6c92d8a2e7d">   60</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="classGreedyTriangulation.html#a01f84f9a3326f2597089f6c92d8a2e7d">GreedyTriangulation::openInputDialog</a>() {</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="comment">// initialize the dialog object</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classGreedyTriangulation.html#ac406e5af53936a9cc8b2026bb3970dbe">m_dialog</a>)</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <a class="code" href="classGreedyTriangulation.html#ac406e5af53936a9cc8b2026bb3970dbe">m_dialog</a> = <span class="keyword">new</span> <a class="code" href="classGreedyTriangulationDlg.html">GreedyTriangulationDlg</a>(<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> ? <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;getActiveWindow()</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <a class="code" href="classGreedyTriangulation.html#ac406e5af53936a9cc8b2026bb3970dbe">m_dialog</a> = <span class="keyword">new</span> <a class="code" href="classGreedyTriangulationDlg.html">GreedyTriangulationDlg</a>(<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> ? <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>()</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                                    : 0);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud = <a class="code" href="classBasePclModule.html#ab6703557d3e1877cb85538ace7a04c01">getSelectedEntityAsCCPointCloud</a>();</div>
@@ -206,19 +215,19 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <span class="keywordflow">if</span> (!xyzCloud) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        <span class="comment">// now compute</span></div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        pcl::PointCloud&lt;NormalT&gt;::Ptr <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>(<span class="keyword">new</span> pcl::PointCloud&lt;NormalT&gt;);</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        pcl::PointCloud&lt;NormalT&gt;::Ptr <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>(<span class="keyword">new</span> pcl::PointCloud&lt;NormalT&gt;);</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = PCLModules::ComputeNormals&lt;pcl::PointXYZ, NormalT&gt;(</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                xyzCloud, <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>,</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                xyzCloud, <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>,</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                <a class="code" href="classGreedyTriangulation.html#ab9a2cb34599090aca2e6ec7dc0eb3523">m_useKnn</a> ? <a class="code" href="classGreedyTriangulation.html#a636d22150de85ae790d852a5373372a0">m_knn_radius</a> : <a class="code" href="classGreedyTriangulation.html#a4102f229bb99940e47453ee6b3cc358e">m_normalSearchRadius</a>, <a class="code" href="classGreedyTriangulation.html#ab9a2cb34599090aca2e6ec7dc0eb3523">m_useKnn</a>);</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> &lt; 0) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="comment">// concat points and normals</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        pcl::concatenateFields(*xyzCloud, *<a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>, *cloudWithNormals);</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(tr(<span class="stringliteral">&quot;[GreedyTriangulation::compute] generate new normals&quot;</span>));</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        pcl::concatenateFields(*xyzCloud, *<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>, *cloudWithNormals);</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(tr(<span class="stringliteral">&quot;[GreedyTriangulation::compute] generate new normals&quot;</span>));</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        PCLCloud::Ptr sm_cloud = cc2smReader(cloud).getAsSM();</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        FROM_PCL_CLOUD(*sm_cloud, *cloudWithNormals);</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                tr(<span class="stringliteral">&quot;[GreedyTriangulation::compute] find normals and use the &quot;</span></div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                   <span class="stringliteral">&quot;normals&quot;</span>));</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    }</div>
@@ -245,7 +254,7 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <span class="keywordtype">unsigned</span> vertCount = out_mesh-&gt;<a class="code" href="classccMesh.html#a74311e2d479202ef3ebee9e1051f661e">getAssociatedCloud</a>()-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">size</a>();</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keywordtype">unsigned</span> faceCount = out_mesh-&gt;<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>();</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            tr(<span class="stringliteral">&quot;[greedy-triangulation-Reconstruction] %1 points, %2 face(s)&quot;</span>)</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;                    .arg(vertCount)</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                    .arg(faceCount));</div>
@@ -295,7 +304,7 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div class="ttc" id="aclassBasePclModule_html_a7cb9b001d00e054785d3cff0c3126e73"><div class="ttname"><a href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">BasePclModule::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Associated application interface.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00296">BasePclModule.h:296</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a807b1aa6e0abe15ec48fc5c7801b6150"><div class="ttname"><a href="classBasePclModule.html#a807b1aa6e0abe15ec48fc5c7801b6150">BasePclModule::getErrorMessage</a></div><div class="ttdeci">virtual QString getErrorMessage(int errorCode)</div><div class="ttdoc">Returns the error message corresponding to a given error code.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00218">BasePclModule.cpp:218</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_ab6703557d3e1877cb85538ace7a04c01"><div class="ttname"><a href="classBasePclModule.html#ab6703557d3e1877cb85538ace7a04c01">BasePclModule::getSelectedEntityAsCCPointCloud</a></div><div class="ttdeci">ccPointCloud * getSelectedEntityAsCCPointCloud() const</div><div class="ttdoc">Returns the first selected entity as a ccPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00256">BasePclModule.cpp:256</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassGreedyTriangulationDlg_html"><div class="ttname"><a href="classGreedyTriangulationDlg.html">GreedyTriangulationDlg</a></div><div class="ttdef"><b>Definition:</b> <a href="GreedyTriangulationDlg_8h_source.html#l00018">GreedyTriangulationDlg.h:19</a></div></div>
 <div class="ttc" id="aclassGreedyTriangulation_html_a01f84f9a3326f2597089f6c92d8a2e7d"><div class="ttname"><a href="classGreedyTriangulation.html#a01f84f9a3326f2597089f6c92d8a2e7d">GreedyTriangulation::openInputDialog</a></div><div class="ttdeci">virtual int openInputDialog()</div><div class="ttdef"><b>Definition:</b> <a href="GreedyTriangulation_8cpp_source.html#l00060">GreedyTriangulation.cpp:60</a></div></div>
 <div class="ttc" id="aclassGreedyTriangulation_html_a0d04eec74f976019af731c08cfca4bf4"><div class="ttname"><a href="classGreedyTriangulation.html#a0d04eec74f976019af731c08cfca4bf4">GreedyTriangulation::checkParameters</a></div><div class="ttdeci">virtual int checkParameters()</div><div class="ttdef"><b>Definition:</b> <a href="GreedyTriangulation_8cpp_source.html#l00096">GreedyTriangulation.cpp:96</a></div></div>
@@ -333,9 +342,11 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_a68eec2164cc1d0363fd25b9108c2475e"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#a68eec2164cc1d0363fd25b9108c2475e">cloudViewer::BoundingBoxTpl::getDiagNorm</a></div><div class="ttdeci">T getDiagNorm() const</div><div class="ttdoc">Returns diagonal length.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00172">BoundingBox.h:172</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_ae42ccda2daa6b8891fb33eb06948daa2"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">cloudViewer::BoundingBoxTpl::isValid</a></div><div class="ttdeci">bool isValid() const</div><div class="ttdoc">Returns whether bounding box is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00203">BoundingBox.h:203</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericCloud_html_aa24d123b33022a7ff03f15e6a8618b55"><div class="ttname"><a href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size</a></div><div class="ttdeci">virtual unsigned size() const =0</div><div class="ttdoc">Returns the number of points.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -343,7 +354,7 @@ $(document).ready(function(){initNavTree('GreedyTriangulation_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_5850ee9049dacb63664f250860351471.html">Surfaces</a></li><li class="navelem"><a class="el" href="GreedyTriangulation_8cpp.html">GreedyTriangulation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

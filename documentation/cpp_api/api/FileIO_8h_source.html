@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -156,33 +165,33 @@ $(document).ready(function(){initNavTree('FileIO_8h_source.html',''); initResiza
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            <span class="comment">// Attention: when you update the defaults, update the docstrings in</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            <span class="comment">// pybind/io/class_io.cpp</span></div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            std::string <a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a> = <span class="stringliteral">&quot;auto&quot;</span>,</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;            <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#ab883cb560ee096ae851748587afa9fed">IsAscii</a> write_ascii = IsAscii::Binary,</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#ab37465ce537f59b0fc62ed203fff47e3">Compressed</a> compressed = Compressed::Uncompressed,</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;            <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#ab883cb560ee096ae851748587afa9fed">IsAscii</a> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a> = IsAscii::Binary,</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#ab37465ce537f59b0fc62ed203fff47e3">Compressed</a> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a> = Compressed::Uncompressed,</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;            <span class="keywordtype">bool</span> print_progress = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;            std::function&lt;<span class="keywordtype">bool</span>(<span class="keywordtype">double</span>)&gt; update_progress = {})</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        : <a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>(<a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>),</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;          write_ascii(write_ascii),</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;          compressed(compressed),</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;          <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>),</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;          <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>),</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;          print_progress(print_progress),</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;          update_progress(update_progress) {};</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="comment">// for compatibility</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#aa014e39d0182369fd688d5e5a236b7da">   94</a></span>&#160;    <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#aa014e39d0182369fd688d5e5a236b7da">WritePointCloudOption</a>(<span class="keywordtype">bool</span> write_ascii,</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                          <span class="keywordtype">bool</span> compressed = <span class="keyword">false</span>,</div>
+<div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#aa014e39d0182369fd688d5e5a236b7da">   94</a></span>&#160;    <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#aa014e39d0182369fd688d5e5a236b7da">WritePointCloudOption</a>(<span class="keywordtype">bool</span> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>,</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                          <span class="keywordtype">bool</span> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a> = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                          <span class="keywordtype">bool</span> print_progress = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                          std::function&lt;<span class="keywordtype">bool</span>(<span class="keywordtype">double</span>)&gt; update_progress = {})</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        : write_ascii(IsAscii(write_ascii)),</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;          compressed(Compressed(compressed)),</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        : <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>(IsAscii(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>)),</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;          <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>(Compressed(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>)),</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;          print_progress(print_progress),</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;          update_progress(update_progress) {};</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="comment">// for compatibility</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#a57949f703195d881e4ebb0f2decd1255">  103</a></span>&#160;    <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#a57949f703195d881e4ebb0f2decd1255">WritePointCloudOption</a>(std::string <a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                          <span class="keywordtype">bool</span> write_ascii,</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                          <span class="keywordtype">bool</span> compressed = <span class="keyword">false</span>,</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                          <span class="keywordtype">bool</span> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>,</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                          <span class="keywordtype">bool</span> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a> = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                          <span class="keywordtype">bool</span> print_progress = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                          std::function&lt;<span class="keywordtype">bool</span>(<span class="keywordtype">double</span>)&gt; update_progress = {})</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        : <a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>(<a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>),</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;          write_ascii(IsAscii(write_ascii)),</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          compressed(Compressed(compressed)),</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;          <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>(IsAscii(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>)),</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>(Compressed(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>)),</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;          print_progress(print_progress),</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;          update_progress(update_progress) {};</div>
 <div class="line"><a name="l00113"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#ab13dc1e097900ff8ba5458efde0e6e24">  113</a></span>&#160;    <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#ab13dc1e097900ff8ba5458efde0e6e24">WritePointCloudOption</a>(std::function&lt;<span class="keywordtype">bool</span>(<span class="keywordtype">double</span>)&gt; up)</div>
@@ -197,6 +206,8 @@ $(document).ready(function(){initNavTree('FileIO_8h_source.html',''); initResiza
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;};</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_a3c714c0fc7918c687a29f3dcd5dea7bc"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a></div><div class="ttdeci">IsAscii write_ascii</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00048">PointCloudIO.cpp:48</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_a898b08e62b0504ee78def67b1c9c8524"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a></div><div class="ttdeci">Compressed compressed</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00049">PointCloudIO.cpp:49</a></div></div>
 <div class="ttc" id="aCV__io_8h_html"><div class="ttname"><a href="CV__io_8h.html">CV_io.h</a></div></div>
 <div class="ttc" id="aCV__io_8h_html_ad6ec50f27d85b0cbac57c50291db956f"><div class="ttname"><a href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div><div class="ttdeci">#define CV_IO_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__io_8h_source.html#l00015">CV_io.h:15</a></div></div>
 <div class="ttc" id="aFilamentResourceManager_8cpp_html_a1acaede49c416601578d9bbd854f5106"><div class="ttname"><a href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a></div><div class="ttdeci">filament::Texture::InternalFormat format</div><div class="ttdef"><b>Definition:</b> <a href="FilamentResourceManager_8cpp_source.html#l00181">FilamentResourceManager.cpp:181</a></div></div>
@@ -207,7 +218,7 @@ $(document).ready(function(){initNavTree('FileIO_8h_source.html',''); initResiza
 <div class="ttc" id="aclassFileIO_html_a841f95f25ac73b58f960cbaa8f59a26b"><div class="ttname"><a href="classFileIO.html#a841f95f25ac73b58f960cbaa8f59a26b">FileIO::setWriterInfo</a></div><div class="ttdeci">static void setWriterInfo(const QString &amp;applicationName, const QString &amp;version)</div></div>
 <div class="ttc" id="aclassFileIO_html_a86518c2e6f8527c1c5a839a28c93f2ad"><div class="ttname"><a href="classFileIO.html#a86518c2e6f8527c1c5a839a28c93f2ad">FileIO::applicationName</a></div><div class="ttdeci">static QString applicationName()</div></div>
 <div class="ttc" id="aclassFileIO_html_a8ca6f57871bf8e45284786d9c05e3074"><div class="ttname"><a href="classFileIO.html#a8ca6f57871bf8e45284786d9c05e3074">FileIO::createdDateTime</a></div><div class="ttdeci">static QString createdDateTime()</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a></div><div class="ttdoc">Optional parameters to ReadPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00039">FileIO.h:39</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html_a111029302235886c2949e79532279353"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html#a111029302235886c2949e79532279353">cloudViewer::io::ReadPointCloudOption::ReadPointCloudOption</a></div><div class="ttdeci">ReadPointCloudOption(std::function&lt; bool(double)&gt; up)</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00053">FileIO.h:53</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html_a4e0cc3b5eef7b17349b0693b0d211109"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html#a4e0cc3b5eef7b17349b0693b0d211109">cloudViewer::io::ReadPointCloudOption::remove_nan_points</a></div><div class="ttdeci">bool remove_nan_points</div><div class="ttdoc">Whether to remove all points that have nan.</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00062">FileIO.h:62</a></div></div>
@@ -234,7 +245,7 @@ $(document).ready(function(){initNavTree('FileIO_8h_source.html',''); initResiza
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_3886bc5fbdde051dbb667d23ac4e3d40.html">CV_io</a></li><li class="navelem"><a class="el" href="dir_e4c5393be4f54449f4c55d38d92d28ac.html">include</a></li><li class="navelem"><a class="el" href="FileIO_8h.html">FileIO.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

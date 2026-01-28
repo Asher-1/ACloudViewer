@@ -1,6 +1,9 @@
 <map id="HSVDialog" name="HSVDialog">
-<area shape="rect" id="node1" title=" " alt="" coords="127,80,217,107"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="105,5,239,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="263,5,377,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="200,184,291,211"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,95,80,121"/>
+<area shape="rect" id="node3" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="105,95,239,121"/>
+<area shape="rect" id="node4" title=" " alt="" coords="263,95,377,121"/>
+<area shape="rect" id="node5" href="$classccPickingHub.html" title="Point/triangle picking hub." alt="" coords="401,95,511,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="348,5,423,32"/>
+<area shape="rect" id="node7" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="447,5,607,32"/>
 </map>

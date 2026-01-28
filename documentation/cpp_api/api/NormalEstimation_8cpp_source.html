@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -105,7 +114,7 @@ $(document).ready(function(){initNavTree('NormalEstimation_8cpp_source.html','')
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NormalEstimationDlg_8h.html">dialogs/NormalEstimationDlg.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// ECV_PLUGINS</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">// CV_DB_LIB</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
@@ -135,7 +144,7 @@ $(document).ready(function(){initNavTree('NormalEstimation_8cpp_source.html','')
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classNormalEstimation.html#a4c98ba2f4106800b92759d7d3aa21cbc">   46</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="classNormalEstimation.html#a4c98ba2f4106800b92759d7d3aa21cbc">NormalEstimation::openInputDialog</a>() {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classNormalEstimation.html#a834e431452280d58a61f896cdebcd418">m_dialog</a>) {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <a class="code" href="classNormalEstimation.html#a834e431452280d58a61f896cdebcd418">m_dialog</a> = <span class="keyword">new</span> <a class="code" href="classNormalEstimationDialog.html">NormalEstimationDialog</a>(<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> ? <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;getActiveWindow()</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <a class="code" href="classNormalEstimation.html#a834e431452280d58a61f896cdebcd418">m_dialog</a> = <span class="keyword">new</span> <a class="code" href="classNormalEstimationDialog.html">NormalEstimationDialog</a>(<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> ? <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>()</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                                    : 0);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="comment">// initially these are invisible</span></div>
@@ -177,15 +186,15 @@ $(document).ready(function(){initNavTree('NormalEstimation_8cpp_source.html','')
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">if</span> (!pcl_cloud) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="comment">// create storage for normals</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    PointCloudNormal::Ptr <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>(<span class="keyword">new</span> PointCloudNormal);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    PointCloudNormal::Ptr <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>(<span class="keyword">new</span> PointCloudNormal);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="comment">// now compute</span></div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordtype">int</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = PCLModules::ComputeNormals&lt;PointT, pcl::PointNormal&gt;(</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            pcl_cloud, <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>, <a class="code" href="classNormalEstimation.html#a9375735ca8b4cc337a132a766e546c2d">m_useKnn</a> ? <a class="code" href="classNormalEstimation.html#a5a4f4d746a3e674d14497348a4ec709c">m_knn_radius</a> : <a class="code" href="classNormalEstimation.html#aa4753b885ee10b12a55d28f99ac6cf0e">m_radius</a>, <a class="code" href="classNormalEstimation.html#a9375735ca8b4cc337a132a766e546c2d">m_useKnn</a>);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            pcl_cloud, <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>, <a class="code" href="classNormalEstimation.html#a9375735ca8b4cc337a132a766e546c2d">m_useKnn</a> ? <a class="code" href="classNormalEstimation.html#a5a4f4d746a3e674d14497348a4ec709c">m_knn_radius</a> : <a class="code" href="classNormalEstimation.html#aa4753b885ee10b12a55d28f99ac6cf0e">m_radius</a>, <a class="code" href="classNormalEstimation.html#a9375735ca8b4cc337a132a766e546c2d">m_useKnn</a>);</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> &lt; 0) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    PCLCloud::Ptr sm_normals(<span class="keyword">new</span> PCLCloud);</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    TO_PCL_CLOUD(*<a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>, *sm_normals);</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    TO_PCL_CLOUD(*<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>, *sm_normals);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    pcl2cc::CopyNormals(*sm_normals, *cloud);</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    pcl2cc::CopyScalarField(*sm_normals, <span class="stringliteral">&quot;curvature&quot;</span>, *cloud,</div>
@@ -220,8 +229,10 @@ $(document).ready(function(){initNavTree('NormalEstimation_8cpp_source.html','')
 <div class="ttc" id="aclassccPointCloud_html_ab8c5a40cd817ba60f700d505d39cabdf"><div class="ttname"><a href="classccPointCloud.html#ab8c5a40cd817ba60f700d505d39cabdf">ccPointCloud::unallocateNorms</a></div><div class="ttdeci">void unallocateNorms()</div><div class="ttdoc">Erases the cloud normals.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_a68eec2164cc1d0363fd25b9108c2475e"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#a68eec2164cc1d0363fd25b9108c2475e">cloudViewer::BoundingBoxTpl::getDiagNorm</a></div><div class="ttdeci">T getDiagNorm() const</div><div class="ttdoc">Returns diagonal length.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00172">BoundingBox.h:172</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_ae42ccda2daa6b8891fb33eb06948daa2"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">cloudViewer::BoundingBoxTpl::isValid</a></div><div class="ttdeci">bool isValid() const</div><div class="ttdoc">Returns whether bounding box is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00203">BoundingBox.h:203</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -229,7 +240,7 @@ $(document).ready(function(){initNavTree('NormalEstimation_8cpp_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_1ab9807fc05473169be6a637eb7211ed.html">Features</a></li><li class="navelem"><a class="el" href="NormalEstimation_8cpp.html">NormalEstimation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

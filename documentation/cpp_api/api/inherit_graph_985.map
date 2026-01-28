@@ -1,7 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structmasc_1_1Feature.html" title="Generic feature descriptor." alt="" coords="5,81,120,108"/>
-<area shape="rect" id="node2" href="$structmasc_1_1ContextBasedFeature.html" title="Context&#45;based feature." alt="" coords="168,5,373,32"/>
-<area shape="rect" id="node3" href="$structmasc_1_1DualCloudFeature.html" title="Dual&#45;cloud feature." alt="" coords="180,56,361,83"/>
-<area shape="rect" id="node4" href="$structmasc_1_1NeighborhoodFeature.html" title="Neighborhood&#45;based feature." alt="" coords="168,107,373,133"/>
-<area shape="rect" id="node5" href="$structmasc_1_1PointFeature.html" title="Point feature." alt="" coords="197,157,344,184"/>
+<area shape="rect" id="node1" href="$classIntensityLimits.html" title=" " alt="" coords="5,5,124,32"/>
 </map>

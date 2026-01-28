@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -110,7 +119,7 @@ $(document).ready(function(){initNavTree('qVoxFall_8cpp_source.html',''); initRe
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;qVoxFall::qVoxFall(QObject *parent)</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;      ccStdPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qVoxFall/info.json&quot;</span>),</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;      <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qVoxFall/info.json&quot;</span>),</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;      m_action(nullptr) {}</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keywordtype">void</span> qVoxFall::onNewSelection(<span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> &amp;selectedEntities) {</div>
@@ -125,9 +134,9 @@ $(document).ready(function(){initNavTree('qVoxFall_8cpp_source.html',''); initRe
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;QList&lt;QAction *&gt; qVoxFall::getActions() {</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keywordflow">if</span> (!m_action) {</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        m_action = <span class="keyword">new</span> QAction(getName(), <span class="keyword">this</span>);</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        m_action-&gt;setToolTip(getDescription());</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        m_action-&gt;setIcon(getIcon());</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        m_action = <span class="keyword">new</span> QAction(<a class="code" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a>(), <span class="keyword">this</span>);</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        m_action-&gt;setToolTip(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>());</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        m_action-&gt;setIcon(<a class="code" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a>());</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="comment">// Connect signal</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        connect(m_action, &amp;QAction::triggered, <span class="keyword">this</span>, &amp;qVoxFall::doAction);</div>
@@ -138,47 +147,47 @@ $(document).ready(function(){initNavTree('qVoxFall_8cpp_source.html',''); initRe
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">void</span> qVoxFall::doAction() {</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="comment">// disclaimer accepted?</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classDisclaimerDialog.html#abdb0853f0b9904fa8c1d92366e7362a6">DisclaimerDialog::show</a>(m_app)) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classDisclaimerDialog.html#abdb0853f0b9904fa8c1d92366e7362a6">DisclaimerDialog::show</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>)) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="comment">// m_app should have already been initialized by CC when plugin is loaded!</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    assert(m_app);</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> (!m_app) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    assert(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordflow">if</span> (m_selectedEntities.size() != 2 ||</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        !m_selectedEntities[0]-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a>) ||</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        !m_selectedEntities[1]-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a>)) {</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;Select two meshes !&quot;</span>,</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;Select two meshes !&quot;</span>,</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    }</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a> *mesh1 = <a class="code" href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh</a>(m_selectedEntities[0]);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a> *mesh2 = <a class="code" href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh</a>(m_selectedEntities[1]);</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    m_app-&gt;dispToConsole(<span class="stringliteral">&quot;[VoxFall] Meshes loaded successfully&quot;</span>,</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                         ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[VoxFall] Meshes loaded successfully&quot;</span>,</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                         <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="comment">// display dialog</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <a class="code" href="classqVoxFallDialog.html">qVoxFallDialog</a> dlg(mesh1, mesh2, m_app);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <a class="code" href="classqVoxFallDialog.html">qVoxFallDialog</a> dlg(mesh1, mesh2, <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">if</span> (!dlg.exec()) {</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="comment">// process cancelled by the user</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    }</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            QString(<span class="stringliteral">&quot;[VoxFall] Voxel size: %1 m&quot;</span>).arg(dlg.getVoxelSize()),</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    QString errorMessage;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classqVoxFallProcess.html#a3ebc0c0ee3c3e18f381630860831cee7">qVoxFallProcess::Compute</a>(dlg, errorMessage, <span class="keyword">true</span>,</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                                  m_app-&gt;getMainWindow(), m_app)) {</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                                  <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>(), <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>)) {</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordflow">if</span> (!errorMessage.isEmpty()) {</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;            m_app-&gt;dispToConsole(errorMessage,</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                                 ecvMainAppInterface::WRN_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(errorMessage,</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                                 <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            mesh1-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            m_app-&gt;dispToConsole(<span class="stringliteral">&quot;[VoxFall] Completed!&quot;</span>,</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                 ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[VoxFall] Completed!&quot;</span>,</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                 <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        }</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    }</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
@@ -186,10 +195,20 @@ $(document).ready(function(){initNavTree('qVoxFall_8cpp_source.html',''); initRe
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    dlg.saveParamsToPersistentSettings();</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;}</div>
 <div class="ttc" id="aclassDisclaimerDialog_html_abdb0853f0b9904fa8c1d92366e7362a6"><div class="ttname"><a href="classDisclaimerDialog.html#abdb0853f0b9904fa8c1d92366e7362a6">DisclaimerDialog::show</a></div><div class="ttdeci">static bool show(ecvMainAppInterface *app)</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2DisclaimerDialog_8cpp_source.html#l00027">qM3C2DisclaimerDialog.cpp:27</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_a8a1a1767db7a925da80ee8a356ce423b"><div class="ttname"><a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">ccDefaultPluginInterface::getName</a></div><div class="ttdeci">virtual QString getName() const override</div><div class="ttdoc">Returns (short) name (for menu entry, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00100">ecvDefaultPluginInterface.cpp:100</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_aae6336c05f8e7de1be072565b8d6256c"><div class="ttname"><a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">ccDefaultPluginInterface::getDescription</a></div><div class="ttdeci">virtual QString getDescription() const override</div><div class="ttdoc">Returns long name/description (for tooltip, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00104">ecvDefaultPluginInterface.cpp:104</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_ac9d5f749c5b30b78dab3cc78812e8d8e"><div class="ttname"><a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">ccDefaultPluginInterface::getIcon</a></div><div class="ttdeci">virtual QIcon getIcon() const override</div><div class="ttdoc">Returns icon.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00108">ecvDefaultPluginInterface.cpp:108</a></div></div>
 <div class="ttc" id="aclassccHObjectCaster_html_a00270441cbe35d7592ce95829ccd429f"><div class="ttname"><a href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh</a></div><div class="ttdeci">static ccMesh * ToMesh(ccHObject *obj)</div><div class="ttdoc">Converts current object to ccMesh (if possible)</div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9f0e313a854dd2ff9803d7b6d074872c"><div class="ttname"><a href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">ccObject::setEnabled</a></div><div class="ttdeci">virtual void setEnabled(bool state)</div><div class="ttdoc">Sets the &quot;enabled&quot; property.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00102">ecvObject.h:102</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_af46bcfd10da04c21300a7f1a59b29d86"><div class="ttname"><a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">ccStdPluginInterface::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Main application interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00085">ecvStdPluginInterface.h:85</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a58bfabfc34f4ee6033a2654f28ae72dc">ecvMainAppInterface::WRN_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ WRN_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00118">ecvMainAppInterface.h:118</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ STD_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00117">ecvMainAppInterface.h:117</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="aclassqVoxFallDialog_html"><div class="ttname"><a href="classqVoxFallDialog.html">qVoxFallDialog</a></div><div class="ttdoc">VOXFALL plugin's main dialog.</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallDialog_8h_source.html#l00019">qVoxFallDialog.h:19</a></div></div>
 <div class="ttc" id="aclassqVoxFallProcess_html_a3ebc0c0ee3c3e18f381630860831cee7"><div class="ttname"><a href="classqVoxFallProcess.html#a3ebc0c0ee3c3e18f381630860831cee7">qVoxFallProcess::Compute</a></div><div class="ttdeci">static bool Compute(const qVoxFallDialog &amp;dlg, QString &amp;errorMessage, bool allowDialogs, QWidget *parentWidget=nullptr, ecvMainAppInterface *app=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallProcess_8cpp_source.html#l00347">qVoxFallProcess.cpp:347</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
@@ -204,7 +223,7 @@ $(document).ready(function(){initNavTree('qVoxFall_8cpp_source.html',''); initRe
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4bac82d6d66125057afc5b6a16ccbd7c.html">qVoxFall</a></li><li class="navelem"><a class="el" href="dir_8968ffa52cafc454537db249a1a7ae52.html">src</a></li><li class="navelem"><a class="el" href="qVoxFall_8cpp.html">qVoxFall.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

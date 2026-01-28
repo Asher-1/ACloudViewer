@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('GlobalOptimization_8cpp_source.html','
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="GlobalOptimization_8h.html">pipelines/registration/GlobalOptimization.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Eigen_8h.html">Eigen.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Timer_8h.html">Timer.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;Eigen/Dense&gt;</span></div>
@@ -569,7 +578,7 @@ $(document).ready(function(){initNavTree('GlobalOptimization_8cpp_source.html','
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        <span class="keywordtype">bool</span> solver_success = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160; </div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;        <span class="comment">// Solve H_LM @ delta == b using a sparse solver</span></div>
-<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;        std::tie(solver_success, delta) = <a class="code" href="namespacecloudViewer_1_1utility.html#a7fcfc22883e4fd3266e9e506b159f81b">utility::SolveLinearSystemPSD</a>(</div>
+<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;        std::tie(solver_success, delta) = <a class="code" href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">utility::SolveLinearSystemPSD</a>(</div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;                H, b, <span class="comment">/*prefer_sparse=*/</span><span class="keyword">true</span>, <span class="comment">/*check_symmetric=*/</span><span class="keyword">false</span>,</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;                <span class="comment">/*check_det=*/</span><span class="keyword">false</span>, <span class="comment">/*check_psd=*/</span><span class="keyword">false</span>);</div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160; </div>
@@ -670,7 +679,7 @@ $(document).ready(function(){initNavTree('GlobalOptimization_8cpp_source.html','
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;            <span class="keywordtype">bool</span> solver_success = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160; </div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;            <span class="comment">// Solve H_LM @ delta == b using a sparse solver</span></div>
-<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;            std::tie(solver_success, delta) = <a class="code" href="namespacecloudViewer_1_1utility.html#a7fcfc22883e4fd3266e9e506b159f81b">utility::SolveLinearSystemPSD</a>(</div>
+<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;            std::tie(solver_success, delta) = <a class="code" href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">utility::SolveLinearSystemPSD</a>(</div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;                    H_LM, b, <span class="comment">/*prefer_sparse=*/</span><span class="keyword">true</span>, <span class="comment">/*check_symmetric=*/</span><span class="keyword">false</span>,</div>
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;                    <span class="comment">/*check_det=*/</span><span class="keyword">false</span>, <span class="comment">/*check_psd=*/</span><span class="keyword">false</span>);</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160; </div>
@@ -793,14 +802,14 @@ $(document).ready(function(){initNavTree('GlobalOptimization_8cpp_source.html','
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html_ad7486247462d5ebd03cebdd9adc217c0"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">cloudViewer::pipelines::registration::PoseGraph::nodes_</a></div><div class="ttdeci">std::vector&lt; PoseGraphNode &gt; nodes_</div><div class="ttdoc">List of PoseGraphNode.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8h_source.html#l00108">PoseGraph.h:108</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html_af774a10e3f1795a9dbedacae093417ee"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#af774a10e3f1795a9dbedacae093417ee">cloudViewer::pipelines::registration::PoseGraph::edges_</a></div><div class="ttdeci">std::vector&lt; PoseGraphEdge &gt; edges_</div><div class="ttdoc">List of PoseGraphEdge.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8h_source.html#l00111">PoseGraph.h:111</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html">cloudViewer::utility::Timer</a></div><div class="ttdef"><b>Definition:</b> <a href="Timer_8h_source.html#l00019">Timer.h:19</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_a280587460680d9d5bd78a5b908847179"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#a280587460680d9d5bd78a5b908847179">cloudViewer::utility::Timer::GetDurationInMillisecond</a></div><div class="ttdeci">double GetDurationInMillisecond() const</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_abe3be08cf7e4f4b4ad5feda24150a0fa"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#abe3be08cf7e4f4b4ad5feda24150a0fa">cloudViewer::utility::Timer::Stop</a></div><div class="ttdeci">void Stop()</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_ac143410d43e4cde938c9f970635733fe"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#ac143410d43e4cde938c9f970635733fe">cloudViewer::utility::Timer::Start</a></div><div class="ttdeci">void Start()</div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_a280587460680d9d5bd78a5b908847179"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#a280587460680d9d5bd78a5b908847179">cloudViewer::utility::Timer::GetDurationInMillisecond</a></div><div class="ttdeci">double GetDurationInMillisecond() const</div><div class="ttdef"><b>Definition:</b> <a href="Timer_8cpp_source.html#l00036">Timer.cpp:36</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_abe3be08cf7e4f4b4ad5feda24150a0fa"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#abe3be08cf7e4f4b4ad5feda24150a0fa">cloudViewer::utility::Timer::Stop</a></div><div class="ttdeci">void Stop()</div><div class="ttdef"><b>Definition:</b> <a href="Timer_8cpp_source.html#l00032">Timer.cpp:32</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_ac143410d43e4cde938c9f970635733fe"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#ac143410d43e4cde938c9f970635733fe">cloudViewer::utility::Timer::Start</a></div><div class="ttdeci">void Start()</div><div class="ttdef"><b>Definition:</b> <a href="Timer_8cpp_source.html#l00028">Timer.cpp:28</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespaceEigen_html_a09219f5e0b822edbf24b125e0e2a4fe0"><div class="ttname"><a href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 1 &gt; Vector6d</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00107">Eigen.h:107</a></div></div>
 <div class="ttc" id="anamespaceEigen_html_ab6f8b8b11b0f6350ed45e7cd3437207f"><div class="ttname"><a href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 6 &gt; Matrix6d</div><div class="ttdoc">Extending Eigen namespace by adding frequently used matrix type.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00106">Eigen.h:106</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a043bfa34c70e52f7a0e76ea0e2ab154a"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a043bfa34c70e52f7a0e76ea0e2ab154a">cloudViewer::pipelines::registration::GetLinearized6DVector</a></div><div class="ttdeci">Eigen::Vector6d GetLinearized6DVector(const Eigen::Matrix4d &amp;input)</div><div class="ttdef"><b>Definition:</b> <a href="GlobalOptimization_8cpp_source.html#l00078">GlobalOptimization.cpp:78</a></div></div>
@@ -826,17 +835,17 @@ $(document).ready(function(){initNavTree('GlobalOptimization_8cpp_source.html','
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_ae0491002e9a2a3de9b07b463c4638e31"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#ae0491002e9a2a3de9b07b463c4638e31">cloudViewer::pipelines::registration::ComputeLinearSystem</a></div><div class="ttdeci">std::tuple&lt; Eigen::MatrixXd, Eigen::VectorXd &gt; ComputeLinearSystem(const PoseGraph &amp;pose_graph, const Eigen::VectorXd &amp;zeta)</div><div class="ttdef"><b>Definition:</b> <a href="GlobalOptimization_8cpp_source.html#l00189">GlobalOptimization.cpp:189</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_af38d9ea27303d6b6ad8fb6240739e1dd"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#af38d9ea27303d6b6ad8fb6240739e1dd">cloudViewer::pipelines::registration::UpdateConfidence</a></div><div class="ttdeci">int UpdateConfidence(PoseGraph &amp;pose_graph, const Eigen::VectorXd &amp;zeta, const double line_process_weight, const GlobalOptimizationOption &amp;option)</div><div class="ttdef"><b>Definition:</b> <a href="GlobalOptimization_8cpp_source.html#l00125">GlobalOptimization.cpp:125</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_af8209c2cde52cb4b5cc41ed9d4381f11"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#af8209c2cde52cb4b5cc41ed9d4381f11">cloudViewer::pipelines::registration::CheckRelativeResidualIncrement</a></div><div class="ttdeci">bool CheckRelativeResidualIncrement(double current_residual, double new_residual, const GlobalOptimizationConvergenceCriteria &amp;criteria)</div><div class="ttdef"><b>Definition:</b> <a href="GlobalOptimization_8cpp_source.html#l00280">GlobalOptimization.cpp:280</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6a666d5eb181e8cc02c265576677dc3a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6a666d5eb181e8cc02c265576677dc3a">cloudViewer::utility::TransformMatrix4dToVector6d</a></div><div class="ttdeci">Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &amp;input)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a7c203be6c52984c361b887c22839a1ab"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">cloudViewer::utility::TransformVector6dToMatrix4d</a></div><div class="ttdeci">Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &amp;input)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a7fcfc22883e4fd3266e9e506b159f81b"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a7fcfc22883e4fd3266e9e506b159f81b">cloudViewer::utility::SolveLinearSystemPSD</a></div><div class="ttdeci">std::tuple&lt; bool, Eigen::VectorXd &gt; SolveLinearSystemPSD(const Eigen::MatrixXd &amp;A, const Eigen::VectorXd &amp;b, bool prefer_sparse=false, bool check_symmetric=false, bool check_det=false, bool check_psd=false)</div><div class="ttdoc">Function to solve Ax=b.</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a49e438c8916e5075a03171db433df4a4"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">cloudViewer::utility::SolveLinearSystemPSD</a></div><div class="ttdeci">std::tuple&lt; bool, Eigen::VectorXd &gt; SolveLinearSystemPSD(const Eigen::MatrixXd &amp;A, const Eigen::VectorXd &amp;b, bool prefer_sparse=false, bool check_symmetric=false, bool check_det=false, bool check_psd=false)</div><div class="ttdoc">Function to solve Ax=b.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00021">Eigen.cpp:21</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6a666d5eb181e8cc02c265576677dc3a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6a666d5eb181e8cc02c265576677dc3a">cloudViewer::utility::TransformMatrix4dToVector6d</a></div><div class="ttdeci">Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &amp;input)</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00088">Eigen.cpp:88</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a7c203be6c52984c361b887c22839a1ab"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">cloudViewer::utility::TransformVector6dToMatrix4d</a></div><div class="ttdeci">Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &amp;input)</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00076">Eigen.cpp:76</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="GlobalOptimization_8cpp.html">GlobalOptimization.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

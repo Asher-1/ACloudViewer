@@ -1,0 +1,9 @@
+<map id="cloudViewer::VisualizerForAlignment" name="cloudViewer::VisualizerForAlignment">
+<area shape="rect" id="node1" title=" " alt="" coords="1128,85,1323,126"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1Visualizer.html" title="The main Visualizer class." alt="" coords="355,114,548,155"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html" title="Visualizer with editing capabilities." alt="" coords="737,55,930,97"/>
+<area shape="rect" id="node3" title=" " alt="" coords="73,52,131,79"/>
+<area shape="rect" id="node4" href="$structcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl.html" title=" " alt="" coords="5,125,199,166"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1AlignmentSession.html" title=" " alt="" coords="720,179,947,205"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="377,179,525,221"/>
+</map>

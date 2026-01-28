@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -111,7 +120,7 @@ $(document).ready(function(){initNavTree('LasMetadata_8cpp_source.html',''); ini
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    {</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        <span class="keywordflow">if</span> (QString(vlr.user_id) != <a class="code" href="namespaceLasMetadata.html#a96a3a8eaa7dfcff6226fb16995ccc2ab">ProjectionVLR</a>)</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        {</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid Projection VLR&quot;</span>);</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid Projection VLR&quot;</span>);</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;            <span class="keywordflow">return</span> {};</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        }</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
@@ -202,7 +211,7 @@ $(document).ready(function(){initNavTree('LasMetadata_8cpp_source.html',''); ini
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;            QByteArray byteArray = value.toByteArray();</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <span class="keywordflow">if</span> (byteArray.size() != 16)</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            {</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid project UUID meta data&quot;</span>);</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid project UUID meta data&quot;</span>);</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;            }</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
@@ -310,7 +319,7 @@ $(document).ready(function(){initNavTree('LasMetadata_8cpp_source.html',''); ini
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;        }</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        <span class="keywordflow">if</span> (globalEncoding &gt; 65535)</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        {</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid global encoding value: &quot;</span> + QString::number(globalEncoding));</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid global encoding value: &quot;</span> + QString::number(globalEncoding));</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        }</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        outGlobalEncoding = <span class="keyword">static_cast&lt;</span>uint16_t<span class="keyword">&gt;</span>(globalEncoding);</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -322,7 +331,7 @@ $(document).ready(function(){initNavTree('LasMetadata_8cpp_source.html',''); ini
 <div class="ttc" id="aLasDetails_8h_html"><div class="ttname"><a href="LasDetails_8h.html">LasDetails.h</a></div></div>
 <div class="ttc" id="aLasDetails_8h_html_ac070b2cb7e8b8ed756f322e71234df7e"><div class="ttname"><a href="LasDetails_8h.html#ac070b2cb7e8b8ed756f322e71234df7e">laszip_vlr_struct</a></div><div class="ttdeci">laszip_vlr laszip_vlr_struct</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00047">LasDetails.h:46</a></div></div>
 <div class="ttc" id="aLasMetadata_8h_html"><div class="ttname"><a href="LasMetadata_8h.html">LasMetadata.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_a64cc8e49fc845aff7a2a0592c5610447"><div class="ttname"><a href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">Tuple3Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_ac8d05ce413d7659429e2e7243b8a8257"><div class="ttname"><a href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">Tuple3Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_aea57f32b7c87f9388205c027216ba132"><div class="ttname"><a href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">Tuple3Tpl::z</a></div><div class="ttdeci">Type z</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
@@ -367,7 +376,7 @@ $(document).ready(function(){initNavTree('LasMetadata_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasMetadata_8cpp.html">LasMetadata.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

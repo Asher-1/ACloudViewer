@@ -1,0 +1,21 @@
+<map id="sfEditDlg" name="sfEditDlg">
+<area shape="rect" id="node1" title="GUI scalar field interactor for properties list dialog." alt="" coords="1268,161,1349,188"/>
+<area shape="rect" id="node2" title=" " alt="" coords="957,111,1036,137"/>
+<area shape="rect" id="node3" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="639,304,746,331"/>
+<area shape="rect" id="node11" href="$classccHistogramWindow.html" title="Histogram widget." alt="" coords="919,161,1075,188"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="246,224,427,251"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,223,196,249"/>
+<area shape="rect" id="node6" href="$classCCShareable.html" title=" " alt="" coords="48,273,153,300"/>
+<area shape="rect" id="node7" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="259,275,414,301"/>
+<area shape="rect" id="node8" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="245,325,428,352"/>
+<area shape="rect" id="node9" title=" " alt="" coords="11,325,191,352"/>
+<area shape="rect" id="node10" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="259,384,415,411"/>
+<area shape="rect" id="node12" title=" " alt="" coords="639,5,746,32"/>
+<area shape="rect" id="node13" href="$classQCPColoredBars.html" title="QCustomPlot: colored histogram." alt="" coords="629,56,757,83"/>
+<area shape="rect" id="node14" title=" " alt="" coords="297,107,376,133"/>
+<area shape="rect" id="node18" href="$classQCPBarsWithText.html" title="QCustomPlot: vertical bar with text along side." alt="" coords="625,107,760,133"/>
+<area shape="rect" id="node15" href="$classQCPArrow.html" title="QCustomPlot: small arrows at the bottom." alt="" coords="649,165,736,192"/>
+<area shape="rect" id="node16" href="$classQCPSelectableCursor.html" title="QCustomPlot: selectable cursor interface." alt="" coords="257,171,416,197"/>
+<area shape="rect" id="node19" href="$classQCPHiddenArea.html" title="QCustomPlot: greyed areas." alt="" coords="630,219,755,245"/>
+<area shape="rect" id="node17" title=" " alt="" coords="21,171,181,197"/>
+</map>

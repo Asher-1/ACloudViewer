@@ -1,4 +1,5 @@
 <map id="cloudViewer::NormalizedProgress" name="cloudViewer::NormalizedProgress">
-<area shape="rect" id="node1" title=" " alt="" coords="5,109,247,136"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1GenericProgressCallback.html" title=" " alt="" coords="18,5,234,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="40,109,281,136"/>
+<area shape="rect" id="node2" href="$classAtomicCounter.html" title="Fake QAtomicInt." alt="" coords="5,13,124,39"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1GenericProgressCallback.html" title=" " alt="" coords="149,5,365,47"/>
 </map>

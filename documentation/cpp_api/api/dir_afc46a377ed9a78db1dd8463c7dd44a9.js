@@ -30,7 +30,7 @@ var dir_afc46a377ed9a78db1dd8463c7dd44a9 =
       [ "PoseGraphEdge", "classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html", "classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge" ],
       [ "PoseGraph", "classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html", "classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph" ]
     ] ],
-    [ "Registration.cpp", "pipelines_2registration_2Registration_8cpp.html", "pipelines_2registration_2Registration_8cpp" ],
+    [ "Registration.cpp", "cloudViewer_2pipelines_2registration_2Registration_8cpp.html", "cloudViewer_2pipelines_2registration_2Registration_8cpp" ],
     [ "Registration.h", "pipelines_2registration_2Registration_8h.html", "pipelines_2registration_2Registration_8h" ],
     [ "RobustKernel.cpp", "RobustKernel_8cpp.html", null ],
     [ "RobustKernel.h", "pipelines_2registration_2RobustKernel_8h.html", [

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -269,8 +278,8 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;      <span class="keywordtype">bool</span> isAttached() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;      <span class="keywordtype">void</span> dump( <span class="keywordtype">int</span> indent = 0, std::ostream &amp;os = std::cout ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;      <span class="keywordtype">void</span> checkInvariant( <span class="keywordtype">bool</span> doRecurse = <span class="keyword">true</span>, <span class="keywordtype">bool</span> doDowncast = <span class="keyword">true</span> );</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">operator==</a>( <a class="code" href="classe57_1_1Node.html">Node</a> n2 ) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">operator!=</a>( <a class="code" href="classe57_1_1Node.html">Node</a> n2 ) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">operator==</a>( <a class="code" href="classe57_1_1Node.html">Node</a> n2 ) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">operator!=</a>( <a class="code" href="classe57_1_1Node.html">Node</a> n2 ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;<span class="preprocessor">#ifdef E57_INTERNAL_IMPLEMENTATION_ENABLE</span></div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;      <span class="keyword">explicit</span> <a class="code" href="classe57_1_1Node.html">Node</a>( std::shared_ptr&lt;NodeImpl&gt; ); <span class="comment">// internal use only</span></div>
@@ -705,8 +714,8 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;      <span class="comment">// Diagnostic functions:</span></div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;      <span class="keywordtype">void</span> dump( <span class="keywordtype">int</span> indent = 0, std::ostream &amp;os = std::cout ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;      <span class="keywordtype">void</span> checkInvariant( <span class="keywordtype">bool</span> doRecurse = <span class="keyword">true</span> ) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">operator==</a>( <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a> imf2 ) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">operator!=</a>( <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a> imf2 ) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">operator==</a>( <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a> imf2 ) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">operator!=</a>( <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a> imf2 ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160; </div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;   <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;      <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a>( <span class="keywordtype">double</span> ); <span class="comment">// Give a second dummy constructor, better error msg</span></div>
@@ -776,8 +785,8 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="ttc" id="aclasse57_1_1VectorNode_html"><div class="ttname"><a href="classe57_1_1VectorNode.html">e57::VectorNode</a></div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00256">E57Format.h:257</a></div></div>
 <div class="ttc" id="aclasse57_1_1VectorNode_html_affb0761350c2599b3a85fcbeb7928424"><div class="ttname"><a href="classe57_1_1VectorNode.html#affb0761350c2599b3a85fcbeb7928424">e57::VectorNode::VectorNode</a></div><div class="ttdeci">VectorNode()=delete</div></div>
 <div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1ml_1_1contrib_html_a316e251ba53455adb251fefdc79baf23"><div class="ttname"><a href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">cloudViewer::ml::contrib::operator==</a></div><div class="ttdeci">bool operator==(const PointXYZ A, const PointXYZ B)</div><div class="ttdef"><b>Definition:</b> <a href="Cloud_8h_source.html#l00116">Cloud.h:116</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a959d489eaede13ea64ad2bf7bf4e6d8a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">cloudViewer::utility::operator!=</a></div><div class="ttdeci">MiniVec&lt; bool, N &gt; operator!=(const MiniVec&lt; T, N &gt; &amp;a, const MiniVec&lt; T, N &gt; &amp;b)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00184">MiniVec.h:184</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_ad6dc9b6b533094ad312fc0a398a30333"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">cloudViewer::utility::operator!=</a></div><div class="ttdeci">constexpr bool operator!=(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00620">Optional.h:620</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_afdf4d48647db5d5512ba844470381384"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">cloudViewer::utility::operator==</a></div><div class="ttdeci">constexpr bool operator==(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00615">Optional.h:615</a></div></div>
 <div class="ttc" id="anamespacee57_html"><div class="ttname"><a href="namespacee57.html">e57</a></div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00036">E57Exception.h:37</a></div></div>
 <div class="ttc" id="anamespacee57_html_a0aa74ddcae83c86ef7fd9397771a6736"><div class="ttname"><a href="namespacee57.html#a0aa74ddcae83c86ef7fd9397771a6736">e57::E57_V1_0_URI</a></div><div class="ttdeci">constexpr char E57_V1_0_URI[]</div><div class="ttdoc">Verify all checksums. This is the default. (slow)</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00107">E57Format.h:107</a></div></div>
 <div class="ttc" id="anamespacee57_html_a261186fd7531b7cc50f9aa5f41462dcc"><div class="ttname"><a href="namespacee57.html#a261186fd7531b7cc50f9aa5f41462dcc">e57::CHECKSUM_POLICY_ALL</a></div><div class="ttdeci">constexpr ReadChecksumPolicy CHECKSUM_POLICY_ALL</div><div class="ttdoc">Only verify 50% of the checksums. The last block is always verified.</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00102">E57Format.h:102</a></div></div>
@@ -817,7 +826,7 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d21333906be55f8c765d03a59e7fedc5.html">include</a></li><li class="navelem"><a class="el" href="E57Format_8h.html">E57Format.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

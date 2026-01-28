@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('MemoryManagerStatistic_8cpp_source.htm
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="MemoryManagerStatistic_8h.html">cloudViewer/core/MemoryManagerStatistic.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
@@ -111,7 +120,7 @@ $(document).ready(function(){initNavTree('MemoryManagerStatistic_8cpp_source.htm
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="comment">// MemoryManagerStatistic instance.</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="comment">// Since destruction of static instances happens in reverse order,</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="comment">// this guarantees that the Logger can be used at any point in time.</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">utility::Logger::GetInstance</a>();</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">utility::Logger::GetInstance</a>();</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="keyword">static</span> <a class="code" href="classcloudViewer_1_1core_1_1MemoryManagerStatistic.html">MemoryManagerStatistic</a> instance;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keywordflow">return</span> instance;</div>
@@ -122,7 +131,7 @@ $(document).ready(function(){initNavTree('MemoryManagerStatistic_8cpp_source.htm
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        <span class="comment">// Always use the default print function (print to the console).</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        <span class="comment">// Custom print functions like py::print may not work reliably</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        <span class="comment">// at this point in time.</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">ResetPrintFunction</a>();</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">ResetPrintFunction</a>();</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1MemoryManagerStatistic.html#a8b37234d8c320f7711f8d99163e5116a">Print</a>();</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        <span class="comment">// Indicate failure if possible leaks have been detected.</span></div>
@@ -288,16 +297,16 @@ $(document).ready(function(){initNavTree('MemoryManagerStatistic_8cpp_source.htm
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManagerStatistic_html_ada219a97fa90ab949d62c4ebe73d9f6c"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManagerStatistic.html#ada219a97fa90ab949d62c4ebe73d9f6c">cloudViewer::core::MemoryManagerStatistic::HasLeaks</a></div><div class="ttdeci">bool HasLeaks() const</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerStatistic_8cpp_source.html#l00111">MemoryManagerStatistic.cpp:111</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManagerStatistic_html_ae26fbbc8d8d4b9b8e83253e484eea864"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManagerStatistic.html#ae26fbbc8d8d4b9b8e83253e484eea864">cloudViewer::core::MemoryManagerStatistic::CountMalloc</a></div><div class="ttdeci">void CountMalloc(void *ptr, size_t byte_size, const Device &amp;device)</div><div class="ttdoc">Adds the given allocation to the statistics.</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerStatistic_8cpp_source.html#l00118">MemoryManagerStatistic.cpp:118</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManagerStatistic_html_aec6e409e256ebf87acfcc516d6609f1c"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManagerStatistic.html#aec6e409e256ebf87acfcc516d6609f1c">cloudViewer::core::MemoryManagerStatistic::SetPrintAtProgramEnd</a></div><div class="ttdeci">void SetPrintAtProgramEnd(bool print)</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerStatistic_8cpp_source.html#l00048">MemoryManagerStatistic.cpp:48</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a34eb07b824a0a284146cf3a3345b4261"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">cloudViewer::utility::Logger::ResetPrintFunction</a></div><div class="ttdeci">void ResetPrintFunction()</div><div class="ttdoc">Reset the print function to the default one (print to console).</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_acc81e40a92aeb86a688d12f9a2c9be6e"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">cloudViewer::utility::Logger::GetInstance</a></div><div class="ttdeci">static Logger &amp; GetInstance()</div><div class="ttdoc">Get Logger global singleton instance.</div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a34eb07b824a0a284146cf3a3345b4261"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">cloudViewer::utility::Logger::ResetPrintFunction</a></div><div class="ttdeci">void ResetPrintFunction()</div><div class="ttdoc">Reset the print function to the default one (print to console).</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00077">Logging.cpp:77</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_af5fadbb1e86d87dd473087e30069ac8a"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">cloudViewer::utility::Logger::GetInstance</a></div><div class="ttdeci">static Logger &amp; GetInstance()</div><div class="ttdoc">Get Logger global singleton instance.</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00025">Logging.cpp:25</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a1c30099de766a5d88b4ae380b7decc9d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a1c30099de766a5d88b4ae380b7decc9d">cloudViewer::utility::SetVerbosityLevel</a></div><div class="ttdeci">void SetVerbosityLevel(VerbosityLevel level)</div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a1c30099de766a5d88b4ae380b7decc9d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a1c30099de766a5d88b4ae380b7decc9d">cloudViewer::utility::SetVerbosityLevel</a></div><div class="ttdeci">void SetVerbosityLevel(VerbosityLevel level)</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00089">Logging.cpp:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a2ae83ff42dd112dcbf69c5dfa18f56e0a4059b0251f66a18cb56f544728796875"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a2ae83ff42dd112dcbf69c5dfa18f56e0a4059b0251f66a18cb56f544728796875">cloudViewer::utility::VerbosityLevel::Info</a></div><div class="ttdeci">@ Info</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa78a6bb35dc9085286e5d527df243cb4"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa78a6bb35dc9085286e5d527df243cb4">cloudViewer::utility::GetVerbosityLevel</a></div><div class="ttdeci">VerbosityLevel GetVerbosityLevel()</div><div class="ttdoc">Get global verbosity level of CloudViewer.</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa78a6bb35dc9085286e5d527df243cb4"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa78a6bb35dc9085286e5d527df243cb4">cloudViewer::utility::GetVerbosityLevel</a></div><div class="ttdeci">VerbosityLevel GetVerbosityLevel()</div><div class="ttdoc">Get global verbosity level of CloudViewer.</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00093">Logging.cpp:93</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="arename_8h_html_a68893c829436f87813107dfbe768f765"><div class="ttname"><a href="rename_8h.html#a68893c829436f87813107dfbe768f765">IsBalanced</a></div><div class="ttdeci">#define IsBalanced</div><div class="ttdef"><b>Definition:</b> <a href="rename_8h_source.html#l00110">rename.h:110</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -305,7 +314,7 @@ $(document).ready(function(){initNavTree('MemoryManagerStatistic_8cpp_source.htm
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="MemoryManagerStatistic_8cpp.html">MemoryManagerStatistic.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

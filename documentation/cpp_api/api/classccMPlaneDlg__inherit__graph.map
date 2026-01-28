@@ -1,5 +1,6 @@
 <map id="ccMPlaneDlg" name="ccMPlaneDlg">
-<area shape="rect" id="node1" title=" " alt="" coords="94,80,201,107"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,135,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="159,5,293,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="94,155,201,181"/>
+<area shape="rect" id="node2" href="$classccOverlayDialog.html" title="Generic overlay dialog interface." alt="" coords="5,80,135,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="33,5,107,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="159,80,293,107"/>
 </map>

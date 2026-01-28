@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -564,9 +573,9 @@ $(document).ready(function(){initNavTree('serialization_8h_source.html',''); ini
 <div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;    }</div>
 <div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160; </div>
 <div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00482"></a><span class="lineno"><a class="line" href="classflann_1_1serialization_1_1SaveArchive.html#a8e4318d18bc75f28c5cce6cfe7afc7be">  482</a></span>&#160;    <a class="code" href="classflann_1_1serialization_1_1SaveArchive.html#a8e4318d18bc75f28c5cce6cfe7afc7be">SaveArchive</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* filename)</div>
+<div class="line"><a name="l00482"></a><span class="lineno"><a class="line" href="classflann_1_1serialization_1_1SaveArchive.html#a8e4318d18bc75f28c5cce6cfe7afc7be">  482</a></span>&#160;    <a class="code" href="classflann_1_1serialization_1_1SaveArchive.html#a8e4318d18bc75f28c5cce6cfe7afc7be">SaveArchive</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)</div>
 <div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;    {</div>
-<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;        stream_ = fopen(filename, <span class="stringliteral">&quot;wb&quot;</span>);</div>
+<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;        stream_ = fopen(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="stringliteral">&quot;wb&quot;</span>);</div>
 <div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;        own_stream_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;        initBlock();</div>
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;    }</div>
@@ -825,10 +834,10 @@ $(document).ready(function(){initNavTree('serialization_8h_source.html',''); ini
 <div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    }</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160; </div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00748"></a><span class="lineno"><a class="line" href="classflann_1_1serialization_1_1LoadArchive.html#a6b00da2574dcb78384998e8579e4d0a7">  748</a></span>&#160;    <a class="code" href="classflann_1_1serialization_1_1LoadArchive.html#a6b00da2574dcb78384998e8579e4d0a7">LoadArchive</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* filename)</div>
+<div class="line"><a name="l00748"></a><span class="lineno"><a class="line" href="classflann_1_1serialization_1_1LoadArchive.html#a6b00da2574dcb78384998e8579e4d0a7">  748</a></span>&#160;    <a class="code" href="classflann_1_1serialization_1_1LoadArchive.html#a6b00da2574dcb78384998e8579e4d0a7">LoadArchive</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)</div>
 <div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;    {</div>
 <div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;        <span class="comment">// Open the file</span></div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;        stream_ = fopen(filename, <span class="stringliteral">&quot;rb&quot;</span>);</div>
+<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;        stream_ = fopen(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="stringliteral">&quot;rb&quot;</span>);</div>
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;        own_stream_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160; </div>
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;        initBlock(stream_);</div>
@@ -891,6 +900,7 @@ $(document).ready(function(){initNavTree('serialization_8h_source.html',''); ini
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;} <span class="comment">// namespace serialization</span></div>
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;} <span class="comment">// namespace flann</span></div>
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SERIALIZATION_H_</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aFilePLY_8cpp_html_a09206911190ce91fe5bece5535717837"><div class="ttname"><a href="FilePLY_8cpp.html#a09206911190ce91fe5bece5535717837">offset_</a></div><div class="ttdeci">int offset_</div><div class="ttdef"><b>Definition:</b> <a href="FilePLY_8cpp_source.html#l00036">FilePLY.cpp:36</a></div></div>
@@ -943,7 +953,7 @@ $(document).ready(function(){initNavTree('serialization_8h_source.html',''); ini
 <div class="ttc" id="anamespaceflann_1_1serialization_html_a144d0a8d1c34d3d97a56e3fc6b121ec0"><div class="ttname"><a href="namespaceflann_1_1serialization.html#a144d0a8d1c34d3d97a56e3fc6b121ec0">flann::serialization::make_binary_object</a></div><div class="ttdeci">const binary_object make_binary_object(void *t, size_t size)</div><div class="ttdef"><b>Definition:</b> <a href="serialization_8h_source.html#l00229">serialization.h:229</a></div></div>
 <div class="ttc" id="anamespaceflann_1_1serialization_html_ab434a209a5da0e27c7ac412adb1de8c5"><div class="ttname"><a href="namespaceflann_1_1serialization.html#ab434a209a5da0e27c7ac412adb1de8c5">flann::serialization::serialize</a></div><div class="ttdeci">void serialize(Archive &amp;ar, T &amp;type)</div><div class="ttdef"><b>Definition:</b> <a href="serialization_8h_source.html#l00040">serialization.h:40</a></div></div>
 <div class="ttc" id="anamespaceflann_html"><div class="ttname"><a href="namespaceflann.html">flann</a></div><div class="ttdef"><b>Definition:</b> <a href="all__indices_8h_source.html#l00049">all_indices.h:50</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_a0d112bae8fd35be772185b6ec6bcbe64"><div class="ttname"><a href="qioapi_8cpp.html#a0d112bae8fd35be772185b6ec6bcbe64">SEEK_SET</a></div><div class="ttdeci">#define SEEK_SET</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00038">qioapi.cpp:38</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_ad2a2e6c114780c3071efd24f16c7f7d8"><div class="ttname"><a href="qioapi_8cpp.html#ad2a2e6c114780c3071efd24f16c7f7d8">SEEK_END</a></div><div class="ttdeci">#define SEEK_END</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00034">qioapi.cpp:34</a></div></div>
 <div class="ttc" id="aserialization_8h_html_a07fd4cae5a72a9fc6a34aebe25e61082"><div class="ttname"><a href="serialization_8h.html#a07fd4cae5a72a9fc6a34aebe25e61082">BLOCK_BYTES</a></div><div class="ttdeci">#define BLOCK_BYTES</div><div class="ttdef"><b>Definition:</b> <a href="serialization_8h_source.html#l00374">serialization.h:374</a></div></div>
@@ -991,7 +1001,7 @@ $(document).ready(function(){initNavTree('serialization_8h_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_186106f66c937cacb1ffede1d0bee71a.html">FLANN</a></li><li class="navelem"><a class="el" href="dir_59c431a38e52df86f630c5d3b62a5e47.html">util</a></li><li class="navelem"><a class="el" href="serialization_8h.html">serialization.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

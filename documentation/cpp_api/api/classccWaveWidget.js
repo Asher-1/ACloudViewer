@@ -1,0 +1,28 @@
+var classccWaveWidget =
+[
+    [ "ccWaveWidget", "classccWaveWidget.html#a3e8242e6850883b26f644d0e761ec390", null ],
+    [ "~ccWaveWidget", "classccWaveWidget.html#a29ecb501a341152d616cc73e8e9b72a9", null ],
+    [ "clear", "classccWaveWidget.html#a9d659f01f1a5d386b2e1ad38aa095bd3", null ],
+    [ "init", "classccWaveWidget.html#a4fcbfeab612fd66a0f6130f6d05cb53c", null ],
+    [ "mouseMoveEvent", "classccWaveWidget.html#ab12545a03564d3a994263dba277210cc", null ],
+    [ "mousePressEvent", "classccWaveWidget.html#a79be905199853f248a0574121a5c7950", null ],
+    [ "refresh", "classccWaveWidget.html#af7066d2d8e874a51316704e17577aab9", null ],
+    [ "resizeEvent", "classccWaveWidget.html#a6dddcb4905fa7387cb5bfb19366fa383", null ],
+    [ "setAxisLabels", "classccWaveWidget.html#a253313068836060a7ff174990f54e370", null ],
+    [ "setTitle", "classccWaveWidget.html#aa4e83d8011eb02aa6145ffa6c964d3e0", null ],
+    [ "updateCurveWidth", "classccWaveWidget.html#a13772f2d6319382006aae1f03e1009dd", null ],
+    [ "m_curve", "classccWaveWidget.html#a7c240de29cc99c29f9848b0f22c1b7c3", null ],
+    [ "m_curveValues", "classccWaveWidget.html#a2476ff7f85ea1e4df95cc05a3b2d2884", null ],
+    [ "m_drawVerticalIndicator", "classccWaveWidget.html#a51dda592564e38ec37cf9da902bc4aa1", null ],
+    [ "m_dt", "classccWaveWidget.html#abd88604f85028894d92b93da98336d97", null ],
+    [ "m_echoPos", "classccWaveWidget.html#a1a2561003cca2164d61e62101092f0cf", null ],
+    [ "m_lastMouseClick", "classccWaveWidget.html#af04f830c79b8de896a47f633f93f144a", null ],
+    [ "m_maxA", "classccWaveWidget.html#a225aa4ce2401da4ca8b8b43d16ca957e", null ],
+    [ "m_minA", "classccWaveWidget.html#ac2846018deec99de105a629bfc089c17", null ],
+    [ "m_peakBar", "classccWaveWidget.html#a3ae46bd8cc811b636a968b71ee4b2a23", null ],
+    [ "m_renderingFont", "classccWaveWidget.html#a1a6509569e1a89de962f23fc9a037de9", null ],
+    [ "m_titlePlot", "classccWaveWidget.html#a3bd9ebc8581a6956efe84906c29475a7", null ],
+    [ "m_titleStr", "classccWaveWidget.html#a2711f324e01502386ce42c53cf396170", null ],
+    [ "m_vertBar", "classccWaveWidget.html#a2c5058f694719410059a6b87338f3298", null ],
+    [ "m_verticalIndicatorPositionPercent", "classccWaveWidget.html#a8703b28e8ae2f800c7ceb7ea7f577ae5", null ]
+];

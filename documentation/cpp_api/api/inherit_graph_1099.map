@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classPlyValueVertex.html" title=" " alt="" coords="5,5,184,32"/>
+<area shape="rect" id="node1" href="$classpba_1_1ConfigBA.html" title=" " alt="" coords="9,15,122,42"/>
+<area shape="rect" id="node2" href="$classpba_1_1SparseBundleCPU.html" title=" " alt="" coords="173,5,344,47"/>
+<area shape="rect" id="node3" href="$classpba_1_1SparseBundleCU.html" title=" " alt="" coords="177,71,340,98"/>
+<area shape="rect" id="node4" href="$classpba_1_1ParallelBA.html" title=" " alt="" coords="5,67,125,94"/>
 </map>

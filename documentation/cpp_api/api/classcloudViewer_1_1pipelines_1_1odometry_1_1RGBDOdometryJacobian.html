@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,9 +110,10 @@ Inheritance diagram for cloudViewer::pipelines::odometry::RGBDOdometryJacobian:<
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian__inherit__graph.png" border="0" usemap="#acloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian_inherit__map" alt="Inheritance graph"/></div>
 <map name="acloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian_inherit__map" id="acloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian_inherit__map">
-<area shape="rect" title="Base class that computes Jacobian from two RGB&#45;D images." alt="" coords="5,53,264,94"/>
-<area shape="rect" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm.html" title="Class to compute Jacobian using color term." alt="" coords="312,5,571,61"/>
-<area shape="rect" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html" title="Class to compute Jacobian using hybrid term." alt="" coords="312,85,571,141"/>
+<area shape="rect" title="Base class that computes Jacobian from two RGB&#45;D images." alt="" coords="5,93,264,134"/>
+<area shape="rect" href="classcloudViewer_1_1pipelines_1_1odometry_1_1PyRGBDOdometryJacobian.html" title=" " alt="" coords="312,5,587,61"/>
+<area shape="rect" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm.html" title="Class to compute Jacobian using color term." alt="" coords="320,85,579,141"/>
+<area shape="rect" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html" title="Class to compute Jacobian using hybrid term." alt="" coords="320,165,579,221"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -274,7 +284,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Function to compute i-th row of J and r the vector form of J_r is basically 6x1 matrix, but it can be easily extendable to 6xn matrix. See <a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html" title="Class to compute Jacobian using hybrid term.">RGBDOdometryJacobianFromHybridTerm</a> for this case. </p>
 
-<p>Implemented in <a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html#a21f2ebd914227acf89573d8d4b3391f7">cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromHybridTerm</a>, and <a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm.html#af1c667ae15632e777ca08919e074ad45">cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromColorTerm</a>.</p>
+<p>Implemented in <a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1PyRGBDOdometryJacobian.html#aac0d059ee5a126e5b2636df6a9766968">cloudViewer::pipelines::odometry::PyRGBDOdometryJacobian&lt; RGBDOdometryJacobianBase &gt;</a>, <a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html#a21f2ebd914227acf89573d8d4b3391f7">cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromHybridTerm</a>, and <a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm.html#af1c667ae15632e777ca08919e074ad45">cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromColorTerm</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Odometry_8cpp_source.html#l00398">cloudViewer::pipelines::odometry::DoSingleIteration()</a>.</p>
 
@@ -289,7 +299,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1pipelines.html">pipelines</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1odometry.html">odometry</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian.html">RGBDOdometryJacobian</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

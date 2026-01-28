@@ -2,7 +2,7 @@ var dir_2d6c1b659045648624fd6c5ccde24ed0 =
 [
     [ "cgal", "dir_16444c7a69c5c65bee2939b87d3a8e55.html", "dir_16444c7a69c5c65bee2939b87d3a8e55" ],
     [ "pcl", "dir_657346dca2c01ec4150df4d0b811aa42.html", "dir_657346dca2c01ec4150df4d0b811aa42" ],
-    [ "main.cpp", "main_8cpp.html", "main_8cpp" ],
+    [ "main.cpp", "plugins_2core_2Standard_2qHoughNormals_2extern_2normals__Hough_2normals__Hough_2main_8cpp.html", "plugins_2core_2Standard_2qHoughNormals_2extern_2normals__Hough_2normals__Hough_2main_8cpp" ],
     [ "Normals.h", "Normals_8h.html", [
       [ "Eigen_Normal_Estimator", "classEigen__Normal__Estimator.html", "classEigen__Normal__Estimator" ]
     ] ],

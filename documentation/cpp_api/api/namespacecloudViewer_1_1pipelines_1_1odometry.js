@@ -4,6 +4,7 @@ var namespacecloudViewer_1_1pipelines_1_1odometry =
     [ "RGBDOdometryJacobian", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian.html", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian" ],
     [ "RGBDOdometryJacobianFromColorTerm", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm.html", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm" ],
     [ "RGBDOdometryJacobianFromHybridTerm", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm" ],
+    [ "PyRGBDOdometryJacobian", "classcloudViewer_1_1pipelines_1_1odometry_1_1PyRGBDOdometryJacobian.html", "classcloudViewer_1_1pipelines_1_1odometry_1_1PyRGBDOdometryJacobian" ],
     [ "CorrespondenceSetPixelWise", "namespacecloudViewer_1_1pipelines_1_1odometry.html#ac18e34d3925d1f2ca3d9f2601a3d2dd1", null ],
     [ "AddElementToCorrespondenceMap", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a222e8ce6d0645f5f94411cf07dfbb5e4", null ],
     [ "CheckImagePair", "namespacecloudViewer_1_1pipelines_1_1odometry.html#ad51642b0587063ab264ccf42c249d203", null ],
@@ -22,5 +23,8 @@ var namespacecloudViewer_1_1pipelines_1_1odometry =
     [ "MergeCorrespondenceMaps", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a51322721f437716dca3bbad57f62b1d3", null ],
     [ "NormalizeIntensity", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a44ddb951badbc372e56b0010c57f2340", null ],
     [ "PackRGBDImage", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a15a3a158f2db0d7b049c2b1891f0a64c", null ],
-    [ "PreprocessDepth", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a893b85134ac5715cba56592e23ce5de8", null ]
+    [ "PreprocessDepth", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a893b85134ac5715cba56592e23ce5de8", null ],
+    [ "pybind_odometry", "namespacecloudViewer_1_1pipelines_1_1odometry.html#a8f963be59c7996f3ceef368d5b7b9dd2", null ],
+    [ "pybind_odometry_classes", "namespacecloudViewer_1_1pipelines_1_1odometry.html#aa7f38b6d935d747af7651357ceca180d", null ],
+    [ "pybind_odometry_methods", "namespacecloudViewer_1_1pipelines_1_1odometry.html#afc6b54f9fad5bac739232f218a7bfa03", null ]
 ];

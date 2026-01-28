@@ -21,5 +21,5 @@ var classcloudViewer_1_1ICPRegistrationTools =
       [ "ICP_ERROR_CANCELED_BY_USER", "classcloudViewer_1_1ICPRegistrationTools.html#a401e1d5344f822f400e810ebda669c8eae457afcc2efa89aa5be42c3125eb6214", null ],
       [ "ICP_ERROR_INVALID_INPUT", "classcloudViewer_1_1ICPRegistrationTools.html#a401e1d5344f822f400e810ebda669c8ea5e8a236f477e4081575133c391545177", null ]
     ] ],
-    [ "Register", "classcloudViewer_1_1ICPRegistrationTools.html#aa5c01ac911b343521bf03acde9cbb180", null ]
+    [ "Register", "classcloudViewer_1_1ICPRegistrationTools.html#a49420d206c7cd9a0e4f1a106319903f3", null ]
 ];

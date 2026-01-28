@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -100,8 +109,8 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="TreeIsoHelper_8h.html">TreeIsoHelper.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// CC</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;ecvQtHelpers.h&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvQtHelpers_8h.html">ecvQtHelpers.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// qCC_db</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
@@ -202,7 +211,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">if</span> (outSFIndex &lt; 0) {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        outSFIndex = pc-&gt;<a class="code" href="classccPointCloud.html#a62f3f94a091c6adf5e7ea5ea4dcde014">addScalarField</a>(<a class="code" href="TreeIso_8cpp.html#ae7ec27969a7e36e6557e779af37930e1">InitSegsSFName</a>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">if</span> (outSFIndex &lt; 0) {</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory!&quot;</span>);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory!&quot;</span>);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        }</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    }</div>
@@ -220,7 +229,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    pc-&gt;<a class="code" href="classccDrawableObject.html#abc02127e71c2c1f2dcee2cb1662c6a93">showSF</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="keyword">auto</span> elapsed = <a class="code" href="TreeIso_8cpp.html#a5e99e56377a57b65ffdcb873bbf4759a">Since</a>(start).count() / 1000;</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[TreeIso] Init segs took %1 seconds&quot;</span>).arg(elapsed));</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[TreeIso] Init segs took %1 seconds&quot;</span>).arg(elapsed));</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordflow">if</span> (progressDlg) {</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        progressDlg-&gt;setValue(100);</div>
@@ -251,7 +260,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keywordtype">int</span> initSFIndex = pc-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">getScalarFieldIndexByName</a>(<a class="code" href="TreeIso_8cpp.html#ae7ec27969a7e36e6557e779af37930e1">InitSegsSFName</a>);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="keywordflow">if</span> (initSFIndex &lt; 0) {</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Please run initial segmentation first!&quot;</span>);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Please run initial segmentation first!&quot;</span>);</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    }</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <a class="code" href="classcloudViewer_1_1ScalarField.html">cloudViewer::ScalarField</a>* initSF = pc-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a4184d316a52e83046216dd14bd0204df">getScalarField</a>(initSFIndex);</div>
@@ -260,7 +269,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        in_component.resize(pointCount);</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    }</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; pointCount; ++i) {</div>
@@ -471,7 +480,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    <span class="keywordflow">if</span> (outSFIndex &lt; 0) {</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;        outSFIndex = pc-&gt;<a class="code" href="classccPointCloud.html#a62f3f94a091c6adf5e7ea5ea4dcde014">addScalarField</a>(<a class="code" href="TreeIso_8cpp.html#ae461acf935e9459a4ba7c45430f0eb9e">IntermedSegsSFName</a>);</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        <span class="keywordflow">if</span> (outSFIndex &lt; 0) {</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory!&quot;</span>);</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory!&quot;</span>);</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;        }</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;    }</div>
@@ -494,7 +503,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    }</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160; </div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    <span class="keyword">auto</span> elapsed = <a class="code" href="TreeIso_8cpp.html#a5e99e56377a57b65ffdcb873bbf4759a">Since</a>(start).count() / 1000;</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[TreeIso] Intermediate segs took %1 seconds&quot;</span>)</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[TreeIso] Intermediate segs took %1 seconds&quot;</span>)</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                         .arg(elapsed));</div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160; </div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -522,12 +531,12 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160; </div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    <span class="keywordtype">int</span> initIdx = pc-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">getScalarFieldIndexByName</a>(<a class="code" href="TreeIso_8cpp.html#ae7ec27969a7e36e6557e779af37930e1">InitSegsSFName</a>);</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    <span class="keywordflow">if</span> (initIdx &lt; 0) {</div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Please run initial segmentation first!&quot;</span>);</div>
+<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Please run initial segmentation first!&quot;</span>);</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;    }</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    <span class="keywordtype">int</span> groupIdx = pc-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">getScalarFieldIndexByName</a>(<a class="code" href="TreeIso_8cpp.html#ae461acf935e9459a4ba7c45430f0eb9e">IntermedSegsSFName</a>);</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;    <span class="keywordflow">if</span> (groupIdx &lt; 0) {</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Please run intermeditate segmentation first!&quot;</span>);</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Please run intermeditate segmentation first!&quot;</span>);</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    }</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160; </div>
@@ -892,7 +901,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;        <span class="keywordflow">if</span> (outSFIndex &lt; 0) {</div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;            outSFIndex = pc-&gt;<a class="code" href="classccPointCloud.html#a62f3f94a091c6adf5e7ea5ea4dcde014">addScalarField</a>(<a class="code" href="TreeIso_8cpp.html#a14a2b8bcebaba8471e66a007ae1a469c">FinalSegsSFName</a>);</div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;            <span class="keywordflow">if</span> (outSFIndex &lt; 0) {</div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory!&quot;</span>);</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[TreeIso] Not enough memory!&quot;</span>);</div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;            }</div>
 <div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        }</div>
@@ -914,7 +923,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;        }</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160; </div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;        <span class="keyword">auto</span> elapsed = <a class="code" href="TreeIso_8cpp.html#a5e99e56377a57b65ffdcb873bbf4759a">Since</a>(start).count() / 1000;</div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[TreeIso] Final segs took: %1 seconds !!!&quot;</span>)</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[TreeIso] Final segs took: %1 seconds !!!&quot;</span>)</div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;                             .arg(elapsed));</div>
 <div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;    }</div>
 <div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160; </div>
@@ -925,25 +934,25 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00835"></a><span class="lineno"><a class="line" href="classTreeIso.html#a03f47a8d5feb81132caf9bd26eb387e8">  835</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classTreeIso.html#a03f47a8d5feb81132caf9bd26eb387e8">TreeIso::Init_seg</a>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> min_nn1,</div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;                       <span class="keyword">const</span> <span class="keywordtype">float</span> regStrength1,</div>
 <div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;                       <span class="keyword">const</span> <span class="keywordtype">float</span> PR_DECIMATE_RES1,</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                       ecvMainAppInterface* app,</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                       <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app,</div>
 <div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;                       QProgressDialog* progressDlg) {</div>
 <div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;    <span class="keywordflow">if</span> (!app) {</div>
 <div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;    }</div>
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160; </div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = app-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;    <span class="keywordflow">if</span> (selectedEntities.empty()) {</div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;        assert(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        app-&gt;dispToConsole(<span class="stringliteral">&quot;[TreeIso] Select at least one cloud&quot;</span>,</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                           ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[TreeIso] Select at least one cloud&quot;</span>,</div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                           <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;    }</div>
 <div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* ent = selectedEntities[0];</div>
 <div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160; </div>
 <div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;    <span class="keywordflow">if</span> (!ent || !ent-&gt;<a class="code" href="classccObject.html#a7b4d06906277afee84282d5a217ee125">isA</a>(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;        app-&gt;dispToConsole(<span class="stringliteral">&quot;[TreeIso] Not a point cloud&quot;</span>,</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                           ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[TreeIso] Not a point cloud&quot;</span>,</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                           <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;    }</div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* pointCloud = <span class="keyword">static_cast&lt;</span><a class="code" href="classccPointCloud.html">ccPointCloud</a>*<span class="keyword">&gt;</span>(ent);</div>
@@ -962,27 +971,27 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;                               <span class="keyword">const</span> <span class="keywordtype">float</span> PR_REG_STRENGTH2,</div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;                               <span class="keyword">const</span> <span class="keywordtype">float</span> PR_DECIMATE_RES2,</div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;                               <span class="keyword">const</span> <span class="keywordtype">float</span> PR_MAX_GAP,</div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                               ecvMainAppInterface* app,</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                               <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app,</div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;                               QProgressDialog* progressDlg) {</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;    <span class="keywordflow">if</span> (!app) {</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;    }</div>
 <div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160; </div>
-<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = app-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160; </div>
 <div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;    <span class="keywordflow">if</span> (selectedEntities.empty()) {</div>
 <div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;        assert(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;        app-&gt;dispToConsole(<span class="stringliteral">&quot;[TreeIso] Select at least one cloud&quot;</span>,</div>
-<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;                           ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[TreeIso] Select at least one cloud&quot;</span>,</div>
+<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;                           <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;    }</div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160; </div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* ent = selectedEntities[0];</div>
 <div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160; </div>
 <div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;    <span class="keywordflow">if</span> (!ent || !ent-&gt;<a class="code" href="classccObject.html#a7b4d06906277afee84282d5a217ee125">isA</a>(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;        app-&gt;dispToConsole(<span class="stringliteral">&quot;[TreeIso] Not a point cloud&quot;</span>,</div>
-<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;                           ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[TreeIso] Not a point cloud&quot;</span>,</div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;                           <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;    }</div>
 <div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160; </div>
@@ -1001,26 +1010,26 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="line"><a name="l00911"></a><span class="lineno"><a class="line" href="classTreeIso.html#a7223c878d5d20d10a3408d1ee916cfb7">  911</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classTreeIso.html#a7223c878d5d20d10a3408d1ee916cfb7">TreeIso::Final_seg</a>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> PR_MIN_NN3,</div>
 <div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">float</span> PR_REL_HEIGHT_LENGTH_RATIO,</div>
 <div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">float</span> PR_VERTICAL_WEIGHT,</div>
-<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;                        ecvMainAppInterface* app,</div>
+<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;                        <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app,</div>
 <div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;                        QProgressDialog* progressDlg) {</div>
 <div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;    <span class="keywordflow">if</span> (!app) {</div>
 <div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;    }</div>
 <div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160; </div>
-<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = app-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160; </div>
 <div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;    <span class="keywordflow">if</span> (selectedEntities.empty()) {</div>
 <div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;        assert(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        app-&gt;dispToConsole(<span class="stringliteral">&quot;[TreeIso] Select at least one cloud&quot;</span>,</div>
-<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;                           ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[TreeIso] Select at least one cloud&quot;</span>,</div>
+<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;                           <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;    }</div>
 <div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160; </div>
 <div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* ent = selectedEntities[0];</div>
 <div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;    <span class="keywordflow">if</span> (!ent || !ent-&gt;<a class="code" href="classccObject.html#a7b4d06906277afee84282d5a217ee125">isA</a>(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;        app-&gt;dispToConsole(<span class="stringliteral">&quot;[TreeIso] Not a point cloud&quot;</span>,</div>
-<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;                           ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[TreeIso] Not a point cloud&quot;</span>,</div>
+<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;                           <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;    }</div>
 <div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* pointCloud = <span class="keyword">static_cast&lt;</span><a class="code" href="classccPointCloud.html">ccPointCloud</a>*<span class="keyword">&gt;</span>(ent);</div>
@@ -1762,8 +1771,8 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="ttc" id="aTreeIso_8cpp_html_aeef553545a752fd8e31a36c698f67964"><div class="ttname"><a href="TreeIso_8cpp.html#aeef553545a752fd8e31a36c698f67964">get_subset</a></div><div class="ttdeci">void get_subset(std::vector&lt; T1 &gt; &amp;arr, std::vector&lt; T2 &gt; &amp;indices, std::vector&lt; T1 &gt; &amp;arr_sub)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l01155">TreeIso.cpp:1155</a></div></div>
 <div class="ttc" id="aTreeIso_8h_html"><div class="ttname"><a href="TreeIso_8h.html">TreeIso.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassTreeIso_html_a03f47a8d5feb81132caf9bd26eb387e8"><div class="ttname"><a href="classTreeIso.html#a03f47a8d5feb81132caf9bd26eb387e8">TreeIso::Init_seg</a></div><div class="ttdeci">static bool Init_seg(const unsigned min_nn1, const float regStrength1, const float PR_DECIMATE_RES1, ecvMainAppInterface *app, QProgressDialog *progressDlg)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l00835">TreeIso.cpp:835</a></div></div>
 <div class="ttc" id="aclassTreeIso_html_a088114c7d0eb498ecc3be987146da3a4"><div class="ttname"><a href="classTreeIso.html#a088114c7d0eb498ecc3be987146da3a4">TreeIso::Intermediate_seg_pcd</a></div><div class="ttdeci">static bool Intermediate_seg_pcd(ccPointCloud *pc, const unsigned PR_MIN_NN2, const float PR_REG_STRENGTH2, const float PR_DECIMATE_RES2, const float PR_MAX_GAP, QProgressDialog *progressDlg=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l00143">TreeIso.cpp:143</a></div></div>
 <div class="ttc" id="aclassTreeIso_html_a7223c878d5d20d10a3408d1ee916cfb7"><div class="ttname"><a href="classTreeIso.html#a7223c878d5d20d10a3408d1ee916cfb7">TreeIso::Final_seg</a></div><div class="ttdeci">static bool Final_seg(const unsigned PR_MIN_NN3, const float PR_REL_HEIGHT_LENGTH_RATIO, const float PR_VERTICAL_WEIGHT, ecvMainAppInterface *app, QProgressDialog *progressDlg)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l00911">TreeIso.cpp:911</a></div></div>
@@ -1792,6 +1801,10 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a078acc10755088a704d18d575482d0ec"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a078acc10755088a704d18d575482d0ec">cloudViewer::ScalarField::computeMinAndMax</a></div><div class="ttdeci">virtual void computeMinAndMax()</div><div class="ttdoc">Determines the min and max values.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00123">ScalarField.h:123</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a3f4b03878754e8a774ba422b31ac5440"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a3f4b03878754e8a774ba422b31ac5440">cloudViewer::ScalarField::getValue</a></div><div class="ttdeci">ScalarType &amp; getValue(std::size_t index)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00092">ScalarField.h:92</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a4f659aa5dd4563ab557c7f154bc3fcae"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a4f659aa5dd4563ab557c7f154bc3fcae">cloudViewer::ScalarField::setValue</a></div><div class="ttdeci">void setValue(std::size_t index, ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00096">ScalarField.h:96</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="aclassknncpp_1_1KDTreeMinkowski_html"><div class="ttname"><a href="classknncpp_1_1KDTreeMinkowski.html">knncpp::KDTreeMinkowski</a></div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00499">knncpp.h:499</a></div></div>
 <div class="ttc" id="aclassknncpp_1_1KDTreeMinkowski_html_a014d5393c1ff769791c9df3756f1b1fc"><div class="ttname"><a href="classknncpp_1_1KDTreeMinkowski.html#a014d5393c1ff769791c9df3756f1b1fc">knncpp::KDTreeMinkowski::build</a></div><div class="ttdeci">void build()</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00988">knncpp.h:988</a></div></div>
 <div class="ttc" id="aclassknncpp_1_1KDTreeMinkowski_html_a0b700573585e53d7edc10643dfcd7494"><div class="ttname"><a href="classknncpp_1_1KDTreeMinkowski.html#a0b700573585e53d7edc10643dfcd7494">knncpp::KDTreeMinkowski::query</a></div><div class="ttdeci">void query(const Eigen::MatrixBase&lt; Derived &gt; &amp;queryPoints, const size_t knn, Matrixi &amp;indices, Matrix &amp;distances) const</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l01029">knncpp.h:1029</a></div></div>
@@ -1801,7 +1814,9 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
+<div class="ttc" id="aecvQtHelpers_8h_html"><div class="ttname"><a href="ecvQtHelpers_8h.html">ecvQtHelpers.h</a></div></div>
 <div class="ttc" id="anamespaceCP_html"><div class="ttname"><a href="namespaceCP.html">CP</a></div><div class="ttdef"><b>Definition:</b> <a href="API_8h_source.html#l00123">API.h:123</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa2763013e3ec9c4434c6f9a82d2752fc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">cloudViewer::utility::floor</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; floor(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00075">MiniVec.h:75</a></div></div>
@@ -1814,7 +1829,7 @@ $(document).ready(function(){initNavTree('TreeIso_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4b928928a8ba753e3642cd3e99306298.html">qTreeIso</a></li><li class="navelem"><a class="el" href="dir_5812e1d64c3eab9730bae5fbd6e5d65b.html">src</a></li><li class="navelem"><a class="el" href="TreeIso_8cpp.html">TreeIso.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -111,8 +120,8 @@ $(document).ready(function(){initNavTree('K4aPlugin_8cpp_source.html',''); initR
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;link.h&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Helper_8h.html">Helper.h</a>&gt;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="K4aPlugin_8h.html">io/sensor/azure_kinect/K4aPlugin.h</a>&quot;</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PluginMacros_8h.html">io/sensor/azure_kinect/PluginMacros.h</a>&quot;</span></div>
@@ -274,7 +283,7 @@ $(document).ready(function(){initNavTree('K4aPlugin_8cpp_source.html',''); initR
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                    k4a_result_t,</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                    <a class="code" href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a7ac2cbf3fd95df27aaae9f926262aedf">k4a_record_create</a>,</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                    <span class="keyword">const</span> <span class="keywordtype">char</span>*,</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                    path,</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                    <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>,</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                    k4a_device_t,</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                    device,</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                    <span class="keyword">const</span> k4a_device_configuration_t,</div>
@@ -337,7 +346,7 @@ $(document).ready(function(){initNavTree('K4aPlugin_8cpp_source.html',''); initR
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                    k4a_result_t,</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                    <a class="code" href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#aaeb8b1d0229cfa7cdac5ab81008bc577">k4a_playback_open</a>,</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                    <span class="keyword">const</span> <span class="keywordtype">char</span>*,</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                    path,</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                    <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>,</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                    k4a_playback_t*,</div>
 <div class="line"><a name="l00254"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#aaeb8b1d0229cfa7cdac5ab81008bc577">  254</a></span>&#160;                    playback_handle)</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<a class="code" href="K4aPlugin_8cpp.html#ac8a2e3065dcfb6037b34ef232e6d99f8">DEFINE_BRIDGED_FUNC</a>(<a class="code" href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#af1948be355d7237d6a1f6a6335981521">k4arecord_lib_name</a>,</div>
@@ -925,11 +934,11 @@ $(document).ready(function(){initNavTree('K4aPlugin_8cpp_source.html',''); initR
 <div class="ttc" id="aK4aPlugin_8h_html"><div class="ttname"><a href="K4aPlugin_8h.html">K4aPlugin.h</a></div></div>
 <div class="ttc" id="aPluginMacros_8h_html"><div class="ttname"><a href="PluginMacros_8h.html">PluginMacros.h</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
-<div class="ttc" id="acore_2include_2Helper_8h_html"><div class="ttname"><a href="core_2include_2Helper_8h.html">Helper.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_a087f86d78711d4215fa119ba1da11c32"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a087f86d78711d4215fa119ba1da11c32">cloudViewer::io::k4a_plugin::k4a_record_add_imu_track</a></div><div class="ttdeci">k4a_result_t k4a_record_add_imu_track(k4a_record_t recording_handle)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00210">K4aPlugin.cpp:210</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_a09c17ba44172dc6df6b1696a35002746"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a09c17ba44172dc6df6b1696a35002746">cloudViewer::io::k4a_plugin::k4a_device_get_installed_count</a></div><div class="ttdeci">uint32_t k4a_device_get_installed_count()</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00346">K4aPlugin.cpp:346</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_a0fa6929b6fef9e78e1d9abde3fc4f50b"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a0fa6929b6fef9e78e1d9abde3fc4f50b">cloudViewer::io::k4a_plugin::k4a_calibration_get_from_raw</a></div><div class="ttdeci">k4a_result_t k4a_calibration_get_from_raw(char *raw_calibration, size_t raw_calibration_size, const k4a_depth_mode_t depth_mode, const k4a_color_resolution_t color_resolution, k4a_calibration_t *calibration)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00717">K4aPlugin.cpp:717</a></div></div>
@@ -1011,15 +1020,16 @@ $(document).ready(function(){initNavTree('K4aPlugin_8cpp_source.html',''); initR
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_af33c515572d6c6bb0cf168f57769a25a"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#af33c515572d6c6bb0cf168f57769a25a">cloudViewer::io::k4a_plugin::k4a_image_get_iso_speed</a></div><div class="ttdeci">uint32_t k4a_image_get_iso_speed(k4a_image_t image_handle)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00548">K4aPlugin.cpp:548</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_af601a9435d5ef01adcc36a4c8d629bb8"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#af601a9435d5ef01adcc36a4c8d629bb8">cloudViewer::io::k4a_plugin::k4a_capture_reference</a></div><div class="ttdeci">void k4a_capture_reference(k4a_capture_t capture_handle)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00402">K4aPlugin.cpp:402</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_afed0520bd71f4767ee49d5ade99f0975"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#afed0520bd71f4767ee49d5ade99f0975">cloudViewer::io::k4a_plugin::k4a_transformation_color_image_to_depth_camera</a></div><div class="ttdeci">k4a_result_t k4a_transformation_color_image_to_depth_camera(k4a_transformation_t transformation_handle, const k4a_image_t depth_image, const k4a_image_t color_image, k4a_image_t transformed_color_image)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00817">K4aPlugin.cpp:817</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00197">Helper.cpp:197</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_1289b311b7a3197348dd9698cec970c0.html">io</a></li><li class="navelem"><a class="el" href="dir_3c97c8b7a20a453cfd77600b85f9c063.html">sensor</a></li><li class="navelem"><a class="el" href="dir_c57d2d893b81e7f337d28d4e35f13f1e.html">azure_kinect</a></li><li class="navelem"><a class="el" href="K4aPlugin_8cpp.html">K4aPlugin.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

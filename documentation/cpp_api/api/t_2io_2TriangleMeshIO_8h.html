@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -156,9 +165,11 @@ This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
 <div class="center"><img src="t_2io_2TriangleMeshIO_8h__dep__incl.png" border="0" usemap="#a_2root_2ACloudViewer_2libs_2cloudViewer_2t_2io_2TriangleMeshIO_8hdep" alt=""/></div>
 <map name="a_2root_2ACloudViewer_2libs_2cloudViewer_2t_2io_2TriangleMeshIO_8hdep" id="a_2root_2ACloudViewer_2libs_2cloudViewer_2t_2io_2TriangleMeshIO_8hdep">
-<area shape="rect" title=" " alt="" coords="143,5,298,61"/>
+<area shape="rect" title=" " alt="" coords="355,5,510,61"/>
 <area shape="rect" href="t_2io_2file__format_2FileASSIMP_8cpp.html" title=" " alt="" coords="5,109,220,165"/>
-<area shape="rect" href="t_2io_2TriangleMeshIO_8cpp.html" title=" " alt="" coords="244,109,413,165"/>
+<area shape="rect" href="cloudViewer_2t_2io_2TriangleMeshIO_8cpp.html" title=" " alt="" coords="244,109,413,165"/>
+<area shape="rect" href="CVViewer_2benchmarks_2t_2io_2TriangleMeshIO_8cpp.html" title=" " alt="" coords="438,109,638,165"/>
+<area shape="rect" href="t_2io_2class__io_8cpp.html" title=" " alt="" coords="662,109,809,165"/>
 </map>
 </div>
 </div>
@@ -176,19 +187,19 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a496602d75a9d1ebcea382106ccf8352d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; geometry::TriangleMesh &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#a496602d75a9d1ebcea382106ccf8352d">cloudViewer::t::io::CreateMeshFromFile</a> (const std::string &amp;filename, bool print_progress)</td></tr>
+<tr class="memitem:a496602d75a9d1ebcea382106ccf8352d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; geometry::TriangleMesh &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#a496602d75a9d1ebcea382106ccf8352d">cloudViewer::t::io::CreateMeshFromFile</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, bool print_progress)</td></tr>
 <tr class="separator:a496602d75a9d1ebcea382106ccf8352d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a029ccb76151064f60f2bdab1bdafed3a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#a029ccb76151064f60f2bdab1bdafed3a">cloudViewer::t::io::ReadTriangleMesh</a> (const std::string &amp;filename, geometry::TriangleMesh &amp;mesh, <a class="el" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a> <a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>)</td></tr>
+<tr class="memitem:a029ccb76151064f60f2bdab1bdafed3a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#a029ccb76151064f60f2bdab1bdafed3a">cloudViewer::t::io::ReadTriangleMesh</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, geometry::TriangleMesh &amp;mesh, <a class="el" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a> <a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>)</td></tr>
 <tr class="separator:a029ccb76151064f60f2bdab1bdafed3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acf8aa4f2694bf0c2d20394aadf5399ec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#acf8aa4f2694bf0c2d20394aadf5399ec">cloudViewer::t::io::WriteTriangleMesh</a> (const std::string &amp;filename, const geometry::TriangleMesh &amp;mesh, bool write_ascii, bool compressed, bool write_vertex_normals, bool write_vertex_colors, bool write_triangle_uvs, bool print_progress)</td></tr>
+<tr class="memitem:acf8aa4f2694bf0c2d20394aadf5399ec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#acf8aa4f2694bf0c2d20394aadf5399ec">cloudViewer::t::io::WriteTriangleMesh</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, const geometry::TriangleMesh &amp;mesh, bool <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>, bool <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>, bool write_vertex_normals, bool write_vertex_colors, bool write_triangle_uvs, bool print_progress)</td></tr>
 <tr class="separator:acf8aa4f2694bf0c2d20394aadf5399ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af830b79d1ca65cfdc0f2d26795cf64b3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#af830b79d1ca65cfdc0f2d26795cf64b3">cloudViewer::t::io::ReadTriangleMeshUsingASSIMP</a> (const std::string &amp;filename, geometry::TriangleMesh &amp;mesh, const <a class="el" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a> &amp;<a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>)</td></tr>
+<tr class="memitem:af830b79d1ca65cfdc0f2d26795cf64b3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#af830b79d1ca65cfdc0f2d26795cf64b3">cloudViewer::t::io::ReadTriangleMeshUsingASSIMP</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, geometry::TriangleMesh &amp;mesh, const <a class="el" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a> &amp;<a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>)</td></tr>
 <tr class="separator:af830b79d1ca65cfdc0f2d26795cf64b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5d5da54b60407bc6c82963cace85da8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#ab5d5da54b60407bc6c82963cace85da8">cloudViewer::t::io::ReadTriangleMeshFromNPZ</a> (const std::string &amp;filename, geometry::TriangleMesh &amp;mesh, const <a class="el" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a> &amp;<a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>)</td></tr>
+<tr class="memitem:ab5d5da54b60407bc6c82963cace85da8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#ab5d5da54b60407bc6c82963cace85da8">cloudViewer::t::io::ReadTriangleMeshFromNPZ</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, geometry::TriangleMesh &amp;mesh, const <a class="el" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a> &amp;<a class="el" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>)</td></tr>
 <tr class="separator:ab5d5da54b60407bc6c82963cace85da8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3e82867aa365394526391bea2dd8924"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#af3e82867aa365394526391bea2dd8924">cloudViewer::t::io::WriteTriangleMeshUsingASSIMP</a> (const std::string &amp;filename, const geometry::TriangleMesh &amp;mesh, const bool write_ascii, const bool compressed, const bool write_vertex_normals, const bool write_vertex_colors, const bool write_triangle_uvs, const bool print_progress)</td></tr>
+<tr class="memitem:af3e82867aa365394526391bea2dd8924"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#af3e82867aa365394526391bea2dd8924">cloudViewer::t::io::WriteTriangleMeshUsingASSIMP</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, const geometry::TriangleMesh &amp;mesh, const bool <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>, const bool <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>, const bool write_vertex_normals, const bool write_vertex_colors, const bool write_triangle_uvs, const bool print_progress)</td></tr>
 <tr class="separator:af3e82867aa365394526391bea2dd8924"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a23eba667827e22b95b8199b7d0b44d0c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#a23eba667827e22b95b8199b7d0b44d0c">cloudViewer::t::io::WriteTriangleMeshToNPZ</a> (const std::string &amp;filename, const geometry::TriangleMesh &amp;mesh, const bool write_ascii, const bool compressed, const bool write_vertex_normals, const bool write_vertex_colors, const bool write_triangle_uvs, const bool print_progress)</td></tr>
+<tr class="memitem:a23eba667827e22b95b8199b7d0b44d0c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html#a23eba667827e22b95b8199b7d0b44d0c">cloudViewer::t::io::WriteTriangleMeshToNPZ</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, const geometry::TriangleMesh &amp;mesh, const bool <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a3c714c0fc7918c687a29f3dcd5dea7bc">write_ascii</a>, const bool <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a898b08e62b0504ee78def67b1c9c8524">compressed</a>, const bool write_vertex_normals, const bool write_vertex_colors, const bool write_triangle_uvs, const bool print_progress)</td></tr>
 <tr class="separator:a23eba667827e22b95b8199b7d0b44d0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
@@ -197,7 +208,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="t_2io_2TriangleMeshIO_8h.html">TriangleMeshIO.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

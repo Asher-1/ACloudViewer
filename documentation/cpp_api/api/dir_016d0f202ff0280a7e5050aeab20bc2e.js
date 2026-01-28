@@ -237,8 +237,8 @@ var dir_016d0f202ff0280a7e5050aeab20bc2e =
     [ "WidgetStack.h", "WidgetStack_8h.html", [
       [ "WidgetStack", "classcloudViewer_1_1visualization_1_1gui_1_1WidgetStack.html", "classcloudViewer_1_1visualization_1_1gui_1_1WidgetStack" ]
     ] ],
-    [ "Window.cpp", "Window_8cpp.html", "Window_8cpp" ],
-    [ "Window.h", "Window_8h.html", [
+    [ "Window.cpp", "libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html", "libs_2cloudViewer_2visualization_2gui_2Window_8cpp" ],
+    [ "Window.h", "libs_2cloudViewer_2visualization_2gui_2Window_8h.html", [
       [ "Window", "classcloudViewer_1_1visualization_1_1gui_1_1Window.html", "classcloudViewer_1_1visualization_1_1gui_1_1Window" ]
     ] ],
     [ "WindowSystem.h", "WindowSystem_8h.html", [

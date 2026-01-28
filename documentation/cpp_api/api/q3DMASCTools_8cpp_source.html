@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -102,7 +111,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="DualCloudFeature_8h.html">DualCloudFeature.h</a>&quot;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NeighborhoodFeature_8h.html">NeighborhoodFeature.h</a>&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PointFeature_8h.html">PointFeature.h</a>&quot;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;ecvMainAppInterface.h&quot;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// qCC_io</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileIOFilter_8h.html">FileIOFilter.h</a>&gt;</span></div>
@@ -130,26 +139,26 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">using namespace </span><a class="code" href="namespacemasc.html">masc</a>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">   43</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">Tools::SaveClassifier</a>(QString filename,</div>
+<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">   43</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">Tools::SaveClassifier</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                           <span class="keyword">const</span> <a class="code" href="structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611">Feature::Set</a>&amp; features,</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                           <span class="keyword">const</span> QString corePointsRole,</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                           <span class="keyword">const</span> <a class="code" href="classmasc_1_1Classifier.html">masc::Classifier</a>&amp; classifier,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                           QWidget* parent <span class="comment">/*=nullptr*/</span>) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="comment">// first save the classifier data (same base filename but with the yaml</span></div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="comment">// extension)</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    QFileInfo fi(filename);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    QFileInfo fi(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    QString yamlFilename = fi.baseName() + <span class="stringliteral">&quot;.yaml&quot;</span>;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    QString yamlAbsoluteFilename =</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            fi.absoluteDir().absoluteFilePath(yamlFilename);</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordflow">if</span> (!classifier.<a class="code" href="classmasc_1_1Classifier.html#a00a48a6a03aee4bad0b23eecd5729d28">toFile</a>(yamlAbsoluteFilename, parent)) {</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Failed to save the classifier data&quot;</span>);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Failed to save the classifier data&quot;</span>);</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    }</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::Text | QFile::WriteOnly)) {</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                QString(<span class="stringliteral">&quot;Can&#39;t open file &#39;%1&#39; for writing&quot;</span>).arg(filename));</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                QString(<span class="stringliteral">&quot;Can&#39;t open file &#39;%1&#39; for writing&quot;</span>).arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>));</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
@@ -188,7 +197,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;}</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
-<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a75777b6337a789caeb7f0f9701e4a4d2">  101</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a75777b6337a789caeb7f0f9701e4a4d2">Tools::LoadClassifierCloudLabels</a>(QString filename,</div>
+<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a75777b6337a789caeb7f0f9701e4a4d2">  101</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a75777b6337a789caeb7f0f9701e4a4d2">Tools::LoadClassifierCloudLabels</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                                      QList&lt;QString&gt;&amp; labels,</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                                      QString&amp; corePointsLabel,</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                                      <span class="keywordtype">bool</span>&amp; filenamesSpecified,</div>
@@ -198,9 +207,9 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    labels.clear();</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    rolesAndNames.clear();</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::Text | QFile::ReadOnly)) {</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Can&#39;t open file &#39;%1&#39;&quot;</span>).arg(filename));</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Can&#39;t open file &#39;%1&#39;&quot;</span>).arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>));</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
@@ -219,7 +228,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            QString command = line.mid(6).trimmed();</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            QStringList tokens = command.split(<span class="charliteral">&#39;=&#39;</span>);</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;            <span class="keywordflow">if</span> (tokens.size() == 0) {</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                        <span class="stringliteral">&quot;Malformed file: expecting some tokens after &#39;cloud:&#39; &quot;</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                        <span class="stringliteral">&quot;on line #&quot;</span> +</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                        QString::number(lineNumber));</div>
@@ -228,7 +237,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;            QString label = tokens.front();</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;            <span class="keywordflow">if</span> (labels.contains(label)) {</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: role &#39;%1:&#39; is already &quot;</span></div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: role &#39;%1:&#39; is already &quot;</span></div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;                                       <span class="stringliteral">&quot;defined/used on line #%2&quot;</span>)</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;                                       .arg(label)</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                                       .arg(lineNumber));</div>
@@ -246,7 +255,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            QString command = line.mid(12);</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            QStringList tokens = command.split(<span class="charliteral">&#39;_&#39;</span>);</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            <span class="keywordflow">if</span> (tokens.empty()) {</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;                        <span class="stringliteral">&quot;Malformed file: expecting tokens after &#39;core_points:&#39; &quot;</span></div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                        <span class="stringliteral">&quot;on line #&quot;</span> +</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                        QString::number(lineNumber));</div>
@@ -282,7 +291,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                                      std::vector&lt;double&gt;&amp; scales) {</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    QStringList tokens = command.split(<span class="charliteral">&#39;_&#39;</span>);</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <span class="keywordflow">if</span> (tokens.empty()) {</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                <span class="stringliteral">&quot;Malformed file: expecting at least one token after &#39;feature:&#39; &quot;</span></div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                <span class="stringliteral">&quot;on line #&quot;</span> +</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                QString::number(lineNumber));</div>
@@ -309,7 +318,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                    <span class="keywordtype">bool</span> ok = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                    <span class="keywordtype">int</span> sfIndex = sfIndexStr.toInt(&amp;ok);</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                                QString(<span class="stringliteral">&quot;Malformed file: expecting a valid &quot;</span></div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                                        <span class="stringliteral">&quot;integer value after &#39;SF&#39; on line #%1&quot;</span>)</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                                        .arg(lineNumber));</div>
@@ -345,7 +354,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                    <span class="keywordtype">bool</span> ok = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                    kNN = typeStr.mid(featureStr.length()).toInt(&amp;ok);</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                    <span class="keywordflow">if</span> (!ok || kNN &lt;= 0) {</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: expecting a &quot;</span></div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: expecting a &quot;</span></div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                                               <span class="stringliteral">&quot;valid and positive number &quot;</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                                               <span class="stringliteral">&quot;after &#39;%1&#39; on line #%2&quot;</span>)</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                                               .arg(featureStr)</div>
@@ -368,7 +377,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            }</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            <span class="keywordflow">if</span> (!feature) {</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: unrecognized token &quot;</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: unrecognized token &quot;</span></div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                                       <span class="stringliteral">&quot;&#39;%1&#39; after &#39;feature:&#39; on line #%2&quot;</span>)</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                                       .arg(typeStr)</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                                       .arg(lineNumber));</div>
@@ -383,7 +392,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    {</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        QString scaleStr = tokens[1].toUpper();</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        <span class="keywordflow">if</span> (!scaleStr.startsWith(<span class="stringliteral">&quot;SC&quot;</span>)) {</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: unrecognized token &#39;%1&#39; &quot;</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: unrecognized token &#39;%1&#39; &quot;</span></div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                                   <span class="stringliteral">&quot;(expecting the scale descriptor &#39;SC...&#39; on &quot;</span></div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                                   <span class="stringliteral">&quot;line #%2&quot;</span>)</div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                                   .arg(typeStr)</div>
@@ -401,7 +410,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;            <span class="keywordtype">bool</span> ok = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;            feature-&gt;scale = scaleStr.mid(2).toDouble(&amp;ok);</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: expecting a valid &quot;</span></div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: expecting a valid &quot;</span></div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                                       <span class="stringliteral">&quot;number after &#39;SC:&#39; on line #%1&quot;</span>)</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                                       .arg(lineNumber));</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -476,7 +485,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                                    ++i;</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                                }</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;                                        QString(<span class="stringliteral">&quot;Malformed context based &quot;</span></div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;                                                <span class="stringliteral">&quot;features at line %1&quot;</span>)</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;                                                .arg(lineNumber));</div>
@@ -503,7 +512,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;                                <span class="keywordtype">bool</span> ok = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                                <span class="keywordtype">int</span> classLabel = tokens[i + 1].toInt(&amp;ok);</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;                                <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;                                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;                                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;                                            QString(<span class="stringliteral">&quot;ContextBasedFeature: &quot;</span></div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;                                                    <span class="stringliteral">&quot;expecting a class number &quot;</span></div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;                                                    <span class="stringliteral">&quot;after the context cloud &quot;</span></div>
@@ -512,7 +521,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;                                                    .arg(lineNumber));</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;                                    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;                                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;                                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;                                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;                                            <span class="stringliteral">&quot;ContextBasedFeature: you are &quot;</span></div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;                                            <span class="stringliteral">&quot;using the DEPRECATED syntax, the &quot;</span></div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;                                            <span class="stringliteral">&quot;feature should contain only one &quot;</span></div>
@@ -523,7 +532,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;                                    ++i;</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                                }</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;                            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;                                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;                                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;                                        QString(<span class="stringliteral">&quot;Malformed context based &quot;</span></div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;                                                <span class="stringliteral">&quot;features at line %1&quot;</span>)</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;                                                .arg(lineNumber));</div>
@@ -586,7 +595,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160; </div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;        <span class="comment">// if we are here, it means we couldn&#39;t find a correspondance for the</span></div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;        <span class="comment">// current token</span></div>
-<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: unrecognized or unexpected &quot;</span></div>
+<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: unrecognized or unexpected &quot;</span></div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                               <span class="stringliteral">&quot;token &#39;%1&#39; on line #%2&quot;</span>)</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                               .arg(token)</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;                               .arg(lineNumber));</div>
@@ -596,7 +605,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;    <span class="comment">// now create the various versions of rules (if any)</span></div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;    <span class="keywordflow">if</span> (useAllScales) {</div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        <span class="keywordflow">if</span> (scales.empty()) {</div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;                    <span class="stringliteral">&quot;Malformed file: &#39;SCx&#39; token used while no scale is &quot;</span></div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;                    <span class="stringliteral">&quot;defined&quot;</span> +</div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;                    QString(<span class="stringliteral">&quot; (line %1)&quot;</span>).arg(lineNumber));</div>
@@ -611,7 +620,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    <span class="comment">// now check the consistency of the rule</span></div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    QString errorMessage;</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;    <span class="keywordflow">if</span> (!feature-&gt;checkValidity(corePointsRole, errorMessage)) {</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Malformed feature: &quot;</span> + errorMessage +</div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Malformed feature: &quot;</span> + errorMessage +</div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;                       QString(<span class="stringliteral">&quot; (line %1)&quot;</span>).arg(lineNumber));</div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    }</div>
@@ -620,7 +629,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;                rawFeatures,</div>
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;                feature))  <span class="comment">// check that the feature does not exists already!</span></div>
 <div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;    {</div>
-<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[3DMASC] duplicated feature &quot;</span> + feature-&gt;toString() +</div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[3DMASC] duplicated feature &quot;</span> + feature-&gt;toString() +</div>
 <div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;                       <span class="stringliteral">&quot;, check your parameter file&quot;</span>);</div>
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;    } <span class="keywordflow">else</span> {</div>
@@ -642,7 +651,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;                                     newFeature))  <span class="comment">// check that the feature</span></div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;                                                   <span class="comment">// does not exists already!</span></div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            {</div>
-<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[3DMASC] duplicated feature &quot;</span> +</div>
+<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[3DMASC] duplicated feature &quot;</span> +</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;                               newFeature-&gt;toString() +</div>
 <div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;                               <span class="stringliteral">&quot;, check your parameter file&quot;</span>);</div>
 <div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -663,7 +672,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160; </div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;    QStringList tokens = command.split(<span class="charliteral">&#39;;&#39;</span>);</div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;    <span class="keywordflow">if</span> (tokens.empty()) {</div>
-<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;                <span class="stringliteral">&quot;Malformed file: expecting at least one token after &#39;scales:&#39; &quot;</span></div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;                <span class="stringliteral">&quot;on line #&quot;</span> +</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;                QString::number(lineNumber));</div>
@@ -675,7 +684,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;            <span class="comment">// it&#39;s probably a range</span></div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;            QStringList subTokens = token.trimmed().split(<span class="charliteral">&#39;:&#39;</span>);</div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;            <span class="keywordflow">if</span> (subTokens.size() != 3) {</div>
-<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: expecting 3 tokens for &quot;</span></div>
+<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: expecting 3 tokens for &quot;</span></div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;                                       <span class="stringliteral">&quot;a range of scales (%1)&quot;</span>)</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;                                       .arg(token));</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -685,14 +694,14 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;            <span class="keywordtype">double</span> step = subTokens[1].toDouble(ok + 1);</div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;            <span class="keywordtype">double</span> stop = subTokens[2].toDouble(ok + 2);</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;            <span class="keywordflow">if</span> (!ok[0] || !ok[1] || !ok[2]) {</div>
-<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: invalid values in &quot;</span></div>
+<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: invalid values in &quot;</span></div>
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;                                       <span class="stringliteral">&quot;scales range (%1) on line #%2&quot;</span>)</div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;                                       .arg(token)</div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;                                       .arg(lineNumber));</div>
 <div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;            }</div>
 <div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;            <span class="keywordflow">if</span> (stop &lt; start || step &lt;= 1.0 - 6) {</div>
-<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: invalid range (%1) on &quot;</span></div>
+<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: invalid range (%1) on &quot;</span></div>
 <div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;                                       <span class="stringliteral">&quot;line #%2&quot;</span>)</div>
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;                                       .arg(token)</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;                                       .arg(lineNumber));</div>
@@ -706,7 +715,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;            <span class="keywordtype">bool</span> ok = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;            <span class="keywordtype">double</span> v = token.trimmed().toDouble(&amp;ok);</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;            <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: invalid scale value &quot;</span></div>
+<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Malformed file: invalid scale value &quot;</span></div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;                                       <span class="stringliteral">&quot;(%1) on line #%2&quot;</span>)</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;                                       .arg(token)</div>
 <div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;                                       .arg(lineNumber));</div>
@@ -726,7 +735,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;                           <span class="keywordtype">int</span> lineNumber) {</div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;    QStringList tokens = command.split(<span class="charliteral">&#39;_&#39;</span>);</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    <span class="keywordflow">if</span> (tokens.empty()) {</div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;                <span class="stringliteral">&quot;Malformed file: expecting tokens after &#39;core_points:&#39; on line &quot;</span></div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;                <span class="stringliteral">&quot;#&quot;</span> +</div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;                QString::number(lineNumber));</div>
@@ -734,7 +743,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;    }</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;    QString pcName = tokens[0].trimmed();</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;    <span class="keywordflow">if</span> (!clouds.contains(pcName)) {</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;                QString(<span class="stringliteral">&quot;Malformed file: unknown cloud &#39;%1&#39; on line #%2 (make &quot;</span></div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;                        <span class="stringliteral">&quot;sure it is declared before the core points)&quot;</span>)</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;                        .arg(pcName)</div>
@@ -748,7 +757,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;    <span class="keywordflow">if</span> (tokens.size() &gt; 1) {</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        <span class="keywordflow">if</span> (tokens[1].toUpper() == <span class="stringliteral">&quot;SS&quot;</span>) {</div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;            <span class="keywordflow">if</span> (tokens.size() &lt; 3) {</div>
-<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;                        <span class="stringliteral">&quot;Malformed file: missing token after &#39;SS&#39; on line #&quot;</span> +</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;                        QString::number(lineNumber));</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -759,7 +768,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (options.startsWith(<span class="charliteral">&#39;S&#39;</span>)) {</div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;                <a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a>.selectionMethod = <a class="code" href="structmasc_1_1CorePoints.html#a6d827a5bae2d523f6cda865689842db8a091519270acdfab66ed8bd8523448a6c">CorePoints::SPATIAL</a>;</div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;                        <span class="stringliteral">&quot;Malformed file: unknown option after &#39;SS&#39; on line #&quot;</span> +</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;                        QString::number(lineNumber));</div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -769,7 +778,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;            <span class="keywordtype">bool</span> ok = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;            <a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a>.selectionParam = options.mid(1).toDouble(&amp;ok);</div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;            <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;                        <span class="stringliteral">&quot;Malformed file: expecting a number after &#39;SS_X&#39; on &quot;</span></div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;                        <span class="stringliteral">&quot;line #&quot;</span> +</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;                        QString::number(lineNumber));</div>
@@ -789,7 +798,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;                      <a class="code" href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a>&amp; loadParameters) {</div>
 <div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;    QStringList tokens = command.split(<span class="charliteral">&#39;=&#39;</span>);</div>
 <div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;    <span class="keywordflow">if</span> (tokens.size() != 2) {</div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;                <span class="stringliteral">&quot;Malformed file: expecting 2 tokens after &#39;cloud:&#39; on line #&quot;</span> +</div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;                QString::number(lineNumber));</div>
 <div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -811,11 +820,11 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;        <span class="keywordtype">object</span>-&gt;<a class="code" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">filterChildren</a>(cloudsInFile, <span class="keyword">false</span>, <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>,</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;                               <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;        <span class="keywordflow">if</span> (cloudsInFile.empty()) {</div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;File doesn&#39;t contain a single cloud&quot;</span>);</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;File doesn&#39;t contain a single cloud&quot;</span>);</div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;            <span class="keyword">delete</span> object;</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (cloudsInFile.size() &gt; 1) {</div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                    <span class="stringliteral">&quot;File contains more than one cloud, only the first one &quot;</span></div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                    <span class="stringliteral">&quot;will be kept&quot;</span>);</div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        }</div>
@@ -833,7 +842,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;}</div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160; </div>
 <div class="line"><a name="l00745"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">  745</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">Tools::LoadFile</a>(</div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;        <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;        <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;        <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">Tools::NamedClouds</a>* clouds,</div>
 <div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;        <span class="keywordtype">bool</span> cloudsAreProvided,</div>
 <div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;        std::vector&lt;Feature::Shared&gt;*</div>
@@ -843,15 +852,15 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;        <a class="code" href="classmasc_1_1Classifier.html">masc::Classifier</a>* classifier <span class="comment">/*=nullptr*/</span>,</div>
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;        <a class="code" href="structmasc_1_1TrainParameters.html">TrainParameters</a>* parameters <span class="comment">/*=nullptr*/</span>,</div>
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;        QWidget* parent <span class="comment">/*=nullptr*/</span>) {</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    QFileInfo fi(filename);</div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    QFileInfo fi(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;    <span class="keywordflow">if</span> (!fi.exists()) {</div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Can&#39;t find file &#39;%1&#39;&quot;</span>).arg(filename));</div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Can&#39;t find file &#39;%1&#39;&quot;</span>).arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>));</div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;    }</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160; </div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::Text | QFile::ReadOnly)) {</div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Can&#39;t open file &#39;%1&#39;&quot;</span>).arg(filename));</div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Can&#39;t open file &#39;%1&#39;&quot;</span>).arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>));</div>
 <div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;    }</div>
 <div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160; </div>
@@ -899,7 +908,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                    <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;                }</div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;                <span class="keywordflow">if</span> (classifier-&gt;<a class="code" href="classmasc_1_1Classifier.html#a5425dbc7798897486b2636380711b503">isValid</a>()) {</div>
-<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;                            <span class="stringliteral">&quot;Malformed file: can&#39;t declare the classifier file &quot;</span></div>
 <div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;                            <span class="stringliteral">&quot;twice! (line #&quot;</span> +</div>
 <div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;                            QString::number(lineNumber) + <span class="stringliteral">&quot;)&quot;</span>);</div>
@@ -909,11 +918,11 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                QString yamlAbsoluteFilename =</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;                        fi.absoluteDir().absoluteFilePath(yamlFilename);</div>
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                <span class="keywordflow">if</span> (!classifier-&gt;<a class="code" href="classmasc_1_1Classifier.html#a9a089744975e3a6a9af7d5127480e836">fromFile</a>(yamlAbsoluteFilename, parent)) {</div>
-<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to load the classifier file from &quot;</span> +</div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to load the classifier file from &quot;</span> +</div>
 <div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                                   yamlAbsoluteFilename);</div>
 <div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;                }</div>
-<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[3DMASC] Classifier data loaded from &quot;</span> +</div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[3DMASC] Classifier data loaded from &quot;</span> +</div>
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;                             yamlAbsoluteFilename);</div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (upperLine.startsWith(<span class="stringliteral">&quot;CLOUD:&quot;</span>))  <span class="comment">// clouds</span></div>
 <div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;            {</div>
@@ -948,7 +957,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;                    <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                }</div>
 <div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a>-&gt;origin) {</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;                            <span class="stringliteral">&quot;Core points already defined (those declared on &quot;</span></div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;                            <span class="stringliteral">&quot;line #&quot;</span> +</div>
 <div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;                            QString::number(lineNumber) + <span class="stringliteral">&quot; will be ignored)&quot;</span>);</div>
@@ -962,7 +971,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (upperLine.startsWith(<span class="stringliteral">&quot;SCALES:&quot;</span>))  <span class="comment">// scales</span></div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;            {</div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;                <span class="keywordflow">if</span> (!scales.empty()) {</div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;                            <span class="stringliteral">&quot;Malformed file: scales defined twice (line #&quot;</span> +</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;                            QString::number(lineNumber) + <span class="stringliteral">&quot;)&quot;</span>);</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;                    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -997,7 +1006,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;                {</div>
 <div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;                    QStringList tokens = upperLine.split(<span class="stringliteral">&quot;=&quot;</span>);</div>
 <div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;                    <span class="keywordflow">if</span> (tokens.size() != 2) {</div>
-<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;                                QString(<span class="stringliteral">&quot;Line #%1: malformed parameter command &quot;</span></div>
 <div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;                                        <span class="stringliteral">&quot;(expecting param_XXX=Y)&quot;</span>)</div>
 <div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;                                        .arg(lineNumber));</div>
@@ -1015,20 +1024,20 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;                    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (tokens[0] == <span class="stringliteral">&quot;PARAM_TEST_DATA_RATIO&quot;</span>) {</div>
 <div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;                        parameters-&gt;<a class="code" href="structmasc_1_1TrainParameters.html#a33428428e785021a2ad17824074c3666">testDataRatio</a> = tokens[1].toFloat(&amp;ok);</div>
 <div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;                                QString(<span class="stringliteral">&quot;Line #%1: unrecognized parameter: &quot;</span>)</div>
 <div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;                                        .arg(lineNumber) +</div>
 <div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;                                tokens[0]);</div>
 <div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;                    }</div>
 <div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Line #%1: invalid value for &quot;</span></div>
+<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Line #%1: invalid value for &quot;</span></div>
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;                                               <span class="stringliteral">&quot;parameter &quot;</span>)</div>
 <div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;                                               .arg(lineNumber) +</div>
 <div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;                                       tokens[0]);</div>
 <div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;                    }</div>
 <div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;                }</div>
 <div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;                        QString(<span class="stringliteral">&quot;Line #%1: unrecognized token/command: &quot;</span>)</div>
 <div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;                                .arg(lineNumber) +</div>
 <div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;                        (line.length() &lt; 10 ? line : line.left(10) + <span class="stringliteral">&quot;...&quot;</span>));</div>
@@ -1040,7 +1049,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;        }</div>
 <div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;    }</div>
 <div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160; </div>
@@ -1049,16 +1058,16 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;}</div>
 <div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160; </div>
-<div class="line"><a name="l00962"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a328e212d3016c7723ac1b1b8bb266776">  962</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a328e212d3016c7723ac1b1b8bb266776">Tools::LoadClassifier</a>(QString filename,</div>
+<div class="line"><a name="l00962"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a328e212d3016c7723ac1b1b8bb266776">  962</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a328e212d3016c7723ac1b1b8bb266776">Tools::LoadClassifier</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;                           <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">NamedClouds</a>&amp; clouds,</div>
 <div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;                           <a class="code" href="structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611">Feature::Set</a>&amp; rawFeatures,</div>
 <div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;                           <a class="code" href="classmasc_1_1Classifier.html">masc::Classifier</a>&amp; classifier,</div>
 <div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;                           QWidget* parent <span class="comment">/*=nullptr*/</span>) {</div>
-<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">LoadFile</a>(filename, &amp;clouds, <span class="keyword">true</span>, &amp;rawFeatures, <span class="keyword">nullptr</span>, <span class="keyword">nullptr</span>,</div>
+<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">LoadFile</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, &amp;clouds, <span class="keyword">true</span>, &amp;rawFeatures, <span class="keyword">nullptr</span>, <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;                    &amp;classifier, <span class="keyword">nullptr</span>, parent);</div>
 <div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;}</div>
 <div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160; </div>
-<div class="line"><a name="l00971"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a869871c8b59360b84cc141d4dd09c166">  971</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a869871c8b59360b84cc141d4dd09c166">Tools::LoadTrainingFile</a>(QString filename,</div>
+<div class="line"><a name="l00971"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#a869871c8b59360b84cc141d4dd09c166">  971</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a869871c8b59360b84cc141d4dd09c166">Tools::LoadTrainingFile</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;                             <a class="code" href="structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611">Feature::Set</a>&amp; rawFeatures,</div>
 <div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;                             std::vector&lt;double&gt;&amp; rawScales,</div>
 <div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;                             <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">NamedClouds</a>&amp; loadedClouds,</div>
@@ -1066,7 +1075,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;                             <a class="code" href="structmasc_1_1CorePoints.html">CorePoints</a>* <a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a> <span class="comment">/*=nullptr*/</span>,</div>
 <div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;                             QWidget* parentWidget <span class="comment">/*=nullptr*/</span>) {</div>
 <div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;    <span class="keywordtype">bool</span> cloudsWereProvided = !loadedClouds.empty();</div>
-<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">LoadFile</a>(filename, &amp;loadedClouds, cloudsWereProvided, &amp;rawFeatures,</div>
+<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">LoadFile</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, &amp;loadedClouds, cloudsWereProvided, &amp;rawFeatures,</div>
 <div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160;                 &amp;rawScales, <a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a>, <span class="keyword">nullptr</span>, &amp;parameters, parentWidget)) {</div>
 <div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160;    } <span class="keywordflow">else</span> {</div>
@@ -1313,7 +1322,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160;            <span class="comment">// get the octree</span></div>
 <div class="line"><a name="l01224"></a><span class="lineno"> 1224</span>&#160;            <a class="code" href="classccOctree.html#af435f6e496610de74232af94a213fc29">ccOctree::Shared</a> <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a> = <a class="code" href="qCanupoTools_8cpp.html#af712bdf54ab7ccd9bcb817178d7426b7">sourceCloud</a>-&gt;<a class="code" href="classccGenericPointCloud.html#accfd073e6344928840a5b5ed1e1eda0e">getOctree</a>();</div>
 <div class="line"><a name="l01225"></a><span class="lineno"> 1225</span>&#160;            <span class="keywordflow">if</span> (!<a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>) {</div>
-<div class="line"><a name="l01226"></a><span class="lineno"> 1226</span>&#160;                <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;Computing octree of cloud %1 (%2 points)&quot;</span>)</div>
+<div class="line"><a name="l01226"></a><span class="lineno"> 1226</span>&#160;                <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;Computing octree of cloud %1 (%2 points)&quot;</span>)</div>
 <div class="line"><a name="l01227"></a><span class="lineno"> 1227</span>&#160;                                     .arg(<a class="code" href="qCanupoTools_8cpp.html#af712bdf54ab7ccd9bcb817178d7426b7">sourceCloud</a>-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>())</div>
 <div class="line"><a name="l01228"></a><span class="lineno"> 1228</span>&#160;                                     .arg(<a class="code" href="qCanupoTools_8cpp.html#af712bdf54ab7ccd9bcb817178d7426b7">sourceCloud</a>-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">size</a>()));</div>
 <div class="line"><a name="l01229"></a><span class="lineno"> 1229</span>&#160;                <span class="keywordflow">if</span> (progressCb) progressCb-&gt;<a class="code" href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">start</a>();</div>
@@ -1334,7 +1343,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;                    <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;                            largetScale / 2);  <span class="comment">// scale is the diameter!</span></div>
 <div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;            <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> <a class="code" href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a> =</div>
-<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;                    <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a8b57ec3c21c660206bd3355dc2871a0b">findBestLevelForAGivenNeighbourhoodSizeExtraction</a>(</div>
+<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;                    <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a5965a93246173f8ee45c1aa77f1a46ff">findBestLevelForAGivenNeighbourhoodSizeExtraction</a>(</div>
 <div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;                            largestRadius);</div>
 <div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160; </div>
 <div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;            <span class="keywordtype">unsigned</span> pointCount = <a class="code" href="qCanupoTools_8cpp.html#a6e030796be90d09ae5d4ceca468648d8">corePoints</a>.<a class="code" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">size</a>();</div>
@@ -1347,7 +1356,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;                progressCb-&gt;<a class="code" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">setMethodTitle</a>(<span class="stringliteral">&quot;Compute features&quot;</span>);</div>
 <div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;                progressCb-&gt;<a class="code" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">setInfo</a>(qPrintable(logMessage));</div>
 <div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;            }</div>
-<div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(logMessage);</div>
+<div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(logMessage);</div>
 <div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a> <a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>(progressCb, pointCount);</div>
 <div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160; </div>
 <div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;            <span class="keywordtype">bool</span> cancelled = <span class="keyword">false</span>;</div>
@@ -1376,7 +1385,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01286"></a><span class="lineno"> 1286</span>&#160; </div>
 <div class="line"><a name="l01287"></a><span class="lineno"> 1287</span>&#160;                    <span class="comment">// we extract the point&#39;s neighbors</span></div>
 <div class="line"><a name="l01288"></a><span class="lineno"> 1288</span>&#160;                    <span class="keywordtype">unsigned</span> kNN =</div>
-<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160;                            <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a7841c619fd51888bd9e455607a7a4e09">findNeighborsInASphereStartingFromCell</a>(</div>
+<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160;                            <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a68403a0a0fccc48fe2db12067dedd391">findNeighborsInASphereStartingFromCell</a>(</div>
 <div class="line"><a name="l01290"></a><span class="lineno"> 1290</span>&#160;                                    nNSS, largestRadius, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l01291"></a><span class="lineno"> 1291</span>&#160;                    <span class="keywordflow">if</span> (kNN != 0) {</div>
 <div class="line"><a name="l01292"></a><span class="lineno"> 1292</span>&#160;                        nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#acff325118aec9be88ecfd8e59cbe92da">pointsInNeighbourhood</a>.resize(kNN);</div>
@@ -1559,12 +1568,12 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01469"></a><span class="lineno"> 1469</span>&#160;                        errorStr = <span class="stringliteral">&quot;Feature computation failed for point &quot;</span> +</div>
 <div class="line"><a name="l01470"></a><span class="lineno"> 1470</span>&#160;                                   QString::number(i);</div>
 <div class="line"><a name="l01471"></a><span class="lineno"> 1471</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l01472"></a><span class="lineno"> 1472</span>&#160;                        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(localErrorStr);</div>
+<div class="line"><a name="l01472"></a><span class="lineno"> 1472</span>&#160;                        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(localErrorStr);</div>
 <div class="line"><a name="l01473"></a><span class="lineno"> 1473</span>&#160;                    }</div>
 <div class="line"><a name="l01474"></a><span class="lineno"> 1474</span>&#160; </div>
 <div class="line"><a name="l01475"></a><span class="lineno"> 1475</span>&#160;                    <span class="keywordflow">if</span> (progressCb) {</div>
 <div class="line"><a name="l01476"></a><span class="lineno"> 1476</span>&#160;                        <span class="keywordflow">if</span> (!cancelled) {</div>
-<div class="line"><a name="l01477"></a><span class="lineno"> 1477</span>&#160;                            cancelled = !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>();</div>
+<div class="line"><a name="l01477"></a><span class="lineno"> 1477</span>&#160;                            cancelled = !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>();</div>
 <div class="line"><a name="l01478"></a><span class="lineno"> 1478</span>&#160;                            <span class="keywordflow">if</span> (cancelled) {</div>
 <div class="line"><a name="l01479"></a><span class="lineno"> 1479</span>&#160;                                <span class="comment">// process cancelled by the user</span></div>
 <div class="line"><a name="l01480"></a><span class="lineno"> 1480</span>&#160;<span class="preprocessor">#if defined(_OPENMP)</span></div>
@@ -1578,7 +1587,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01488"></a><span class="lineno"> 1488</span>&#160;                                errorStr = <span class="stringliteral">&quot;Process cancelled at point &quot;</span> +</div>
 <div class="line"><a name="l01489"></a><span class="lineno"> 1489</span>&#160;                                           QString::number(i);</div>
 <div class="line"><a name="l01490"></a><span class="lineno"> 1490</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l01491"></a><span class="lineno"> 1491</span>&#160;                                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(errorStr);</div>
+<div class="line"><a name="l01491"></a><span class="lineno"> 1491</span>&#160;                                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(errorStr);</div>
 <div class="line"><a name="l01492"></a><span class="lineno"> 1492</span>&#160;                                success = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01493"></a><span class="lineno"> 1493</span>&#160;                            }</div>
 <div class="line"><a name="l01494"></a><span class="lineno"> 1494</span>&#160;                        }</div>
@@ -1604,21 +1613,21 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01514"></a><span class="lineno"> 1514</span>&#160;                         <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a>* inRatioSubset,</div>
 <div class="line"><a name="l01515"></a><span class="lineno"> 1515</span>&#160;                         <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a>* outRatioSubset) {</div>
 <div class="line"><a name="l01516"></a><span class="lineno"> 1516</span>&#160;    <span class="keywordflow">if</span> (!cloud) {</div>
-<div class="line"><a name="l01517"></a><span class="lineno"> 1517</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Invalid input cloud&quot;</span>);</div>
+<div class="line"><a name="l01517"></a><span class="lineno"> 1517</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Invalid input cloud&quot;</span>);</div>
 <div class="line"><a name="l01518"></a><span class="lineno"> 1518</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01519"></a><span class="lineno"> 1519</span>&#160;    }</div>
 <div class="line"><a name="l01520"></a><span class="lineno"> 1520</span>&#160;    <span class="keywordflow">if</span> (!inRatioSubset || !outRatioSubset) {</div>
-<div class="line"><a name="l01521"></a><span class="lineno"> 1521</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Invalid input refence clouds&quot;</span>);</div>
+<div class="line"><a name="l01521"></a><span class="lineno"> 1521</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Invalid input refence clouds&quot;</span>);</div>
 <div class="line"><a name="l01522"></a><span class="lineno"> 1522</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01523"></a><span class="lineno"> 1523</span>&#160;    }</div>
 <div class="line"><a name="l01524"></a><span class="lineno"> 1524</span>&#160;    <span class="keywordflow">if</span> (inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a4fb7c768e38a003e56d51ac12e1d5869">getAssociatedCloud</a>() != cloud ||</div>
 <div class="line"><a name="l01525"></a><span class="lineno"> 1525</span>&#160;        outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a4fb7c768e38a003e56d51ac12e1d5869">getAssociatedCloud</a>() != cloud) {</div>
-<div class="line"><a name="l01526"></a><span class="lineno"> 1526</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01526"></a><span class="lineno"> 1526</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01527"></a><span class="lineno"> 1527</span>&#160;                <span class="stringliteral">&quot;Invalid input reference clouds (associated cloud is wrong)&quot;</span>);</div>
 <div class="line"><a name="l01528"></a><span class="lineno"> 1528</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01529"></a><span class="lineno"> 1529</span>&#160;    }</div>
 <div class="line"><a name="l01530"></a><span class="lineno"> 1530</span>&#160;    <span class="keywordflow">if</span> (ratio &lt; 0.0f || ratio &gt; 1.0f) {</div>
-<div class="line"><a name="l01531"></a><span class="lineno"> 1531</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Invalid parameter (ratio: %1)&quot;</span>).arg(ratio));</div>
+<div class="line"><a name="l01531"></a><span class="lineno"> 1531</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Invalid parameter (ratio: %1)&quot;</span>).arg(ratio));</div>
 <div class="line"><a name="l01532"></a><span class="lineno"> 1532</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01533"></a><span class="lineno"> 1533</span>&#160;    }</div>
 <div class="line"><a name="l01534"></a><span class="lineno"> 1534</span>&#160; </div>
@@ -1640,15 +1649,15 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01550"></a><span class="lineno"> 1550</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l01551"></a><span class="lineno"> 1551</span>&#160;        pointInsideRatio.resize(cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>(), defaultState);</div>
 <div class="line"><a name="l01552"></a><span class="lineno"> 1552</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l01553"></a><span class="lineno"> 1553</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l01553"></a><span class="lineno"> 1553</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l01554"></a><span class="lineno"> 1554</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01555"></a><span class="lineno"> 1555</span>&#160;    }</div>
 <div class="line"><a name="l01556"></a><span class="lineno"> 1556</span>&#160; </div>
-<div class="line"><a name="l01557"></a><span class="lineno"> 1557</span>&#160;    <span class="keywordflow">if</span> (!inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">reserve</a>(inSampleCount) ||</div>
-<div class="line"><a name="l01558"></a><span class="lineno"> 1558</span>&#160;        !outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">reserve</a>(outSampleCount)) {</div>
-<div class="line"><a name="l01559"></a><span class="lineno"> 1559</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
-<div class="line"><a name="l01560"></a><span class="lineno"> 1560</span>&#160;        inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a15e667ee7f7fadb7ee41c243c8a1b35d">clear</a>();</div>
-<div class="line"><a name="l01561"></a><span class="lineno"> 1561</span>&#160;        outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a15e667ee7f7fadb7ee41c243c8a1b35d">clear</a>();</div>
+<div class="line"><a name="l01557"></a><span class="lineno"> 1557</span>&#160;    <span class="keywordflow">if</span> (!inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(inSampleCount) ||</div>
+<div class="line"><a name="l01558"></a><span class="lineno"> 1558</span>&#160;        !outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(outSampleCount)) {</div>
+<div class="line"><a name="l01559"></a><span class="lineno"> 1559</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l01560"></a><span class="lineno"> 1560</span>&#160;        inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a8f514b1e5f4cb6403616f3519f3f4466">clear</a>();</div>
+<div class="line"><a name="l01561"></a><span class="lineno"> 1561</span>&#160;        outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a8f514b1e5f4cb6403616f3519f3f4466">clear</a>();</div>
 <div class="line"><a name="l01562"></a><span class="lineno"> 1562</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l01563"></a><span class="lineno"> 1563</span>&#160;    }</div>
 <div class="line"><a name="l01564"></a><span class="lineno"> 1564</span>&#160; </div>
@@ -1667,9 +1676,9 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01577"></a><span class="lineno"> 1577</span>&#160;    {</div>
 <div class="line"><a name="l01578"></a><span class="lineno"> 1578</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>(); ++i) {</div>
 <div class="line"><a name="l01579"></a><span class="lineno"> 1579</span>&#160;            <span class="keywordflow">if</span> (pointInsideRatio[i])</div>
-<div class="line"><a name="l01580"></a><span class="lineno"> 1580</span>&#160;                inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(i);</div>
+<div class="line"><a name="l01580"></a><span class="lineno"> 1580</span>&#160;                inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(i);</div>
 <div class="line"><a name="l01581"></a><span class="lineno"> 1581</span>&#160;            <span class="keywordflow">else</span></div>
-<div class="line"><a name="l01582"></a><span class="lineno"> 1582</span>&#160;                outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(i);</div>
+<div class="line"><a name="l01582"></a><span class="lineno"> 1582</span>&#160;                outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(i);</div>
 <div class="line"><a name="l01583"></a><span class="lineno"> 1583</span>&#160;        }</div>
 <div class="line"><a name="l01584"></a><span class="lineno"> 1584</span>&#160;        assert(inRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() == inSampleCount);</div>
 <div class="line"><a name="l01585"></a><span class="lineno"> 1585</span>&#160;        assert(outRatioSubset-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() == outSampleCount);</div>
@@ -1696,6 +1705,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="line"><a name="l01606"></a><span class="lineno"> 1606</span>&#160;    <span class="keywordflow">return</span> cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a4184d316a52e83046216dd14bd0204df">getScalarField</a>(classifSFIdx);</div>
 <div class="line"><a name="l01607"></a><span class="lineno"> 1607</span>&#160;}</div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aContextBasedFeature_8h_html"><div class="ttname"><a href="ContextBasedFeature_8h.html">ContextBasedFeature.h</a></div></div>
 <div class="ttc" id="aDualCloudFeature_8h_html"><div class="ttname"><a href="DualCloudFeature_8h.html">DualCloudFeature.h</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
@@ -1707,9 +1717,9 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="ttc" id="aNeighborhoodFeature_8h_html"><div class="ttname"><a href="NeighborhoodFeature_8h.html">NeighborhoodFeature.h</a></div></div>
 <div class="ttc" id="aPointFeature_8h_html"><div class="ttname"><a href="PointFeature_8h.html">PointFeature.h</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a379b93fba64c32e43f440cebbaf99bbb"><div class="ttname"><a href="classFileIOFilter.html#a379b93fba64c32e43f440cebbaf99bbb">FileIOFilter::ResetSesionCounter</a></div><div class="ttdeci">static void ResetSesionCounter()</div></div>
 <div class="ttc" id="aclassFileIOFilter_html_ad18f37613e75433a397a653ce4bfd539"><div class="ttname"><a href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a></div><div class="ttdeci">static ccHObject * LoadFromFile(const QString &amp;filename, LoadParameters &amp;parameters, Shared filter, CC_FILE_ERROR &amp;result)</div><div class="ttdoc">Loads one or more entities from a file with a known filter.</div></div>
 <div class="ttc" id="aclassSFCollector_html"><div class="ttname"><a href="classSFCollector.html">SFCollector</a></div><div class="ttdoc">SF collector.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldCollector_8h_source.html#l00042">ScalarFieldCollector.h:42</a></div></div>
@@ -1725,9 +1735,9 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccOctree_html_af435f6e496610de74232af94a213fc29"><div class="ttname"><a href="classccOctree.html#af435f6e496610de74232af94a213fc29">ccOctree::Shared</a></div><div class="ttdeci">QSharedPointer&lt; ccOctree &gt; Shared</div><div class="ttdoc">Shared pointer.</div><div class="ttdef"><b>Definition:</b> <a href="ecvOctree_8h_source.html#l00032">ecvOctree.h:32</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a5965a93246173f8ee45c1aa77f1a46ff"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a5965a93246173f8ee45c1aa77f1a46ff">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction</a></div><div class="ttdeci">unsigned char findBestLevelForAGivenNeighbourhoodSizeExtraction(PointCoordinateType radius) const</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DgmOctree_8cpp_source.html#l02664">DgmOctree.cpp:2664</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a68403a0a0fccc48fe2db12067dedd391"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a68403a0a0fccc48fe2db12067dedd391">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell</a></div><div class="ttdeci">int findNeighborsInASphereStartingFromCell(NearestNeighboursSearchStruct &amp;nNSS, double radius, bool sortValues=true) const</div><div class="ttdoc">Advanced form of the nearest neighbours search algorithm (in a sphere)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2DgmOctree_8cpp_source.html#l02479">DgmOctree.cpp:2479</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a6fe65767b34563fa0ca5ad197046e7b0"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a6fe65767b34563fa0ca5ad197046e7b0">cloudViewer::DgmOctree::getTheCellPosWhichIncludesThePoint</a></div><div class="ttdeci">void getTheCellPosWhichIncludesThePoint(const CCVector3 *thePoint, Tuple3i &amp;cellPos) const</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00779">DgmOctree.h:779</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a7841c619fd51888bd9e455607a7a4e09"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a7841c619fd51888bd9e455607a7a4e09">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell</a></div><div class="ttdeci">int findNeighborsInASphereStartingFromCell(NearestNeighboursSearchStruct &amp;nNSS, double radius, bool sortValues=true) const</div><div class="ttdoc">Advanced form of the nearest neighbours search algorithm (in a sphere)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a8b57ec3c21c660206bd3355dc2871a0b"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a8b57ec3c21c660206bd3355dc2871a0b">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction</a></div><div class="ttdeci">unsigned char findBestLevelForAGivenNeighbourhoodSizeExtraction(PointCoordinateType radius) const</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1DgmOctree_html_a9990f3005573b39a289f7e2a38c591ce"><div class="ttname"><a href="classcloudViewer_1_1DgmOctree.html#a9990f3005573b39a289f7e2a38c591ce">cloudViewer::DgmOctree::computeCellCenter</a></div><div class="ttdeci">void computeCellCenter(CellCode code, unsigned char level, CCVector3 &amp;center, bool isCodeTruncated=false) const</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00862">DgmOctree.h:862</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericCloud_html_aa24d123b33022a7ff03f15e6a8618b55"><div class="ttname"><a href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size</a></div><div class="ttdeci">virtual unsigned size() const =0</div><div class="ttdoc">Returns the number of points.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericIndexedCloud_html_a33b19730507f2fdcbfea0fd04310b29a"><div class="ttname"><a href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint</a></div><div class="ttdeci">virtual const CCVector3 * getPoint(unsigned index) const =0</div><div class="ttdoc">Returns the ith point.</div></div>
@@ -1736,17 +1746,17 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html_a469bb7b24628181241c020c0c9041a91"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle</a></div><div class="ttdeci">virtual void setMethodTitle(const char *methodTitle)=0</div><div class="ttdoc">Notifies the algorithm title.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html_a820ea5b650d3c548f2d6f066181dd976"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">cloudViewer::GenericProgressCallback::start</a></div><div class="ttdeci">virtual void start()=0</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00078">GenericProgressCallback.h:78</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_acb12b90f38ce4214da186cb2d5d0b764"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_a6e75fa9a0a99931ed3ed2835e142d2d5"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div><div class="ttdef"><b>Definition:</b> <a href="NormalizedProgress_8cpp_source.html#l00099">NormalizedProgress.cpp:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a1c41893330b17710a7f6e4c7c4df9187"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">cloudViewer::PointCloudTpl::getScalarFieldIndexByName</a></div><div class="ttdeci">int getScalarFieldIndexByName(const char *name) const</div><div class="ttdoc">Returns the index of a scalar field represented by its name.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00375">PointCloudTpl.h:375</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a4184d316a52e83046216dd14bd0204df"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a4184d316a52e83046216dd14bd0204df">cloudViewer::PointCloudTpl::getScalarField</a></div><div class="ttdeci">ScalarField * getScalarField(int index) const</div><div class="ttdoc">Returns a pointer to a specific scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00354">PointCloudTpl.h:354</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a4356f599ba19b0e7d538dbe175188937"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a4356f599ba19b0e7d538dbe175188937">cloudViewer::PointCloudTpl::getNumberOfScalarFields</a></div><div class="ttdeci">unsigned getNumberOfScalarFields() const</div><div class="ttdoc">Returns the number of associated (and active) scalar fields.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00345">PointCloudTpl.h:345</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a15e667ee7f7fadb7ee41c243c8a1b35d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a15e667ee7f7fadb7ee41c243c8a1b35d">cloudViewer::ReferenceCloud::clear</a></div><div class="ttdeci">virtual void clear(bool releaseMemory=false)</div><div class="ttdoc">Clears the cloud.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a4fb7c768e38a003e56d51ac12e1d5869"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a4fb7c768e38a003e56d51ac12e1d5869">cloudViewer::ReferenceCloud::getAssociatedCloud</a></div><div class="ttdeci">virtual GenericIndexedCloudPersist * getAssociatedCloud()</div><div class="ttdoc">Returns the associated (source) cloud.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00206">ReferenceCloud.h:206</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ad4f53966b1708e3b6d147446c4ae4f57"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">cloudViewer::ReferenceCloud::reserve</a></div><div class="ttdeci">virtual bool reserve(unsigned n)</div><div class="ttdoc">Reserves some memory for hosting the point references.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a8f514b1e5f4cb6403616f3519f3f4466"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a8f514b1e5f4cb6403616f3519f3f4466">cloudViewer::ReferenceCloud::clear</a></div><div class="ttdeci">virtual void clear(bool releaseMemory=false)</div><div class="ttdoc">Clears the cloud.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00026">ReferenceCloud.cpp:26</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ad962545dc4babcf0442883041950e1ee"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">cloudViewer::ReferenceCloud::reserve</a></div><div class="ttdeci">virtual bool reserve(unsigned n)</div><div class="ttdoc">Reserves some memory for hosting the point references.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">ReferenceCloud.cpp:51</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html">cloudViewer::ScalarField</a></div><div class="ttdoc">A simple scalar field (to be associated to a point cloud)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00025">ScalarField.h:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a581d830daaf4575734be3347aa7d69ef"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a581d830daaf4575734be3347aa7d69ef">cloudViewer::ScalarField::getName</a></div><div class="ttdeci">const char * getName() const</div><div class="ttdoc">Returns scalar field name.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00043">ScalarField.h:43</a></div></div>
 <div class="ttc" id="aclassecvGlobalShiftManager_html_ac4d0eed32852e32ab487878a5b6f0f9ea04673024f53bc3314c629a81a9869385"><div class="ttname"><a href="classecvGlobalShiftManager.html#ac4d0eed32852e32ab487878a5b6f0f9ea04673024f53bc3314c629a81a9869385">ecvGlobalShiftManager::DIALOG_IF_NECESSARY</a></div><div class="ttdeci">@ DIALOG_IF_NECESSARY</div><div class="ttdef"><b>Definition:</b> <a href="ecvGlobalShiftManager_8h_source.html#l00032">ecvGlobalShiftManager.h:32</a></div></div>
@@ -1764,6 +1774,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div class="ttc" id="aclassmasc_1_1Tools_html_a983345bb93421b45674b3dcfb5085f08"><div class="ttname"><a href="classmasc_1_1Tools.html#a983345bb93421b45674b3dcfb5085f08">masc::Tools::GetClassificationSF</a></div><div class="ttdeci">static cloudViewer::ScalarField * GetClassificationSF(const ccPointCloud *cloud)</div><div class="ttdoc">Helper: returns the classification SF associated to a cloud (if any)</div><div class="ttdef"><b>Definition:</b> <a href="q3DMASCTools_8cpp_source.html#l01591">q3DMASCTools.cpp:1591</a></div></div>
 <div class="ttc" id="aclassmasc_1_1Tools_html_ab848822b34b3fb471e0e0224336e2b16"><div class="ttname"><a href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">masc::Tools::SaveClassifier</a></div><div class="ttdeci">static bool SaveClassifier(QString filename, const Feature::Set &amp;features, const QString corePointsRole, const masc::Classifier &amp;classifier, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="q3DMASCTools_8cpp_source.html#l00043">q3DMASCTools.cpp:43</a></div></div>
 <div class="ttc" id="aclassmasc_1_1Tools_html_ae58f96850248fffa5516f3e5caf73e04"><div class="ttname"><a href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">masc::Tools::NamedClouds</a></div><div class="ttdeci">QMap&lt; QString, ccPointCloud * &gt; NamedClouds</div><div class="ttdef"><b>Definition:</b> <a href="q3DMASCTools_8h_source.html#l00043">q3DMASCTools.h:43</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvScalarField_8h_html"><div class="ttname"><a href="ecvScalarField_8h.html">ecvScalarField.h</a></div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
@@ -1853,7 +1864,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="q3DMASCTools_8cpp.html">q3DMASCTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

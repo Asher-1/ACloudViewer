@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -138,7 +147,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;          <a class="code" href="structExtraLasField.html#ab1fd5354cc79e6c0e394c8842b7b2fc7">isShifted</a>(false),</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;          <a class="code" href="structExtraLasField.html#a925fe563f40859832a0ffd4ffc248f98">startIndex</a>(0) {</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="structExtraLasField.html#a150511a8f27239a584b34921bf6cf92f">fieldName</a> != <a class="code" href="structExtraLasField.html#aa748185df8105172395643647bdab7de">sanitizedName</a>) {</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Extra field &#39;%1&#39; renamed &#39;%2&#39; to comply to &quot;</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Extra field &#39;%1&#39; renamed &#39;%2&#39; to comply to &quot;</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                   <span class="stringliteral">&quot;LAS specifications&quot;</span>)</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                                   .arg(<a class="code" href="structExtraLasField.html#a150511a8f27239a584b34921bf6cf92f">fieldName</a>)</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                                   .arg(<a class="code" href="structExtraLasField.html#aa748185df8105172395643647bdab7de">sanitizedName</a>));</div>
@@ -195,7 +204,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
 <div class="line"><a name="l00110"></a><span class="lineno"><a class="line" href="LASFWFFilter_8cpp.html#a659edd216ec890d7601f8280bb5bbdb7">  110</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="LASFWFFilter_8cpp.html#a659edd216ec890d7601f8280bb5bbdb7">FromQByteArray</a>(<span class="keyword">const</span> QByteArray&amp; buffer, LASvlr&amp; vlr) {</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keywordflow">if</span> (buffer.size() &lt;= <a class="code" href="LASFWFFilter_8cpp.html#a53aeb3830f341c8e211a6c229b5330c6">VLR_HEADER_SIZE</a>) {</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid VLR buffer size&quot;</span>);</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid VLR buffer size&quot;</span>);</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    }</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
@@ -214,7 +223,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="comment">// check consistency</span></div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keywordflow">if</span> (vlr.record_length_after_header != buffer.size() - <a class="code" href="LASFWFFilter_8cpp.html#a53aeb3830f341c8e211a6c229b5330c6">VLR_HEADER_SIZE</a>) {</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid VLR buffer size&quot;</span>);</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid VLR buffer size&quot;</span>);</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    }</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
@@ -224,7 +233,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="comment">// data</span></div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    vlr.data = <span class="keyword">new</span> U8[vlr.record_length_after_header];</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    if (!vlr.data) {</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Not enough memory to restore VLR&quot;</span>);</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Not enough memory to restore VLR&quot;</span>);</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    }</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
@@ -284,15 +293,15 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;}</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
 <div class="line"><a name="l00201"></a><span class="lineno"><a class="line" href="classLASFWFFilter.html#ac1f7852814cdf85f10ef17e8157ded3c">  201</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classLASFWFFilter.html#ac1f7852814cdf85f10ef17e8157ded3c">LASFWFFilter::saveToFile</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity,</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                                       <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                                       <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                                       <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a>&amp; parameters) {</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">if</span> (!entity || filename.isEmpty()) {</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">if</span> (!entity || <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.isEmpty()) {</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    }</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud = <a class="code" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a>(entity);</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="keywordflow">if</span> (!cloud) {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                <span class="stringliteral">&quot;[LAS_FWF] This filter can only save one cloud at a time!&quot;</span>);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ac69606ed4e828590a336cf9dd4de8d75">CC_FERR_BAD_ENTITY_TYPE</a>;</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    }</div>
@@ -310,7 +319,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160; </div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;            <span class="comment">// save the FWF data before anything (in case it fails)</span></div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            <span class="comment">// we save it in a separate file</span></div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            QFileInfo fi(filename);</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            QFileInfo fi(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            QString fwFilename =</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                    fi.absolutePath() + <span class="stringliteral">&quot;/&quot;</span> + fi.completeBaseName() + <span class="stringliteral">&quot;.wdp&quot;</span>;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;            QFile fwfFile(fwFilename);</div>
@@ -341,12 +350,12 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            }</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            <span class="keywordflow">if</span> (fwfFile.error() != QFile::NoError) {</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS_FWF] An error occurred while &quot;</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS_FWF] An error occurred while &quot;</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                                       <span class="stringliteral">&quot;writing the FWF data file!\n(%1)&quot;</span>)</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                                       .arg(fwFilename));</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                hasFWF = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[LAS_FWF] FWF data file written: %1&quot;</span>)</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[LAS_FWF] FWF data file written: %1&quot;</span>)</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                                     .arg(fwFilename));</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;            }</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        }</div>
@@ -607,7 +616,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;                        <span class="comment">// warning message already issued</span></div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;                    }</div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;                            <span class="stringliteral">&quot;[LAS_FWF] Invalid projection VLR meta-data. Can&#39;t &quot;</span></div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;                            <span class="stringliteral">&quot;restore Coordinate Reference System.&quot;</span>);</div>
 <div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;                }</div>
@@ -662,8 +671,8 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160; </div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;        <span class="comment">// open laswriter</span></div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;        LASwriterLAS laswriter;</div>
-<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;        <span class="keywordtype">bool</span> useLAZ = QFileInfo(filename).suffix().toUpper().endsWith(<span class="charliteral">&#39;Z&#39;</span>);</div>
-<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;        <span class="keywordflow">if</span> (!laswriter.open(qUtf8Printable(filename), &amp;lasheader,</div>
+<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;        <span class="keywordtype">bool</span> useLAZ = QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).suffix().toUpper().endsWith(<span class="charliteral">&#39;Z&#39;</span>);</div>
+<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;        <span class="keywordflow">if</span> (!laswriter.open(qUtf8Printable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), &amp;lasheader,</div>
 <div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;                            useLAZ ? LASZIP_COMPRESSOR_LAYERED_CHUNKED</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;                                   : LASZIP_COMPRESSOR_NONE)) {</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04">CC_FERR_WRITING</a>;</div>
@@ -694,7 +703,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;        }</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160; </div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>(); ++i) {</div>
-<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;            <a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>();</div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;            <a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>();</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160; </div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;            <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* P = cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">getPoint</a>(i);</div>
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160; </div>
@@ -912,14 +921,14 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;    }</div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160; </div>
 <div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;    <span class="comment">// try to reserve the memory to store the field values</span></div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;    <span class="keywordflow">if</span> (!sf-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a1cd318b0e744f580db5032272609f2bf">reserveSafe</a>(totalCount)) {</div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Not enough memory to load a field: &#39;%1&#39;&quot;</span>)</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;    <span class="keywordflow">if</span> (!sf-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a624ac0787431898be1997a7796387b13">reserveSafe</a>(totalCount)) {</div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Not enough memory to load a field: &#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;                               .arg(sf-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a581d830daaf4575734be3347aa7d69ef">getName</a>()));</div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        sf-&gt;<a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        sf-&gt;<a class="code" href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">release</a>();</div>
 <div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        sf = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;    }</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;    sf-&gt;<a class="code" href="classCCShareable.html#a092121c292278646a23fa14308f6a357">link</a>();</div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;    sf-&gt;<a class="code" href="classCCShareable.html#a0b0e80bab025916d0b60053e6bbe85d8">link</a>();</div>
 <div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160; </div>
 <div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;    <span class="comment">// fill the previous points values (if any)</span></div>
 <div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; currentCount; ++i) {</div>
@@ -930,7 +939,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;}</div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160; </div>
-<div class="line"><a name="l00848"></a><span class="lineno"><a class="line" href="classLASFWFFilter.html#ae2327a53e47d6750be972ac55026912d">  848</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classLASFWFFilter.html#ae2327a53e47d6750be972ac55026912d">LASFWFFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00848"></a><span class="lineno"><a class="line" href="classLASFWFFilter.html#ae2327a53e47d6750be972ac55026912d">  848</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classLASFWFFilter.html#ae2327a53e47d6750be972ac55026912d">LASFWFFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                                     <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;                                     <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;    <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
@@ -940,13 +949,13 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160; </div>
 <div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;        LASreaderLAS lasreader;</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;        <span class="keywordflow">if</span> (!lasreader.open(qUtf8Printable(filename))) {</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;LASLib&quot;</span>, <span class="stringliteral">&quot;Failed to open &#39;lasreader&#39;&quot;</span>);</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;        <span class="keywordflow">if</span> (!lasreader.open(qUtf8Printable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>))) {</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;LASLib&quot;</span>, <span class="stringliteral">&quot;Failed to open &#39;lasreader&#39;&quot;</span>);</div>
 <div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;        }</div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160; </div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;        <span class="keywordtype">unsigned</span> pointCount = <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(lasreader.npoints);</div>
-<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[LASLib] &quot;</span> +</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[LASLib] &quot;</span> +</div>
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;                             QObject::tr(<span class="stringliteral">&quot;Reading %1 points&quot;</span>).arg(pointCount)));</div>
 <div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160; </div>
 <div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;        <span class="comment">// progress dialog</span></div>
@@ -1045,7 +1054,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;            <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;                cloud-&gt;<a class="code" href="classccPointCloud.html#a54853e0f3d20847f592ebc01a60f8500">waveforms</a>().resize(pointCount);</div>
 <div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;            } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(</div>
+<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(</div>
 <div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;                        <span class="stringliteral">&quot;Not enough memory to import the waveform data&quot;</span>));</div>
 <div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;                hasFWF = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;                <span class="keywordflow">break</span>;</div>
@@ -1058,9 +1067,9 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;                <span class="comment">// the FWF data is internal</span></div>
 <div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;                assert(lasreader.header.global_encoding &amp; 2);</div>
 <div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;                <span class="comment">// open the same file</span></div>
-<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;                fwfDataSource.setFileName(filename);</div>
+<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;                fwfDataSource.setFileName(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;                <span class="keywordflow">if</span> (!fwfDataSource.open(QFile::ReadOnly)) {</div>
-<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;                            QString(<span class="stringliteral">&quot;Failed to read the associated waveform &quot;</span></div>
 <div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160;                                    <span class="stringliteral">&quot;data packets&quot;</span>));</div>
 <div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;                    hasFWF = <span class="keyword">false</span>;</div>
@@ -1070,7 +1079,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;                <span class="keywordflow">if</span> (!fwfDataSource.seek(</div>
 <div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;                            lasreader.header</div>
 <div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;                                    .start_of_waveform_data_packet_record)) {</div>
-<div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;                            QString(<span class="stringliteral">&quot;Failed to find the associated waveform &quot;</span></div>
 <div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160;                                    <span class="stringliteral">&quot;data packets header&quot;</span>));</div>
 <div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;                    hasFWF = <span class="keyword">false</span>;</div>
@@ -1078,7 +1087,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;                }</div>
 <div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;                QByteArray evlrHeader = fwfDataSource.read(60);</div>
 <div class="line"><a name="l00995"></a><span class="lineno">  995</span>&#160;                <span class="keywordflow">if</span> (evlrHeader.size() &lt; 60) {</div>
-<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00997"></a><span class="lineno">  997</span>&#160;                            QString(<span class="stringliteral">&quot;Failed to read the associated waveform &quot;</span></div>
 <div class="line"><a name="l00998"></a><span class="lineno">  998</span>&#160;                                    <span class="stringliteral">&quot;data packets&quot;</span>));</div>
 <div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160;                    hasFWF = <span class="keyword">false</span>;</div>
@@ -1099,7 +1108,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01014"></a><span class="lineno"> 1014</span>&#160;                        evlrHeader.constData() +</div>
 <div class="line"><a name="l01015"></a><span class="lineno"> 1015</span>&#160;                        20);  <span class="comment">// see LAS 1.4 EVLR header specifications</span></div>
 <div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;                <span class="keywordflow">if</span> (fwfDataCount == 0) {</div>
-<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(</div>
+<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(</div>
 <div class="line"><a name="l01018"></a><span class="lineno"> 1018</span>&#160;                            <span class="stringliteral">&quot;Invalid waveform data packet size (0). We&#39;ll load &quot;</span></div>
 <div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;                            <span class="stringliteral">&quot;all the remaining part of the file!&quot;</span>));</div>
 <div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160;                    fwfDataCount = fwfDataSource.size() - fwfDataSource.pos();</div>
@@ -1108,11 +1117,11 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;                <span class="comment">// memcpy(description, evlrHeader.constData() + 28, 32);</span></div>
 <div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;                fwfDataOffset = 60;</div>
 <div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;                QString wdpFilename = filename;</div>
-<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;                wdpFilename.replace(QFileInfo(filename).suffix(), <span class="stringliteral">&quot;wdp&quot;</span>);</div>
+<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;                QString wdpFilename = <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>;</div>
+<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;                wdpFilename.replace(QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).suffix(), <span class="stringliteral">&quot;wdp&quot;</span>);</div>
 <div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;                fwfDataSource.setFileName(wdpFilename);</div>
 <div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;                <span class="keywordflow">if</span> (!fwfDataSource.open(QFile::ReadOnly)) {</div>
-<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;                            QString(<span class="stringliteral">&quot;Failed to read the associated waveform &quot;</span></div>
 <div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160;                                    <span class="stringliteral">&quot;data packets file (looking for &#39;%1&#39;)&quot;</span>)</div>
 <div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;                                    .arg(wdpFilename));</div>
@@ -1146,7 +1155,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160;                <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;                    container-&gt;resize(fwfDataCount);</div>
 <div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;                } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(</div>
+<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(</div>
 <div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160;                            <span class="stringliteral">&quot;Not enough memory to import the waveform data&quot;</span>));</div>
 <div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;                    cloud-&gt;<a class="code" href="classccPointCloud.html#a54853e0f3d20847f592ebc01a60f8500">waveforms</a>().clear();</div>
 <div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;                    <span class="keyword">delete</span> container;</div>
@@ -1248,7 +1257,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01163"></a><span class="lineno"> 1163</span>&#160;                    <span class="keywordflow">if</span> (preserveCoordinateShift) {</div>
 <div class="line"><a name="l01164"></a><span class="lineno"> 1164</span>&#160;                        cloud-&gt;<a class="code" href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">setGlobalShift</a>(Pshift);</div>
 <div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;                    }</div>
-<div class="line"><a name="l01166"></a><span class="lineno"> 1166</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01166"></a><span class="lineno"> 1166</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01167"></a><span class="lineno"> 1167</span>&#160;                            <span class="stringliteral">&quot;[LAS] Cloud has been recentered! Translation: &quot;</span></div>
 <div class="line"><a name="l01168"></a><span class="lineno"> 1168</span>&#160;                            <span class="stringliteral">&quot;(%.2f ; %.2f ; %.2f)&quot;</span>,</div>
 <div class="line"><a name="l01169"></a><span class="lineno"> 1169</span>&#160;                            Pshift.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, Pshift.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, Pshift.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
@@ -1267,7 +1276,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;                        hasColors = cloud-&gt;<a class="code" href="classccPointCloud.html#aa9333aaf6255b952902a8d4129922a02">reserveTheRGBTable</a>();</div>
 <div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;                        <span class="keywordflow">if</span> (!hasColors) {</div>
 <div class="line"><a name="l01184"></a><span class="lineno"> 1184</span>&#160;                            <span class="comment">// not enough memory!</span></div>
-<div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01186"></a><span class="lineno"> 1186</span>&#160;                                    <span class="stringliteral">&quot;[LAS] Not enough memory to load RGB &quot;</span></div>
 <div class="line"><a name="l01187"></a><span class="lineno"> 1187</span>&#160;                                    <span class="stringliteral">&quot;colors!&quot;</span>);</div>
 <div class="line"><a name="l01188"></a><span class="lineno"> 1188</span>&#160;                            ignoreColors = <span class="keyword">true</span>;</div>
@@ -1403,7 +1412,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01318"></a><span class="lineno"> 1318</span>&#160;                                <span class="comment">// (otherwise we will lose accuracy)</span></div>
 <div class="line"><a name="l01319"></a><span class="lineno"> 1319</span>&#160;                                field-&gt;sf-&gt;setGlobalShift(field-&gt;firstValue);</div>
 <div class="line"><a name="l01320"></a><span class="lineno"> 1320</span>&#160;                                value -= field-&gt;firstValue;</div>
-<div class="line"><a name="l01321"></a><span class="lineno"> 1321</span>&#160;                                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01321"></a><span class="lineno"> 1321</span>&#160;                                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01322"></a><span class="lineno"> 1322</span>&#160;                                        <span class="stringliteral">&quot;[LAS] Time SF has been shifted to &quot;</span></div>
 <div class="line"><a name="l01323"></a><span class="lineno"> 1323</span>&#160;                                        <span class="stringliteral">&quot;prevent a loss of accuracy (%.2f)&quot;</span>,</div>
 <div class="line"><a name="l01324"></a><span class="lineno"> 1324</span>&#160;                                        field-&gt;firstValue);</div>
@@ -1413,7 +1422,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01328"></a><span class="lineno"> 1328</span>&#160;                            ScalarType s = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(value);</div>
 <div class="line"><a name="l01329"></a><span class="lineno"> 1329</span>&#160;                            field-&gt;sf-&gt;addElement(s);</div>
 <div class="line"><a name="l01330"></a><span class="lineno"> 1330</span>&#160;                        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01331"></a><span class="lineno"> 1331</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01331"></a><span class="lineno"> 1331</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01332"></a><span class="lineno"> 1332</span>&#160;                                    QString(<span class="stringliteral">&quot;[LAS] Not enough memory: &#39;%1&#39; &quot;</span></div>
 <div class="line"><a name="l01333"></a><span class="lineno"> 1333</span>&#160;                                            <span class="stringliteral">&quot;field will be ignored!&quot;</span>)</div>
 <div class="line"><a name="l01334"></a><span class="lineno"> 1334</span>&#160;                                            .arg(<a class="code" href="LASFields_8h.html#a4a50e3f0dde7ffb6e96b3e5c49a23cc9">LAS_FIELD_NAMES</a>[field-&gt;type]));</div>
@@ -1426,7 +1435,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01341"></a><span class="lineno"> 1341</span>&#160; </div>
 <div class="line"><a name="l01342"></a><span class="lineno"> 1342</span>&#160;            cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">addPoint</a>(<a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3::fromArray</a>((P + Pshift).u));</div>
 <div class="line"><a name="l01343"></a><span class="lineno"> 1343</span>&#160; </div>
-<div class="line"><a name="l01344"></a><span class="lineno"> 1344</span>&#160;            <span class="keywordflow">if</span> (progressDialog &amp;&amp; !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>()) {</div>
+<div class="line"><a name="l01344"></a><span class="lineno"> 1344</span>&#160;            <span class="keywordflow">if</span> (progressDialog &amp;&amp; !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>()) {</div>
 <div class="line"><a name="l01345"></a><span class="lineno"> 1345</span>&#160;                <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a425fd0ad6d502712c66a042927902cc1">CC_FERR_CANCELED_BY_USER</a>;</div>
 <div class="line"><a name="l01346"></a><span class="lineno"> 1346</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01347"></a><span class="lineno"> 1347</span>&#160;            }</div>
@@ -1441,7 +1450,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01356"></a><span class="lineno"> 1356</span>&#160;                <span class="keywordflow">if</span> (buffer.size() != 0) {</div>
 <div class="line"><a name="l01357"></a><span class="lineno"> 1357</span>&#160;                    cloud-&gt;<a class="code" href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4">setMetaData</a>(<a class="code" href="LASFWFFilter_8cpp.html#a6748eb10f5023af2d624826eff1e47d8">ProjectionVLR</a>, buffer);</div>
 <div class="line"><a name="l01358"></a><span class="lineno"> 1358</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01359"></a><span class="lineno"> 1359</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01359"></a><span class="lineno"> 1359</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01360"></a><span class="lineno"> 1360</span>&#160;                            <span class="stringliteral">&quot;[LAS] Failed to save projection information (not &quot;</span></div>
 <div class="line"><a name="l01361"></a><span class="lineno"> 1361</span>&#160;                            <span class="stringliteral">&quot;enough memory)&quot;</span>);</div>
 <div class="line"><a name="l01362"></a><span class="lineno"> 1362</span>&#160;                }</div>
@@ -1458,7 +1467,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01373"></a><span class="lineno"> 1373</span>&#160;        lasreader.close();</div>
 <div class="line"><a name="l01374"></a><span class="lineno"> 1374</span>&#160; </div>
 <div class="line"><a name="l01375"></a><span class="lineno"> 1375</span>&#160;        <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() == 0) {</div>
-<div class="line"><a name="l01376"></a><span class="lineno"> 1376</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;LASLib&quot;</span>, QObject::tr(<span class="stringliteral">&quot;No valid point in file&quot;</span>));</div>
+<div class="line"><a name="l01376"></a><span class="lineno"> 1376</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;LASLib&quot;</span>, QObject::tr(<span class="stringliteral">&quot;No valid point in file&quot;</span>));</div>
 <div class="line"><a name="l01377"></a><span class="lineno"> 1377</span>&#160; </div>
 <div class="line"><a name="l01378"></a><span class="lineno"> 1378</span>&#160;            <span class="comment">// release scalar fields (if any)</span></div>
 <div class="line"><a name="l01379"></a><span class="lineno"> 1379</span>&#160;            <span class="keywordflow">for</span> (<a class="code" href="structLasField.html#abd143fedffb7f9daad4d7a6e41166b0a">LasField::Shared</a>&amp; field : fieldsToLoad) {</div>
@@ -1505,7 +1514,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="line"><a name="l01420"></a><span class="lineno"> 1420</span>&#160;                    field-&gt;sf-&gt;release();</div>
 <div class="line"><a name="l01421"></a><span class="lineno"> 1421</span>&#160;                    field-&gt;sf = 0;  <span class="comment">// just in case</span></div>
 <div class="line"><a name="l01422"></a><span class="lineno"> 1422</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01423"></a><span class="lineno"> 1423</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01423"></a><span class="lineno"> 1423</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01424"></a><span class="lineno"> 1424</span>&#160;                            QString(<span class="stringliteral">&quot;[LAS] All &#39;%1&#39; values were the same (%2)! &quot;</span></div>
 <div class="line"><a name="l01425"></a><span class="lineno"> 1425</span>&#160;                                    <span class="stringliteral">&quot;We ignored them...&quot;</span>)</div>
 <div class="line"><a name="l01426"></a><span class="lineno"> 1426</span>&#160;                                    .arg(field-&gt;type == <a class="code" href="LASFields_8h.html#a75b7b71db516f48729d86dbdf5296a40a8769acd4f0e4741b571ebf3d3d3f0af6">LAS_EXTRA</a></div>
@@ -1536,6 +1545,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="ttc" id="aCVTools_8h_html"><div class="ttname"><a href="CVTools_8h.html">CVTools.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
@@ -1586,10 +1596,10 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="ttc" id="aLASFilter_8cpp_html_a710e80b9249918cd3b08be815f26e3e1"><div class="ttname"><a href="LASFilter_8cpp.html#a710e80b9249918cd3b08be815f26e3e1">s_saveDlg</a></div><div class="ttdeci">QSharedPointer&lt; LASSaveDlg &gt; s_saveDlg(nullptr)</div><div class="ttdoc">Semi persistent save dialog.</div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_a092121c292278646a23fa14308f6a357"><div class="ttname"><a href="classCCShareable.html#a092121c292278646a23fa14308f6a357">CCShareable::link</a></div><div class="ttdeci">virtual void link()</div><div class="ttdoc">Increase counter.</div></div>
-<div class="ttc" id="aclassCCShareable_html_ab8ad53d1acfbe69894cd01504d42b0a1"><div class="ttname"><a href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCCShareable_html_a0b0e80bab025916d0b60053e6bbe85d8"><div class="ttname"><a href="classCCShareable.html#a0b0e80bab025916d0b60053e6bbe85d8">CCShareable::link</a></div><div class="ttdeci">virtual void link()</div><div class="ttdoc">Increase counter.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8cpp_source.html#l00033">CVShareable.cpp:33</a></div></div>
+<div class="ttc" id="aclassCCShareable_html_a2ea8a973d6ed745b1abf65155167a49e"><div class="ttname"><a href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8cpp_source.html#l00035">CVShareable.cpp:35</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a">FileIOFilter::Export</a></div><div class="ttdeci">@ Export</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00303">FileIOFilter.h:303</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">FileIOFilter::Import</a></div><div class="ttdeci">@ Import</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00302">FileIOFilter.h:302</a></div></div>
@@ -1667,16 +1677,16 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div class="ttc" id="aclassccWaveform_html_af387cabeca2eb0df3155502def56473b"><div class="ttname"><a href="classccWaveform.html#af387cabeca2eb0df3155502def56473b">ccWaveform::dataOffset</a></div><div class="ttdeci">uint64_t dataOffset() const</div><div class="ttdoc">Returns the byte offset to waveform data.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00115">ecvWaveform.h:115</a></div></div>
 <div class="ttc" id="aclassccWaveform_html_afb445195515b66c50f9e996ee7d03aac"><div class="ttname"><a href="classccWaveform.html#afb445195515b66c50f9e996ee7d03aac">ccWaveform::setEchoTime_ps</a></div><div class="ttdeci">void setEchoTime_ps(float time_ps)</div><div class="ttdoc">Set the echo time (in picoseconds)</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00132">ecvWaveform.h:132</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00078">GenericProgressCallback.h:78</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_acb12b90f38ce4214da186cb2d5d0b764"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_a6e75fa9a0a99931ed3ed2835e142d2d5"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div><div class="ttdef"><b>Definition:</b> <a href="NormalizedProgress_8cpp_source.html#l00099">NormalizedProgress.cpp:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a1c41893330b17710a7f6e4c7c4df9187"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">cloudViewer::PointCloudTpl::getScalarFieldIndexByName</a></div><div class="ttdeci">int getScalarFieldIndexByName(const char *name) const</div><div class="ttdoc">Returns the index of a scalar field represented by its name.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00375">PointCloudTpl.h:375</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a4184d316a52e83046216dd14bd0204df"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a4184d316a52e83046216dd14bd0204df">cloudViewer::PointCloudTpl::getScalarField</a></div><div class="ttdeci">ScalarField * getScalarField(int index) const</div><div class="ttdoc">Returns a pointer to a specific scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00354">PointCloudTpl.h:354</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a4356f599ba19b0e7d538dbe175188937"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a4356f599ba19b0e7d538dbe175188937">cloudViewer::PointCloudTpl::getNumberOfScalarFields</a></div><div class="ttdeci">unsigned getNumberOfScalarFields() const</div><div class="ttdoc">Returns the number of associated (and active) scalar fields.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00345">PointCloudTpl.h:345</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ae034bad005881269d7a571c144185d6d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">cloudViewer::PointCloudTpl::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00143">PointCloudTpl.h:143</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a1cd318b0e744f580db5032272609f2bf"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a1cd318b0e744f580db5032272609f2bf">cloudViewer::ScalarField::reserveSafe</a></div><div class="ttdeci">bool reserveSafe(std::size_t count)</div><div class="ttdoc">Reserves memory (no exception thrown)</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a31ce5eee4a27b8f84d4dd9fd3c40ee87"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a31ce5eee4a27b8f84d4dd9fd3c40ee87">cloudViewer::ScalarField::addElement</a></div><div class="ttdeci">void addElement(ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00099">ScalarField.h:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a581d830daaf4575734be3347aa7d69ef"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a581d830daaf4575734be3347aa7d69ef">cloudViewer::ScalarField::getName</a></div><div class="ttdeci">const char * getName() const</div><div class="ttdoc">Returns scalar field name.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00043">ScalarField.h:43</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a624ac0787431898be1997a7796387b13"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a624ac0787431898be1997a7796387b13">cloudViewer::ScalarField::reserveSafe</a></div><div class="ttdeci">bool reserveSafe(std::size_t count)</div><div class="ttdoc">Reserves memory (no exception thrown)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarField_8cpp_source.html#l00071">ScalarField.cpp:71</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a0f0db28e58d97db3711841616dc01464"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a0f0db28e58d97db3711841616dc01464">ecvColor::RgbTpl::g</a></div><div class="ttdeci">Type g</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a1f61925054e683444965627c90976b39"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a1f61925054e683444965627c90976b39">ecvColor::RgbTpl::b</a></div><div class="ttdeci">Type b</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
@@ -1736,7 +1746,7 @@ $(document).ready(function(){initNavTree('LASFWFFilter_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_42608493b1a3c9d45a5c789faa6219a1.html">qLASFWFIO</a></li><li class="navelem"><a class="el" href="dir_78eca8fa0ddb3910a757d1256d54e4e3.html">src</a></li><li class="navelem"><a class="el" href="LASFWFFilter_8cpp.html">LASFWFFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

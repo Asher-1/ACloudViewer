@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -132,7 +141,7 @@ $(document).ready(function(){initNavTree('SLACOptimizer_8h_source.html',''); ini
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">fmt::format</a>(<span class="stringliteral">&quot;{}/{:.3f}&quot;</span>, <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#a9eb7674853a307be49431fff9eaf9b53">slac_folder_</a>, <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#a3827fd37b452024ada0ef9e482d832bf">voxel_size_</a>);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    }</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#ad76517e901297ea2f0266d95f1e7e0ef">   66</a></span>&#160;    <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#ad76517e901297ea2f0266d95f1e7e0ef">SLACOptimizerParams</a>(<span class="keyword">const</span> <span class="keywordtype">int</span> max_iterations = 5,</div>
+<div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#ad76517e901297ea2f0266d95f1e7e0ef">   66</a></span>&#160;    <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#ad76517e901297ea2f0266d95f1e7e0ef">SLACOptimizerParams</a>(<span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer_1_1pipelines_1_1registration.html#a9a336aa0a84eeea13fecb545df432e24">max_iterations</a> = 5,</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">float</span> voxel_size = 0.05,</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">float</span> distance_threshold = 0.07,</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">float</span> fitness_threshold = 0.3,</div>
@@ -146,7 +155,7 @@ $(document).ready(function(){initNavTree('SLACOptimizer_8h_source.html',''); ini
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;            <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;distance threshold must be positive.&quot;</span>);</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        }</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#a3e584dac1600197be5fa0ddce4f14389">max_iterations_</a> = max_iterations;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#a3e584dac1600197be5fa0ddce4f14389">max_iterations_</a> = <a class="code" href="namespacecloudViewer_1_1pipelines_1_1registration.html#a9a336aa0a84eeea13fecb545df432e24">max_iterations</a>;</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#a3827fd37b452024ada0ef9e482d832bf">voxel_size_</a> = voxel_size;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#a61772ea269de6020b25aa14550697aa0">distance_threshold_</a> = distance_threshold;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <a class="code" href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACOptimizerParams.html#aa48f719c8ed329c0fd1e88c89298e7f3">fitness_threshold_</a> = fitness_threshold;</div>
@@ -211,11 +220,12 @@ $(document).ready(function(){initNavTree('SLACOptimizer_8h_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html">cloudViewer::core::Device</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00018">Device.h:18</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html">cloudViewer::pipelines::registration::PoseGraph</a></div><div class="ttdoc">Data structure defining the pose graph.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8h_source.html#l00096">PoseGraph.h:96</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a9a336aa0a84eeea13fecb545df432e24"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a9a336aa0a84eeea13fecb545df432e24">cloudViewer::pipelines::registration::max_iterations</a></div><div class="ttdeci">static const int max_iterations</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2pipelines_2registration_2Registration_8cpp_source.html#l00029">Registration.cpp:29</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1slac_html_a050bda06c7412d0b89ce44be58449a34"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a050bda06c7412d0b89ce44be58449a34">cloudViewer::t::pipelines::slac::SaveCorrespondencesForPointClouds</a></div><div class="ttdeci">void SaveCorrespondencesForPointClouds(const std::vector&lt; std::string &gt; &amp;fnames_processed, const PoseGraph &amp;pose_graph, const SLACOptimizerParams &amp;params, const SLACDebugOption &amp;debug_option)</div><div class="ttdoc">Read pose graph containing loop closures and odometry to compute putative correspondences between pai...</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8cpp_source.html#l00209">SLACOptimizer.cpp:209</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1slac_html_a11063f3be60132b857bf1369c53d68dd"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a11063f3be60132b857bf1369c53d68dd">cloudViewer::t::pipelines::slac::RunRigidOptimizerForFragments</a></div><div class="ttdeci">PoseGraph RunRigidOptimizerForFragments(const std::vector&lt; std::string &gt; &amp;fnames, const PoseGraph &amp;pose_graph, const SLACOptimizerParams &amp;params, const SLACDebugOption &amp;debug_option)</div><div class="ttdoc">Extended ICP to simultaneously align multiple point clouds with dense pairwise point-to-plane distanc...</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8cpp_source.html#l00370">SLACOptimizer.cpp:370</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1slac_html_a20fc66afaa84ab5d3e5cb415a8aa6d2c"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a20fc66afaa84ab5d3e5cb415a8aa6d2c">cloudViewer::t::pipelines::slac::PoseGraph</a></div><div class="ttdeci">cloudViewer::pipelines::registration::PoseGraph PoseGraph</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8h_source.html#l00022">SLACOptimizer.h:22</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1slac_html_a2df11c266c32b89bdea9810f1985bb7a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a2df11c266c32b89bdea9810f1985bb7a">cloudViewer::t::pipelines::slac::RunSLACOptimizerForFragments</a></div><div class="ttdeci">std::pair&lt; PoseGraph, ControlGrid &gt; RunSLACOptimizerForFragments(const std::vector&lt; std::string &gt; &amp;fnames, const PoseGraph &amp;pose_graph, const SLACOptimizerParams &amp;params, const SLACDebugOption &amp;debug_option)</div><div class="ttdoc">Simultaneous Localization and Calibration: Self-Calibration of Consumer Depth Cameras,...</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8cpp_source.html#l00298">SLACOptimizer.cpp:298</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACDebugOption_html"><div class="ttname"><a href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACDebugOption.html">cloudViewer::t::pipelines::slac::SLACDebugOption</a></div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8h_source.html#l00090">SLACOptimizer.h:90</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACDebugOption_html_a2b58a796cb4fb2e8d3a9e2ba740c78ba"><div class="ttname"><a href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACDebugOption.html#a2b58a796cb4fb2e8d3a9e2ba740c78ba">cloudViewer::t::pipelines::slac::SLACDebugOption::debug_start_node_idx_</a></div><div class="ttdeci">int debug_start_node_idx_</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8h_source.html#l00096">SLACOptimizer.h:96</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACDebugOption_html_ab1ec64eb4a9e73455346951b69ebac85"><div class="ttname"><a href="structcloudViewer_1_1t_1_1pipelines_1_1slac_1_1SLACDebugOption.html#ab1ec64eb4a9e73455346951b69ebac85">cloudViewer::t::pipelines::slac::SLACDebugOption::SLACDebugOption</a></div><div class="ttdeci">SLACDebugOption(const bool debug=false, const int debug_start_node_idx=0)</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8h_source.html#l00103">SLACOptimizer.h:103</a></div></div>
@@ -237,7 +247,7 @@ $(document).ready(function(){initNavTree('SLACOptimizer_8h_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0da8f8fbf693040b7dc37f26c330e75d.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_2d1cdef7c81d543631503c40b58f6d61.html">slac</a></li><li class="navelem"><a class="el" href="SLACOptimizer_8h.html">SLACOptimizer.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

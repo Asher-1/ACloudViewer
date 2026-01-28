@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -104,20 +113,21 @@ $(document).ready(function(){initNavTree('CV__io_2include_2FeatureIO_8h_source.h
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>io {</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a08037a6f32047daa1eda058449accda9">   19</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a08037a6f32047daa1eda058449accda9">ReadFeature</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a08037a6f32047daa1eda058449accda9">   19</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a08037a6f32047daa1eda058449accda9">ReadFeature</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;                               <a class="code" href="classcloudViewer_1_1utility_1_1Feature.html">utility::Feature</a> &amp;feature);</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a1248fa7b22a5dd95ae8843ecf1350aa5">   24</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a1248fa7b22a5dd95ae8843ecf1350aa5">WriteFeature</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a1248fa7b22a5dd95ae8843ecf1350aa5">   24</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a1248fa7b22a5dd95ae8843ecf1350aa5">WriteFeature</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                                <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1utility_1_1Feature.html">utility::Feature</a> &amp;feature);</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#ad5902e68cbbeb6cefdac33b7a4d1d84d">   27</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#ad5902e68cbbeb6cefdac33b7a4d1d84d">ReadFeatureFromBIN</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#ad5902e68cbbeb6cefdac33b7a4d1d84d">   27</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#ad5902e68cbbeb6cefdac33b7a4d1d84d">ReadFeatureFromBIN</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                                      <a class="code" href="classcloudViewer_1_1utility_1_1Feature.html">utility::Feature</a> &amp;feature);</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a0a20cc97fe55f56510fc153580fd4feb">   30</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a0a20cc97fe55f56510fc153580fd4feb">WriteFeatureToBIN</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a0a20cc97fe55f56510fc153580fd4feb">   30</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a0a20cc97fe55f56510fc153580fd4feb">WriteFeatureToBIN</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1utility_1_1Feature.html">utility::Feature</a> &amp;feature);</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aCV__io_8h_html"><div class="ttname"><a href="CV__io_8h.html">CV_io.h</a></div></div>
 <div class="ttc" id="aCV__io_8h_html_ad6ec50f27d85b0cbac57c50291db956f"><div class="ttname"><a href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div><div class="ttdeci">#define CV_IO_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__io_8h_source.html#l00015">CV_io.h:15</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1Feature_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Feature.html">cloudViewer::utility::Feature</a></div><div class="ttdoc">Class to store featrues for registration.</div><div class="ttdef"><b>Definition:</b> <a href="ecvFeature_8h_source.html#l00029">ecvFeature.h:29</a></div></div>
@@ -126,14 +136,14 @@ $(document).ready(function(){initNavTree('CV__io_2include_2FeatureIO_8h_source.h
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a0a20cc97fe55f56510fc153580fd4feb"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0a20cc97fe55f56510fc153580fd4feb">cloudViewer::io::WriteFeatureToBIN</a></div><div class="ttdeci">bool WriteFeatureToBIN(const std::string &amp;filename, const utility::Feature &amp;feature)</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a1248fa7b22a5dd95ae8843ecf1350aa5"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a1248fa7b22a5dd95ae8843ecf1350aa5">cloudViewer::io::WriteFeature</a></div><div class="ttdeci">bool WriteFeature(const std::string &amp;filename, const utility::Feature &amp;feature)</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_ad5902e68cbbeb6cefdac33b7a4d1d84d"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#ad5902e68cbbeb6cefdac33b7a4d1d84d">cloudViewer::io::ReadFeatureFromBIN</a></div><div class="ttdeci">bool ReadFeatureFromBIN(const std::string &amp;filename, utility::Feature &amp;feature)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_3886bc5fbdde051dbb667d23ac4e3d40.html">CV_io</a></li><li class="navelem"><a class="el" href="dir_e4c5393be4f54449f4c55d38d92d28ac.html">include</a></li><li class="navelem"><a class="el" href="CV__io_2include_2FeatureIO_8h.html">FeatureIO.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

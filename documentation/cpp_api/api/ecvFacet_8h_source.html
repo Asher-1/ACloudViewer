@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -195,13 +204,13 @@ $(document).ready(function(){initNavTree('ecvFacet_8h_source.html',''); initResi
 <div class="line"><a name="l00143"></a><span class="lineno"><a class="line" href="classccFacet.html#a3734cb638b7e180bd073c1ace910282d">  143</a></span>&#160;    <a class="code" href="classccFacet.html">ccFacet</a> <a class="code" href="classccFacet.html#a3734cb638b7e180bd073c1ace910282d">operator+</a>(<span class="keyword">const</span> <a class="code" href="classccFacet.html">ccFacet</a>&amp; polyline) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
 <div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="classccFacet.html#aa556f1150c8dee2098eb3c2cb6a1350e">  148</a></span>&#160;    <a class="code" href="classccFacet.html">ccFacet</a>&amp; <a class="code" href="classccFacet.html#aa556f1150c8dee2098eb3c2cb6a1350e">PaintUniformColor</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; <a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>) {</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        setColor(<a class="code" href="classecvColor_1_1RgbTpl.html#a348a16b9a812de66ee0063d85c6b12c6">ecvColor::Rgb::FromEigen</a>(<a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>));</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <a class="code" href="namespaceccEntityAction.html#a9ca8ed63cdc159b45484226265e554fe">setColor</a>(<a class="code" href="classecvColor_1_1RgbTpl.html#a348a16b9a812de66ee0063d85c6b12c6">ecvColor::Rgb::FromEigen</a>(<a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>));</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordflow">return</span> (*<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    }</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="comment">// inherited from ccDrawable</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno"><a class="line" href="classccFacet.html#a1b91e7b9b999bc92a7fbf1bf5db08b55">  155</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccFacet.html#a1b91e7b9b999bc92a7fbf1bf5db08b55">drawMeOnly</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00155"></a><span class="lineno"><a class="line" href="classccFacet.html#a1b91e7b9b999bc92a7fbf1bf5db08b55">  155</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccFacet.html#a1b91e7b9b999bc92a7fbf1bf5db08b55">drawMeOnly</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keywordtype">bool</span> createInternalRepresentation(</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">cloudViewer::GenericIndexedCloudPersist</a>* <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>,</div>
@@ -242,7 +251,6 @@ $(document).ready(function(){initNavTree('ecvFacet_8h_source.html',''); initResi
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_af7f8f4a4e39e09fdb5e9f02330ecabef"><div class="ttname"><a href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a></div><div class="ttdeci">int points</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00144">FileIOFactory.cpp:144</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccBBox_html"><div class="ttname"><a href="classccBBox.html">ccBBox</a></div><div class="ttdoc">Bounding box structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvBBox_8h_source.html#l00025">ecvBBox.h:25</a></div></div>
 <div class="ttc" id="aclassccFacet_html"><div class="ttname"><a href="classccFacet.html">ccFacet</a></div><div class="ttdoc">Facet.</div><div class="ttdef"><b>Definition:</b> <a href="ecvFacet_8h_source.html#l00025">ecvFacet.h:25</a></div></div>
@@ -315,8 +323,10 @@ $(document).ready(function(){initNavTree('ecvFacet_8h_source.html',''); initResi
 <div class="ttc" id="aclassecvOrientedBBox_html"><div class="ttname"><a href="classecvOrientedBBox.html">ecvOrientedBBox</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvOrientedBBox_8h_source.html#l00029">ecvOrientedBBox.h:30</a></div></div>
 <div class="ttc" id="aecvHObject_8h_html"><div class="ttname"><a href="ecvHObject_8h.html">ecvHObject.h</a></div></div>
 <div class="ttc" id="aecvPlanarEntityInterface_8h_html"><div class="ttname"><a href="ecvPlanarEntityInterface_8h.html">ecvPlanarEntityInterface.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a93d5ad29a083a39379d1447b8f55904a"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a93d5ad29a083a39379d1447b8f55904a">CV_TYPES::FACET</a></div><div class="ttdeci">@ FACET</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00109">CVTypes.h:109</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespaceccEntityAction_html_a9ca8ed63cdc159b45484226265e554fe"><div class="ttname"><a href="namespaceccEntityAction.html#a9ca8ed63cdc159b45484226265e554fe">ccEntityAction::setColor</a></div><div class="ttdeci">bool setColor(ccHObject::Container selectedEntities, bool colorize, QWidget *parent)</div><div class="ttdef"><b>Definition:</b> <a href="ecvEntityAction_8cpp_source.html#l00089">ecvEntityAction.cpp:89</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructccGLDrawContext_html"><div class="ttname"><a href="structccGLDrawContext.html">ccGLDrawContext</a></div><div class="ttdoc">Display context.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00365">ecvDrawContext.h:365</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -324,7 +334,7 @@ $(document).ready(function(){initNavTree('ecvFacet_8h_source.html',''); initResi
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvFacet_8h.html">ecvFacet.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

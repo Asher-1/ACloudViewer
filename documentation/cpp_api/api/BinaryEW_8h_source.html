@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,8 +106,8 @@ $(document).ready(function(){initNavTree('BinaryEW_8h_source.html',''); initResi
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Helper_8h.html">Helper.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;unordered_set&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
@@ -158,11 +167,11 @@ $(document).ready(function(){initNavTree('BinaryEW_8h_source.html',''); initResi
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aTensor_8h_html"><div class="ttname"><a href="Tensor_8h.html">Tensor.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
-<div class="ttc" id="acore_2include_2Helper_8h_html"><div class="ttname"><a href="core_2include_2Helper_8h.html">Helper.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a20f1270704949f6d20448a1984ae59a4"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a20f1270704949f6d20448a1984ae59a4">cloudViewer::core::kernel::BinaryEWCPU</a></div><div class="ttdeci">void BinaryEWCPU(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEWCPU_8cpp_source.html#l00154">BinaryEWCPU.cpp:154</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a21d8f56c737fd1d1630ad4abe8c43b10"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a21d8f56c737fd1d1630ad4abe8c43b10">cloudViewer::core::kernel::s_boolean_binary_ew_op_codes</a></div><div class="ttdeci">const std::unordered_set&lt; BinaryEWOpCode, utility::hash_enum_class &gt; s_boolean_binary_ew_op_codes</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEW_8cpp_source.html#l00022">BinaryEW.cpp:22</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a2a5fea461632c9cb4fe1fbbf52bd6fb7"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a2a5fea461632c9cb4fe1fbbf52bd6fb7">cloudViewer::core::kernel::BinaryEW</a></div><div class="ttdeci">void BinaryEW(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEW_8cpp_source.html#l00030">BinaryEW.cpp:30</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a21d8f56c737fd1d1630ad4abe8c43b10"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a21d8f56c737fd1d1630ad4abe8c43b10">cloudViewer::core::kernel::s_boolean_binary_ew_op_codes</a></div><div class="ttdeci">const std::unordered_set&lt; BinaryEWOpCode, utility::hash_enum_class &gt; s_boolean_binary_ew_op_codes</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2kernel_2BinaryEW_8cpp_source.html#l00022">BinaryEW.cpp:22</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a2a5fea461632c9cb4fe1fbbf52bd6fb7"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a2a5fea461632c9cb4fe1fbbf52bd6fb7">cloudViewer::core::kernel::BinaryEW</a></div><div class="ttdeci">void BinaryEW(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2kernel_2BinaryEW_8cpp_source.html#l00030">BinaryEW.cpp:30</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a5bcc1c1feae3436cea4437c96d6ec132"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a5bcc1c1feae3436cea4437c96d6ec132">cloudViewer::core::kernel::BinaryEWOpCode</a></div><div class="ttdeci">BinaryEWOpCode</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEW_8h_source.html#l00021">BinaryEW.h:21</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a5bcc1c1feae3436cea4437c96d6ec132a086cb8308e5a36e7c4ed1f8873ad801f"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a5bcc1c1feae3436cea4437c96d6ec132a086cb8308e5a36e7c4ed1f8873ad801f">cloudViewer::core::kernel::BinaryEWOpCode::Gt</a></div><div class="ttdeci">@ Gt</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a5bcc1c1feae3436cea4437c96d6ec132a103aa83df42877d5f9baeafdbf620b55"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a5bcc1c1feae3436cea4437c96d6ec132a103aa83df42877d5f9baeafdbf620b55">cloudViewer::core::kernel::BinaryEWOpCode::LogicalAnd</a></div><div class="ttdeci">@ LogicalAnd</div></div>
@@ -180,14 +189,14 @@ $(document).ready(function(){initNavTree('BinaryEW_8h_source.html',''); initResi
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a5bcc1c1feae3436cea4437c96d6ec132ae80155eceb940c89e2de63ad05868db2"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a5bcc1c1feae3436cea4437c96d6ec132ae80155eceb940c89e2de63ad05868db2">cloudViewer::core::kernel::BinaryEWOpCode::Sub</a></div><div class="ttdeci">@ Sub</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a5bcc1c1feae3436cea4437c96d6ec132aec211f7c20af43e742bf2570c3cb84f9"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a5bcc1c1feae3436cea4437c96d6ec132aec211f7c20af43e742bf2570c3cb84f9">cloudViewer::core::kernel::BinaryEWOpCode::Add</a></div><div class="ttdeci">@ Add</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_adeed5e08acdb98a60ea716b035a80550"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#adeed5e08acdb98a60ea716b035a80550">cloudViewer::core::kernel::BinaryEWSYCL</a></div><div class="ttdeci">void BinaryEWSYCL(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEWSYCL_8cpp_source.html#l00116">BinaryEWSYCL.cpp:116</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_45b440cfe532bda991cb85e5a82a2a21.html">kernel</a></li><li class="navelem"><a class="el" href="BinaryEW_8h.html">BinaryEW.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

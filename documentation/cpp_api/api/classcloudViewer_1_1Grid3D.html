@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -105,11 +114,12 @@ Inheritance diagram for cloudViewer::Grid3D&lt; Type &gt;:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1Grid3D__inherit__graph.png" border="0" usemap="#acloudViewer_1_1Grid3D_3_01Type_01_4_inherit__map" alt="Inheritance graph"/></div>
 <map name="acloudViewer_1_1Grid3D_3_01Type_01_4_inherit__map" id="acloudViewer_1_1Grid3D_3_01Type_01_4_inherit__map">
-<area shape="rect" title="Simple 3D grid structure." alt="" coords="142,5,297,47"/>
-<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="54,109,209,151"/>
-<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="259,109,414,151"/>
-<area shape="rect" href="classcloudViewer_1_1ChamferDistanceTransform.html" title="Class to compute a Chamfer distance field on a 3D grid." alt="" coords="5,200,228,241"/>
-<area shape="rect" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html" title=" " alt="" coords="252,200,448,241"/>
+<area shape="rect" title="Simple 3D grid structure." alt="" coords="5,71,160,112"/>
+<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="416,5,641,47"/>
+<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="451,71,606,112"/>
+<area shape="rect" href="classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="451,136,606,177"/>
+<area shape="rect" href="classcloudViewer_1_1ChamferDistanceTransform.html" title="Class to compute a Chamfer distance field on a 3D grid." alt="" coords="691,71,913,112"/>
+<area shape="rect" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html" title=" " alt="" coords="704,136,900,177"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -429,6 +439,8 @@ template&lt;class Type &gt; </div>
 
 <p class="reference">References <a class="el" href="Grid3D_8h_source.html#l00544">cloudViewer::Grid3D&lt; Type &gt;::m_grid</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="SaitoSquaredDistanceTransform_8cpp_source.html#l00055">cloudViewer::SaitoSquaredDistanceTransform::SDT_2D()</a>, and <a class="el" href="SaitoSquaredDistanceTransform_8cpp_source.html#l00159">cloudViewer::SaitoSquaredDistanceTransform::SDT_3D()</a>.</p>
+
 </div>
 </div>
 <a id="a12ec7a4f3568b782377f6b6ba4c70b3a"></a>
@@ -579,6 +591,8 @@ template&lt;class Type &gt; </div>
 <p class="definition">Definition at line <a class="el" href="Grid3D_8h_source.html#l00498">498</a> of file <a class="el" href="Grid3D_8h_source.html">Grid3D.h</a>.</p>
 
 <p class="reference">References <a class="el" href="Grid3D_8h_source.html#l00544">cloudViewer::Grid3D&lt; Type &gt;::m_grid</a>, and <a class="el" href="Grid3D_8h_source.html#l00538">cloudViewer::Grid3D&lt; Type &gt;::pos2index()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l03754">cloudViewer::DistanceComputationTools::computeApproxCloud2CloudDistance()</a>, <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l02252">cloudViewer::DistanceComputationTools::computeCloud2MeshDistancesWithOctree()</a>, and <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l01429">cloudViewer::DistanceComputationTools::computeCloud2MeshDistanceWithOctree()</a>.</p>
 
 </div>
 </div>
@@ -830,7 +844,7 @@ template&lt;class Type &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="Grid3D_8h_source.html#l00423">423</a> of file <a class="el" href="Grid3D_8h_source.html">Grid3D.h</a>.</p>
 
-<p class="reference">References <a class="el" href="Grid3D_8h_source.html#l00111">cloudViewer::Grid3D&lt; Type &gt;::computeCellPos()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a92fb0560290d58171c67563d84e6a278">cloudViewer::GenericCloud::getNextPoint()</a>, <a class="el" href="Grid3D_8h_source.html#l00051">cloudViewer::Grid3D&lt; Type &gt;::isInitialized()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a2f05e939821a2ef1d333715127e6fcb7">cloudViewer::GenericCloud::placeIteratorAtBeginning()</a>, <a class="el" href="Grid3D_8h_source.html#l00480">cloudViewer::Grid3D&lt; Type &gt;::setValue()</a>, <a class="el" href="Grid3D_8h_source.html#l00048">cloudViewer::Grid3D&lt; Type &gt;::size()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+<p class="reference">References <a class="el" href="Grid3D_8h_source.html#l00111">cloudViewer::Grid3D&lt; Type &gt;::computeCellPos()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a92fb0560290d58171c67563d84e6a278">cloudViewer::GenericCloud::getNextPoint()</a>, <a class="el" href="Grid3D_8h_source.html#l00051">cloudViewer::Grid3D&lt; Type &gt;::isInitialized()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a2f05e939821a2ef1d333715127e6fcb7">cloudViewer::GenericCloud::placeIteratorAtBeginning()</a>, <a class="el" href="Grid3D_8h_source.html#l00480">cloudViewer::Grid3D&lt; Type &gt;::setValue()</a>, <a class="el" href="Grid3D_8h_source.html#l00048">cloudViewer::Grid3D&lt; Type &gt;::size()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
 
 </div>
 </div>
@@ -892,7 +906,7 @@ template&lt;class Type &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="Grid3D_8h_source.html#l00155">155</a> of file <a class="el" href="Grid3D_8h_source.html">Grid3D.h</a>.</p>
 
-<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericTriangle.html#a05daf220ca75c5201c22019459f015c3">cloudViewer::GenericTriangle::_getA()</a>, <a class="el" href="classcloudViewer_1_1GenericTriangle.html#af32e76478a64667415f7c3f827af15f5">cloudViewer::GenericTriangle::_getB()</a>, <a class="el" href="classcloudViewer_1_1GenericTriangle.html#af170e0b439cf53e84332fa97dd3c3fc1">cloudViewer::GenericTriangle::_getC()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a598ef450b49f92f605e84cb335897c38">cloudViewer::GenericMesh::_getNextTriangle()</a>, <a class="el" href="MiniVec_8h_source.html#l00089">cloudViewer::utility::ceil()</a>, <a class="el" href="Grid3D_8h_source.html#l00131">cloudViewer::Grid3D&lt; Type &gt;::CellToTest::cellSize</a>, <a class="el" href="Grid3D_8h_source.html#l00111">cloudViewer::Grid3D&lt; Type &gt;::computeCellPos()</a>, <a class="el" href="CVGeom_8h_source.html#l00412">Vector3Tpl&lt; Type &gt;::cross()</a>, <a class="el" href="CVGeom_8h_source.html#l00408">Vector3Tpl&lt; Type &gt;::dot()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray()</a>, <a class="el" href="CVMath_8h_source.html#l00052">cloudViewer::GreaterThanSquareEpsilon()</a>, <a class="el" href="Grid3D_8h_source.html#l00051">cloudViewer::Grid3D&lt; Type &gt;::isInitialized()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, <a class="el" href="CVGeom_8h_source.html#l00417">Vector3Tpl&lt; Type &gt;::norm2()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad24beb13c85a002ef4c0ddb496452141">cloudViewer::GenericMesh::placeIteratorAtBeginning()</a>, <a class="el" href="Grid3D_8h_source.html#l00129">cloudViewer::Grid3D&lt; Type &gt;::CellToTest::pos</a>, <a class="el" href="Grid3D_8h_source.html#l00048">cloudViewer::Grid3D&lt; Type &gt;::size()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a0ca723078d1f8194be24861cd6e1d7c8">cloudViewer::GenericMesh::size()</a>, <a class="el" href="classcloudViewer_1_1CCMiscTools.html#af35910b28b867a080df3efafae2865ce">cloudViewer::CCMiscTools::TriBoxOverlap()</a>, <a class="el" href="CVGeom_8h_source.html#l00139">Tuple3Tpl&lt; Type &gt;::u</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericTriangle.html#a05daf220ca75c5201c22019459f015c3">cloudViewer::GenericTriangle::_getA()</a>, <a class="el" href="classcloudViewer_1_1GenericTriangle.html#af32e76478a64667415f7c3f827af15f5">cloudViewer::GenericTriangle::_getB()</a>, <a class="el" href="classcloudViewer_1_1GenericTriangle.html#af170e0b439cf53e84332fa97dd3c3fc1">cloudViewer::GenericTriangle::_getC()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a598ef450b49f92f605e84cb335897c38">cloudViewer::GenericMesh::_getNextTriangle()</a>, <a class="el" href="MiniVec_8h_source.html#l00089">cloudViewer::utility::ceil()</a>, <a class="el" href="Grid3D_8h_source.html#l00131">cloudViewer::Grid3D&lt; Type &gt;::CellToTest::cellSize</a>, <a class="el" href="Grid3D_8h_source.html#l00111">cloudViewer::Grid3D&lt; Type &gt;::computeCellPos()</a>, <a class="el" href="CVGeom_8h_source.html#l00412">Vector3Tpl&lt; Type &gt;::cross()</a>, <a class="el" href="CVGeom_8h_source.html#l00408">Vector3Tpl&lt; Type &gt;::dot()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray()</a>, <a class="el" href="CVMath_8h_source.html#l00052">cloudViewer::GreaterThanSquareEpsilon()</a>, <a class="el" href="Grid3D_8h_source.html#l00051">cloudViewer::Grid3D&lt; Type &gt;::isInitialized()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, <a class="el" href="CVGeom_8h_source.html#l00417">Vector3Tpl&lt; Type &gt;::norm2()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad24beb13c85a002ef4c0ddb496452141">cloudViewer::GenericMesh::placeIteratorAtBeginning()</a>, <a class="el" href="Grid3D_8h_source.html#l00129">cloudViewer::Grid3D&lt; Type &gt;::CellToTest::pos</a>, <a class="el" href="Grid3D_8h_source.html#l00048">cloudViewer::Grid3D&lt; Type &gt;::size()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a0ca723078d1f8194be24861cd6e1d7c8">cloudViewer::GenericMesh::size()</a>, <a class="el" href="CVMiscTools_8cpp_source.html#l00127">cloudViewer::CCMiscTools::TriBoxOverlap()</a>, <a class="el" href="CVGeom_8h_source.html#l00139">Tuple3Tpl&lt; Type &gt;::u</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
 
 </div>
 </div>
@@ -1159,7 +1173,7 @@ template&lt;class Type &gt; </div>
 
 <p class="reference">References <a class="el" href="Grid3D_8h_source.html#l00544">cloudViewer::Grid3D&lt; Type &gt;::m_grid</a>, and <a class="el" href="Grid3D_8h_source.html#l00538">cloudViewer::Grid3D&lt; Type &gt;::pos2index()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Grid3D_8h_source.html#l00135">cloudViewer::Grid3D&lt; Type &gt;::intersectWith()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l03754">cloudViewer::DistanceComputationTools::computeApproxCloud2CloudDistance()</a>, <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l00741">cloudViewer::DistanceComputationTools::intersectMeshWithOctree()</a>, and <a class="el" href="Grid3D_8h_source.html#l00135">cloudViewer::Grid3D&lt; Type &gt;::intersectWith()</a>.</p>
 
 </div>
 </div>
@@ -1194,7 +1208,7 @@ template&lt;class Type &gt; </div>
 
 <p class="reference">References <a class="el" href="Grid3D_8h_source.html#l00547">cloudViewer::Grid3D&lt; Type &gt;::m_innerSize</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Grid3D_8h_source.html#l00155">cloudViewer::Grid3D&lt; Type &gt;::intersectWith()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Grid3D_8h_source.html#l00155">cloudViewer::Grid3D&lt; Type &gt;::intersectWith()</a>, <a class="el" href="SaitoSquaredDistanceTransform_8cpp_source.html#l00055">cloudViewer::SaitoSquaredDistanceTransform::SDT_2D()</a>, and <a class="el" href="SaitoSquaredDistanceTransform_8cpp_source.html#l00159">cloudViewer::SaitoSquaredDistanceTransform::SDT_3D()</a>.</p>
 
 </div>
 </div>
@@ -1481,7 +1495,7 @@ template&lt;class Type &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1Grid3D.html">Grid3D</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

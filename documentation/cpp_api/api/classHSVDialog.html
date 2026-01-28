@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -102,7 +111,7 @@ Inheritance diagram for HSVDialog:</div>
 <map name="aHSVDialog_inherit__map" id="aHSVDialog_inherit__map">
 <area shape="rect" title=" " alt="" coords="127,80,217,107"/>
 <area shape="rect" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" title=" " alt="" coords="105,5,239,32"/>
+<area shape="rect" href="classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="105,5,239,32"/>
 <area shape="rect" title=" " alt="" coords="263,5,377,32"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
@@ -111,10 +120,13 @@ Collaboration diagram for HSVDialog:</div>
 <div class="dyncontent">
 <div class="center"><img src="classHSVDialog__coll__graph.png" border="0" usemap="#aHSVDialog_coll__map" alt="Collaboration graph"/></div>
 <map name="aHSVDialog_coll__map" id="aHSVDialog_coll__map">
-<area shape="rect" title=" " alt="" coords="127,80,217,107"/>
-<area shape="rect" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" title=" " alt="" coords="105,5,239,32"/>
-<area shape="rect" title=" " alt="" coords="263,5,377,32"/>
+<area shape="rect" title=" " alt="" coords="200,184,291,211"/>
+<area shape="rect" title=" " alt="" coords="5,95,80,121"/>
+<area shape="rect" href="classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="105,95,239,121"/>
+<area shape="rect" title=" " alt="" coords="263,95,377,121"/>
+<area shape="rect" href="classccPickingHub.html" title="Point/triangle picking hub." alt="" coords="401,95,511,121"/>
+<area shape="rect" title=" " alt="" coords="348,5,423,32"/>
+<area shape="rect" href="classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="447,5,607,32"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -127,15 +139,18 @@ Public Slots</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6edc32bbefa29ced50adbc2a41417402"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHSVDialog.html#a6edc32bbefa29ced50adbc2a41417402">HSVDialog</a> (ccPickingHub *pickingHub, QWidget *parent=nullptr)</td></tr>
+<tr class="memitem:a6edc32bbefa29ced50adbc2a41417402"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHSVDialog.html#a6edc32bbefa29ced50adbc2a41417402">HSVDialog</a> (<a class="el" href="classccPickingHub.html">ccPickingHub</a> *pickingHub, QWidget *parent=nullptr)</td></tr>
 <tr class="separator:a6edc32bbefa29ced50adbc2a41417402"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39df80ec75298749d81e01e766db7a91"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHSVDialog.html#a39df80ec75298749d81e01e766db7a91">onItemPicked</a> (const PickedItem &amp;pi)</td></tr>
-<tr class="memdesc:a39df80ec75298749d81e01e766db7a91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inherited from ccPickingListener.  <a href="classHSVDialog.html#a39df80ec75298749d81e01e766db7a91">More...</a><br /></td></tr>
+<tr class="memitem:a39df80ec75298749d81e01e766db7a91"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHSVDialog.html#a39df80ec75298749d81e01e766db7a91">onItemPicked</a> (const <a class="el" href="structccPickingListener_1_1PickedItem.html">PickedItem</a> &amp;pi)</td></tr>
+<tr class="memdesc:a39df80ec75298749d81e01e766db7a91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inherited from <a class="el" href="classccPickingListener.html" title="Point/triangle picking listener interface.">ccPickingListener</a>.  <a href="classHSVDialog.html#a39df80ec75298749d81e01e766db7a91">More...</a><br /></td></tr>
 <tr class="separator:a39df80ec75298749d81e01e766db7a91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccPickingListener"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccPickingListener')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccPickingListener.html">ccPickingListener</a></td></tr>
+<tr class="memitem:ac3e9486f026dd92f87f1ad0f20cc432b inherit pub_methods_classccPickingListener"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPickingListener.html#ac3e9486f026dd92f87f1ad0f20cc432b">~ccPickingListener</a> ()=default</td></tr>
+<tr class="separator:ac3e9486f026dd92f87f1ad0f20cc432b inherit pub_methods_classccPickingListener"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a9670130fce4c71cd44f6b42c9f0d16b3"><td class="memItemLeft" align="right" valign="top">ccPickingHub *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHSVDialog.html#a9670130fce4c71cd44f6b42c9f0d16b3">m_pickingHub</a></td></tr>
+<tr class="memitem:a9670130fce4c71cd44f6b42c9f0d16b3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccPickingHub.html">ccPickingHub</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHSVDialog.html#a9670130fce4c71cd44f6b42c9f0d16b3">m_pickingHub</a></td></tr>
 <tr class="memdesc:a9670130fce4c71cd44f6b42c9f0d16b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Picking hub.  <a href="classHSVDialog.html#a9670130fce4c71cd44f6b42c9f0d16b3">More...</a><br /></td></tr>
 <tr class="separator:a9670130fce4c71cd44f6b42c9f0d16b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -155,7 +170,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">HSVDialog::HSVDialog </td>
           <td>(</td>
-          <td class="paramtype">ccPickingHub *&#160;</td>
+          <td class="paramtype"><a class="el" href="classccPickingHub.html">ccPickingHub</a> *&#160;</td>
           <td class="paramname"><em>pickingHub</em>, </td>
         </tr>
         <tr>
@@ -179,7 +194,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="HSVDialog_8cpp_source.html#l00025">25</a> of file <a class="el" href="HSVDialog_8cpp_source.html">HSVDialog.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="namespaceecvColor.html#a6a46af05a0c0c35f7a1c4cd2ccdfe727">ecvColor::blue()</a>, <a class="el" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green()</a>, <a class="el" href="HSVDialog_8h_source.html#l00054">m_pickingHub</a>, <a class="el" href="HSVDialog_8cpp_source.html#l00063">pickPoint()</a>, <a class="el" href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red()</a>, and <a class="el" href="HSVDialog_8cpp_source.html#l00117">updateValues()</a>.</p>
+<p class="reference">References <a class="el" href="namespaceecvColor.html#a6a46af05a0c0c35f7a1c4cd2ccdfe727">ecvColor::blue()</a>, <a class="el" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green()</a>, <a class="el" href="HSVDialog_8h_source.html#l00054">m_pickingHub</a>, <a class="el" href="HSVDialog_8cpp_source.html#l00063">pickPoint()</a>, <a class="el" href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red()</a>, <a class="el" href="ecvPickingHub_8cpp_source.html#l00165">ccPickingHub::removeListener()</a>, and <a class="el" href="HSVDialog_8cpp_source.html#l00117">updateValues()</a>.</p>
 
 </div>
 </div>
@@ -196,7 +211,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">void HSVDialog::onItemPicked </td>
           <td>(</td>
-          <td class="paramtype">const PickedItem &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="structccPickingListener_1_1PickedItem.html">PickedItem</a> &amp;&#160;</td>
           <td class="paramname"><em>pi</em></td><td>)</td>
           <td></td>
         </tr>
@@ -208,11 +223,13 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Inherited from ccPickingListener. </p>
+<p>Inherited from <a class="el" href="classccPickingListener.html" title="Point/triangle picking listener interface.">ccPickingListener</a>. </p>
+
+<p>Implements <a class="el" href="classccPickingListener.html#ae9fb806eaa277156aa143b154582cada">ccPickingListener</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="HSVDialog_8cpp_source.html#l00087">87</a> of file <a class="el" href="HSVDialog_8cpp_source.html">HSVDialog.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="ecvColorTypes_8h_source.html#l00054">ecvColor::RgbTpl&lt; Type &gt;::b</a>, <a class="el" href="namespaceecvColor.html#a6a46af05a0c0c35f7a1c4cd2ccdfe727">ecvColor::blue()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00054">ecvColor::RgbTpl&lt; Type &gt;::g</a>, <a class="el" href="classccGenericPointCloud.html#a9a77e7617fead9a0bb1b189406433395">ccGenericPointCloud::getPointColor()</a>, <a class="el" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green()</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00054">ecvColor::RgbTpl&lt; Type &gt;::r</a>, and <a class="el" href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red()</a>.</p>
+<p class="reference">References <a class="el" href="ecvColorTypes_8h_source.html#l00054">ecvColor::RgbTpl&lt; Type &gt;::b</a>, <a class="el" href="namespaceecvColor.html#a6a46af05a0c0c35f7a1c4cd2ccdfe727">ecvColor::blue()</a>, <a class="el" href="ecvPickingListener_8h_source.html#l00030">ccPickingListener::PickedItem::entity</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00054">ecvColor::RgbTpl&lt; Type &gt;::g</a>, <a class="el" href="classccGenericPointCloud.html#a9a77e7617fead9a0bb1b189406433395">ccGenericPointCloud::getPointColor()</a>, <a class="el" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green()</a>, <a class="el" href="ecvObject_8h_source.html#l00128">ccObject::isKindOf()</a>, <a class="el" href="ecvPickingListener_8h_source.html#l00031">ccPickingListener::PickedItem::itemIndex</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="CVLog_8cpp_source.html#l00113">CVLog::Print()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00054">ecvColor::RgbTpl&lt; Type &gt;::r</a>, and <a class="el" href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red()</a>.</p>
 
 </div>
 </div>
@@ -242,7 +259,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="HSVDialog_8cpp_source.html#l00063">63</a> of file <a class="el" href="HSVDialog_8cpp_source.html">HSVDialog.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error()</a>, and <a class="el" href="HSVDialog_8h_source.html#l00054">m_pickingHub</a>.</p>
+<p class="reference">References <a class="el" href="ecvPickingHub_8cpp_source.html#l00104">ccPickingHub::addListener()</a>, <a class="el" href="CVLog_8cpp_source.html#l00143">CVLog::Error()</a>, <a class="el" href="HSVDialog_8h_source.html#l00054">m_pickingHub</a>, and <a class="el" href="ecvPickingHub_8cpp_source.html#l00165">ccPickingHub::removeListener()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="HSVDialog_8cpp_source.html#l00025">HSVDialog()</a>.</p>
 
@@ -290,7 +307,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ccPickingHub* HSVDialog::m_pickingHub</td>
+          <td class="memname"><a class="el" href="classccPickingHub.html">ccPickingHub</a>* HSVDialog::m_pickingHub</td>
         </tr>
       </table>
   </td>
@@ -318,7 +335,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classHSVDialog.html">HSVDialog</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:34 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

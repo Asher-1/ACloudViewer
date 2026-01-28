@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -112,8 +121,8 @@ $(document).ready(function(){initNavTree('stereogramDlg_8h_source.html',''); ini
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">class </span><a class="code" href="classccHObject.html">ccHObject</a>;</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">class </span><a class="code" href="classFacetDensityGrid.html">FacetDensityGrid</a>;</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">class </span>ccColorScaleSelector;</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">class </span>ecvMainAppInterface;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">class </span><a class="code" href="classccColorScaleSelector.html">ccColorScaleSelector</a>;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">class </span><a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classStereogramParamsDlg.html">   29</a></span>&#160;<span class="keyword">class </span><a class="code" href="classStereogramParamsDlg.html">StereogramParamsDlg</a> : <span class="keyword">public</span> QDialog, <span class="keyword">public</span> Ui::StereogramParamsDlg {</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">public</span>:</div>
@@ -204,7 +213,7 @@ $(document).ready(function(){initNavTree('stereogramDlg_8h_source.html',''); ini
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    Q_OBJECT</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <a class="code" href="classStereogramDialog.html#a5c6b86f8be666f1503381b6a2c872dde">StereogramDialog</a>(ecvMainAppInterface* app <span class="comment">/*=0*/</span>);</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <a class="code" href="classStereogramDialog.html#a5c6b86f8be666f1503381b6a2c872dde">StereogramDialog</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app <span class="comment">/*=0*/</span>);</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classStereogramDialog.html#aaa64cd89462e4f1965de17ff3b658209">init</a>(<span class="keywordtype">double</span> angularStep_deg,</div>
@@ -234,9 +243,9 @@ $(document).ready(function(){initNavTree('stereogramDlg_8h_source.html',''); ini
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
 <div class="line"><a name="l00187"></a><span class="lineno"><a class="line" href="classStereogramDialog.html#affd730aaf4e7d5e6c49107e64767e2ff">  187</a></span>&#160;    <a class="code" href="classStereogramWidget.html">StereogramWidget</a>* <a class="code" href="classStereogramDialog.html#affd730aaf4e7d5e6c49107e64767e2ff">m_classifWidget</a>;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
-<div class="line"><a name="l00190"></a><span class="lineno"><a class="line" href="classStereogramDialog.html#a44386e2ba4001544c8fc6a625dfd7c11">  190</a></span>&#160;    ccColorScaleSelector* <a class="code" href="classStereogramDialog.html#a44386e2ba4001544c8fc6a625dfd7c11">m_colorScaleSelector</a>;</div>
+<div class="line"><a name="l00190"></a><span class="lineno"><a class="line" href="classStereogramDialog.html#a44386e2ba4001544c8fc6a625dfd7c11">  190</a></span>&#160;    <a class="code" href="classccColorScaleSelector.html">ccColorScaleSelector</a>* <a class="code" href="classStereogramDialog.html#a44386e2ba4001544c8fc6a625dfd7c11">m_colorScaleSelector</a>;</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160; </div>
-<div class="line"><a name="l00193"></a><span class="lineno"><a class="line" href="classStereogramDialog.html#a0db39b61ddc748cf3ce96e7c8b044804">  193</a></span>&#160;    ecvMainAppInterface* <a class="code" href="classStereogramDialog.html#a0db39b61ddc748cf3ce96e7c8b044804">m_app</a>;</div>
+<div class="line"><a name="l00193"></a><span class="lineno"><a class="line" href="classStereogramDialog.html#a0db39b61ddc748cf3ce96e7c8b044804">  193</a></span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* <a class="code" href="classStereogramDialog.html#a0db39b61ddc748cf3ce96e7c8b044804">m_app</a>;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160; </div>
 <div class="line"><a name="l00196"></a><span class="lineno"><a class="line" href="classStereogramDialog.html#a91b7f99cdf3d7a38a471dd0e7ef4148c">  196</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classStereogramDialog.html#a91b7f99cdf3d7a38a471dd0e7ef4148c">m_facetGroupUniqueID</a>;</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;};</div>
@@ -297,8 +306,10 @@ $(document).ready(function(){initNavTree('stereogramDlg_8h_source.html',''); ini
 <div class="ttc" id="aclassStereogramWidget_html_aedea3eb918316f94c6d39f6057048dda"><div class="ttname"><a href="classStereogramWidget.html#aedea3eb918316f94c6d39f6057048dda">StereogramWidget::setTicksFreq</a></div><div class="ttdeci">void setTicksFreq(int freq)</div><div class="ttdoc">Sets the ticks frequency (0 = no ticks)</div><div class="ttdef"><b>Definition:</b> <a href="stereogramDlg_8h_source.html#l00081">stereogramDlg.h:81</a></div></div>
 <div class="ttc" id="aclassStereogramWidget_html_aee4a06865ec59f206125de4d9dbdf4c7"><div class="ttname"><a href="classStereogramWidget.html#aee4a06865ec59f206125de4d9dbdf4c7">StereogramWidget::mousePressEvent</a></div><div class="ttdeci">virtual void mousePressEvent(QMouseEvent *e)</div><div class="ttdef"><b>Definition:</b> <a href="stereogramDlg_8cpp_source.html#l00263">stereogramDlg.cpp:263</a></div></div>
 <div class="ttc" id="aclassStereogramWidget_html_af9304c7dc3f31babf9f134876e09b859"><div class="ttname"><a href="classStereogramWidget.html#af9304c7dc3f31babf9f134876e09b859">StereogramWidget::m_densityColorScale</a></div><div class="ttdeci">ccColorScale::Shared m_densityColorScale</div><div class="ttdoc">Density color scale.</div><div class="ttdef"><b>Definition:</b> <a href="stereogramDlg_8h_source.html#l00119">stereogramDlg.h:119</a></div></div>
+<div class="ttc" id="aclassccColorScaleSelector_html"><div class="ttname"><a href="classccColorScaleSelector.html">ccColorScaleSelector</a></div><div class="ttdoc">Advanced editor for color scales.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorScaleSelector_8h_source.html#l00023">ecvColorScaleSelector.h:23</a></div></div>
 <div class="ttc" id="aclassccColorScale_html_ad5aa28f3845d93677872a0b771a9ae53"><div class="ttname"><a href="classccColorScale.html#ad5aa28f3845d93677872a0b771a9ae53">ccColorScale::Shared</a></div><div class="ttdeci">QSharedPointer&lt; ccColorScale &gt; Shared</div><div class="ttdoc">Shared pointer type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorScale_8h_source.html#l00074">ecvColorScale.h:74</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aecvColorScale_8h_html"><div class="ttname"><a href="ecvColorScale_8h.html">ecvColorScale.h</a></div></div>
 <div class="ttc" id="aecvPlane_8h_html"><div class="ttname"><a href="ecvPlane_8h.html">ecvPlane.h</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
@@ -308,7 +319,7 @@ $(document).ready(function(){initNavTree('stereogramDlg_8h_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_6994d40ac48259704d364a4904bc47b0.html">qFacets</a></li><li class="navelem"><a class="el" href="dir_bb4170c71c085c98fe4bd3a1cfa172ed.html">include</a></li><li class="navelem"><a class="el" href="stereogramDlg_8h.html">stereogramDlg.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

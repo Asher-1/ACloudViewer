@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -152,9 +161,9 @@ $(document).ready(function(){initNavTree('Label_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#acb76d3df7c4d5f8ba0a9f47caa3b124c">   63</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#acb76d3df7c4d5f8ba0a9f47caa3b124c">Label::SetFontId</a>(<span class="keyword">const</span> <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#a7dffb8d99401b9bfe474c3a481e1ef19">FontId</a> font_id) { impl_-&gt;font_id_ = font_id; }</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#ac1647425fd46a54294338eca2ac7e850">   65</a></span>&#160;<a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Size.html">Size</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#ac1647425fd46a54294338eca2ac7e850">Label::CalcPreferredSize</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">LayoutContext</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#ac1647425fd46a54294338eca2ac7e850">   65</a></span>&#160;<a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Size.html">Size</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#ac1647425fd46a54294338eca2ac7e850">Label::CalcPreferredSize</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">LayoutContext</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                              <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Widget_1_1Constraints.html">Constraints</a>&amp; constraints)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    ImGui::PushFont((ImFont*)<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.fonts.GetFont(impl_-&gt;font_id_));</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    ImGui::PushFont((ImFont*)<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.fonts.GetFont(impl_-&gt;font_id_));</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">auto</span> padding = ImGui::GetStyle().FramePadding;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">auto</span>* font = ImGui::GetFont();</div>
@@ -202,7 +211,7 @@ $(document).ready(function(){initNavTree('Label_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">return</span> pref;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;}</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#a345ad12f10ab8cf1d70420779ec9c35b">  115</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391">Widget::DrawResult</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#a345ad12f10ab8cf1d70420779ec9c35b">Label::Draw</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">DrawContext</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) {</div>
+<div class="line"><a name="l00115"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#a345ad12f10ab8cf1d70420779ec9c35b">  115</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391">Widget::DrawResult</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html#a345ad12f10ab8cf1d70420779ec9c35b">Label::Draw</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">DrawContext</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) {</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keyword">auto</span>&amp; <a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a> = <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a8f803341eeec0654d823b75168f8bab9">GetFrame</a>();</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    ImGui::SetCursorScreenPos(</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            ImVec2(<span class="keywordtype">float</span>(<a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.x), <span class="keywordtype">float</span>(<a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.y) - ImGui::GetScrollY()));</div>
@@ -211,7 +220,7 @@ $(document).ready(function(){initNavTree('Label_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="keywordflow">if</span> (!is_default_color) {</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        ImGui::PushStyleColor(ImGuiCol_Text, <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(impl_-&gt;color_));</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    }</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    ImGui::PushFont((ImFont*)<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.fonts.GetFont(impl_-&gt;font_id_));</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    ImGui::PushFont((ImFont*)<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.fonts.GetFont(impl_-&gt;font_id_));</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="keyword">auto</span> padding = ImGui::GetStyle().FramePadding;</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordtype">float</span> wrapX = ImGui::GetCursorPos().x + <a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.width - padding.x;</div>
@@ -239,7 +248,6 @@ $(document).ready(function(){initNavTree('Label_8cpp_source.html',''); initResiz
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
 <div class="ttc" id="aTheme_8h_html"><div class="ttname"><a href="Theme_8h.html">Theme.h</a></div></div>
 <div class="ttc" id="aUtil_8h_html"><div class="ttname"><a href="Util_8h.html">Util.h</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Application_html_a3e0a269365db071e3876c35434dded7e"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Application.html#a3e0a269365db071e3876c35434dded7e">cloudViewer::visualization::gui::Application::DEFAULT_FONT_ID</a></div><div class="ttdeci">static constexpr FontId DEFAULT_FONT_ID</div><div class="ttdoc">Identifier for font used by default for all UI elements.</div><div class="ttdef"><b>Definition:</b> <a href="Application_8h_source.html#l00057">Application.h:57</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Color_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Color.html">cloudViewer::visualization::gui::Color</a></div><div class="ttdef"><b>Definition:</b> <a href="Color_8h_source.html#l00016">Color.h:16</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Label_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Label.html">cloudViewer::visualization::gui::Label</a></div><div class="ttdef"><b>Definition:</b> <a href="Label_8h_source.html#l00016">Label.h:16</a></div></div>
@@ -259,12 +267,13 @@ $(document).ready(function(){initNavTree('Label_8cpp_source.html',''); initResiz
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693">cloudViewer::visualization::gui::Widget::DrawResult::NONE</a></div><div class="ttdeci">@ NONE</div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a20a5fe3256b3fa4da9d1c848e08646d9"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a20a5fe3256b3fa4da9d1c848e08646d9">cloudViewer::visualization::gui::PREFERRED_WRAP_WIDTH_EM</a></div><div class="ttdeci">static const int PREFERRED_WRAP_WIDTH_EM</div><div class="ttdef"><b>Definition:</b> <a href="Label_8cpp_source.html#l00031">Label.cpp:31</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a2d1102c57d91733412572876ff52fa7d"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a2d1102c57d91733412572876ff52fa7d">cloudViewer::visualization::gui::DEFAULT_COLOR</a></div><div class="ttdeci">static const Color DEFAULT_COLOR(0, 0, 0, 0)</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a7dffb8d99401b9bfe474c3a481e1ef19"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a7dffb8d99401b9bfe474c3a481e1ef19">cloudViewer::visualization::gui::FontId</a></div><div class="ttdeci">unsigned int FontId</div><div class="ttdef"><b>Definition:</b> <a href="Gui_8h_source.html#l00068">Gui.h:68</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_aca9fc6fdaa1ee91a03470ca0ed4735a3"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">cloudViewer::visualization::gui::colorToImgui</a></div><div class="ttdeci">ImVec4 colorToImgui(const Color &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00020">Util.cpp:20</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1DrawContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">cloudViewer::visualization::gui::DrawContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00037">Widget.h:37</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1Label_1_1Impl_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1Label_1_1Impl.html">cloudViewer::visualization::gui::Label::Impl</a></div><div class="ttdef"><b>Definition:</b> <a href="Label_8cpp_source.html#l00035">Label.cpp:35</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1Label_1_1Impl_html_a2b18ac1ed9330ecf75f8afad72ffe1cd"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1Label_1_1Impl.html#a2b18ac1ed9330ecf75f8afad72ffe1cd">cloudViewer::visualization::gui::Label::Impl::font_id_</a></div><div class="ttdeci">FontId font_id_</div><div class="ttdef"><b>Definition:</b> <a href="Label_8cpp_source.html#l00038">Label.cpp:38</a></div></div>
@@ -281,7 +290,7 @@ $(document).ready(function(){initNavTree('Label_8cpp_source.html',''); initResiz
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_016d0f202ff0280a7e5050aeab20bc2e.html">gui</a></li><li class="navelem"><a class="el" href="Label_8cpp.html">Label.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

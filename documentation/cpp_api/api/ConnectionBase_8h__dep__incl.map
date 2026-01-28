@@ -1,9 +1,10 @@
 <map id="/root/ACloudViewer/libs/cloudViewer/io/rpc/ConnectionBase.h" name="/root/ACloudViewer/libs/cloudViewer/io/rpc/ConnectionBase.h">
-<area shape="rect" id="node1" title=" " alt="" coords="213,5,379,61"/>
-<area shape="rect" id="node2" href="$BufferConnection_8h.html" title=" " alt="" coords="18,109,193,165"/>
-<area shape="rect" id="node4" href="$Connection_8h.html" title=" " alt="" coords="221,109,371,165"/>
-<area shape="rect" id="node7" href="$RemoteFunctions_8h.html" title=" " alt="" coords="399,109,574,165"/>
+<area shape="rect" id="node1" title=" " alt="" coords="215,5,382,61"/>
+<area shape="rect" id="node2" href="$BufferConnection_8h.html" title=" " alt="" coords="13,109,187,165"/>
+<area shape="rect" id="node5" href="$Connection_8h.html" title=" " alt="" coords="411,109,560,165"/>
+<area shape="rect" id="node8" href="$RemoteFunctions_8h.html" title=" " alt="" coords="211,109,386,165"/>
 <area shape="rect" id="node3" href="$BufferConnection_8cpp.html" title=" " alt="" coords="5,213,195,269"/>
-<area shape="rect" id="node5" href="$Connection_8cpp.html" title=" " alt="" coords="219,213,370,269"/>
-<area shape="rect" id="node6" href="$RemoteFunctions_8cpp.html" title=" " alt="" coords="394,213,585,269"/>
+<area shape="rect" id="node4" href="$rpc_8cpp.html" title=" " alt="" coords="219,213,365,269"/>
+<area shape="rect" id="node6" href="$Connection_8cpp.html" title=" " alt="" coords="605,213,755,269"/>
+<area shape="rect" id="node7" href="$RemoteFunctions_8cpp.html" title=" " alt="" coords="390,213,581,269"/>
 </map>

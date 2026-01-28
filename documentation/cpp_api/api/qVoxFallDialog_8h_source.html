@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -102,14 +111,14 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8h_source.html',''); in
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;QSettings&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">class </span>ecvMainAppInterface;</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">class </span><a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>;</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">class </span><a class="code" href="classccMesh.html">ccMesh</a>;</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html">   19</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqVoxFallDialog.html">qVoxFallDialog</a> : <span class="keyword">public</span> QDialog, <span class="keyword">public</span> Ui::VoxFallDialog {</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    Q_OBJECT</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <a class="code" href="classqVoxFallDialog.html#af9b40804473bb3ffa2d37ffdb2d07561">qVoxFallDialog</a>(<a class="code" href="classccMesh.html">ccMesh</a>* mesh1, <a class="code" href="classccMesh.html">ccMesh</a>* mesh2, ecvMainAppInterface* app);</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <a class="code" href="classqVoxFallDialog.html#af9b40804473bb3ffa2d37ffdb2d07561">qVoxFallDialog</a>(<a class="code" href="classccMesh.html">ccMesh</a>* mesh1, <a class="code" href="classccMesh.html">ccMesh</a>* mesh2, <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app);</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html#a23de4b21c3390a155a4d730ceb26db41">   27</a></span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a>* <a class="code" href="classqVoxFallDialog.html#a23de4b21c3390a155a4d730ceb26db41">getMesh1</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">m_mesh1</a>; }</div>
 <div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html#aa18fe9bc72f60152348bc2e38d206220">   29</a></span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a>* <a class="code" href="classqVoxFallDialog.html#aa18fe9bc72f60152348bc2e38d206220">getMesh2</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415">m_mesh2</a>; }</div>
@@ -135,12 +144,13 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8h_source.html',''); in
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment"></span>    <span class="keywordtype">void</span> <a class="code" href="classqVoxFallDialog.html#a46174a707f3c1a94b90c4e4ac8e83ebe">setMeshes</a>(<a class="code" href="classccMesh.html">ccMesh</a>* mesh1, <a class="code" href="classccMesh.html">ccMesh</a>* mesh2);</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">protected</span>:  <span class="comment">// members</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71">   58</a></span>&#160;    ecvMainAppInterface* <a class="code" href="classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71">m_app</a>;</div>
+<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71">   58</a></span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* <a class="code" href="classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71">m_app</a>;</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">   60</a></span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a>* <a class="code" href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">m_mesh1</a>;</div>
 <div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415">   61</a></span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a>* <a class="code" href="classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415">m_mesh2</a>;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;};</div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aclassqVoxFallDialog_html"><div class="ttname"><a href="classqVoxFallDialog.html">qVoxFallDialog</a></div><div class="ttdoc">VOXFALL plugin's main dialog.</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallDialog_8h_source.html#l00019">qVoxFallDialog.h:19</a></div></div>
 <div class="ttc" id="aclassqVoxFallDialog_html_a199c7ea89769920e65193762d516232d"><div class="ttname"><a href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">qVoxFallDialog::m_mesh1</a></div><div class="ttdeci">ccMesh * m_mesh1</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallDialog_8h_source.html#l00060">qVoxFallDialog.h:60</a></div></div>
 <div class="ttc" id="aclassqVoxFallDialog_html_a23de4b21c3390a155a4d730ceb26db41"><div class="ttname"><a href="classqVoxFallDialog.html#a23de4b21c3390a155a4d730ceb26db41">qVoxFallDialog::getMesh1</a></div><div class="ttdeci">ccMesh * getMesh1() const</div><div class="ttdoc">Returns mesh #1.</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallDialog_8h_source.html#l00027">qVoxFallDialog.h:27</a></div></div>
@@ -167,7 +177,7 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8h_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4bac82d6d66125057afc5b6a16ccbd7c.html">qVoxFall</a></li><li class="navelem"><a class="el" href="dir_cbad06b2d174ca95047bc6413cd5bfc1.html">include</a></li><li class="navelem"><a class="el" href="qVoxFallDialog_8h.html">qVoxFallDialog.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

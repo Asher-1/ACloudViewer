@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -100,7 +109,7 @@ $(document).ready(function(){initNavTree('qM3C2Process_8h_source.html',''); init
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// Local</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="qM3C2Dialog_8h.html">qM3C2Dialog.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">class </span>ecvMainAppInterface;</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">class </span><a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>;</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classqM3C2Process.html">   20</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqM3C2Process.html">qM3C2Process</a> {</div>
@@ -110,9 +119,10 @@ $(document).ready(function(){initNavTree('qM3C2Process_8h_source.html',''); init
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                        <a class="code" href="classccPointCloud.html">ccPointCloud</a>*&amp; outputCloud,</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                        <span class="keywordtype">bool</span> allowDialogs,</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                        QWidget* parentWidget = <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                        ecvMainAppInterface* app = <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                        <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;};</div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html"><div class="ttname"><a href="classqM3C2Dialog.html">qM3C2Dialog</a></div><div class="ttdoc">M3C2 plugin's main dialog.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8h_source.html#l00022">qM3C2Dialog.h:22</a></div></div>
 <div class="ttc" id="aclassqM3C2Process_html"><div class="ttname"><a href="classqM3C2Process.html">qM3C2Process</a></div><div class="ttdoc">M3C2 process.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Process_8h_source.html#l00020">qM3C2Process.h:20</a></div></div>
 <div class="ttc" id="aclassqM3C2Process_html_ab55646fcec9c5c609ae3827d5be6a94c"><div class="ttname"><a href="classqM3C2Process.html#ab55646fcec9c5c609ae3827d5be6a94c">qM3C2Process::Compute</a></div><div class="ttdeci">static bool Compute(const qM3C2Dialog &amp;dlg, QString &amp;errorMessage, ccPointCloud *&amp;outputCloud, bool allowDialogs, QWidget *parentWidget=nullptr, ecvMainAppInterface *app=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Process_8cpp_source.html#l00428">qM3C2Process.cpp:428</a></div></div>
@@ -123,7 +133,7 @@ $(document).ready(function(){initNavTree('qM3C2Process_8h_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_496720c7e7870a9ab5c24efb39eb21c7.html">qM3C2</a></li><li class="navelem"><a class="el" href="dir_bfccb4515c2311a8d7623b322902dcec.html">include</a></li><li class="navelem"><a class="el" href="qM3C2Process_8h.html">qM3C2Process.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

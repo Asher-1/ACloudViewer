@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -130,7 +139,7 @@ $(document).ready(function(){initNavTree('IoAbstractLoader_8cpp_source.html','')
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        message.prepend(<span class="stringliteral">&quot;[qMeshIO] ai - &quot;</span>);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <a class="code" href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">CVLog::LogMessage</a>(message, messageLevel);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <a class="code" href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">CVLog::LogMessage</a>(message, messageLevel);</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    }</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;};</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
@@ -172,13 +181,13 @@ $(document).ready(function(){initNavTree('IoAbstractLoader_8cpp_source.html','')
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keywordtype">void</span> load(<a class="code" href="classccHObject.html">ccHObject</a> &amp;ioContainer) {</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordflow">if</span> (cScene-&gt;HasMeshes()) {</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] The file &#39;%1&#39; has %2 meshes&quot;</span>)</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] The file &#39;%1&#39; has %2 meshes&quot;</span>)</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                                 .arg(cFileName, QLocale::system().<a class="code" href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">toString</a>(</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                                                         cScene-&gt;mNumMeshes)));</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        }</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="keywordflow">if</span> (cScene-&gt;HasCameras()) {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                    QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] The file &#39;%1&#39; has %2 cameras&quot;</span>)</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                            .arg(cFileName, QLocale::system().<a class="code" href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">toString</a>(</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                                                    cScene-&gt;mNumCameras)));</div>
@@ -371,7 +380,7 @@ $(document).ready(function(){initNavTree('IoAbstractLoader_8cpp_source.html','')
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    <span class="keyword">const</span> <span class="keyword">auto</span> cFileName = QFileInfo(inFileName).fileName();</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <span class="keyword">const</span> <span class="keyword">auto</span> cPath = QFileInfo(inFileName).absoluteDir().path();</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Loading file &#39;%1&#39;&quot;</span>).arg(inFileName));</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Loading file &#39;%1&#39;&quot;</span>).arg(inFileName));</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160; </div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    Assimp::DefaultLogger::create(<span class="stringliteral">&quot;&quot;</span>, Assimp::Logger::NORMAL,</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                                  aiDefaultLogStream_STDOUT);</div>
@@ -407,7 +416,7 @@ $(document).ready(function(){initNavTree('IoAbstractLoader_8cpp_source.html','')
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                    aiProcess_ValidateDataStructure);</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160; </div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    <span class="keywordflow">if</span> (cScene == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] The file &#39;%1&#39; has errors: %2&quot;</span>)</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] The file &#39;%1&#39; has errors: %2&quot;</span>)</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                               .arg(cFileName, importer.GetErrorString()));</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        Assimp::DefaultLogger::kill();</div>
@@ -437,13 +446,13 @@ $(document).ready(function(){initNavTree('IoAbstractLoader_8cpp_source.html','')
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee">CC_FERR_READING</a></div><div class="ttdeci">@ CC_FERR_READING</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00026">FileIOFilter.h:26</a></div></div>
 <div class="ttc" id="aIoAbstractLoader_8h_html"><div class="ttname"><a href="IoAbstractLoader_8h.html">IoAbstractLoader.h</a></div></div>
 <div class="ttc" id="aIoUtils_8h_html"><div class="ttname"><a href="IoUtils_8h.html">IoUtils.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a98c01f821dbb91ecb6c735b600f78de7"><div class="ttname"><a href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">CVLog::LogMessage</a></div><div class="ttdeci">static void LogMessage(const QString &amp;message, int level)</div><div class="ttdoc">Static shortcut to CVLog::logMessage.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00064">CVLog.cpp:64</a></div></div>
 <div class="ttc" id="aclassCVLog_html_a9ec2d345e360523551943fdba3378780aa3a315b136baf1b03532047b0f766c09"><div class="ttname"><a href="classCVLog.html#a9ec2d345e360523551943fdba3378780aa3a315b136baf1b03532047b0f766c09">CVLog::LOG_STANDARD</a></div><div class="ttdeci">@ LOG_STANDARD</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8h_source.html#l00044">CVLog.h:44</a></div></div>
 <div class="ttc" id="aclassCVLog_html_a9ec2d345e360523551943fdba3378780ae949015bd273d182622cf21494bfadc1"><div class="ttname"><a href="classCVLog.html#a9ec2d345e360523551943fdba3378780ae949015bd273d182622cf21494bfadc1">CVLog::LOG_VERBOSE</a></div><div class="ttdeci">@ LOG_VERBOSE</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8h_source.html#l00043">CVLog.h:43</a></div></div>
 <div class="ttc" id="aclassCVLog_html_a9ec2d345e360523551943fdba3378780af21e58e19173e7df5c6fd188e0aa3ca6"><div class="ttname"><a href="classCVLog.html#a9ec2d345e360523551943fdba3378780af21e58e19173e7df5c6fd188e0aa3ca6">CVLog::LOG_WARNING</a></div><div class="ttdeci">@ LOG_WARNING</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8h_source.html#l00046">CVLog.h:46</a></div></div>
 <div class="ttc" id="aclassCVLog_html_a9ec2d345e360523551943fdba3378780af38f34287b5dd6b9d18965113f5331f3"><div class="ttname"><a href="classCVLog.html#a9ec2d345e360523551943fdba3378780af38f34287b5dd6b9d18965113f5331f3">CVLog::LOG_ERROR</a></div><div class="ttdeci">@ LOG_ERROR</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8h_source.html#l00047">CVLog.h:47</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af2ed33e05ca3cab1aa8d9292b87765ca"><div class="ttname"><a href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">CVLog::LogMessage</a></div><div class="ttdeci">static void LogMessage(const QString &amp;message, int level)</div><div class="ttdoc">Static shortcut to CVLog::logMessage.</div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassIoAbstractLoader_html_abbdef7debc3f9ef74894e8ea2220c033"><div class="ttname"><a href="classIoAbstractLoader.html#abbdef7debc3f9ef74894e8ea2220c033">IoAbstractLoader::_postProcess</a></div><div class="ttdeci">virtual void _postProcess(ccHObject &amp;ioContainer)</div><div class="ttdef"><b>Definition:</b> <a href="IoAbstractLoader_8cpp_source.html#l00340">IoAbstractLoader.cpp:340</a></div></div>
 <div class="ttc" id="aclassIoAbstractLoader_html_acbea53f055d53e59b5311430709c394b"><div class="ttname"><a href="classIoAbstractLoader.html#acbea53f055d53e59b5311430709c394b">IoAbstractLoader::canSave</a></div><div class="ttdeci">bool canSave(CV_CLASS_ENUM inType, bool &amp;outMultiple, bool &amp;outExclusive) const override</div><div class="ttdoc">Returns whether this I/O filter can save the specified type of entity.</div><div class="ttdef"><b>Definition:</b> <a href="IoAbstractLoader_8cpp_source.html#l00265">IoAbstractLoader.cpp:265</a></div></div>
@@ -481,7 +490,7 @@ $(document).ready(function(){initNavTree('IoAbstractLoader_8cpp_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_93729575d6fedf5bf48258f8bebc2d7a.html">qMeshIO</a></li><li class="navelem"><a class="el" href="dir_cbaf5887df0850fa9bfa13889c85bbfc.html">src</a></li><li class="navelem"><a class="el" href="IoAbstractLoader_8cpp.html">IoAbstractLoader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

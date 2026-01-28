@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -284,24 +293,24 @@ $(document).ready(function(){initNavTree('Util_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    std::string font_ttc = font + <span class="stringliteral">&quot;.ttc&quot;</span>;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    std::string font_otf = font + <span class="stringliteral">&quot;.otf&quot;</span>;</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="keyword">auto</span> is_match = [font, &amp;font_ttf, &amp;font_ttc,</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                     &amp;font_otf](<span class="keyword">const</span> std::string &amp;path) {</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="keyword">auto</span> filename = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">GetFileNameWithoutDirectory</a>(path);</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        <span class="keyword">auto</span> ext = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">GetFileExtensionInLowerCase</a>(filename);</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                     &amp;font_otf](<span class="keyword">const</span> std::string &amp;<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>) {</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="keyword">auto</span> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">GetFileNameWithoutDirectory</a>(<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        <span class="keyword">auto</span> ext = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">GetFileExtensionInLowerCase</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <span class="keywordflow">if</span> (ext != <span class="stringliteral">&quot;ttf&quot;</span> &amp;&amp; ext != <span class="stringliteral">&quot;ttc&quot;</span> &amp;&amp; ext != <span class="stringliteral">&quot;otf&quot;</span>) {</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        }</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        <span class="keywordflow">if</span> (filename == font_ttf || filename == font_ttc ||</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            filename == font_otf) {</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> == font_ttf || <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> == font_ttc ||</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> == font_otf) {</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        }</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (filename.find(font) == 0) {</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.find(font) == 0) {</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        }</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    };</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;font_dir : system_font_paths) {</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        <span class="keyword">auto</span> matches = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a58e8fde520aaf45ea24766a7c9cdd454">FindFilesRecursively</a>(font_dir, is_match);</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        <span class="keyword">auto</span> matches = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a18940747562f8af1563ba24d8f99cf0c">FindFilesRecursively</a>(font_dir, is_match);</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;        <span class="keywordflow">if</span> (style == <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a1e23852820b9154316c7c06e2b7ba051">FontStyle::NORMAL</a>) {</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;            <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;m : matches) {</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa93b1a19ed0023a320eda4c4f8018749">GetFileNameWithoutExtension</a>(</div>
@@ -327,18 +336,20 @@ $(document).ready(function(){initNavTree('Util_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;}  <span class="comment">// namespace gui</span></div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;}  <span class="comment">// namespace visualization</span></div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aColor_8h_html"><div class="ttname"><a href="Color_8h.html">Color.h</a></div></div>
 <div class="ttc" id="aFileSystem_8h_html"><div class="ttname"><a href="FileSystem_8h.html">FileSystem.h</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
 <div class="ttc" id="aUtil_8h_html"><div class="ttname"><a href="Util_8h.html">Util.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Color_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Color.html">cloudViewer::visualization::gui::Color</a></div><div class="ttdef"><b>Definition:</b> <a href="Color_8h_source.html#l00016">Color.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html">cloudViewer::utility::filesystem</a></div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00019">FileSystem.h:19</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a58e8fde520aaf45ea24766a7c9cdd454"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a58e8fde520aaf45ea24766a7c9cdd454">cloudViewer::utility::filesystem::FindFilesRecursively</a></div><div class="ttdeci">std::vector&lt; std::string &gt; FindFilesRecursively(const std::string &amp;directory, std::function&lt; bool(const std::string &amp;)&gt; is_match)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a66f3411d5d77326974645154fc3dcea7"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a66f3411d5d77326974645154fc3dcea7">cloudViewer::utility::filesystem::GetFileParentDirectory</a></div><div class="ttdeci">std::string GetFileParentDirectory(const std::string &amp;filename)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa93b1a19ed0023a320eda4c4f8018749"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa93b1a19ed0023a320eda4c4f8018749">cloudViewer::utility::filesystem::GetFileNameWithoutExtension</a></div><div class="ttdeci">std::string GetFileNameWithoutExtension(const std::string &amp;filename)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa97d5d06ded25c88b7e456fbdb4bd46c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase</a></div><div class="ttdeci">std::string GetFileExtensionInLowerCase(const std::string &amp;filename)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aaa1c6356e5cf03744e9abae7be20336c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aaa1c6356e5cf03744e9abae7be20336c">cloudViewer::utility::filesystem::FileExists</a></div><div class="ttdeci">bool FileExists(const std::string &amp;filename)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_af79673c77b8ab2db46803c8014ce0911"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">cloudViewer::utility::filesystem::GetFileNameWithoutDirectory</a></div><div class="ttdeci">std::string GetFileNameWithoutDirectory(const std::string &amp;filename)</div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a18940747562f8af1563ba24d8f99cf0c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a18940747562f8af1563ba24d8f99cf0c">cloudViewer::utility::filesystem::FindFilesRecursively</a></div><div class="ttdeci">std::vector&lt; std::string &gt; FindFilesRecursively(const std::string &amp;directory, std::function&lt; bool(const std::string &amp;)&gt; is_match)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00586">FileSystem.cpp:586</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a66f3411d5d77326974645154fc3dcea7"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a66f3411d5d77326974645154fc3dcea7">cloudViewer::utility::filesystem::GetFileParentDirectory</a></div><div class="ttdeci">std::string GetFileParentDirectory(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00314">FileSystem.cpp:314</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa93b1a19ed0023a320eda4c4f8018749"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa93b1a19ed0023a320eda4c4f8018749">cloudViewer::utility::filesystem::GetFileNameWithoutExtension</a></div><div class="ttdeci">std::string GetFileNameWithoutExtension(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00295">FileSystem.cpp:295</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa97d5d06ded25c88b7e456fbdb4bd46c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase</a></div><div class="ttdeci">std::string GetFileExtensionInLowerCase(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00281">FileSystem.cpp:281</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aaa1c6356e5cf03744e9abae7be20336c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aaa1c6356e5cf03744e9abae7be20336c">cloudViewer::utility::filesystem::FileExists</a></div><div class="ttdeci">bool FileExists(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00524">FileSystem.cpp:524</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_af79673c77b8ab2db46803c8014ce0911"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">cloudViewer::utility::filesystem::GetFileNameWithoutDirectory</a></div><div class="ttdeci">std::string GetFileNameWithoutDirectory(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00301">FileSystem.cpp:301</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a05233c9e0cd4054c9b0fcd4a41ba3d17"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17">cloudViewer::visualization::gui::FontStyle</a></div><div class="ttdeci">FontStyle</div><div class="ttdef"><b>Definition:</b> <a href="Gui_8h_source.html#l00070">Gui.h:70</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a05233c9e0cd4054c9b0fcd4a41ba3d17a1e23852820b9154316c7c06e2b7ba051"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a1e23852820b9154316c7c06e2b7ba051">cloudViewer::visualization::gui::FontStyle::NORMAL</a></div><div class="ttdeci">@ NORMAL</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a05233c9e0cd4054c9b0fcd4a41ba3d17a25093123b8943308104129e1d762f3b7"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a25093123b8943308104129e1d762f3b7">cloudViewer::visualization::gui::FontStyle::ITALIC</a></div><div class="ttdeci">@ ITALIC</div></div>
@@ -347,14 +358,14 @@ $(document).ready(function(){initNavTree('Util_8cpp_source.html',''); initResiza
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_a3ddc74c18be8666befdd35047fbe987d"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#a3ddc74c18be8666befdd35047fbe987d">cloudViewer::visualization::gui::colorToImguiRGBA</a></div><div class="ttdeci">uint32_t colorToImguiRGBA(const Color &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00025">Util.cpp:25</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_ab5c464e0abe4cd75ffc297f9b308708d"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#ab5c464e0abe4cd75ffc297f9b308708d">cloudViewer::visualization::gui::FindFontPath</a></div><div class="ttdeci">std::string FindFontPath(std::string font, FontStyle style)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00032">Util.cpp:32</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_aca9fc6fdaa1ee91a03470ca0ed4735a3"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">cloudViewer::visualization::gui::colorToImgui</a></div><div class="ttdeci">ImVec4 colorToImgui(const Color &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00020">Util.cpp:20</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_016d0f202ff0280a7e5050aeab20bc2e.html">gui</a></li><li class="navelem"><a class="el" href="Util_8cpp.html">Util.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

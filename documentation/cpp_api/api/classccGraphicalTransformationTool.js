@@ -1,0 +1,27 @@
+var classccGraphicalTransformationTool =
+[
+    [ "ccGraphicalTransformationTool", "classccGraphicalTransformationTool.html#ac6fb5efc0610a260668445db0cdd75f1", null ],
+    [ "~ccGraphicalTransformationTool", "classccGraphicalTransformationTool.html#a65131d921722969f29939527c9b8919e", null ],
+    [ "addEntity", "classccGraphicalTransformationTool.html#a7f59cc4429646a5e8f2bd2f1ca53918a", null ],
+    [ "apply", "classccGraphicalTransformationTool.html#a6fbcdb906457be51663033c852ae013e", null ],
+    [ "cancel", "classccGraphicalTransformationTool.html#ae49806afdf0d1b4d525b5839b8f9656f", null ],
+    [ "clear", "classccGraphicalTransformationTool.html#aac47197a3c125451748e24a10f216fc6", null ],
+    [ "exportNewEntities", "classccGraphicalTransformationTool.html#add6b22e2734db2e3bcaa4ac124bd188f", null ],
+    [ "getNumberOfValidEntities", "classccGraphicalTransformationTool.html#aad6d16237e3e96d9e600d5f721ea1dbc", null ],
+    [ "getValidEntities", "classccGraphicalTransformationTool.html#a252d3acd95002a7668ea226b64ffab16", null ],
+    [ "linkWith", "classccGraphicalTransformationTool.html#ac00ac9375cae9e1cefc5691cc04a626a", null ],
+    [ "onRotationModeChanged", "classccGraphicalTransformationTool.html#a22abf953a06f8e90ea3232c3811cc10d", null ],
+    [ "onScaleEnabled", "classccGraphicalTransformationTool.html#ad44b14e2d2fde3ef9aebaffa6feeb994", null ],
+    [ "onShearEnabled", "classccGraphicalTransformationTool.html#a43f2086ee95e039beeccfef607433525", null ],
+    [ "onShortcutTriggered", "classccGraphicalTransformationTool.html#a1d9e2460ad49760448520ef4ab171dce", null ],
+    [ "onTranlationModeChanged", "classccGraphicalTransformationTool.html#a537fb8f9657da4c94e6d68d2d907053c", null ],
+    [ "pause", "classccGraphicalTransformationTool.html#a5f44147a94bb5bb17a14553166b3aaa4", null ],
+    [ "reset", "classccGraphicalTransformationTool.html#a70584765c46bc95c71adf0739f3e542e", null ],
+    [ "setRotationCenter", "classccGraphicalTransformationTool.html#a2e0685d4bfbec0b693ba4f3ae46594b6", null ],
+    [ "setTansformTool", "classccGraphicalTransformationTool.html#af23bbc1d59661aab059782db97f9607c", null ],
+    [ "start", "classccGraphicalTransformationTool.html#a0d168bbeae61c0e3c6bd7138dc30dfaa", null ],
+    [ "stop", "classccGraphicalTransformationTool.html#ad4dc093a7743396a144f74519de59e7e", null ],
+    [ "m_rotationCenter", "classccGraphicalTransformationTool.html#aa5ca186c1455be966a9de71508eb5269", null ],
+    [ "m_tool", "classccGraphicalTransformationTool.html#a09b7de888911a39100aec537f909fbe3", null ],
+    [ "m_toTransform", "classccGraphicalTransformationTool.html#ad432e5226fab6d0476962c2768be4de2", null ]
+];

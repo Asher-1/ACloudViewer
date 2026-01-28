@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -106,35 +115,35 @@ $(document).ready(function(){initNavTree('IntersectionTest_8h_source.html',''); 
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html">   17</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html">IntersectionTest</a> {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a90357a572e2c1f8a8a1914d43e7153ce">   19</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a90357a572e2c1f8a8a1914d43e7153ce">AABBAABB</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; min0,</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> AABBAABB(<span class="keyword">const</span> Eigen::Vector3d&amp; min0,</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;                         <span class="keyword">const</span> Eigen::Vector3d&amp; max0,</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;                         <span class="keyword">const</span> Eigen::Vector3d&amp; min1,</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;                         <span class="keyword">const</span> Eigen::Vector3d&amp; max1);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#abdbd05cc15a7a9cd1566cf8ef2eeb2be">   24</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#abdbd05cc15a7a9cd1566cf8ef2eeb2be">TriangleTriangle3d</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> TriangleTriangle3d(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                                   <span class="keyword">const</span> Eigen::Vector3d&amp; p1,</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                                   <span class="keyword">const</span> Eigen::Vector3d&amp; p2,</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                   <span class="keyword">const</span> Eigen::Vector3d&amp; q0,</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                                   <span class="keyword">const</span> Eigen::Vector3d&amp; q1,</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                                   <span class="keyword">const</span> Eigen::Vector3d&amp; q2);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#af28a14d61cf709b3f616f1422f24b606">   31</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#af28a14d61cf709b3f616f1422f24b606">TriangleAABB</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; box_center,</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> TriangleAABB(<span class="keyword">const</span> Eigen::Vector3d&amp; box_center,</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                             <span class="keyword">const</span> Eigen::Vector3d&amp; box_half_size,</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                             <span class="keyword">const</span> Eigen::Vector3d&amp; vert0,</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                             <span class="keyword">const</span> Eigen::Vector3d&amp; vert1,</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                             <span class="keyword">const</span> Eigen::Vector3d&amp; vert2);</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a0d8e0f4f58a702814554ac6cf977fbb1">   38</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a0d8e0f4f58a702814554ac6cf977fbb1">PointsCoplanar</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> PointsCoplanar(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                               <span class="keyword">const</span> Eigen::Vector3d&amp; p1,</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                               <span class="keyword">const</span> Eigen::Vector3d&amp; p2,</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                               <span class="keyword">const</span> Eigen::Vector3d&amp; p3);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#afa70bb20ef752d965be347958c2d25c4">   49</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#afa70bb20ef752d965be347958c2d25c4">LinesMinimumDistance</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> LinesMinimumDistance(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                       <span class="keyword">const</span> Eigen::Vector3d&amp; p1,</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                       <span class="keyword">const</span> Eigen::Vector3d&amp; q0,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                       <span class="keyword">const</span> Eigen::Vector3d&amp; q1);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a711d619220a0fd7ff8c1c6ea75178440">   59</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a711d619220a0fd7ff8c1c6ea75178440">LineSegmentsMinimumDistance</a>(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> LineSegmentsMinimumDistance(<span class="keyword">const</span> Eigen::Vector3d&amp; p0,</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                              <span class="keyword">const</span> Eigen::Vector3d&amp; p1,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                              <span class="keyword">const</span> Eigen::Vector3d&amp; q0,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                              <span class="keyword">const</span> Eigen::Vector3d&amp; q1);</div>
@@ -145,20 +154,14 @@ $(document).ready(function(){initNavTree('IntersectionTest_8h_source.html',''); 
 <div class="ttc" id="aCVCoreLibWin_8h_html_a1dafbf7307681e0ae43ca1905b2d2e5c"><div class="ttname"><a href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a></div><div class="ttdeci">#define CV_CORE_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CVCoreLibWin_8h_source.html#l00015">CVCoreLibWin.h:15</a></div></div>
 <div class="ttc" id="aCVCoreLib_8h_html"><div class="ttname"><a href="CVCoreLib_8h.html">CVCoreLib.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html">cloudViewer::utility::IntersectionTest</a></div><div class="ttdef"><b>Definition:</b> <a href="IntersectionTest_8h_source.html#l00017">IntersectionTest.h:17</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html_a0d8e0f4f58a702814554ac6cf977fbb1"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a0d8e0f4f58a702814554ac6cf977fbb1">cloudViewer::utility::IntersectionTest::PointsCoplanar</a></div><div class="ttdeci">static bool PointsCoplanar(const Eigen::Vector3d &amp;p0, const Eigen::Vector3d &amp;p1, const Eigen::Vector3d &amp;p2, const Eigen::Vector3d &amp;p3)</div><div class="ttdoc">Tests if the given four points all lie on the same plane.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html_a711d619220a0fd7ff8c1c6ea75178440"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a711d619220a0fd7ff8c1c6ea75178440">cloudViewer::utility::IntersectionTest::LineSegmentsMinimumDistance</a></div><div class="ttdeci">static double LineSegmentsMinimumDistance(const Eigen::Vector3d &amp;p0, const Eigen::Vector3d &amp;p1, const Eigen::Vector3d &amp;q0, const Eigen::Vector3d &amp;q1)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html_a90357a572e2c1f8a8a1914d43e7153ce"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html#a90357a572e2c1f8a8a1914d43e7153ce">cloudViewer::utility::IntersectionTest::AABBAABB</a></div><div class="ttdeci">static bool AABBAABB(const Eigen::Vector3d &amp;min0, const Eigen::Vector3d &amp;max0, const Eigen::Vector3d &amp;min1, const Eigen::Vector3d &amp;max1)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html_abdbd05cc15a7a9cd1566cf8ef2eeb2be"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html#abdbd05cc15a7a9cd1566cf8ef2eeb2be">cloudViewer::utility::IntersectionTest::TriangleTriangle3d</a></div><div class="ttdeci">static bool TriangleTriangle3d(const Eigen::Vector3d &amp;p0, const Eigen::Vector3d &amp;p1, const Eigen::Vector3d &amp;p2, const Eigen::Vector3d &amp;q0, const Eigen::Vector3d &amp;q1, const Eigen::Vector3d &amp;q2)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html_af28a14d61cf709b3f616f1422f24b606"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html#af28a14d61cf709b3f616f1422f24b606">cloudViewer::utility::IntersectionTest::TriangleAABB</a></div><div class="ttdeci">static bool TriangleAABB(const Eigen::Vector3d &amp;box_center, const Eigen::Vector3d &amp;box_half_size, const Eigen::Vector3d &amp;vert0, const Eigen::Vector3d &amp;vert1, const Eigen::Vector3d &amp;vert2)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IntersectionTest_html_afa70bb20ef752d965be347958c2d25c4"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IntersectionTest.html#afa70bb20ef752d965be347958c2d25c4">cloudViewer::utility::IntersectionTest::LinesMinimumDistance</a></div><div class="ttdeci">static double LinesMinimumDistance(const Eigen::Vector3d &amp;p0, const Eigen::Vector3d &amp;p1, const Eigen::Vector3d &amp;q0, const Eigen::Vector3d &amp;q1)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="IntersectionTest_8h.html">IntersectionTest.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

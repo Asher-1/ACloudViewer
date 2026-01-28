@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -119,14 +128,14 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8h_source.html',
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;QDialog&gt;</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">class </span>ecvMainAppInterface;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">class </span><a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">class </span><a class="code" href="classccPointCloud.html">ccPointCloud</a>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classClassify3DMASCDialog.html">   36</a></span>&#160;<span class="keyword">class </span><a class="code" href="classClassify3DMASCDialog.html">Classify3DMASCDialog</a> : <span class="keyword">public</span> QDialog, <span class="keyword">public</span> Ui::Classify3DMASCDialog {</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    Q_OBJECT</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classClassify3DMASCDialog.html#acdbe577c4408e6934e0733b1f3076123">Classify3DMASCDialog</a>(ecvMainAppInterface* app, <span class="keywordtype">bool</span> trainMode = <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classClassify3DMASCDialog.html#acdbe577c4408e6934e0733b1f3076123">Classify3DMASCDialog</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app, <span class="keywordtype">bool</span> trainMode = <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="classClassify3DMASCDialog.html#acf20e70b1da3adaf7e506bed176ae48d">~Classify3DMASCDialog</a>();</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classClassify3DMASCDialog.html#aeaeffeb1ef1152e53b7e9d99bb465f74">readSettings</a>();</div>
@@ -148,7 +157,7 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8h_source.html',
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classClassify3DMASCDialog.html#aba1105e17aaa1d509620dbc7ba3a5b93">onCloudChanged</a>(<span class="keywordtype">int</span>);</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">   70</a></span>&#160;    ecvMainAppInterface* <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">   70</a></span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;};</div>
 <div class="ttc" id="aPythonPlugin_8cpp_html_aa2ad9c27624efec8c3fce893e35bbc81"><div class="ttname"><a href="PythonPlugin_8cpp.html#aa2ad9c27624efec8c3fce893e35bbc81">slots</a></div><div class="ttdeci">#define slots</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00025">PythonPlugin.cpp:25</a></div></div>
 <div class="ttc" id="aclassClassify3DMASCDialog_html"><div class="ttname"><a href="classClassify3DMASCDialog.html">Classify3DMASCDialog</a></div><div class="ttdoc">3DMASC plugin 'classify' dialog</div><div class="ttdef"><b>Definition:</b> <a href="qClassify3DMASCDialog_8h_source.html#l00036">qClassify3DMASCDialog.h:36</a></div></div>
@@ -162,13 +171,14 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8h_source.html',
 <div class="ttc" id="aclassClassify3DMASCDialog_html_adb13466934e14613bc2f3d2b382db81b"><div class="ttname"><a href="classClassify3DMASCDialog.html#adb13466934e14613bc2f3d2b382db81b">Classify3DMASCDialog::setComboBoxIndex</a></div><div class="ttdeci">void setComboBoxIndex(const QMap&lt; QString, QString &gt; &amp;rolesAndNames, QLabel *label, const QMap&lt; QString, QVariant &gt; &amp;namesAndUniqueIds, QComboBox *comboBox)</div><div class="ttdef"><b>Definition:</b> <a href="qClassify3DMASCDialog_8cpp_source.html#l00128">qClassify3DMASCDialog.cpp:128</a></div></div>
 <div class="ttc" id="aclassClassify3DMASCDialog_html_aeaeffeb1ef1152e53b7e9d99bb465f74"><div class="ttname"><a href="classClassify3DMASCDialog.html#aeaeffeb1ef1152e53b7e9d99bb465f74">Classify3DMASCDialog::readSettings</a></div><div class="ttdeci">void readSettings()</div><div class="ttdoc">read settings</div><div class="ttdef"><b>Definition:</b> <a href="qClassify3DMASCDialog_8cpp_source.html#l00115">qClassify3DMASCDialog.cpp:115</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="qClassify3DMASCDialog_8h.html">qClassify3DMASCDialog.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

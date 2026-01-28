@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('ParallelFor_8h_source.html',''); initR
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Parallel_8h.html">Parallel.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;cstdint&gt;</span></div>
@@ -292,19 +301,19 @@ $(document).ready(function(){initNavTree('ParallelFor_8h_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html_a642d02f398995ecc71bdb1eee76ee1ff"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html#a642d02f398995ecc71bdb1eee76ee1ff">cloudViewer::core::Device::IsCPU</a></div><div class="ttdeci">bool IsCPU() const</div><div class="ttdoc">Returns true iff device type is CPU.</div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00046">Device.h:46</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html_a89ef0256b6ee05646703c8ef8bf24589aa33b7755e5f9b504d2d038eaca4ff28d"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589aa33b7755e5f9b504d2d038eaca4ff28d">cloudViewer::core::Device::DeviceType::CUDA</a></div><div class="ttdeci">@ CUDA</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html_a937a2d57a5621b1d5f33f0d1a44f829a"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html#a937a2d57a5621b1d5f33f0d1a44f829a">cloudViewer::core::Device::ToString</a></div><div class="ttdeci">std::string ToString() const</div><div class="ttdoc">Returns string representation of device, e.g. &quot;CPU:0&quot;, &quot;CUDA:0&quot;.</div><div class="ttdef"><b>Definition:</b> <a href="Device_8cpp_source.html#l00089">Device.cpp:89</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0793177dbf31e47ea65bb4bbaa85700c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">cloudViewer::core::ParallelFor</a></div><div class="ttdeci">void ParallelFor(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00111">ParallelFor.h:111</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aab6425f45a9273c4b34696e2dd9bb86b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aab6425f45a9273c4b34696e2dd9bb86b">cloudViewer::core::ParallelForCPU_</a></div><div class="ttdeci">void ParallelForCPU_(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdoc">Run a function in parallel on CPU.</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00076">ParallelFor.h:76</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6c3bbb412c07c125cf6d4868d38ecb2c"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6c3bbb412c07c125cf6d4868d38ecb2c">cloudViewer::utility::EstimateMaxThreads</a></div><div class="ttdeci">int EstimateMaxThreads()</div><div class="ttdoc">Estimate the maximum number of threads to be used in a parallel region.</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6c3bbb412c07c125cf6d4868d38ecb2c"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6c3bbb412c07c125cf6d4868d38ecb2c">cloudViewer::utility::EstimateMaxThreads</a></div><div class="ttdeci">int EstimateMaxThreads()</div><div class="ttdoc">Estimate the maximum number of threads to be used in a parallel region.</div><div class="ttdef"><b>Definition:</b> <a href="Parallel_8cpp_source.html#l00031">Parallel.cpp:31</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="ParallelFor_8h.html">ParallelFor.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

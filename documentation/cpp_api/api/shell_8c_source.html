@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -1966,7 +1975,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l01876"></a><span class="lineno"> 1876</span>&#160;<span class="comment">** of a NULL value is NULL.</span></div>
 <div class="line"><a name="l01877"></a><span class="lineno"> 1877</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l01878"></a><span class="lineno"><a class="line" href="shell_8c.html#a51833bed43d580b8380a1e1bec8eb700"> 1878</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a51833bed43d580b8380a1e1bec8eb700">sha3Func</a>(</div>
-<div class="line"><a name="l01879"></a><span class="lineno"> 1879</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l01879"></a><span class="lineno"> 1879</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l01880"></a><span class="lineno"> 1880</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l01881"></a><span class="lineno"> 1881</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l01882"></a><span class="lineno"> 1882</span>&#160;){</div>
@@ -1979,7 +1988,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l01889"></a><span class="lineno"> 1889</span>&#160;  }<span class="keywordflow">else</span>{</div>
 <div class="line"><a name="l01890"></a><span class="lineno"> 1890</span>&#160;    iSize = <a class="code" href="sqlite3ext_8h.html#a31ac06566d2765afd6aabcdf64f6b409">sqlite3_value_int</a>(argv[1]);</div>
 <div class="line"><a name="l01891"></a><span class="lineno"> 1891</span>&#160;    <span class="keywordflow">if</span>( iSize!=224 &amp;&amp; iSize!=256 &amp;&amp; iSize!=384 &amp;&amp; iSize!=512 ){</div>
-<div class="line"><a name="l01892"></a><span class="lineno"> 1892</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;SHA3 size should be one of: 224 256 &quot;</span></div>
+<div class="line"><a name="l01892"></a><span class="lineno"> 1892</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;SHA3 size should be one of: 224 256 &quot;</span></div>
 <div class="line"><a name="l01893"></a><span class="lineno"> 1893</span>&#160;                                    <span class="stringliteral">&quot;384 512&quot;</span>, -1);</div>
 <div class="line"><a name="l01894"></a><span class="lineno"> 1894</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01895"></a><span class="lineno"> 1895</span>&#160;    }</div>
@@ -1991,7 +2000,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l01901"></a><span class="lineno"> 1901</span>&#160;  }<span class="keywordflow">else</span>{</div>
 <div class="line"><a name="l01902"></a><span class="lineno"> 1902</span>&#160;    <a class="code" href="shell_8c.html#a6e14fd9c3aafb2b219a686641c2ea9b4">SHA3Update</a>(&amp;cx, <a class="code" href="sqlite3ext_8h.html#ab12c837b5f5b7ac0b91a667f4d763cd5">sqlite3_value_text</a>(argv[0]), nByte);</div>
 <div class="line"><a name="l01903"></a><span class="lineno"> 1903</span>&#160;  }</div>
-<div class="line"><a name="l01904"></a><span class="lineno"> 1904</span>&#160;  <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <a class="code" href="shell_8c.html#a6a2ec33936522fb0586250dc61747ec3">SHA3Final</a>(&amp;cx), iSize/8, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l01904"></a><span class="lineno"> 1904</span>&#160;  <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <a class="code" href="shell_8c.html#a6a2ec33936522fb0586250dc61747ec3">SHA3Final</a>(&amp;cx), iSize/8, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l01905"></a><span class="lineno"> 1905</span>&#160;}</div>
 <div class="line"><a name="l01906"></a><span class="lineno"> 1906</span>&#160; </div>
 <div class="line"><a name="l01907"></a><span class="lineno"> 1907</span>&#160;<span class="comment">/* Compute a string using sqlite3_vsnprintf() with a maximum length</span></div>
@@ -2045,11 +2054,11 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l01955"></a><span class="lineno"> 1955</span>&#160;<span class="comment">** with no delimiters of any kind.</span></div>
 <div class="line"><a name="l01956"></a><span class="lineno"> 1956</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l01957"></a><span class="lineno"><a class="line" href="shell_8c.html#a45605123477af036a543563ae898a111"> 1957</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a45605123477af036a543563ae898a111">sha3QueryFunc</a>(</div>
-<div class="line"><a name="l01958"></a><span class="lineno"> 1958</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l01958"></a><span class="lineno"> 1958</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l01959"></a><span class="lineno"> 1959</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l01960"></a><span class="lineno"> 1960</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l01961"></a><span class="lineno"> 1961</span>&#160;){</div>
-<div class="line"><a name="l01962"></a><span class="lineno"> 1962</span>&#160;  <a class="code" href="structsqlite3.html">sqlite3</a> *db = <a class="code" href="sqlite3ext_8h.html#af9691b6d2be74a677d8e76c463ae3ca0">sqlite3_context_db_handle</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l01962"></a><span class="lineno"> 1962</span>&#160;  <a class="code" href="structsqlite3.html">sqlite3</a> *db = <a class="code" href="sqlite3ext_8h.html#af9691b6d2be74a677d8e76c463ae3ca0">sqlite3_context_db_handle</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l01963"></a><span class="lineno"> 1963</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *zSql = (<span class="keyword">const</span> <span class="keywordtype">char</span>*)<a class="code" href="sqlite3ext_8h.html#ab12c837b5f5b7ac0b91a667f4d763cd5">sqlite3_value_text</a>(argv[0]);</div>
 <div class="line"><a name="l01964"></a><span class="lineno"> 1964</span>&#160;  <a class="code" href="sqlite3_8c.html#af2a033da1327cdd77f0a174a09aedd0c">sqlite3_stmt</a> *pStmt = 0;</div>
 <div class="line"><a name="l01965"></a><span class="lineno"> 1965</span>&#160;  <span class="keywordtype">int</span> nCol;                   <span class="comment">/* Number of columns in the result set */</span></div>
@@ -2065,7 +2074,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l01975"></a><span class="lineno"> 1975</span>&#160;  }<span class="keywordflow">else</span>{</div>
 <div class="line"><a name="l01976"></a><span class="lineno"> 1976</span>&#160;    iSize = <a class="code" href="sqlite3ext_8h.html#a31ac06566d2765afd6aabcdf64f6b409">sqlite3_value_int</a>(argv[1]);</div>
 <div class="line"><a name="l01977"></a><span class="lineno"> 1977</span>&#160;    <span class="keywordflow">if</span>( iSize!=224 &amp;&amp; iSize!=256 &amp;&amp; iSize!=384 &amp;&amp; iSize!=512 ){</div>
-<div class="line"><a name="l01978"></a><span class="lineno"> 1978</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;SHA3 size should be one of: 224 256 &quot;</span></div>
+<div class="line"><a name="l01978"></a><span class="lineno"> 1978</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;SHA3 size should be one of: 224 256 &quot;</span></div>
 <div class="line"><a name="l01979"></a><span class="lineno"> 1979</span>&#160;                                    <span class="stringliteral">&quot;384 512&quot;</span>, -1);</div>
 <div class="line"><a name="l01980"></a><span class="lineno"> 1980</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01981"></a><span class="lineno"> 1981</span>&#160;    }</div>
@@ -2078,14 +2087,14 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l01988"></a><span class="lineno"> 1988</span>&#160;      <span class="keywordtype">char</span> *zMsg = <a class="code" href="sqlite3ext_8h.html#a6eaef6246a54829c28d076615b8be4fa">sqlite3_mprintf</a>(<span class="stringliteral">&quot;error SQL statement [%s]: %s&quot;</span>,</div>
 <div class="line"><a name="l01989"></a><span class="lineno"> 1989</span>&#160;                                   zSql, <a class="code" href="sqlite3ext_8h.html#a90bf442fe50931fed4d4bb38a66cc38d">sqlite3_errmsg</a>(db));</div>
 <div class="line"><a name="l01990"></a><span class="lineno"> 1990</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a7a427eb7d12093d2555b94d8e39c5863">sqlite3_finalize</a>(pStmt);</div>
-<div class="line"><a name="l01991"></a><span class="lineno"> 1991</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zMsg, -1);</div>
+<div class="line"><a name="l01991"></a><span class="lineno"> 1991</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zMsg, -1);</div>
 <div class="line"><a name="l01992"></a><span class="lineno"> 1992</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(zMsg);</div>
 <div class="line"><a name="l01993"></a><span class="lineno"> 1993</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l01994"></a><span class="lineno"> 1994</span>&#160;    }</div>
 <div class="line"><a name="l01995"></a><span class="lineno"> 1995</span>&#160;    <span class="keywordflow">if</span>( !<a class="code" href="sqlite3ext_8h.html#a60d141e0726ff1f86e5a67ce5731aff1">sqlite3_stmt_readonly</a>(pStmt) ){</div>
 <div class="line"><a name="l01996"></a><span class="lineno"> 1996</span>&#160;      <span class="keywordtype">char</span> *zMsg = <a class="code" href="sqlite3ext_8h.html#a6eaef6246a54829c28d076615b8be4fa">sqlite3_mprintf</a>(<span class="stringliteral">&quot;non-query: [%s]&quot;</span>, <a class="code" href="sqlite3ext_8h.html#a3d4ca3152555647cd8562885b1fce301">sqlite3_sql</a>(pStmt));</div>
 <div class="line"><a name="l01997"></a><span class="lineno"> 1997</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a7a427eb7d12093d2555b94d8e39c5863">sqlite3_finalize</a>(pStmt);</div>
-<div class="line"><a name="l01998"></a><span class="lineno"> 1998</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zMsg, -1);</div>
+<div class="line"><a name="l01998"></a><span class="lineno"> 1998</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zMsg, -1);</div>
 <div class="line"><a name="l01999"></a><span class="lineno"> 1999</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(zMsg);</div>
 <div class="line"><a name="l02000"></a><span class="lineno"> 2000</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l02001"></a><span class="lineno"> 2001</span>&#160;    }</div>
@@ -2151,7 +2160,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02061"></a><span class="lineno"> 2061</span>&#160;    }</div>
 <div class="line"><a name="l02062"></a><span class="lineno"> 2062</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a7a427eb7d12093d2555b94d8e39c5863">sqlite3_finalize</a>(pStmt);</div>
 <div class="line"><a name="l02063"></a><span class="lineno"> 2063</span>&#160;  }</div>
-<div class="line"><a name="l02064"></a><span class="lineno"> 2064</span>&#160;  <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <a class="code" href="shell_8c.html#a6a2ec33936522fb0586250dc61747ec3">SHA3Final</a>(&amp;cx), iSize/8, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l02064"></a><span class="lineno"> 2064</span>&#160;  <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <a class="code" href="shell_8c.html#a6a2ec33936522fb0586250dc61747ec3">SHA3Final</a>(&amp;cx), iSize/8, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l02065"></a><span class="lineno"> 2065</span>&#160;}</div>
 <div class="line"><a name="l02066"></a><span class="lineno"> 2066</span>&#160; </div>
 <div class="line"><a name="l02067"></a><span class="lineno"> 2067</span>&#160; </div>
@@ -2364,7 +2373,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02274"></a><span class="lineno"> 2274</span>&#160;<span class="comment">** if the file does not exist or is unreadable.</span></div>
 <div class="line"><a name="l02275"></a><span class="lineno"> 2275</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l02276"></a><span class="lineno"><a class="line" href="shell_8c.html#a55e9c691f5db117b63ac1f8912663eaa"> 2276</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a55e9c691f5db117b63ac1f8912663eaa">readfileFunc</a>(</div>
-<div class="line"><a name="l02277"></a><span class="lineno"> 2277</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l02277"></a><span class="lineno"> 2277</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l02278"></a><span class="lineno"> 2278</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l02279"></a><span class="lineno"> 2279</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l02280"></a><span class="lineno"> 2280</span>&#160;){</div>
@@ -2372,7 +2381,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02282"></a><span class="lineno"> 2282</span>&#160;  (void)(argc);  <span class="comment">/* Unused parameter */</span></div>
 <div class="line"><a name="l02283"></a><span class="lineno"> 2283</span>&#160;  <a class="code" href="sqlite3_8c.html#a661118d86ac4127d40bf3be78d92117d">zName</a> = (<span class="keyword">const</span> <span class="keywordtype">char</span>*)<a class="code" href="sqlite3ext_8h.html#ab12c837b5f5b7ac0b91a667f4d763cd5">sqlite3_value_text</a>(argv[0]);</div>
 <div class="line"><a name="l02284"></a><span class="lineno"> 2284</span>&#160;  <span class="keywordflow">if</span>( <a class="code" href="sqlite3_8c.html#a661118d86ac4127d40bf3be78d92117d">zName</a>==0 ) <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l02285"></a><span class="lineno"> 2285</span>&#160;  <a class="code" href="shell_8c.html#a15793439af47119edab12f99b0ed8a57">readFileContents</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <a class="code" href="sqlite3_8c.html#a661118d86ac4127d40bf3be78d92117d">zName</a>);</div>
+<div class="line"><a name="l02285"></a><span class="lineno"> 2285</span>&#160;  <a class="code" href="shell_8c.html#a15793439af47119edab12f99b0ed8a57">readFileContents</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <a class="code" href="sqlite3_8c.html#a661118d86ac4127d40bf3be78d92117d">zName</a>);</div>
 <div class="line"><a name="l02286"></a><span class="lineno"> 2286</span>&#160;}</div>
 <div class="line"><a name="l02287"></a><span class="lineno"> 2287</span>&#160; </div>
 <div class="line"><a name="l02288"></a><span class="lineno"> 2288</span>&#160;<span class="comment">/*</span></div>
@@ -2646,7 +2655,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02556"></a><span class="lineno"> 2556</span>&#160;<span class="comment">** Refer to header comments at the top of this file for details.</span></div>
 <div class="line"><a name="l02557"></a><span class="lineno"> 2557</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l02558"></a><span class="lineno"><a class="line" href="shell_8c.html#a11e5af10ab390682cf8fce9a534da02c"> 2558</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a11e5af10ab390682cf8fce9a534da02c">writefileFunc</a>(</div>
-<div class="line"><a name="l02559"></a><span class="lineno"> 2559</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l02559"></a><span class="lineno"> 2559</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l02560"></a><span class="lineno"> 2560</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l02561"></a><span class="lineno"> 2561</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l02562"></a><span class="lineno"> 2562</span>&#160;){</div>
@@ -2656,7 +2665,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02566"></a><span class="lineno"> 2566</span>&#160;  <a class="code" href="sqlite3_8c.html#a0a4d3e6c1ad46f90e746b920ab6ca0d2">sqlite3_int64</a> mtime = -1;</div>
 <div class="line"><a name="l02567"></a><span class="lineno"> 2567</span>&#160; </div>
 <div class="line"><a name="l02568"></a><span class="lineno"> 2568</span>&#160;  <span class="keywordflow">if</span>( argc&lt;2 || argc&gt;4 ){</div>
-<div class="line"><a name="l02569"></a><span class="lineno"> 2569</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
+<div class="line"><a name="l02569"></a><span class="lineno"> 2569</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
 <div class="line"><a name="l02570"></a><span class="lineno"> 2570</span>&#160;        <span class="stringliteral">&quot;wrong number of arguments to function writefile()&quot;</span>, -1</div>
 <div class="line"><a name="l02571"></a><span class="lineno"> 2571</span>&#160;    );</div>
 <div class="line"><a name="l02572"></a><span class="lineno"> 2572</span>&#160;    <span class="keywordflow">return</span>;</div>
@@ -2671,20 +2680,20 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02581"></a><span class="lineno"> 2581</span>&#160;    mtime = <a class="code" href="sqlite3ext_8h.html#a0ff0a8583f8f798c92f232ab3e14fa91">sqlite3_value_int64</a>(argv[3]);</div>
 <div class="line"><a name="l02582"></a><span class="lineno"> 2582</span>&#160;  }</div>
 <div class="line"><a name="l02583"></a><span class="lineno"> 2583</span>&#160; </div>
-<div class="line"><a name="l02584"></a><span class="lineno"> 2584</span>&#160;  res = <a class="code" href="shell_8c.html#a6c6e4132d386987f7993da8b744dca55">writeFile</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zFile, argv[1], mode, mtime);</div>
+<div class="line"><a name="l02584"></a><span class="lineno"> 2584</span>&#160;  res = <a class="code" href="shell_8c.html#a6c6e4132d386987f7993da8b744dca55">writeFile</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zFile, argv[1], mode, mtime);</div>
 <div class="line"><a name="l02585"></a><span class="lineno"> 2585</span>&#160;  <span class="keywordflow">if</span>( res==1 &amp;&amp; errno==ENOENT ){</div>
 <div class="line"><a name="l02586"></a><span class="lineno"> 2586</span>&#160;    <span class="keywordflow">if</span>( <a class="code" href="shell_8c.html#a6e314bdf95720609135e34b2215392b7">makeDirectory</a>(zFile)==<a class="code" href="sqlite3_8c.html#a650d09c7bec7ddadb7c8aa3519dc842c">SQLITE_OK</a> ){</div>
-<div class="line"><a name="l02587"></a><span class="lineno"> 2587</span>&#160;      res = <a class="code" href="shell_8c.html#a6c6e4132d386987f7993da8b744dca55">writeFile</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zFile, argv[1], mode, mtime);</div>
+<div class="line"><a name="l02587"></a><span class="lineno"> 2587</span>&#160;      res = <a class="code" href="shell_8c.html#a6c6e4132d386987f7993da8b744dca55">writeFile</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zFile, argv[1], mode, mtime);</div>
 <div class="line"><a name="l02588"></a><span class="lineno"> 2588</span>&#160;    }</div>
 <div class="line"><a name="l02589"></a><span class="lineno"> 2589</span>&#160;  }</div>
 <div class="line"><a name="l02590"></a><span class="lineno"> 2590</span>&#160; </div>
 <div class="line"><a name="l02591"></a><span class="lineno"> 2591</span>&#160;  <span class="keywordflow">if</span>( argc&gt;2 &amp;&amp; res!=0 ){</div>
 <div class="line"><a name="l02592"></a><span class="lineno"> 2592</span>&#160;    <span class="keywordflow">if</span>( S_ISLNK(mode) ){</div>
-<div class="line"><a name="l02593"></a><span class="lineno"> 2593</span>&#160;      <a class="code" href="shell_8c.html#adcfe1f77e48a053a405be1ac0737ef19">ctxErrorMsg</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;failed to create symlink: %s&quot;</span>, zFile);</div>
+<div class="line"><a name="l02593"></a><span class="lineno"> 2593</span>&#160;      <a class="code" href="shell_8c.html#adcfe1f77e48a053a405be1ac0737ef19">ctxErrorMsg</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;failed to create symlink: %s&quot;</span>, zFile);</div>
 <div class="line"><a name="l02594"></a><span class="lineno"> 2594</span>&#160;    }<span class="keywordflow">else</span> <span class="keywordflow">if</span>( S_ISDIR(mode) ){</div>
-<div class="line"><a name="l02595"></a><span class="lineno"> 2595</span>&#160;      <a class="code" href="shell_8c.html#adcfe1f77e48a053a405be1ac0737ef19">ctxErrorMsg</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;failed to create directory: %s&quot;</span>, zFile);</div>
+<div class="line"><a name="l02595"></a><span class="lineno"> 2595</span>&#160;      <a class="code" href="shell_8c.html#adcfe1f77e48a053a405be1ac0737ef19">ctxErrorMsg</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;failed to create directory: %s&quot;</span>, zFile);</div>
 <div class="line"><a name="l02596"></a><span class="lineno"> 2596</span>&#160;    }<span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l02597"></a><span class="lineno"> 2597</span>&#160;      <a class="code" href="shell_8c.html#adcfe1f77e48a053a405be1ac0737ef19">ctxErrorMsg</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;failed to write file: %s&quot;</span>, zFile);</div>
+<div class="line"><a name="l02597"></a><span class="lineno"> 2597</span>&#160;      <a class="code" href="shell_8c.html#adcfe1f77e48a053a405be1ac0737ef19">ctxErrorMsg</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;failed to write file: %s&quot;</span>, zFile);</div>
 <div class="line"><a name="l02598"></a><span class="lineno"> 2598</span>&#160;    }</div>
 <div class="line"><a name="l02599"></a><span class="lineno"> 2599</span>&#160;  }</div>
 <div class="line"><a name="l02600"></a><span class="lineno"> 2600</span>&#160;}</div>
@@ -2696,7 +2705,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02606"></a><span class="lineno"> 2606</span>&#160;<span class="comment">** text string in the style of &quot;ls -l&quot;.</span></div>
 <div class="line"><a name="l02607"></a><span class="lineno"> 2607</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l02608"></a><span class="lineno"><a class="line" href="shell_8c.html#a5b7584a07747418e506a52041076f21b"> 2608</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a6f313b008c50dbdd10869b61bc4a1cc7">lsModeFunc</a>(</div>
-<div class="line"><a name="l02609"></a><span class="lineno"> 2609</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l02609"></a><span class="lineno"> 2609</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l02610"></a><span class="lineno"> 2610</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l02611"></a><span class="lineno"> 2611</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l02612"></a><span class="lineno"> 2612</span>&#160;){</div>
@@ -2721,7 +2730,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l02631"></a><span class="lineno"> 2631</span>&#160;    a[2] = (m &amp; 0x1) ? <span class="charliteral">&#39;x&#39;</span> : <span class="charliteral">&#39;-&#39;</span>;</div>
 <div class="line"><a name="l02632"></a><span class="lineno"> 2632</span>&#160;  }</div>
 <div class="line"><a name="l02633"></a><span class="lineno"> 2633</span>&#160;  z[10] = <span class="charliteral">&#39;\0&#39;</span>;</div>
-<div class="line"><a name="l02634"></a><span class="lineno"> 2634</span>&#160;  <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, z, -1, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l02634"></a><span class="lineno"> 2634</span>&#160;  <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, z, -1, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l02635"></a><span class="lineno"> 2635</span>&#160;}</div>
 <div class="line"><a name="l02636"></a><span class="lineno"> 2636</span>&#160; </div>
 <div class="line"><a name="l02637"></a><span class="lineno"> 2637</span>&#160;<span class="preprocessor">#ifndef SQLITE_OMIT_VIRTUALTABLE</span></div>
@@ -6298,12 +6307,12 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l06208"></a><span class="lineno"> 6208</span>&#160;}</div>
 <div class="line"><a name="l06209"></a><span class="lineno"> 6209</span>&#160; </div>
 <div class="line"><a name="l06210"></a><span class="lineno"> 6210</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> zipfileFunctionCds(</div>
-<div class="line"><a name="l06211"></a><span class="lineno"> 6211</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l06211"></a><span class="lineno"> 6211</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l06212"></a><span class="lineno"> 6212</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l06213"></a><span class="lineno"> 6213</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l06214"></a><span class="lineno"> 6214</span>&#160;){</div>
 <div class="line"><a name="l06215"></a><span class="lineno"> 6215</span>&#160;  ZipfileCsr *pCsr;</div>
-<div class="line"><a name="l06216"></a><span class="lineno"> 6216</span>&#160;  ZipfileTab *pTab = (ZipfileTab*)<a class="code" href="sqlite3ext_8h.html#ae29c9d53f69925323f3d06ae4e887a97">sqlite3_user_data</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l06216"></a><span class="lineno"> 6216</span>&#160;  ZipfileTab *pTab = (ZipfileTab*)<a class="code" href="sqlite3ext_8h.html#ae29c9d53f69925323f3d06ae4e887a97">sqlite3_user_data</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l06217"></a><span class="lineno"> 6217</span>&#160;  assert( argc&gt;0 );</div>
 <div class="line"><a name="l06218"></a><span class="lineno"> 6218</span>&#160; </div>
 <div class="line"><a name="l06219"></a><span class="lineno"> 6219</span>&#160;  pCsr = zipfileFindCursor(pTab, <a class="code" href="sqlite3ext_8h.html#a0ff0a8583f8f798c92f232ab3e14fa91">sqlite3_value_int64</a>(argv[0]));</div>
@@ -6337,9 +6346,9 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l06247"></a><span class="lineno"> 6247</span>&#160;    );</div>
 <div class="line"><a name="l06248"></a><span class="lineno"> 6248</span>&#160; </div>
 <div class="line"><a name="l06249"></a><span class="lineno"> 6249</span>&#160;    <span class="keywordflow">if</span>( zRes==0 ){</div>
-<div class="line"><a name="l06250"></a><span class="lineno"> 6250</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l06250"></a><span class="lineno"> 6250</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l06251"></a><span class="lineno"> 6251</span>&#160;    }<span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l06252"></a><span class="lineno"> 6252</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zRes, -1, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l06252"></a><span class="lineno"> 6252</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zRes, -1, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l06253"></a><span class="lineno"> 6253</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(zRes);</div>
 <div class="line"><a name="l06254"></a><span class="lineno"> 6254</span>&#160;    }</div>
 <div class="line"><a name="l06255"></a><span class="lineno"> 6255</span>&#160;  }</div>
@@ -6699,7 +6708,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l06609"></a><span class="lineno"> 6609</span>&#160;<span class="comment">** compressed data.</span></div>
 <div class="line"><a name="l06610"></a><span class="lineno"> 6610</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l06611"></a><span class="lineno"> 6611</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> sqlarCompressFunc(</div>
-<div class="line"><a name="l06612"></a><span class="lineno"> 6612</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l06612"></a><span class="lineno"> 6612</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l06613"></a><span class="lineno"> 6613</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l06614"></a><span class="lineno"> 6614</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l06615"></a><span class="lineno"> 6615</span>&#160;){</div>
@@ -6712,20 +6721,20 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l06622"></a><span class="lineno"> 6622</span>&#160; </div>
 <div class="line"><a name="l06623"></a><span class="lineno"> 6623</span>&#160;    pOut = (Bytef*)<a class="code" href="sqlite3ext_8h.html#a95fb39636aefcf729bc671a37cf0157b">sqlite3_malloc</a>(nOut);</div>
 <div class="line"><a name="l06624"></a><span class="lineno"> 6624</span>&#160;    <span class="keywordflow">if</span>( pOut==0 ){</div>
-<div class="line"><a name="l06625"></a><span class="lineno"> 6625</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l06625"></a><span class="lineno"> 6625</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l06626"></a><span class="lineno"> 6626</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l06627"></a><span class="lineno"> 6627</span>&#160;    }<span class="keywordflow">else</span>{</div>
 <div class="line"><a name="l06628"></a><span class="lineno"> 6628</span>&#160;      <span class="keywordflow">if</span>( Z_OK!=compress(pOut, &amp;nOut, pData, nData) ){</div>
-<div class="line"><a name="l06629"></a><span class="lineno"> 6629</span>&#160;        <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;error in compress()&quot;</span>, -1);</div>
+<div class="line"><a name="l06629"></a><span class="lineno"> 6629</span>&#160;        <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;error in compress()&quot;</span>, -1);</div>
 <div class="line"><a name="l06630"></a><span class="lineno"> 6630</span>&#160;      }<span class="keywordflow">else</span> <span class="keywordflow">if</span>( nOut&lt;nData ){</div>
-<div class="line"><a name="l06631"></a><span class="lineno"> 6631</span>&#160;        <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, pOut, nOut, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l06631"></a><span class="lineno"> 6631</span>&#160;        <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, pOut, nOut, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l06632"></a><span class="lineno"> 6632</span>&#160;      }<span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l06633"></a><span class="lineno"> 6633</span>&#160;        <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
+<div class="line"><a name="l06633"></a><span class="lineno"> 6633</span>&#160;        <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
 <div class="line"><a name="l06634"></a><span class="lineno"> 6634</span>&#160;      }</div>
 <div class="line"><a name="l06635"></a><span class="lineno"> 6635</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(pOut);</div>
 <div class="line"><a name="l06636"></a><span class="lineno"> 6636</span>&#160;    }</div>
 <div class="line"><a name="l06637"></a><span class="lineno"> 6637</span>&#160;  }<span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l06638"></a><span class="lineno"> 6638</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
+<div class="line"><a name="l06638"></a><span class="lineno"> 6638</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
 <div class="line"><a name="l06639"></a><span class="lineno"> 6639</span>&#160;  }</div>
 <div class="line"><a name="l06640"></a><span class="lineno"> 6640</span>&#160;}</div>
 <div class="line"><a name="l06641"></a><span class="lineno"> 6641</span>&#160; </div>
@@ -6740,7 +6749,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l06650"></a><span class="lineno"> 6650</span>&#160;<span class="comment">** blob).</span></div>
 <div class="line"><a name="l06651"></a><span class="lineno"> 6651</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l06652"></a><span class="lineno"> 6652</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> sqlarUncompressFunc(</div>
-<div class="line"><a name="l06653"></a><span class="lineno"> 6653</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l06653"></a><span class="lineno"> 6653</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l06654"></a><span class="lineno"> 6654</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l06655"></a><span class="lineno"> 6655</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l06656"></a><span class="lineno"> 6656</span>&#160;){</div>
@@ -6751,14 +6760,14 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l06661"></a><span class="lineno"> 6661</span>&#160;  sz = <a class="code" href="sqlite3ext_8h.html#a31ac06566d2765afd6aabcdf64f6b409">sqlite3_value_int</a>(argv[1]);</div>
 <div class="line"><a name="l06662"></a><span class="lineno"> 6662</span>&#160; </div>
 <div class="line"><a name="l06663"></a><span class="lineno"> 6663</span>&#160;  <span class="keywordflow">if</span>( sz&lt;=0 || sz==(nData = <a class="code" href="sqlite3ext_8h.html#acb83d8fe3097b9949f7713dfd05d18d3">sqlite3_value_bytes</a>(argv[0])) ){</div>
-<div class="line"><a name="l06664"></a><span class="lineno"> 6664</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
+<div class="line"><a name="l06664"></a><span class="lineno"> 6664</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
 <div class="line"><a name="l06665"></a><span class="lineno"> 6665</span>&#160;  }<span class="keywordflow">else</span>{</div>
 <div class="line"><a name="l06666"></a><span class="lineno"> 6666</span>&#160;    <span class="keyword">const</span> Bytef *pData= <a class="code" href="sqlite3ext_8h.html#a79c2eef7936b054b5cf49b1756a12eb3">sqlite3_value_blob</a>(argv[0]);</div>
 <div class="line"><a name="l06667"></a><span class="lineno"> 6667</span>&#160;    Bytef *pOut = <a class="code" href="sqlite3ext_8h.html#a95fb39636aefcf729bc671a37cf0157b">sqlite3_malloc</a>(sz);</div>
 <div class="line"><a name="l06668"></a><span class="lineno"> 6668</span>&#160;    <span class="keywordflow">if</span>( Z_OK!=uncompress(pOut, &amp;sz, pData, nData) ){</div>
-<div class="line"><a name="l06669"></a><span class="lineno"> 6669</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;error in uncompress()&quot;</span>, -1);</div>
+<div class="line"><a name="l06669"></a><span class="lineno"> 6669</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;error in uncompress()&quot;</span>, -1);</div>
 <div class="line"><a name="l06670"></a><span class="lineno"> 6670</span>&#160;    }<span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l06671"></a><span class="lineno"> 6671</span>&#160;      <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, pOut, sz, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l06671"></a><span class="lineno"> 6671</span>&#160;      <a class="code" href="sqlite3ext_8h.html#ab27b6de9a7bb51bf95f471029c066c21">sqlite3_result_blob</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, pOut, sz, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l06672"></a><span class="lineno"> 6672</span>&#160;    }</div>
 <div class="line"><a name="l06673"></a><span class="lineno"> 6673</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(pOut);</div>
 <div class="line"><a name="l06674"></a><span class="lineno"> 6674</span>&#160;  }</div>
@@ -10034,7 +10043,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l09944"></a><span class="lineno"><a class="line" href="shell_8c.html#aa627559456f884f4ede330d165368838"> 9944</a></span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l09945"></a><span class="lineno"> 9945</span>&#160;<span class="preprocessor">#ifndef SQLITE_NOHAVE_SYSTEM</span></div>
 <div class="line"><a name="l09946"></a><span class="lineno"> 9946</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#aa627559456f884f4ede330d165368838">editFunc</a>(</div>
-<div class="line"><a name="l09947"></a><span class="lineno"> 9947</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l09947"></a><span class="lineno"> 9947</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l09948"></a><span class="lineno"> 9948</span>&#160;  <span class="keywordtype">int</span> argc,</div>
 <div class="line"><a name="l09949"></a><span class="lineno"> 9949</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l09950"></a><span class="lineno"> 9950</span>&#160;){</div>
@@ -10056,14 +10065,14 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l09966"></a><span class="lineno"> 9966</span>&#160;    zEditor = getenv(<span class="stringliteral">&quot;VISUAL&quot;</span>);</div>
 <div class="line"><a name="l09967"></a><span class="lineno"> 9967</span>&#160;  }</div>
 <div class="line"><a name="l09968"></a><span class="lineno"> 9968</span>&#160;  <span class="keywordflow">if</span>( zEditor==0 ){</div>
-<div class="line"><a name="l09969"></a><span class="lineno"> 9969</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;no editor for edit()&quot;</span>, -1);</div>
+<div class="line"><a name="l09969"></a><span class="lineno"> 9969</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;no editor for edit()&quot;</span>, -1);</div>
 <div class="line"><a name="l09970"></a><span class="lineno"> 9970</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l09971"></a><span class="lineno"> 9971</span>&#160;  }</div>
 <div class="line"><a name="l09972"></a><span class="lineno"> 9972</span>&#160;  <span class="keywordflow">if</span>( <a class="code" href="sqlite3ext_8h.html#ae850c52808791d8cab31703650211fd4">sqlite3_value_type</a>(argv[0])==<a class="code" href="sqlite3_8c.html#afd180931f2d06d6c245791d187da5802">SQLITE_NULL</a> ){</div>
-<div class="line"><a name="l09973"></a><span class="lineno"> 9973</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;NULL input to edit()&quot;</span>, -1);</div>
+<div class="line"><a name="l09973"></a><span class="lineno"> 9973</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;NULL input to edit()&quot;</span>, -1);</div>
 <div class="line"><a name="l09974"></a><span class="lineno"> 9974</span>&#160;    <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l09975"></a><span class="lineno"> 9975</span>&#160;  }</div>
-<div class="line"><a name="l09976"></a><span class="lineno"> 9976</span>&#160;  db = <a class="code" href="sqlite3ext_8h.html#af9691b6d2be74a677d8e76c463ae3ca0">sqlite3_context_db_handle</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l09976"></a><span class="lineno"> 9976</span>&#160;  db = <a class="code" href="sqlite3ext_8h.html#af9691b6d2be74a677d8e76c463ae3ca0">sqlite3_context_db_handle</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l09977"></a><span class="lineno"> 9977</span>&#160;  zTempFile = 0;</div>
 <div class="line"><a name="l09978"></a><span class="lineno"> 9978</span>&#160;  <a class="code" href="sqlite3ext_8h.html#aaa1d49f3c1f9133c26b8b4beab6dc175">sqlite3_file_control</a>(db, 0, <a class="code" href="sqlite3_8c.html#a9ce72fc423ab4dda38cc1fb2574e4d7b">SQLITE_FCNTL_TEMPFILENAME</a>, &amp;zTempFile);</div>
 <div class="line"><a name="l09979"></a><span class="lineno"> 9979</span>&#160;  <span class="keywordflow">if</span>( zTempFile==0 ){</div>
@@ -10071,7 +10080,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l09981"></a><span class="lineno"> 9981</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a4963e0efeae2617a8775ddbb8f1c311e">sqlite3_randomness</a>(<span class="keyword">sizeof</span>(r), &amp;r);</div>
 <div class="line"><a name="l09982"></a><span class="lineno"> 9982</span>&#160;    zTempFile = <a class="code" href="sqlite3ext_8h.html#a6eaef6246a54829c28d076615b8be4fa">sqlite3_mprintf</a>(<span class="stringliteral">&quot;temp%llx&quot;</span>, r);</div>
 <div class="line"><a name="l09983"></a><span class="lineno"> 9983</span>&#160;    <span class="keywordflow">if</span>( zTempFile==0 ){</div>
-<div class="line"><a name="l09984"></a><span class="lineno"> 9984</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l09984"></a><span class="lineno"> 9984</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l09985"></a><span class="lineno"> 9985</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l09986"></a><span class="lineno"> 9986</span>&#160;    }</div>
 <div class="line"><a name="l09987"></a><span class="lineno"> 9987</span>&#160;  }</div>
@@ -10080,7 +10089,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l09990"></a><span class="lineno"> 9990</span>&#160;<span class="comment">  ** that want \r\n line endings */</span></div>
 <div class="line"><a name="l09991"></a><span class="lineno"> 9991</span>&#160;  f = fopen(zTempFile, bBin ? <span class="stringliteral">&quot;wb&quot;</span> : <span class="stringliteral">&quot;w&quot;</span>);</div>
 <div class="line"><a name="l09992"></a><span class="lineno"> 9992</span>&#160;  <span class="keywordflow">if</span>( f==0 ){</div>
-<div class="line"><a name="l09993"></a><span class="lineno"> 9993</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;edit() cannot open temp file&quot;</span>, -1);</div>
+<div class="line"><a name="l09993"></a><span class="lineno"> 9993</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;edit() cannot open temp file&quot;</span>, -1);</div>
 <div class="line"><a name="l09994"></a><span class="lineno"> 9994</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l09995"></a><span class="lineno"> 9995</span>&#160;  }</div>
 <div class="line"><a name="l09996"></a><span class="lineno"> 9996</span>&#160;  sz = <a class="code" href="sqlite3ext_8h.html#acb83d8fe3097b9949f7713dfd05d18d3">sqlite3_value_bytes</a>(argv[0]);</div>
@@ -10095,23 +10104,23 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l10005"></a><span class="lineno">10005</span>&#160;  fclose(f);</div>
 <div class="line"><a name="l10006"></a><span class="lineno">10006</span>&#160;  f = 0;</div>
 <div class="line"><a name="l10007"></a><span class="lineno">10007</span>&#160;  <span class="keywordflow">if</span>( x!=sz ){</div>
-<div class="line"><a name="l10008"></a><span class="lineno">10008</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;edit() could not write the whole file&quot;</span>, -1);</div>
+<div class="line"><a name="l10008"></a><span class="lineno">10008</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;edit() could not write the whole file&quot;</span>, -1);</div>
 <div class="line"><a name="l10009"></a><span class="lineno">10009</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l10010"></a><span class="lineno">10010</span>&#160;  }</div>
 <div class="line"><a name="l10011"></a><span class="lineno">10011</span>&#160;  zCmd = <a class="code" href="sqlite3ext_8h.html#a6eaef6246a54829c28d076615b8be4fa">sqlite3_mprintf</a>(<span class="stringliteral">&quot;%s \&quot;%s\&quot;&quot;</span>, zEditor, zTempFile);</div>
 <div class="line"><a name="l10012"></a><span class="lineno">10012</span>&#160;  <span class="keywordflow">if</span>( zCmd==0 ){</div>
-<div class="line"><a name="l10013"></a><span class="lineno">10013</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l10013"></a><span class="lineno">10013</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l10014"></a><span class="lineno">10014</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l10015"></a><span class="lineno">10015</span>&#160;  }</div>
 <div class="line"><a name="l10016"></a><span class="lineno">10016</span>&#160;  rc = system(zCmd);</div>
 <div class="line"><a name="l10017"></a><span class="lineno">10017</span>&#160;  <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(zCmd);</div>
 <div class="line"><a name="l10018"></a><span class="lineno">10018</span>&#160;  <span class="keywordflow">if</span>( rc ){</div>
-<div class="line"><a name="l10019"></a><span class="lineno">10019</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;EDITOR returned non-zero&quot;</span>, -1);</div>
+<div class="line"><a name="l10019"></a><span class="lineno">10019</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;EDITOR returned non-zero&quot;</span>, -1);</div>
 <div class="line"><a name="l10020"></a><span class="lineno">10020</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l10021"></a><span class="lineno">10021</span>&#160;  }</div>
 <div class="line"><a name="l10022"></a><span class="lineno">10022</span>&#160;  f = fopen(zTempFile, <span class="stringliteral">&quot;rb&quot;</span>);</div>
 <div class="line"><a name="l10023"></a><span class="lineno">10023</span>&#160;  <span class="keywordflow">if</span>( f==0 ){</div>
-<div class="line"><a name="l10024"></a><span class="lineno">10024</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l10024"></a><span class="lineno">10024</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l10025"></a><span class="lineno">10025</span>&#160;      <span class="stringliteral">&quot;edit() cannot reopen temp file after edit&quot;</span>, -1);</div>
 <div class="line"><a name="l10026"></a><span class="lineno">10026</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l10027"></a><span class="lineno">10027</span>&#160;  }</div>
@@ -10120,18 +10129,18 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l10030"></a><span class="lineno">10030</span>&#160;  rewind(f);</div>
 <div class="line"><a name="l10031"></a><span class="lineno">10031</span>&#160;  p = <a class="code" href="sqlite3ext_8h.html#a111fe6dfd371aaffa7a8d8e89a0614c2">sqlite3_malloc64</a>( sz+1 );</div>
 <div class="line"><a name="l10032"></a><span class="lineno">10032</span>&#160;  <span class="keywordflow">if</span>( p==0 ){</div>
-<div class="line"><a name="l10033"></a><span class="lineno">10033</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l10033"></a><span class="lineno">10033</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l10034"></a><span class="lineno">10034</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l10035"></a><span class="lineno">10035</span>&#160;  }</div>
 <div class="line"><a name="l10036"></a><span class="lineno">10036</span>&#160;  x = fread(p, 1, (<span class="keywordtype">size_t</span>)sz, f);</div>
 <div class="line"><a name="l10037"></a><span class="lineno">10037</span>&#160;  fclose(f);</div>
 <div class="line"><a name="l10038"></a><span class="lineno">10038</span>&#160;  f = 0;</div>
 <div class="line"><a name="l10039"></a><span class="lineno">10039</span>&#160;  <span class="keywordflow">if</span>( x!=sz ){</div>
-<div class="line"><a name="l10040"></a><span class="lineno">10040</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;could not read back the whole file&quot;</span>, -1);</div>
+<div class="line"><a name="l10040"></a><span class="lineno">10040</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a02e97f32ea3f3d44bb0d0eadc7ba1f0f">sqlite3_result_error</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="stringliteral">&quot;could not read back the whole file&quot;</span>, -1);</div>
 <div class="line"><a name="l10041"></a><span class="lineno">10041</span>&#160;    <span class="keywordflow">goto</span> edit_func_end;</div>
 <div class="line"><a name="l10042"></a><span class="lineno">10042</span>&#160;  }</div>
 <div class="line"><a name="l10043"></a><span class="lineno">10043</span>&#160;  <span class="keywordflow">if</span>( bBin ){</div>
-<div class="line"><a name="l10044"></a><span class="lineno">10044</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a8a31ff08907eea85bc31128b7cd7253b">sqlite3_result_blob64</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, p, sz, <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>);</div>
+<div class="line"><a name="l10044"></a><span class="lineno">10044</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a8a31ff08907eea85bc31128b7cd7253b">sqlite3_result_blob64</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, p, sz, <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>);</div>
 <div class="line"><a name="l10045"></a><span class="lineno">10045</span>&#160;  }<span class="keywordflow">else</span>{</div>
 <div class="line"><a name="l10046"></a><span class="lineno">10046</span>&#160;    <a class="code" href="sqlite3_8c.html#a0a4d3e6c1ad46f90e746b920ab6ca0d2">sqlite3_int64</a> i, j;</div>
 <div class="line"><a name="l10047"></a><span class="lineno">10047</span>&#160;    <span class="keywordflow">if</span>( hasCRNL ){</div>
@@ -10147,7 +10156,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l10057"></a><span class="lineno">10057</span>&#160;      sz = j;</div>
 <div class="line"><a name="l10058"></a><span class="lineno">10058</span>&#160;      p[sz] = 0;</div>
 <div class="line"><a name="l10059"></a><span class="lineno">10059</span>&#160;    } </div>
-<div class="line"><a name="l10060"></a><span class="lineno">10060</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a633fbacf6ad479658efa569005f095e4">sqlite3_result_text64</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, (<span class="keyword">const</span> <span class="keywordtype">char</span>*)p, sz,</div>
+<div class="line"><a name="l10060"></a><span class="lineno">10060</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a633fbacf6ad479658efa569005f095e4">sqlite3_result_text64</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, (<span class="keyword">const</span> <span class="keywordtype">char</span>*)p, sz,</div>
 <div class="line"><a name="l10061"></a><span class="lineno">10061</span>&#160;                          <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>, <a class="code" href="sqlite3_8c.html#a7a65f15cad0da22be8ebc0c70f526d32">SQLITE_UTF8</a>);</div>
 <div class="line"><a name="l10062"></a><span class="lineno">10062</span>&#160;  }</div>
 <div class="line"><a name="l10063"></a><span class="lineno">10063</span>&#160;  p = 0;</div>
@@ -12820,7 +12829,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12730"></a><span class="lineno"><a class="line" href="shell_8c.html#a5619fd1ae7a844bff224c7eb6d75ac95">12730</a></span>&#160;<span class="comment">** offset (4*&lt;arg2&gt;) of the blob.</span></div>
 <div class="line"><a name="l12731"></a><span class="lineno">12731</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l12732"></a><span class="lineno">12732</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a5619fd1ae7a844bff224c7eb6d75ac95">shellInt32</a>(</div>
-<div class="line"><a name="l12733"></a><span class="lineno">12733</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
+<div class="line"><a name="l12733"></a><span class="lineno">12733</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
 <div class="line"><a name="l12734"></a><span class="lineno">12734</span>&#160;  <span class="keywordtype">int</span> argc, </div>
 <div class="line"><a name="l12735"></a><span class="lineno">12735</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l12736"></a><span class="lineno">12736</span>&#160;){</div>
@@ -12839,7 +12848,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12749"></a><span class="lineno">12749</span>&#160;                       + ((<a class="code" href="sqlite3_8c.html#a0a4d3e6c1ad46f90e746b920ab6ca0d2">sqlite3_int64</a>)a[1]&lt;&lt;16)</div>
 <div class="line"><a name="l12750"></a><span class="lineno">12750</span>&#160;                       + ((<a class="code" href="sqlite3_8c.html#a0a4d3e6c1ad46f90e746b920ab6ca0d2">sqlite3_int64</a>)a[2]&lt;&lt; 8)</div>
 <div class="line"><a name="l12751"></a><span class="lineno">12751</span>&#160;                       + ((<a class="code" href="sqlite3_8c.html#a0a4d3e6c1ad46f90e746b920ab6ca0d2">sqlite3_int64</a>)a[3]&lt;&lt; 0);</div>
-<div class="line"><a name="l12752"></a><span class="lineno">12752</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a71d614552d765e7970f9bbe9122a8b73">sqlite3_result_int64</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, iVal);</div>
+<div class="line"><a name="l12752"></a><span class="lineno">12752</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a71d614552d765e7970f9bbe9122a8b73">sqlite3_result_int64</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, iVal);</div>
 <div class="line"><a name="l12753"></a><span class="lineno">12753</span>&#160;  }</div>
 <div class="line"><a name="l12754"></a><span class="lineno">12754</span>&#160;}</div>
 <div class="line"><a name="l12755"></a><span class="lineno">12755</span>&#160; </div>
@@ -12848,7 +12857,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12758"></a><span class="lineno"><a class="line" href="shell_8c.html#a3d115699c065cff140172babe7e75ad5">12758</a></span>&#160;<span class="comment">** using &quot;...&quot; with internal double-quote characters doubled.</span></div>
 <div class="line"><a name="l12759"></a><span class="lineno">12759</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l12760"></a><span class="lineno">12760</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a3d115699c065cff140172babe7e75ad5">shellIdQuote</a>(</div>
-<div class="line"><a name="l12761"></a><span class="lineno">12761</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
+<div class="line"><a name="l12761"></a><span class="lineno">12761</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
 <div class="line"><a name="l12762"></a><span class="lineno">12762</span>&#160;  <span class="keywordtype">int</span> argc, </div>
 <div class="line"><a name="l12763"></a><span class="lineno">12763</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l12764"></a><span class="lineno">12764</span>&#160;){</div>
@@ -12856,7 +12865,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12766"></a><span class="lineno">12766</span>&#160;  <a class="code" href="shell_8c.html#a3c95a90e7806e4b0d21edfae15b73465">UNUSED_PARAMETER</a>(argc);</div>
 <div class="line"><a name="l12767"></a><span class="lineno">12767</span>&#160;  <span class="keywordflow">if</span>( <a class="code" href="sqlite3_8c.html#a661118d86ac4127d40bf3be78d92117d">zName</a> ){</div>
 <div class="line"><a name="l12768"></a><span class="lineno">12768</span>&#160;    <span class="keywordtype">char</span> *z = <a class="code" href="sqlite3ext_8h.html#a6eaef6246a54829c28d076615b8be4fa">sqlite3_mprintf</a>(<span class="stringliteral">&quot;\&quot;%w\&quot;&quot;</span>, <a class="code" href="sqlite3_8c.html#a661118d86ac4127d40bf3be78d92117d">zName</a>);</div>
-<div class="line"><a name="l12769"></a><span class="lineno">12769</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, z, -1, <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>);</div>
+<div class="line"><a name="l12769"></a><span class="lineno">12769</span>&#160;    <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, z, -1, <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>);</div>
 <div class="line"><a name="l12770"></a><span class="lineno">12770</span>&#160;  }</div>
 <div class="line"><a name="l12771"></a><span class="lineno">12771</span>&#160;}</div>
 <div class="line"><a name="l12772"></a><span class="lineno">12772</span>&#160; </div>
@@ -12874,7 +12883,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12784"></a><span class="lineno"><a class="line" href="shell_8c.html#a1feeb4254c9d8aec63ad810297e0312d">12784</a></span>&#160;<span class="comment">** of the input is returned.</span></div>
 <div class="line"><a name="l12785"></a><span class="lineno">12785</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l12786"></a><span class="lineno">12786</span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="shell_8c.html#a1feeb4254c9d8aec63ad810297e0312d">shellEscapeCrnl</a>(</div>
-<div class="line"><a name="l12787"></a><span class="lineno">12787</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
+<div class="line"><a name="l12787"></a><span class="lineno">12787</span>&#160;  <a class="code" href="structsqlite3__context.html">sqlite3_context</a> *<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, </div>
 <div class="line"><a name="l12788"></a><span class="lineno">12788</span>&#160;  <span class="keywordtype">int</span> argc, </div>
 <div class="line"><a name="l12789"></a><span class="lineno">12789</span>&#160;  <a class="code" href="structsqlite3__value.html">sqlite3_value</a> **argv</div>
 <div class="line"><a name="l12790"></a><span class="lineno">12790</span>&#160;){</div>
@@ -12907,7 +12916,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12817"></a><span class="lineno">12817</span>&#160;      <a class="code" href="shell_8c.html#a9b2c7298acf62c3803b0fbded620026a">i64</a> nAlloc = nMax * nText + (nMax+64)*2;</div>
 <div class="line"><a name="l12818"></a><span class="lineno">12818</span>&#160;      <span class="keywordtype">char</span> *zOut = (<span class="keywordtype">char</span>*)<a class="code" href="sqlite3ext_8h.html#a111fe6dfd371aaffa7a8d8e89a0614c2">sqlite3_malloc64</a>(nAlloc);</div>
 <div class="line"><a name="l12819"></a><span class="lineno">12819</span>&#160;      <span class="keywordflow">if</span>( zOut==0 ){</div>
-<div class="line"><a name="l12820"></a><span class="lineno">12820</span>&#160;        <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l12820"></a><span class="lineno">12820</span>&#160;        <a class="code" href="sqlite3ext_8h.html#a913ff37c0c0d9a83844848b0c2ff1204">sqlite3_result_error_nomem</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l12821"></a><span class="lineno">12821</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l12822"></a><span class="lineno">12822</span>&#160;      }</div>
 <div class="line"><a name="l12823"></a><span class="lineno">12823</span>&#160; </div>
@@ -12942,13 +12951,13 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="line"><a name="l12852"></a><span class="lineno">12852</span>&#160;        memcpy(&amp;zOut[iOut], <span class="stringliteral">&quot;&#39;, char(13))&quot;</span>, 12); iOut += 12;</div>
 <div class="line"><a name="l12853"></a><span class="lineno">12853</span>&#160;      }</div>
 <div class="line"><a name="l12854"></a><span class="lineno">12854</span>&#160; </div>
-<div class="line"><a name="l12855"></a><span class="lineno">12855</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zOut, iOut, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
+<div class="line"><a name="l12855"></a><span class="lineno">12855</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a3d0446db66b036aab68e66afd68e4c14">sqlite3_result_text</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, zOut, iOut, <a class="code" href="sqlite3_8c.html#adec3d88e3dff21d4c566daccbede9b3b">SQLITE_TRANSIENT</a>);</div>
 <div class="line"><a name="l12856"></a><span class="lineno">12856</span>&#160;      <a class="code" href="sqlite3ext_8h.html#a203ed76f7e82e1cde3c835ee248f9d5f">sqlite3_free</a>(zOut);</div>
 <div class="line"><a name="l12857"></a><span class="lineno">12857</span>&#160;      <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l12858"></a><span class="lineno">12858</span>&#160;    }</div>
 <div class="line"><a name="l12859"></a><span class="lineno">12859</span>&#160;  }</div>
 <div class="line"><a name="l12860"></a><span class="lineno">12860</span>&#160; </div>
-<div class="line"><a name="l12861"></a><span class="lineno">12861</span>&#160;  <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
+<div class="line"><a name="l12861"></a><span class="lineno">12861</span>&#160;  <a class="code" href="sqlite3ext_8h.html#a8bfe3bbc6d99b04fdd498661c7eb73f2">sqlite3_result_value</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, argv[0]);</div>
 <div class="line"><a name="l12862"></a><span class="lineno">12862</span>&#160;}</div>
 <div class="line"><a name="l12863"></a><span class="lineno">12863</span>&#160; </div>
 <div class="line"><a name="l12864"></a><span class="lineno">12864</span>&#160;<span class="comment">/* Flags for open_db().</span></div>
@@ -19645,8 +19654,8 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div class="ttc" id="aSmallVector_8cpp_html_ab385e5bea03d0c55b5efca299f25532e"><div class="ttname"><a href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a></div><div class="ttdeci">void * X</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00045">SmallVector.cpp:45</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="alsd_8c_html_aa8cecfc5c5c054d2875c03e77b7be15d"><div class="ttname"><a href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a></div><div class="ttdeci">#define TRUE</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00119">lsd.c:119</a></div></div>
 <div class="ttc" id="alsd_8c_html_aa93f0eb578d23995850d61f7d61c55c1"><div class="ttname"><a href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a></div><div class="ttdeci">#define FALSE</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00115">lsd.c:115</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_a0d112bae8fd35be772185b6ec6bcbe64"><div class="ttname"><a href="qioapi_8cpp.html#a0d112bae8fd35be772185b6ec6bcbe64">SEEK_SET</a></div><div class="ttdeci">#define SEEK_SET</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00038">qioapi.cpp:38</a></div></div>
@@ -20647,7 +20656,7 @@ $(document).ready(function(){initNavTree('shell_8c_source.html',''); initResizab
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_03caecd6b893d2310d0670baf3e3a8a6.html">SQLite</a></li><li class="navelem"><a class="el" href="shell_8c.html">shell.c</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:00 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('RealSenseSensorConfig_8cpp_source.html
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RealSenseSensorConfig_8h.html">cloudViewer/t/io/sensor/realsense/RealSenseSensorConfig.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="PinholeCameraIntrinsic_8h.html">camera/PinholeCameraIntrinsic.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
@@ -380,21 +389,21 @@ $(document).ready(function(){initNavTree('RealSenseSensorConfig_8cpp_source.html
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig_html_aa58d9d8f8a14d6156965b73f35539e22"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html#aa58d9d8f8a14d6156965b73f35539e22">cloudViewer::t::io::RealSenseSensorConfig::get_dtype_channels</a></div><div class="ttdeci">static std::pair&lt; core::Dtype, uint8_t &gt; get_dtype_channels(int rs2_format_enum)</div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensorConfig_8cpp_source.html#l00117">RealSenseSensorConfig.cpp:117</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig_html_ad5e37e7efb81dafa1b44838e38d1f8ee"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html#ad5e37e7efb81dafa1b44838e38d1f8ee">cloudViewer::t::io::RealSenseSensorConfig::config_</a></div><div class="ttdeci">std::unordered_map&lt; std::string, std::string &gt; config_</div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensorConfig_8h_source.html#l00093">RealSenseSensorConfig.h:93</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig_html_ad88c235f52f245ced1b1102b508ef265"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html#ad88c235f52f245ced1b1102b508ef265">cloudViewer::t::io::RealSenseSensorConfig::GetMetadataJson</a></div><div class="ttdeci">static Json::Value GetMetadataJson(const rs2::pipeline_profile &amp;profile)</div><div class="ttdoc">Get metadata for a streaming RealSense camera or bag file.</div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensorConfig_8cpp_source.html#l00224">RealSenseSensorConfig.cpp:224</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a67a7a5bd403bf14004573511c1e75165"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a67a7a5bd403bf14004573511c1e75165">cloudViewer::core::UInt8</a></div><div class="ttdeci">const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00048">Dtype.cpp:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a6b6e31d5568e111450f18df2d5174ea4"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a6b6e31d5568e111450f18df2d5174ea4">cloudViewer::core::make_pair</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE Pair&lt; First, Second &gt; make_pair(const First &amp;_first, const Second &amp;_second)</div><div class="ttdef"><b>Definition:</b> <a href="SlabTraits_8h_source.html#l00049">SlabTraits.h:49</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ada08d037ef6e333e2a2ad1d636219433"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ada08d037ef6e333e2a2ad1d636219433">cloudViewer::core::UInt16</a></div><div class="ttdeci">const Dtype UInt16</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00049">Dtype.cpp:49</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_aaf7c50e8a9d3ed0014040ad73d38e7f6"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#aaf7c50e8a9d3ed0014040ad73d38e7f6">cloudViewer::t::io::STRINGIFY_ENUM</a></div><div class="ttdeci">STRINGIFY_ENUM(rs2_stream, { {RS2_STREAM_ANY, &quot;RS2_STREAM_ANY&quot;}, {RS2_STREAM_DEPTH, &quot;RS2_STREAM_DEPTH&quot;}, {RS2_STREAM_COLOR, &quot;RS2_STREAM_COLOR&quot;}, {RS2_STREAM_INFRARED, &quot;RS2_STREAM_INFRARED&quot;}, {RS2_STREAM_FISHEYE, &quot;RS2_STREAM_FISHEYE&quot;}, {RS2_STREAM_GYRO, &quot;RS2_STREAM_GYRO&quot;}, {RS2_STREAM_ACCEL, &quot;RS2_STREAM_ACCEL&quot;}, {RS2_STREAM_GPIO, &quot;RS2_STREAM_GPIO&quot;}, {RS2_STREAM_POSE, &quot;RS2_STREAM_POSE&quot;}, {RS2_STREAM_CONFIDENCE, &quot;RS2_STREAM_CONFIDENCE&quot;} })</div><div class="ttdoc">RS2 stream types.</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ad8cc70e3df581ce2b26c7a1a0b00415e"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ad8cc70e3df581ce2b26c7a1a0b00415e">cloudViewer::t::io::standard_config</a></div><div class="ttdeci">static std::unordered_map&lt; std::string, std::string &gt; standard_config</div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensorConfig_8cpp_source.html#l00134">RealSenseSensorConfig.cpp:134</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_69f8b599ab6abe28788f204e4ebacea4.html">sensor</a></li><li class="navelem"><a class="el" href="dir_c25649614c58c629c45561295a1d464e.html">realsense</a></li><li class="navelem"><a class="el" href="RealSenseSensorConfig_8cpp.html">RealSenseSensorConfig.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

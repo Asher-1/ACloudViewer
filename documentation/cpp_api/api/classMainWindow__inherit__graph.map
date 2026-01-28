@@ -1,0 +1,6 @@
+<map id="MainWindow" name="MainWindow">
+<area shape="rect" id="node1" title=" " alt="" coords="173,80,279,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,121,32"/>
+<area shape="rect" id="node3" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="146,5,306,32"/>
+<area shape="rect" id="node4" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="331,5,465,32"/>
+</map>

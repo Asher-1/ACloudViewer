@@ -3,7 +3,7 @@ var Reconstruction_2lib_2PoissonRecon_2Geometry_8h =
     [ "Point3D", "structPoint3D.html", "structPoint3D" ],
     [ "XForm3x3", "structXForm3x3.html", "structXForm3x3" ],
     [ "XForm4x4", "structXForm4x4.html", "structXForm4x4" ],
-    [ "Edge", "classEdge.html", "classEdge" ],
+    [ "Edge", "structEdge.html", "structEdge" ],
     [ "Triangle", "classTriangle.html", "classTriangle" ],
     [ "CoredPointIndex", "classCoredPointIndex.html", "classCoredPointIndex" ],
     [ "EdgeIndex", "classEdgeIndex.html", "classEdgeIndex" ],

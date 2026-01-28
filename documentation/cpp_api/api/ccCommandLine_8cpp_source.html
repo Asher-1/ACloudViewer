@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -99,7 +108,7 @@ $(document).ready(function(){initNavTree('ccCommandLine_8cpp_source.html',''); i
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;pybind11/stl.h&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;pybind11/stl_bind.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;ecvCommandLineInterface.h&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvGenericMesh_8h.html">ecvGenericMesh.h</a>&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;../../wrapper/pycc/src/casters.h&quot;</span></div>
@@ -117,26 +126,26 @@ $(document).ready(function(){initNavTree('ccCommandLine_8cpp_source.html',''); i
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    py::bind_vector&lt;std::vector&lt;CLMeshDesc&gt;&gt;(m, <span class="stringliteral">&quot;CLMeshDescVector&quot;</span>);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    py::enum_&lt;CL_ENTITY_TYPE&gt;(m, <span class="stringliteral">&quot;CL_ENTITY_TYPE&quot;</span>)</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        .value(<span class="stringliteral">&quot;GROUP&quot;</span>, CL_ENTITY_TYPE::GROUP)</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;        .value(<span class="stringliteral">&quot;CLOUD&quot;</span>, CL_ENTITY_TYPE::CLOUD)</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        .value(<span class="stringliteral">&quot;MESH&quot;</span>, <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CL_ENTITY_TYPE::MESH</a>);</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        .value(<span class="stringliteral">&quot;GROUP&quot;</span>, <a class="code" href="ecvCommandLineInterface_8h.html#a6eb454ecbdb33ca4de55cd17922e5f4ea720909a4b948fc9e33633b61960d6b3c">CL_ENTITY_TYPE::GROUP</a>)</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;        .value(<span class="stringliteral">&quot;CLOUD&quot;</span>, <a class="code" href="ecvCommandLineInterface_8h.html#a6eb454ecbdb33ca4de55cd17922e5f4eaa51b1ad8bfa5207b7eb5c2ca7bfc5a3c">CL_ENTITY_TYPE::CLOUD</a>)</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        .value(<span class="stringliteral">&quot;MESH&quot;</span>, <a class="code" href="ecvCommandLineInterface_8h.html#a6eb454ecbdb33ca4de55cd17922e5f4ea5b65fe46c5dd90ebcec69c472c3be1d9">CL_ENTITY_TYPE::MESH</a>);</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    py::class_&lt;CLEntityDesc&gt;(m, <span class="stringliteral">&quot;CLEntityDesc&quot;</span>)</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        .def_readonly(<span class="stringliteral">&quot;basename&quot;</span>, &amp;CLEntityDesc::basename)</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        .def_readonly(<span class="stringliteral">&quot;path&quot;</span>, &amp;CLEntityDesc::path)</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;        .def_readonly(<span class="stringliteral">&quot;indexInFile&quot;</span>, &amp;CLEntityDesc::indexInFile)</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        .def_readonly(<span class="stringliteral">&quot;basename&quot;</span>, &amp;<a class="code" href="structCLEntityDesc.html#a44e93eaa44be534313d5d8097f595a75">CLEntityDesc::basename</a>)</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        .def_readonly(<span class="stringliteral">&quot;path&quot;</span>, &amp;<a class="code" href="structCLEntityDesc.html#acf24e71c9a874adcd61c4e5688198dd9">CLEntityDesc::path</a>)</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;        .def_readonly(<span class="stringliteral">&quot;indexInFile&quot;</span>, &amp;<a class="code" href="structCLEntityDesc.html#a25e72100e7954876b307e8a5609edeb1">CLEntityDesc::indexInFile</a>)</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        .def(<span class="stringliteral">&quot;getEntity&quot;</span>,</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;             (<a class="code" href="classccHObject.html">ccHObject</a> * (CLEntityDesc::*)())(&amp;CLEntityDesc::getEntity),</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;             (<a class="code" href="classccHObject.html">ccHObject</a> * (<a class="code" href="structCLEntityDesc.html">CLEntityDesc</a>::*)())(&amp;<a class="code" href="structCLEntityDesc.html#a55d26aa3a71efbc30839ab10accdfb64">CLEntityDesc::getEntity</a>),</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;             py::return_value_policy::reference);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    py::class_&lt;CLGroupDesc, CLEntityDesc&gt;(m, <span class="stringliteral">&quot;CLGroupDesc&quot;</span>)</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        .def_readonly(<span class="stringliteral">&quot;groupEntity&quot;</span>, &amp;CLGroupDesc::groupEntity, py::return_value_policy::reference);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        .def_readonly(<span class="stringliteral">&quot;groupEntity&quot;</span>, &amp;<a class="code" href="structCLGroupDesc.html#a3e169927500e3bbf80c6c3f64296f2a0">CLGroupDesc::groupEntity</a>, py::return_value_policy::reference);</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    py::class_&lt;CLCloudDesc, CLEntityDesc&gt;(m, <span class="stringliteral">&quot;CLCloudDesc&quot;</span>)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        .def_readonly(<span class="stringliteral">&quot;pc&quot;</span>, &amp;CLCloudDesc::pc, py::return_value_policy::reference);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        .def_readonly(<span class="stringliteral">&quot;pc&quot;</span>, &amp;<a class="code" href="structCLCloudDesc.html#ad38596f3e7ebca6efb286d96ee59736d">CLCloudDesc::pc</a>, py::return_value_policy::reference);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    py::class_&lt;CLMeshDesc, CLEntityDesc&gt;(m, <span class="stringliteral">&quot;CLMeshDesc&quot;</span>)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        .def_readonly(<span class="stringliteral">&quot;mesh&quot;</span>, &amp;CLMeshDesc::mesh, py::return_value_policy::reference);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        .def_readonly(<span class="stringliteral">&quot;mesh&quot;</span>, &amp;<a class="code" href="structCLMeshDesc.html#a67dd6a415ebb6de19aec67a43e48bedb">CLMeshDesc::mesh</a>, py::return_value_policy::reference);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    py::class_&lt;ccCommandLineInterface&gt; PyccCommandLineInterface(m, <span class="stringliteral">&quot;ccCommandLineInterface&quot;</span>);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
@@ -155,64 +164,87 @@ $(document).ready(function(){initNavTree('ccCommandLine_8cpp_source.html',''); i
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;               ccCommandLineInterface::GlobalShiftOptions::Mode::CUSTOM_GLOBAL_SHIFT)</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        .export_values();</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    PyGlobalShiftOptions.def_readwrite(<span class="stringliteral">&quot;mode&quot;</span>, &amp;ccCommandLineInterface::GlobalShiftOptions::mode)</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    PyGlobalShiftOptions.def_readwrite(<span class="stringliteral">&quot;mode&quot;</span>, &amp;<a class="code" href="structccCommandLineInterface_1_1GlobalShiftOptions.html#a30ee6cb10e542651f19c4499f69dbb26">ccCommandLineInterface::GlobalShiftOptions::mode</a>)</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        .def_readwrite(<span class="stringliteral">&quot;customGlobalShift&quot;</span>,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                       &amp;ccCommandLineInterface::GlobalShiftOptions::customGlobalShift)</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                       &amp;<a class="code" href="structccCommandLineInterface_1_1GlobalShiftOptions.html#ab273865922897b93c75ad17a6425d905">ccCommandLineInterface::GlobalShiftOptions::customGlobalShift</a>)</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        .def(py::init&lt;&gt;());</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    PyccCommandLineInterface</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        .def(<span class="stringliteral">&quot;clouds&quot;</span>,</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;             (std::vector&lt;CLCloudDesc&gt; &amp;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;              (ccCommandLineInterface::*)())(&amp;ccCommandLineInterface::clouds),</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;              (<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>::*)())(&amp;<a class="code" href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">ccCommandLineInterface::clouds</a>),</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;             py::return_value_policy::reference)</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        .def(<span class="stringliteral">&quot;meshes&quot;</span>,</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;             (std::vector&lt;CLMeshDesc&gt; &amp;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;              (ccCommandLineInterface::*)())(&amp;ccCommandLineInterface::meshes))</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;              (<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>::*)())(&amp;<a class="code" href="classccCommandLineInterface.html#ab316d9264021cf61d01a21f25c8905b2">ccCommandLineInterface::meshes</a>))</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        .def(<span class="stringliteral">&quot;getExportFilename&quot;</span>,</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;             &amp;ccCommandLineInterface::getExportFilename,</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;             &amp;<a class="code" href="classccCommandLineInterface.html#a93bcdff01e88adca9b2ad9a0445f5399">ccCommandLineInterface::getExportFilename</a>,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;             <span class="stringliteral">&quot;entityDesc&quot;</span>_a,</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;             <span class="stringliteral">&quot;extension&quot;</span>_a = QString(),</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;             <span class="stringliteral">&quot;suffix&quot;</span>_a = QString(),</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;             <span class="stringliteral">&quot;baseOutputFilename&quot;</span>_a = <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;             <span class="stringliteral">&quot;forceNoTimestamp&quot;</span>_a = <span class="keyword">false</span>)</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        .def(<span class="stringliteral">&quot;exportEntity&quot;</span>,</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;             &amp;ccCommandLineInterface::exportEntity,</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;             &amp;<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">ccCommandLineInterface::exportEntity</a>,</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;             <span class="stringliteral">&quot;entityDesc&quot;</span>_a,</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;             <span class="stringliteral">&quot;suffix&quot;</span>_a = QString(),</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;             <span class="stringliteral">&quot;outputFilename&quot;</span>_a = <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;             <span class="stringliteral">&quot;options&quot;</span>_a = ccCommandLineInterface::ExportOption::NoOptions)</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;             <span class="stringliteral">&quot;options&quot;</span>_a = <a class="code" href="classccCommandLineInterface.html#aba219ed1125f79c2d7ef5018857ea4c4a6ca2ad0a9b55101dd0d9f9000a65e52f">ccCommandLineInterface::ExportOption::NoOptions</a>)</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        .def(<span class="stringliteral">&quot;saveCloud&quot;</span>,</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;             &amp;ccCommandLineInterface::saveClouds,</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;             &amp;<a class="code" href="classccCommandLineInterface.html#a389929747d622258bb9c6cd261b1f3a6">ccCommandLineInterface::saveClouds</a>,</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;             <span class="stringliteral">&quot;suffix&quot;</span>_a = QString(),</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;             <span class="stringliteral">&quot;allAtOnce&quot;</span>_a = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;             <span class="stringliteral">&quot;allAtOnceFileName&quot;</span>_a = <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        .def(<span class="stringliteral">&quot;saveMeshes&quot;</span>,</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;             &amp;ccCommandLineInterface::saveMeshes,</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;             &amp;<a class="code" href="classccCommandLineInterface.html#ae58710735fe535b1e3e5a6f0e495368b">ccCommandLineInterface::saveMeshes</a>,</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;             <span class="stringliteral">&quot;suffix&quot;</span>_a = QString(),</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;             <span class="stringliteral">&quot;allAtOnce&quot;</span>_a = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;             <span class="stringliteral">&quot;allAtOnceFileName&quot;</span>_a = <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        .def(</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <span class="stringliteral">&quot;importFile&quot;</span>,</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            [](ccCommandLineInterface &amp;<span class="keyword">self</span>,</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;               QString filename,</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;               <span class="keyword">const</span> ccCommandLineInterface::GlobalShiftOptions &amp;opts)</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            { <span class="keywordflow">return</span> <span class="keyword">self</span>.importFile(filename, opts); },</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            [](<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> &amp;<span class="keyword">self</span>,</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;               QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;               <span class="keyword">const</span> <a class="code" href="structccCommandLineInterface_1_1GlobalShiftOptions.html">ccCommandLineInterface::GlobalShiftOptions</a> &amp;opts)</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            { <span class="keywordflow">return</span> <span class="keyword">self</span>.importFile(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, opts); },</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            <span class="stringliteral">&quot;filename&quot;</span>_a,</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            <span class="stringliteral">&quot;opts&quot;</span>_a);</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;}</div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="accCommandLine_8cpp_html_ac9e68f0196bb3c9e475056bc5c717557"><div class="ttname"><a href="ccCommandLine_8cpp.html#ac9e68f0196bb3c9e475056bc5c717557">define_ccCommandLine</a></div><div class="ttdeci">void define_ccCommandLine(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="ccCommandLine_8cpp_source.html#l00023">ccCommandLine.cpp:23</a></div></div>
 <div class="ttc" id="accCommandLine_8cpp_html_ada6ca5415a2ec53f5492b7ae7ff3d112"><div class="ttname"><a href="ccCommandLine_8cpp.html#ada6ca5415a2ec53f5492b7ae7ff3d112">PYBIND11_MAKE_OPAQUE</a></div><div class="ttdeci">PYBIND11_MAKE_OPAQUE(std::vector&lt; CLCloudDesc &gt;)</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a389929747d622258bb9c6cd261b1f3a6"><div class="ttname"><a href="classccCommandLineInterface.html#a389929747d622258bb9c6cd261b1f3a6">ccCommandLineInterface::saveClouds</a></div><div class="ttdeci">virtual bool saveClouds(QString suffix=QString(), bool allAtOnce=false, const QString *allAtOnceFileName=nullptr)=0</div><div class="ttdoc">Saves all clouds.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a93bcdff01e88adca9b2ad9a0445f5399"><div class="ttname"><a href="classccCommandLineInterface.html#a93bcdff01e88adca9b2ad9a0445f5399">ccCommandLineInterface::getExportFilename</a></div><div class="ttdeci">virtual QString getExportFilename(const CLEntityDesc &amp;entityDesc, QString extension=QString(), QString suffix=QString(), QString *baseOutputFilename=nullptr, bool forceNoTimestamp=false) const =0</div><div class="ttdoc">Returns the name of a to-be-exported entity.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab21014751ce83f1c0ab59c6cea711212"><div class="ttname"><a href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">ccCommandLineInterface::exportEntity</a></div><div class="ttdeci">virtual QString exportEntity(CLEntityDesc &amp;entityDesc, const QString &amp;suffix=QString(), QString *outputFilename=nullptr, ccCommandLineInterface::ExportOptions options=ExportOption::NoOptions)=0</div><div class="ttdoc">Exports a cloud or a mesh.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab316d9264021cf61d01a21f25c8905b2"><div class="ttname"><a href="classccCommandLineInterface.html#ab316d9264021cf61d01a21f25c8905b2">ccCommandLineInterface::meshes</a></div><div class="ttdeci">virtual std::vector&lt; CLMeshDesc &gt; &amp; meshes()</div><div class="ttdoc">Currently opened meshes and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00139">ecvCommandLineInterface.cpp:139</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_aba219ed1125f79c2d7ef5018857ea4c4a6ca2ad0a9b55101dd0d9f9000a65e52f"><div class="ttname"><a href="classccCommandLineInterface.html#aba219ed1125f79c2d7ef5018857ea4c4a6ca2ad0a9b55101dd0d9f9000a65e52f">ccCommandLineInterface::ExportOption::NoOptions</a></div><div class="ttdeci">@ NoOptions</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ae58710735fe535b1e3e5a6f0e495368b"><div class="ttname"><a href="classccCommandLineInterface.html#ae58710735fe535b1e3e5a6f0e495368b">ccCommandLineInterface::saveMeshes</a></div><div class="ttdeci">virtual bool saveMeshes(QString suffix=QString(), bool allAtOnce=false, const QString *allAtOnceFileName=nullptr)=0</div><div class="ttdoc">Saves all meshes.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_aff5c07ec8e7f1e8b40330262ea21fb17"><div class="ttname"><a href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">ccCommandLineInterface::clouds</a></div><div class="ttdeci">virtual std::vector&lt; CLCloudDesc &gt; &amp; clouds()</div><div class="ttdoc">Currently opened point clouds and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00133">ecvCommandLineInterface.cpp:133</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html"><div class="ttname"><a href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a></div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html_a6eb454ecbdb33ca4de55cd17922e5f4ea5b65fe46c5dd90ebcec69c472c3be1d9"><div class="ttname"><a href="ecvCommandLineInterface_8h.html#a6eb454ecbdb33ca4de55cd17922e5f4ea5b65fe46c5dd90ebcec69c472c3be1d9">CL_ENTITY_TYPE::MESH</a></div><div class="ttdeci">@ MESH</div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html_a6eb454ecbdb33ca4de55cd17922e5f4ea720909a4b948fc9e33633b61960d6b3c"><div class="ttname"><a href="ecvCommandLineInterface_8h.html#a6eb454ecbdb33ca4de55cd17922e5f4ea720909a4b948fc9e33633b61960d6b3c">CL_ENTITY_TYPE::GROUP</a></div><div class="ttdeci">@ GROUP</div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html_a6eb454ecbdb33ca4de55cd17922e5f4eaa51b1ad8bfa5207b7eb5c2ca7bfc5a3c"><div class="ttname"><a href="ecvCommandLineInterface_8h.html#a6eb454ecbdb33ca4de55cd17922e5f4eaa51b1ad8bfa5207b7eb5c2ca7bfc5a3c">CL_ENTITY_TYPE::CLOUD</a></div><div class="ttdeci">@ CLOUD</div></div>
 <div class="ttc" id="aecvGenericMesh_8h_html"><div class="ttname"><a href="ecvGenericMesh_8h.html">ecvGenericMesh.h</a></div></div>
-<div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a></div><div class="ttdeci">@ MESH</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00105">CVTypes.h:105</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="astructCLCloudDesc_html_ad38596f3e7ebca6efb286d96ee59736d"><div class="ttname"><a href="structCLCloudDesc.html#ad38596f3e7ebca6efb286d96ee59736d">CLCloudDesc::pc</a></div><div class="ttdeci">ccPointCloud * pc</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00069">ecvCommandLineInterface.h:69</a></div></div>
+<div class="ttc" id="astructCLEntityDesc_html"><div class="ttname"><a href="structCLEntityDesc.html">CLEntityDesc</a></div><div class="ttdoc">Loaded entity description.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00034">ecvCommandLineInterface.h:34</a></div></div>
+<div class="ttc" id="astructCLEntityDesc_html_a25e72100e7954876b307e8a5609edeb1"><div class="ttname"><a href="structCLEntityDesc.html#a25e72100e7954876b307e8a5609edeb1">CLEntityDesc::indexInFile</a></div><div class="ttdeci">int indexInFile</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00037">ecvCommandLineInterface.h:37</a></div></div>
+<div class="ttc" id="astructCLEntityDesc_html_a44e93eaa44be534313d5d8097f595a75"><div class="ttname"><a href="structCLEntityDesc.html#a44e93eaa44be534313d5d8097f595a75">CLEntityDesc::basename</a></div><div class="ttdeci">QString basename</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00035">ecvCommandLineInterface.h:35</a></div></div>
+<div class="ttc" id="astructCLEntityDesc_html_a55d26aa3a71efbc30839ab10accdfb64"><div class="ttname"><a href="structCLEntityDesc.html#a55d26aa3a71efbc30839ab10accdfb64">CLEntityDesc::getEntity</a></div><div class="ttdeci">virtual ccHObject * getEntity()=0</div></div>
+<div class="ttc" id="astructCLEntityDesc_html_acf24e71c9a874adcd61c4e5688198dd9"><div class="ttname"><a href="structCLEntityDesc.html#acf24e71c9a874adcd61c4e5688198dd9">CLEntityDesc::path</a></div><div class="ttdeci">QString path</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00036">ecvCommandLineInterface.h:36</a></div></div>
+<div class="ttc" id="astructCLGroupDesc_html_a3e169927500e3bbf80c6c3f64296f2a0"><div class="ttname"><a href="structCLGroupDesc.html#a3e169927500e3bbf80c6c3f64296f2a0">CLGroupDesc::groupEntity</a></div><div class="ttdeci">ccHObject * groupEntity</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00054">ecvCommandLineInterface.h:54</a></div></div>
+<div class="ttc" id="astructCLMeshDesc_html_a67dd6a415ebb6de19aec67a43e48bedb"><div class="ttname"><a href="structCLMeshDesc.html#a67dd6a415ebb6de19aec67a43e48bedb">CLMeshDesc::mesh</a></div><div class="ttdeci">ccGenericMesh * mesh</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00091">ecvCommandLineInterface.h:91</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1GlobalShiftOptions_html"><div class="ttname"><a href="structccCommandLineInterface_1_1GlobalShiftOptions.html">ccCommandLineInterface::GlobalShiftOptions</a></div><div class="ttdoc">Global Shift options.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00221">ecvCommandLineInterface.h:221</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1GlobalShiftOptions_html_a30ee6cb10e542651f19c4499f69dbb26"><div class="ttname"><a href="structccCommandLineInterface_1_1GlobalShiftOptions.html#a30ee6cb10e542651f19c4499f69dbb26">ccCommandLineInterface::GlobalShiftOptions::mode</a></div><div class="ttdeci">Mode mode</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00229">ecvCommandLineInterface.h:229</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1GlobalShiftOptions_html_ab273865922897b93c75ad17a6425d905"><div class="ttname"><a href="structccCommandLineInterface_1_1GlobalShiftOptions.html#ab273865922897b93c75ad17a6425d905">ccCommandLineInterface::GlobalShiftOptions::customGlobalShift</a></div><div class="ttdeci">CCVector3d customGlobalShift</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00230">ecvCommandLineInterface.h:230</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="dir_55cc919656e65b5b0b09260db66aea16.html">Runtime</a></li><li class="navelem"><a class="el" href="ccCommandLine_8cpp.html">ccCommandLine.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

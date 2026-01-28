@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -197,17 +206,17 @@ $(document).ready(function(){initNavTree('Visualizer_8h_source.html',''); initRe
 <div class="line"><a name="l00177"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4756b5e1e201e477a4409f544ae86ef8">  177</a></span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html">RenderOption</a> &amp;<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4756b5e1e201e477a4409f544ae86ef8">GetRenderOption</a>() { <span class="keywordflow">return</span> *<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a704f242ec6b6e57d795a0d0e3f8dccaa">render_option_ptr_</a>; }</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    std::shared_ptr&lt;geometry::Image&gt; <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#abb44bbd0d73e96119d5e4b3be3cd2d10">CaptureScreenFloatBuffer</a>(</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            <span class="keywordtype">bool</span> do_render = <span class="keyword">true</span>);</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f9bdc1be29e0f9d4e94b6c4e4071ded">CaptureScreenImage</a>(<span class="keyword">const</span> std::string &amp;filename = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f9bdc1be29e0f9d4e94b6c4e4071ded">CaptureScreenImage</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                            <span class="keywordtype">bool</span> do_render = <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    std::shared_ptr&lt;geometry::Image&gt; <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a2ada2d720cb34636cdb9dddd2f2adf1f">CaptureDepthFloatBuffer</a>(</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            <span class="keywordtype">bool</span> do_render = <span class="keyword">true</span>);</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#aeb912afb68c28288bc885757ca7998ac">CaptureDepthImage</a>(<span class="keyword">const</span> std::string &amp;filename = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#aeb912afb68c28288bc885757ca7998ac">CaptureDepthImage</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                           <span class="keywordtype">bool</span> do_render = <span class="keyword">true</span>,</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                           <span class="keywordtype">double</span> depth_scale = 1000.0);</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a30c516d461ffb55fd702daac31eb6e78">CaptureDepthPointCloud</a>(<span class="keyword">const</span> std::string &amp;filename = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a30c516d461ffb55fd702daac31eb6e78">CaptureDepthPointCloud</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                                <span class="keywordtype">bool</span> do_render = <span class="keyword">true</span>,</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                                <span class="keywordtype">bool</span> convert_to_world_coordinate = <span class="keyword">false</span>);</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ad55fd8184b3601d3eba29ebf81c37eaa">CaptureRenderOption</a>(<span class="keyword">const</span> std::string &amp;filename = <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ad55fd8184b3601d3eba29ebf81c37eaa">CaptureRenderOption</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <span class="stringliteral">&quot;&quot;</span>);</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a938b23473e192a9a3933152beb87ff4c">ResetViewPoint</a>(<span class="keywordtype">bool</span> reset_bounding_box = <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160; </div>
 <div class="line"><a name="l00215"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a3e4beb59f4aca1e3d1c2d04ba21668f5">  215</a></span>&#160;    <span class="keyword">const</span> std::string &amp;<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a3e4beb59f4aca1e3d1c2d04ba21668f5">GetWindowName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ad4894ba11bd4e61a34fd817ea217b68d">window_name_</a>; }</div>
@@ -305,6 +314,7 @@ $(document).ready(function(){initNavTree('Visualizer_8h_source.html',''); initRe
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;}  <span class="comment">// namespace visualization</span></div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aColorMap_8h_html"><div class="ttname"><a href="ColorMap_8h.html">ColorMap.h</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad12fc34ce789bce6c8a05d8a17138534"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a></div><div class="ttdeci">int height</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00143">FileIOFactory.cpp:143</a></div></div>
@@ -385,7 +395,7 @@ $(document).ready(function(){initNavTree('Visualizer_8h_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1Visualizer_html_af0d0681d8b937367608a34802a5fd4b0"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1Visualizer.html#af0d0681d8b937367608a34802a5fd4b0">cloudViewer::visualization::Visualizer::WindowCloseCallback</a></div><div class="ttdeci">virtual void WindowCloseCallback(GLFWwindow *window)</div><div class="ttdoc">Function to notify the window to be closed.</div><div class="ttdef"><b>Definition:</b> <a href="VisualizerCallback_8cpp_source.html#l00350">VisualizerCallback.cpp:350</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1Visualizer_html_af522df43fecf2f9c8df1821d62cc33c2"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1Visualizer.html#af522df43fecf2f9c8df1821d62cc33c2">cloudViewer::visualization::Visualizer::saved_window_size_</a></div><div class="ttdeci">Eigen::Vector2i saved_window_size_</div><div class="ttdef"><b>Definition:</b> <a href="Visualizer_8h_source.html#l00258">Visualizer.h:258</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1Visualizer_html_afbb95e17446649a8b3e6fe8ea23f4a97"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1Visualizer.html#afbb95e17446649a8b3e6fe8ea23f4a97">cloudViewer::visualization::Visualizer::coordinate_frame_mesh_renderer_ptr_</a></div><div class="ttdeci">std::shared_ptr&lt; glsl::CoordinateFrameRenderer &gt; coordinate_frame_mesh_renderer_ptr_</div><div class="ttdef"><b>Definition:</b> <a href="Visualizer_8h_source.html#l00306">Visualizer.h:306</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a9e1eece753ad84dcb69c8ba901f38a4b"><div class="ttname"><a href="namespaceknncpp.html#a9e1eece753ad84dcb69c8ba901f38a4b">knncpp::Vector2i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 2, 1 &gt; Vector2i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00029">knncpp.h:29</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl.html">cloudViewer::visualization::Visualizer::MouseControl</a></div><div class="ttdef"><b>Definition:</b> <a href="Visualizer_8h_source.html#l00047">Visualizer.h:47</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl_html_a0f37145a16ead8308c97e1ad314de6ee"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl.html#a0f37145a16ead8308c97e1ad314de6ee">cloudViewer::visualization::Visualizer::MouseControl::mouse_position_y</a></div><div class="ttdeci">double mouse_position_y</div><div class="ttdef"><b>Definition:</b> <a href="Visualizer_8h_source.html#l00056">Visualizer.h:56</a></div></div>
@@ -402,7 +412,7 @@ $(document).ready(function(){initNavTree('Visualizer_8h_source.html',''); initRe
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="Visualizer_8h.html">Visualizer.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

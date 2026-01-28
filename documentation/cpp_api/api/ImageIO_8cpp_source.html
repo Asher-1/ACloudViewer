@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -99,7 +108,7 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CV__io_2include_2ImageIO_8h.html">ImageIO.h</a>&gt;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;array&gt;</span></div>
@@ -136,15 +145,15 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;}  <span class="comment">// namespace</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#ab7e080e76b9c32614fe74e397529a4d2">   48</a></span>&#160;std::shared_ptr&lt;geometry::Image&gt; <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#ab7e080e76b9c32614fe74e397529a4d2">CreateImageFromFile</a>(</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keyword">const</span> std::string &amp;filename) {</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keyword">auto</span> <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a> = std::make_shared&lt;geometry::Image&gt;();</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4061d93cac5620e6e94287b8304b0eca">ReadImage</a>(filename, *<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>);</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4061d93cac5620e6e94287b8304b0eca">ReadImage</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, *<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a4061d93cac5620e6e94287b8304b0eca">   55</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4061d93cac5620e6e94287b8304b0eca">ReadImage</a>(<span class="keyword">const</span> std::string &amp;filename, <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">geometry::Image</a> &amp;<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>) {</div>
+<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a4061d93cac5620e6e94287b8304b0eca">   55</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4061d93cac5620e6e94287b8304b0eca">ReadImage</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">geometry::Image</a> &amp;<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>) {</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    std::string signature_buffer(MAX_SIGNATURE_LEN, 0);</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    std::ifstream file(filename, std::ios::binary);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    std::ifstream file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, std::ios::binary);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    file.read(&amp;signature_buffer[0], MAX_SIGNATURE_LEN);</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    std::string err_msg;</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (!file) {</div>
@@ -154,7 +163,7 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;signature_decoder : signature_decoder_list) {</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;            <span class="keywordflow">if</span> (signature_buffer.compare(0, signature_decoder.first.size(),</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                         signature_decoder.first) == 0) {</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                <span class="keywordflow">return</span> signature_decoder.second(filename, <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                <span class="keywordflow">return</span> signature_decoder.second(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            }</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        }</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        err_msg =</div>
@@ -162,15 +171,15 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                <span class="stringliteral">&quot;signature, only PNG and JPG are supported.&quot;</span>;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    }</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.Clear();</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(err_msg.c_str(), filename);</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(err_msg.c_str(), <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;}</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
-<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#ac9ed60d5ae37329a31c5f23b2e9209a8">   79</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#ac9ed60d5ae37329a31c5f23b2e9209a8">WriteImage</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#ac9ed60d5ae37329a31c5f23b2e9209a8">   79</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#ac9ed60d5ae37329a31c5f23b2e9209a8">WriteImage</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">geometry::Image</a> &amp;<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>,</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                <span class="keywordtype">int</span> quality <span class="comment">/* = kCloudViewerImageIODefaultQuality*/</span>) {</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    std::string filename_ext =</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">utility::filesystem::GetFileExtensionInLowerCase</a>(filename);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">utility::filesystem::GetFileExtensionInLowerCase</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keywordflow">if</span> (filename_ext.empty()) {</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                <span class="stringliteral">&quot;Write geometry::Image failed: unknown file extension.&quot;</span>);</div>
@@ -183,7 +192,7 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                filename_ext);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    }</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">return</span> map_itr-&gt;second(filename, <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.To(<a class="code" href="classcloudViewer_1_1core_1_1Device.html">core::Device</a>(<span class="stringliteral">&quot;CPU:0&quot;</span>)), quality);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">return</span> map_itr-&gt;second(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.To(<a class="code" href="classcloudViewer_1_1core_1_1Device.html">core::Device</a>(<span class="stringliteral">&quot;CPU:0&quot;</span>)), quality);</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;}</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1DepthNoiseSimulator.html#abff889ddcdbe22f52094d75bed3e31e0">   99</a></span>&#160;<a class="code" href="classcloudViewer_1_1t_1_1io_1_1DepthNoiseSimulator.html#abff889ddcdbe22f52094d75bed3e31e0">DepthNoiseSimulator::DepthNoiseSimulator</a>(<span class="keyword">const</span> std::string &amp;noise_model_path) {</div>
@@ -198,14 +207,14 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    std::vector&lt;float&gt; data;</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *line_buffer;</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; skip_first_n_lines; ++i) {</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordflow">if</span> (!(line_buffer = file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a7ff9792c0a7447a439a2211aad79c677">ReadLine</a>())) {</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordflow">if</span> (!(line_buffer = file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8babed860eb48a002126cb624246b4cd">ReadLine</a>())) {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;            <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                    <span class="stringliteral">&quot;Read depth model failed: file {} is less than {} &quot;</span></div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                    <span class="stringliteral">&quot;lines.&quot;</span>,</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                    noise_model_path, skip_first_n_lines);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        }</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    }</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keywordflow">while</span> ((line_buffer = file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a7ff9792c0a7447a439a2211aad79c677">ReadLine</a>())) {</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keywordflow">while</span> ((line_buffer = file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8babed860eb48a002126cb624246b4cd">ReadLine</a>())) {</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        std::string line(line_buffer);</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        line.erase(std::find(line.begin(), line.end(), comment_prefix),</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                   line.end());</div>
@@ -349,6 +358,7 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;}  <span class="comment">// namespace t</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aCUDAUtils_8h_html_af09d29b35640489ea4ccf1ba464dd4f8"><div class="ttname"><a href="CUDAUtils_8h.html#af09d29b35640489ea4ccf1ba464dd4f8">CLOUDVIEWER_DEVICE</a></div><div class="ttdeci">#define CLOUDVIEWER_DEVICE</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8h_source.html#l00045">CUDAUtils.h:45</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aCV__io_2include_2ImageIO_8h_html"><div class="ttname"><a href="CV__io_2include_2ImageIO_8h.html">ImageIO.h</a></div></div>
 <div class="ttc" id="aFilamentRenderer_8cpp_html_a60b0c69b08810766e366c4b90031cd0d"><div class="ttname"><a href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a></div><div class="ttdeci">std::shared_ptr&lt; core::Tensor &gt; image</div><div class="ttdef"><b>Definition:</b> <a href="FilamentRenderer_8cpp_source.html#l00184">FilamentRenderer.cpp:184</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
@@ -379,15 +389,15 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1DepthNoiseSimulator_html_abff889ddcdbe22f52094d75bed3e31e0"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1DepthNoiseSimulator.html#abff889ddcdbe22f52094d75bed3e31e0">cloudViewer::t::io::DepthNoiseSimulator::DepthNoiseSimulator</a></div><div class="ttdeci">DepthNoiseSimulator(const std::string &amp;noise_model_path)</div><div class="ttdoc">Constructor.</div><div class="ttdef"><b>Definition:</b> <a href="ImageIO_8cpp_source.html#l00099">ImageIO.cpp:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1DepthNoiseSimulator_html_ad0b96f105072f405429fbbc6cb05ee77"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1DepthNoiseSimulator.html#ad0b96f105072f405429fbbc6cb05ee77">cloudViewer::t::io::DepthNoiseSimulator::Simulate</a></div><div class="ttdeci">geometry::Image Simulate(const geometry::Image &amp;im_src, float depth_scale=1000.0)</div><div class="ttdoc">Apply noise model to a depth image.</div><div class="ttdef"><b>Definition:</b> <a href="ImageIO_8cpp_source.html#l00158">ImageIO.cpp:158</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html">cloudViewer::utility::filesystem::CFile</a></div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00219">FileSystem.h:219</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a53f191f47cd6b28657689be32bb0ea97"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a53f191f47cd6b28657689be32bb0ea97">cloudViewer::utility::filesystem::CFile::Open</a></div><div class="ttdeci">bool Open(const std::string &amp;filename, const std::string &amp;mode)</div><div class="ttdoc">Open a file.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a7ff9792c0a7447a439a2211aad79c677"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a7ff9792c0a7447a439a2211aad79c677">cloudViewer::utility::filesystem::CFile::ReadLine</a></div><div class="ttdeci">const char * ReadLine()</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a53f191f47cd6b28657689be32bb0ea97"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a53f191f47cd6b28657689be32bb0ea97">cloudViewer::utility::filesystem::CFile::Open</a></div><div class="ttdeci">bool Open(const std::string &amp;filename, const std::string &amp;mode)</div><div class="ttdoc">Open a file.</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00739">FileSystem.cpp:739</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a8babed860eb48a002126cb624246b4cd"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8babed860eb48a002126cb624246b4cd">cloudViewer::utility::filesystem::CFile::ReadLine</a></div><div class="ttdeci">const char * ReadLine()</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00820">FileSystem.cpp:820</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1random_1_1NormalGenerator_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1random_1_1NormalGenerator.html">cloudViewer::utility::random::NormalGenerator</a></div><div class="ttdef"><b>Definition:</b> <a href="Random_8h_source.html#l00154">Random.h:154</a></div></div>
 <div class="ttc" id="acloudViewer_2t_2io_2ImageIO_8h_html"><div class="ttname"><a href="cloudViewer_2t_2io_2ImageIO_8h.html">ImageIO.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0793177dbf31e47ea65bb4bbaa85700c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">cloudViewer::core::ParallelFor</a></div><div class="ttdeci">void ParallelFor(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00111">ParallelFor.h:111</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ada08d037ef6e333e2a2ad1d636219433"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ada08d037ef6e333e2a2ad1d636219433">cloudViewer::core::UInt16</a></div><div class="ttdeci">const Dtype UInt16</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00049">Dtype.cpp:49</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
@@ -399,15 +409,15 @@ $(document).ready(function(){initNavTree('ImageIO_8cpp_source.html',''); initRes
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ac9ed60d5ae37329a31c5f23b2e9209a8"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ac9ed60d5ae37329a31c5f23b2e9209a8">cloudViewer::t::io::WriteImage</a></div><div class="ttdeci">bool WriteImage(const std::string &amp;filename, const geometry::Image &amp;image, int quality)</div><div class="ttdef"><b>Definition:</b> <a href="ImageIO_8cpp_source.html#l00079">ImageIO.cpp:79</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ad1e11e5a436370da46fa4bff570efd01"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ad1e11e5a436370da46fa4bff570efd01">cloudViewer::t::io::WriteImageToJPG</a></div><div class="ttdeci">bool WriteImageToJPG(const std::string &amp;filename, const geometry::Image &amp;image, int quality)</div><div class="ttdef"><b>Definition:</b> <a href="FileJPG_8cpp_source.html#l00113">FileJPG.cpp:113</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_adfe1cfc25014aa1b9c0c2aa777235316"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#adfe1cfc25014aa1b9c0c2aa777235316">cloudViewer::t::io::ReadImageFromJPG</a></div><div class="ttdeci">bool ReadImageFromJPG(const std::string &amp;filename, geometry::Image &amp;image)</div><div class="ttdef"><b>Definition:</b> <a href="FileJPG_8cpp_source.html#l00041">FileJPG.cpp:41</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa97d5d06ded25c88b7e456fbdb4bd46c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase</a></div><div class="ttdeci">std::string GetFileExtensionInLowerCase(const std::string &amp;filename)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa97d5d06ded25c88b7e456fbdb4bd46c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase</a></div><div class="ttdeci">std::string GetFileExtensionInLowerCase(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00281">FileSystem.cpp:281</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="ImageIO_8cpp.html">ImageIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

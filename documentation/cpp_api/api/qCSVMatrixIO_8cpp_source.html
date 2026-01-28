@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -102,14 +111,16 @@ $(document).ready(function(){initNavTree('qCSVMatrixIO_8cpp_source.html',''); in
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;qCSVMatrixIO::qCSVMatrixIO(QObject *parent)</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;      ccIOPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qCSVMatrixIO/info.json&quot;</span>) {}</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;      <a class="code" href="classccIOPluginInterface.html">ccIOPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qCSVMatrixIO/info.json&quot;</span>) {}</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;ccIOPluginInterface::FilterList qCSVMatrixIO::getFilters() {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<a class="code" href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a> qCSVMatrixIO::getFilters() {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    <span class="keywordflow">return</span> {<a class="code" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a>(<span class="keyword">new</span> <a class="code" href="classCSVMatrixFilter.html">CSVMatrixFilter</a>)};</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;}</div>
 <div class="ttc" id="aCSVMatrixFilter_8h_html"><div class="ttname"><a href="CSVMatrixFilter_8h.html">CSVMatrixFilter.h</a></div></div>
 <div class="ttc" id="aclassCSVMatrixFilter_html"><div class="ttname"><a href="classCSVMatrixFilter.html">CSVMatrixFilter</a></div><div class="ttdoc">CSV matrix I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="CSVMatrixFilter_8h_source.html#l00014">CSVMatrixFilter.h:14</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_abfe3e5d65638ebcf0ec20432b23da4bd"><div class="ttname"><a href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a></div><div class="ttdeci">QSharedPointer&lt; FileIOFilter &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00097">FileIOFilter.h:97</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html"><div class="ttname"><a href="classccIOPluginInterface.html">ccIOPluginInterface</a></div><div class="ttdoc">I/O filter plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00020">ecvIOPluginInterface.h:20</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html_a66bef21cd54a0c6c13a1279a0ff1a827"><div class="ttname"><a href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a></div><div class="ttdeci">QVector&lt; FileIOFilter::Shared &gt; FilterList</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00022">ecvIOPluginInterface.h:22</a></div></div>
 <div class="ttc" id="aqCSVMatrixIO_8h_html"><div class="ttname"><a href="qCSVMatrixIO_8h.html">qCSVMatrixIO.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -117,7 +128,7 @@ $(document).ready(function(){initNavTree('qCSVMatrixIO_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_7805617ea41457ca4a2dd61c67136912.html">qCSVMatrixIO</a></li><li class="navelem"><a class="el" href="dir_1dd8fdf58db2052ab27907dab70255a2.html">src</a></li><li class="navelem"><a class="el" href="qCSVMatrixIO_8cpp.html">qCSVMatrixIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

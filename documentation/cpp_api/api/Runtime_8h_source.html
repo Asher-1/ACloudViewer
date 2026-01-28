@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,8 +107,8 @@ $(document).ready(function(){initNavTree('Runtime_8h_source.html',''); initResiz
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;pybind11/pytypes.h&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">class </span>ecvMainAppInterface;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">class </span>ccCommandLineInterface;</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">class </span><a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>;</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">class </span><a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>;</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;../../wrapper/pycc/src/casters.h&quot;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
@@ -153,20 +162,22 @@ $(document).ready(function(){initNavTree('Runtime_8h_source.html',''); initResiz
 <div class="line"><a name="l00069"></a><span class="lineno"><a class="line" href="structRuntime_1_1RegisteredPlugin.html#ab24bf730991e370df868688ac704d62f">   69</a></span>&#160;    pybind11::object <a class="code" href="structRuntime_1_1RegisteredPlugin.html#ab24bf730991e370df868688ac704d62f">mainIcon</a>;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;};</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">setMainAppInterfaceInstance</a>(ecvMainAppInterface *appInterface) noexcept(<span class="keyword">false</span>);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">setMainAppInterfaceInstance</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *appInterface) noexcept(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a5b51e10a6229c9312a845189f2beb38b">unsetMainAppInterfaceInstance</a>() noexcept;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">setCmdLineInterfaceInstance</a>(ccCommandLineInterface *cmdLine) noexcept;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">setCmdLineInterfaceInstance</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *cmdLine) noexcept;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#ad43c13f4b776fa9b254ce8f0257031e4">unsetCmdLineInterfaceInstance</a>() noexcept;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;} <span class="comment">// namespace Runtime</span></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html"><div class="ttname"><a href="namespaceRuntime.html">Runtime</a></div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00028">Runtime.cpp:29</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a3a8530ce0f197a3767aa2d41ce28add8"><div class="ttname"><a href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">Runtime::setMainAppInterfaceInstance</a></div><div class="ttdeci">void setMainAppInterfaceInstance(ecvMainAppInterface *appInterface) noexcept(false)</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00082">Runtime.cpp:82</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a5b51e10a6229c9312a845189f2beb38b"><div class="ttname"><a href="namespaceRuntime.html#a5b51e10a6229c9312a845189f2beb38b">Runtime::unsetMainAppInterfaceInstance</a></div><div class="ttdeci">void unsetMainAppInterfaceInstance() noexcept</div><div class="ttdoc">Unsets the app interface pointer.</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00090">Runtime.cpp:90</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a5f307c2df990898b9beb09285533042f"><div class="ttname"><a href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">Runtime::setCmdLineInterfaceInstance</a></div><div class="ttdeci">void setCmdLineInterfaceInstance(ccCommandLineInterface *cmdLine) noexcept</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00099">Runtime.cpp:99</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_ad43c13f4b776fa9b254ce8f0257031e4"><div class="ttname"><a href="namespaceRuntime.html#ad43c13f4b776fa9b254ce8f0257031e4">Runtime::unsetCmdLineInterfaceInstance</a></div><div class="ttdeci">void unsetCmdLineInterfaceInstance() noexcept</div><div class="ttdoc">Unsets the pointer to the cmdline app interface.</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00107">Runtime.cpp:107</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="astructRuntime_1_1RegisteredPlugin_1_1Action_html"><div class="ttname"><a href="structRuntime_1_1RegisteredPlugin_1_1Action.html">Runtime::RegisteredPlugin::Action</a></div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8h_source.html#l00023">Runtime.h:24</a></div></div>
 <div class="ttc" id="astructRuntime_1_1RegisteredPlugin_1_1Action_html_a295529ffbc29fa3a69948eeac610b05c"><div class="ttname"><a href="structRuntime_1_1RegisteredPlugin_1_1Action.html#a295529ffbc29fa3a69948eeac610b05c">Runtime::RegisteredPlugin::Action::target</a></div><div class="ttdeci">pybind11::object target</div><div class="ttdoc">The target python function (or method)</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8h_source.html#l00034">Runtime.h:34</a></div></div>
 <div class="ttc" id="astructRuntime_1_1RegisteredPlugin_1_1Action_html_a2962edba7cd7379875ce1655389a12df"><div class="ttname"><a href="structRuntime_1_1RegisteredPlugin_1_1Action.html#a2962edba7cd7379875ce1655389a12df">Runtime::RegisteredPlugin::Action::name</a></div><div class="ttdeci">QString name</div><div class="ttdoc">Name to be displayed in the UI.</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8h_source.html#l00032">Runtime.h:32</a></div></div>
@@ -186,7 +197,7 @@ $(document).ready(function(){initNavTree('Runtime_8h_source.html',''); initResiz
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="dir_55cc919656e65b5b0b09260db66aea16.html">Runtime</a></li><li class="navelem"><a class="el" href="Runtime_8h.html">Runtime.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

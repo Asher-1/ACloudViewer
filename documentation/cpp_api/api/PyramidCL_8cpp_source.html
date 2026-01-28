@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -279,9 +288,9 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <span class="keywordflow">if</span>(_allPyramid==<a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>)</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    {</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        _allPyramid = <span class="keyword">new</span> CLTexImage[ texNum];</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        cl_context       <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>  = _OpenCL-&gt;GetContextCL();</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        cl_context       <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>  = _OpenCL-&gt;GetContextCL();</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        cl_command_queue queue    = _OpenCL-&gt;GetCommandQueue();</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt; texNum; ++i)   _allPyramid[i].SetContext(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt; texNum; ++i)   _allPyramid[i].SetContext(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    }</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160; </div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
@@ -384,7 +393,7 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="keywordflow">if</span>(_levelFeatureNum==<a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>)  _levelFeatureNum = <span class="keyword">new</span> <span class="keywordtype">int</span>[_octave_num * param._dog_level_num];</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    std::fill(_levelFeatureNum, _levelFeatureNum+_octave_num * param._dog_level_num, 0); </div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    cl_context       <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>  = _OpenCL-&gt;GetContextCL();</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    cl_context       <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>  = _OpenCL-&gt;GetContextCL();</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    cl_command_queue queue    = _OpenCL-&gt;GetCommandQueue();</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    <span class="keywordtype">int</span> wmax = GetBaseLevel(_octave_min)-&gt;GetImgWidth() * 2;</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    <span class="keywordtype">int</span> hmax = GetBaseLevel(_octave_min)-&gt;GetImgHeight() * 2;</div>
@@ -399,7 +408,7 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        _hpLevelNum = num;</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keywordflow">if</span>(_histoPyramidTex ) <span class="keyword">delete</span> [] _histoPyramidTex;</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        _histoPyramidTex = <span class="keyword">new</span> CLTexImage[_hpLevelNum];</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt; _hpLevelNum; ++i) _histoPyramidTex[i].SetContext(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt; _hpLevelNum; ++i) _histoPyramidTex[i].SetContext(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    }</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <span class="keywordflow">for</span>(i = 0, w = 1; i &lt; _hpLevelNum; i++)</div>
@@ -416,12 +425,12 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keywordflow">if</span>(_featureTex==<a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>)   </div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    {</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        _featureTex = <span class="keyword">new</span> CLTexImage[n];</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt;n; ++i) _featureTex[i].SetContext(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt;n; ++i) _featureTex[i].SetContext(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    }</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keywordflow">if</span>(<a class="code" href="classGlobalParam.html#aece6b2f2a5f3c769809d44e1e4d26a63">GlobalUtil::_MaxOrientation</a> &gt;1 &amp;&amp; <a class="code" href="classGlobalParam.html#a404059fe9174a0c186c9a54aa19ce492">GlobalUtil::_OrientationPack2</a>==0 &amp;&amp; _orientationTex== <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>)    </div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    {</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        _orientationTex = <span class="keyword">new</span> CLTexImage[n];</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt; n; ++i) _orientationTex[i].SetContext(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keywordflow">for</span>(i = 0; i &lt; n; ++i) _orientationTex[i].SetContext(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    }</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160; </div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160; </div>
@@ -451,7 +460,7 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    {</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;        <span class="comment">//initialize feature texture pyramid</span></div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;        <span class="keywordtype">int</span> fmax = _featureTex-&gt;GetImgWidth();</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        _descriptorTex = <span class="keyword">new</span> CLTexImage(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        _descriptorTex = <span class="keyword">new</span> CLTexImage(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, queue);</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        totalkb += ( fmax /2);</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        _descriptorTex-&gt;InitBufferTex(fmax *128, 1, 1);</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    }<span class="keywordflow">else</span></div>
@@ -1222,7 +1231,6 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="ttc" id="aSiftGPU_8h_html"><div class="ttname"><a href="SiftGPU_8h.html">SiftGPU.h</a></div></div>
 <div class="ttc" id="aSiftPyramid_8h_html"><div class="ttname"><a href="SiftPyramid_8h.html">SiftPyramid.h</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclassGLTexImage_html"><div class="ttname"><a href="classGLTexImage.html">GLTexImage</a></div><div class="ttdef"><b>Definition:</b> <a href="GLTexImage_8h_source.html#l00031">GLTexImage.h:32</a></div></div>
 <div class="ttc" id="aclassGLTexImage_html_a0a5bef9bbb86e30e0fac7baa6e7380a0"><div class="ttname"><a href="classGLTexImage.html#a0a5bef9bbb86e30e0fac7baa6e7380a0">GLTexImage::GetImgHeight</a></div><div class="ttdeci">int GetImgHeight()</div><div class="ttdef"><b>Definition:</b> <a href="GLTexImage_8h_source.html#l00080">GLTexImage.h:80</a></div></div>
 <div class="ttc" id="aclassGLTexImage_html_acfe4c5231e3e4e64a914bf947498caf2"><div class="ttname"><a href="classGLTexImage.html#acfe4c5231e3e4e64a914bf947498caf2">GLTexImage::GetImgWidth</a></div><div class="ttdeci">int GetImgWidth()</div><div class="ttdef"><b>Definition:</b> <a href="GLTexImage_8h_source.html#l00079">GLTexImage.h:79</a></div></div>
@@ -1247,16 +1255,17 @@ $(document).ready(function(){initNavTree('PyramidCL_8cpp_source.html',''); initR
 <div class="ttc" id="aclassSiftPyramid_html"><div class="ttname"><a href="classSiftPyramid.html">SiftPyramid</a></div><div class="ttdef"><b>Definition:</b> <a href="SiftPyramid_8h_source.html#l00049">SiftPyramid.h:50</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_73745d1eab9af7d0334a3c60034e8cb1.html">SiftGPU</a></li><li class="navelem"><a class="el" href="PyramidCL_8cpp.html">PyramidCL.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

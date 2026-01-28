@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -249,6 +258,14 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html">WindowSystem</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1PythonUnlocker.html">PythonUnlocker</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1PyWindow.html">PyWindow</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1PyImageWidget.html">PyImageWidget</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1PySceneWidget.html">PySceneWidget</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -434,6 +451,11 @@ Enumerations</h2></td></tr>
 , <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a3b841056ec36a9d520960db28cf0b88c">BOLD_ITALIC</a> = 3
  }</td></tr>
 <tr class="separator:a05233c9e0cd4054c9b0fcd4a41ba3d17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ab54a938daf9cb59db5fd89441f846d"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846d">EventCallbackResult</a> { <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846da92c30de24509d2778c9515bab375d253">IGNORED</a> = 0
+, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846da9a5c682455ce10cef6dfee3aef3730a5">HANDLED</a>
+, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846da5fd4e4caa04c7a478debcf06da9a3b0c">CONSUMED</a>
+ }</td></tr>
+<tr class="separator:a0ab54a938daf9cb59db5fd89441f846d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -453,6 +475,22 @@ Functions</h2></td></tr>
 <tr class="separator:a3ddc74c18be8666befdd35047fbe987d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5c464e0abe4cd75ffc297f9b308708d"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#ab5c464e0abe4cd75ffc297f9b308708d">FindFontPath</a> (std::string font, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17">FontStyle</a> style)</td></tr>
 <tr class="separator:ab5c464e0abe4cd75ffc297f9b308708d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0665d5de208264d9b860893dc42850b6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0665d5de208264d9b860893dc42850b6">pybind_gui_events</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a0665d5de208264d9b860893dc42850b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4fe3ad3e4a218fbf7facb741704b1c6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a4fe3ad3e4a218fbf7facb741704b1c6b">cleanup_filament_atexit</a> ()</td></tr>
+<tr class="separator:a4fe3ad3e4a218fbf7facb741704b1c6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e9035c614add3d097af5146582ca473"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a1e9035c614add3d097af5146582ca473">install_cleanup_atexit</a> ()</td></tr>
+<tr class="separator:a1e9035c614add3d097af5146582ca473"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa98d7a088ddbe5199cb33052a9520adb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#aa98d7a088ddbe5199cb33052a9520adb">InitializeForPython</a> (std::string resource_path, bool headless)</td></tr>
+<tr class="separator:aa98d7a088ddbe5199cb33052a9520adb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d57a1245f54ebd1cb0be60fbd1b8ca7"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">geometry::Image</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a2d57a1245f54ebd1cb0be60fbd1b8ca7">RenderToImageWithoutWindow</a> (<a class="el" href="classcloudViewer_1_1visualization_1_1rendering_1_1CloudViewerScene.html">rendering::CloudViewerScene</a> *scene, int <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>, int <a class="el" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>)</td></tr>
+<tr class="separator:a2d57a1245f54ebd1cb0be60fbd1b8ca7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b130f1f7b2080306a66043e9e43ef84"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">geometry::Image</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a8b130f1f7b2080306a66043e9e43ef84">RenderToDepthImageWithoutWindow</a> (<a class="el" href="classcloudViewer_1_1visualization_1_1rendering_1_1CloudViewerScene.html">rendering::CloudViewerScene</a> *scene, int <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>, int <a class="el" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>, bool z_in_view_space)</td></tr>
+<tr class="separator:a8b130f1f7b2080306a66043e9e43ef84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98734887f9e168639a902e01fd110918"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a98734887f9e168639a902e01fd110918">pybind_gui_classes</a> (py::module &amp;m_gui)</td></tr>
+<tr class="separator:a98734887f9e168639a902e01fd110918"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51b1e3039985dc232d73fc6c172878a2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a51b1e3039985dc232d73fc6c172878a2">pybind_gui</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a51b1e3039985dc232d73fc6c172878a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -474,6 +512,8 @@ Variables</h2></td></tr>
 <tr class="separator:acf081748634ece5c4634371f2b32ac7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab25635d51dc965b50a701d3e6fb101d2"><td class="memItemLeft" align="right" valign="top">static const <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1Color.html">Color</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#ab25635d51dc965b50a701d3e6fb101d2">DEFAULT_BGCOLOR</a> (0.001f, 0.001f, 0.001f, 0.0f)</td></tr>
 <tr class="separator:ab25635d51dc965b50a701d3e6fb101d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72ae5389b25329f62118d2fb3274a78b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a72ae5389b25329f62118d2fb3274a78b">g_installed_atexit</a> = false</td></tr>
+<tr class="separator:a72ae5389b25329f62118d2fb3274a78b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="a7dffb8d99401b9bfe474c3a481e1ef19"></a>
@@ -552,6 +592,35 @@ Variables</h2></td></tr>
 </table>
 
 <p class="definition">Definition at line <a class="el" href="Gui_8h_source.html#l00053">53</a> of file <a class="el" href="Gui_8h_source.html">Gui.h</a>.</p>
+
+</div>
+</div>
+<a id="a0ab54a938daf9cb59db5fd89441f846d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ab54a938daf9cb59db5fd89441f846d">&#9670;&nbsp;</a></span>EventCallbackResult</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846d">cloudViewer::visualization::gui::EventCallbackResult</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a0ab54a938daf9cb59db5fd89441f846da92c30de24509d2778c9515bab375d253"></a>IGNORED&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a0ab54a938daf9cb59db5fd89441f846da9a5c682455ce10cef6dfee3aef3730a5"></a>HANDLED&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a0ab54a938daf9cb59db5fd89441f846da5fd4e4caa04c7a478debcf06da9a3b0c"></a>CONSUMED&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00175">175</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
 
 </div>
 </div>
@@ -771,6 +840,29 @@ Variables</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="a4fe3ad3e4a218fbf7facb741704b1c6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4fe3ad3e4a218fbf7facb741704b1c6b">&#9670;&nbsp;</a></span>cleanup_filament_atexit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::visualization::gui::cleanup_filament_atexit </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00128">128</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="Application_8cpp_source.html#l00179">cloudViewer::visualization::gui::Application::GetInstance()</a>, and <a class="el" href="Application_8cpp_source.html#l00487">cloudViewer::visualization::gui::Application::OnTerminate()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00130">install_cleanup_atexit()</a>.</p>
+
+</div>
+</div>
 <a id="aca9fc6fdaa1ee91a03470ca0ed4735a3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aca9fc6fdaa1ee91a03470ca0ed4735a3">&#9670;&nbsp;</a></span>colorToImgui()</h2>
 
@@ -791,7 +883,7 @@ Variables</h2></td></tr>
 
 <p class="reference">References <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Button_8cpp_source.html#l00115">cloudViewer::visualization::gui::Button::Draw()</a>, <a class="el" href="Checkbox_8cpp_source.html#l00061">cloudViewer::visualization::gui::Checkbox::Draw()</a>, <a class="el" href="Combobox_8cpp_source.html#l00148">cloudViewer::visualization::gui::Combobox::Draw()</a>, <a class="el" href="ImageWidget_8cpp_source.html#l00094">cloudViewer::visualization::gui::ImageWidget::Draw()</a>, <a class="el" href="Label_8cpp_source.html#l00115">cloudViewer::visualization::gui::Label::Draw()</a>, <a class="el" href="Layout_8cpp_source.html#l00442">cloudViewer::visualization::gui::CollapsableVert::Draw()</a>, <a class="el" href="Layout_8cpp_source.html#l00502">cloudViewer::visualization::gui::ScrollableVert::Draw()</a>, <a class="el" href="ListView_8cpp_source.html#l00105">cloudViewer::visualization::gui::ListView::Draw()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00117">cloudViewer::visualization::gui::NumberEdit::Draw()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00094">cloudViewer::visualization::gui::RadioButton::Draw()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00083">cloudViewer::visualization::gui::TextEdit::Draw()</a>, <a class="el" href="TreeView_8cpp_source.html#l00364">cloudViewer::visualization::gui::TreeView::Draw()</a>, <a class="el" href="VectorEdit_8cpp_source.html#l00058">cloudViewer::visualization::gui::VectorEdit::Draw()</a>, and <a class="el" href="Window_8cpp_source.html#l00246">cloudViewer::visualization::gui::Window::Window()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Button_8cpp_source.html#l00115">cloudViewer::visualization::gui::Button::Draw()</a>, <a class="el" href="Checkbox_8cpp_source.html#l00061">cloudViewer::visualization::gui::Checkbox::Draw()</a>, <a class="el" href="Combobox_8cpp_source.html#l00148">cloudViewer::visualization::gui::Combobox::Draw()</a>, <a class="el" href="ImageWidget_8cpp_source.html#l00094">cloudViewer::visualization::gui::ImageWidget::Draw()</a>, <a class="el" href="Label_8cpp_source.html#l00115">cloudViewer::visualization::gui::Label::Draw()</a>, <a class="el" href="Layout_8cpp_source.html#l00442">cloudViewer::visualization::gui::CollapsableVert::Draw()</a>, <a class="el" href="Layout_8cpp_source.html#l00502">cloudViewer::visualization::gui::ScrollableVert::Draw()</a>, <a class="el" href="ListView_8cpp_source.html#l00105">cloudViewer::visualization::gui::ListView::Draw()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00117">cloudViewer::visualization::gui::NumberEdit::Draw()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00094">cloudViewer::visualization::gui::RadioButton::Draw()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00083">cloudViewer::visualization::gui::TextEdit::Draw()</a>, <a class="el" href="TreeView_8cpp_source.html#l00364">cloudViewer::visualization::gui::TreeView::Draw()</a>, <a class="el" href="VectorEdit_8cpp_source.html#l00058">cloudViewer::visualization::gui::VectorEdit::Draw()</a>, and <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00246">cloudViewer::visualization::gui::Window::Window()</a>.</p>
 
 </div>
 </div>
@@ -847,7 +939,7 @@ Variables</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="Util_8cpp_source.html#l00032">32</a> of file <a class="el" href="Util_8cpp_source.html">Util.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a2909dd0e0336f10b6da9735b859a3d19">BOLD</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a3b841056ec36a9d520960db28cf0b88c">BOLD_ITALIC</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aaa1c6356e5cf03744e9abae7be20336c">cloudViewer::utility::filesystem::FileExists()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a58e8fde520aaf45ea24766a7c9cdd454">cloudViewer::utility::filesystem::FindFilesRecursively()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">cloudViewer::utility::filesystem::GetFileNameWithoutDirectory()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa93b1a19ed0023a320eda4c4f8018749">cloudViewer::utility::filesystem::GetFileNameWithoutExtension()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a66f3411d5d77326974645154fc3dcea7">cloudViewer::utility::filesystem::GetFileParentDirectory()</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a25093123b8943308104129e1d762f3b7">ITALIC</a>, and <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a1e23852820b9154316c7c06e2b7ba051">NORMAL</a>.</p>
+<p class="reference">References <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a2909dd0e0336f10b6da9735b859a3d19">BOLD</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a3b841056ec36a9d520960db28cf0b88c">BOLD_ITALIC</a>, <a class="el" href="FileSystem_8cpp_source.html#l00524">cloudViewer::utility::filesystem::FileExists()</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="FileSystem_8cpp_source.html#l00586">cloudViewer::utility::filesystem::FindFilesRecursively()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00281">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00301">cloudViewer::utility::filesystem::GetFileNameWithoutDirectory()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00295">cloudViewer::utility::filesystem::GetFileNameWithoutExtension()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00314">cloudViewer::utility::filesystem::GetFileParentDirectory()</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a25093123b8943308104129e1d762f3b7">ITALIC</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a1e23852820b9154316c7c06e2b7ba051">NORMAL</a>, and <a class="el" href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">cloudViewer::t::geometry::path</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Application_8cpp_source.html#l00364">cloudViewer::visualization::gui::Application::SetFont()</a>.</p>
 
@@ -872,6 +964,63 @@ Variables</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="NativeLinux_8cpp_source.html#l00023">23</a> of file <a class="el" href="NativeLinux_8cpp_source.html">NativeLinux.cpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="GLFWWindowSystem_8cpp_source.html#l00515">cloudViewer::visualization::gui::GLFWWindowSystem::GetNativeDrawable()</a>.</p>
+
+</div>
+</div>
+<a id="aa98d7a088ddbe5199cb33052a9520adb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa98d7a088ddbe5199cb33052a9520adb">&#9670;&nbsp;</a></span>InitializeForPython()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::visualization::gui::InitializeForPython </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>resource_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>headless</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00136">136</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileSystem_8cpp_source.html#l00314">cloudViewer::utility::filesystem::GetFileParentDirectory()</a>, <a class="el" href="Application_8cpp_source.html#l00179">cloudViewer::visualization::gui::Application::GetInstance()</a>, <a class="el" href="Application_8cpp_source.html#l00267">cloudViewer::visualization::gui::Application::Initialize()</a>, and <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00130">install_cleanup_atexit()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00309">pybind_gui_classes()</a>, and <a class="el" href="rendering_8cpp_source.html#l00033">cloudViewer::visualization::rendering::PyOffscreenRenderer::PyOffscreenRenderer()</a>.</p>
+
+</div>
+</div>
+<a id="a1e9035c614add3d097af5146582ca473"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e9035c614add3d097af5146582ca473">&#9670;&nbsp;</a></span>install_cleanup_atexit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::visualization::gui::install_cleanup_atexit </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00130">130</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00128">cleanup_filament_atexit()</a>, and <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00127">g_installed_atexit</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00136">InitializeForPython()</a>.</p>
 
 </div>
 </div>
@@ -911,7 +1060,7 @@ Variables</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ImguiFilamentBridge_8cpp_source.html#l00057">57</a> of file <a class="el" href="ImguiFilamentBridge_8cpp_source.html">ImguiFilamentBridge.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="TriangleMeshBuffers_8cpp_source.html#l00159">bytes</a>, <a class="el" href="QtCompat_8h_source.html#l00718">QtCompat::endl()</a>, and <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a55d06a573e588481990954cffd5dbbd8">cloudViewer::utility::filesystem::FReadToBuffer()</a>.</p>
+<p class="reference">References <a class="el" href="TriangleMeshBuffers_8cpp_source.html#l00159">bytes</a>, <a class="el" href="QtCompat_8h_source.html#l00718">QtCompat::endl()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00678">cloudViewer::utility::filesystem::FReadToBuffer()</a>, and <a class="el" href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">cloudViewer::t::geometry::path</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="ImguiFilamentBridge_8cpp_source.html#l00133">cloudViewer::visualization::gui::ImguiFilamentBridge::ImguiFilamentBridge()</a>.</p>
 
@@ -974,6 +1123,156 @@ Variables</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="NativeLinux_8cpp_source.html#l00038">38</a> of file <a class="el" href="NativeLinux_8cpp_source.html">NativeLinux.cpp</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="GLFWWindowSystem_8cpp_source.html#l00193">cloudViewer::visualization::gui::GLFWWindowSystem::PostRedrawEvent()</a>.</p>
+
+</div>
+</div>
+<a id="a51b1e3039985dc232d73fc6c172878a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51b1e3039985dc232d73fc6c172878a2">&#9670;&nbsp;</a></span>pybind_gui()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::visualization::gui::pybind_gui </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="reference">Referenced by <a class="el" href="visualization_8cpp_source.html#l00022">cloudViewer::visualization::pybind_visualization()</a>.</p>
+
+</div>
+</div>
+<a id="a98734887f9e168639a902e01fd110918"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98734887f9e168639a902e01fd110918">&#9670;&nbsp;</a></span>pybind_gui_classes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::visualization::gui::pybind_gui_classes </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m_gui</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00309">309</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00597">cloudViewer::visualization::gui::Window::AddChild()</a>, <a class="el" href="FileDialog_8cpp_source.html#l00339">cloudViewer::visualization::gui::FileDialog::AddFilter()</a>, <a class="el" href="Layout_8cpp_source.html#l00212">cloudViewer::visualization::gui::Layout1D::AddFixed()</a>, <a class="el" href="Application_8cpp_source.html#l00357">cloudViewer::visualization::gui::Application::AddFont()</a>, <a class="el" href="Combobox_8cpp_source.html#l00056">cloudViewer::visualization::gui::Combobox::AddItem()</a>, <a class="el" href="TreeView_8cpp_source.html#l00236">cloudViewer::visualization::gui::TreeView::AddItem()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l01066">cloudViewer::visualization::gui::SceneWidget::AddLabel()</a>, <a class="el" href="Menu_8cpp_source.html#l00047">cloudViewer::visualization::gui::Menu::AddSeparator()</a>, <a class="el" href="Layout_8cpp_source.html#l00224">cloudViewer::visualization::gui::Layout1D::AddStretch()</a>, <a class="el" href="TabControl_8cpp_source.html#l00044">cloudViewer::visualization::gui::TabControl::AddTab()</a>, <a class="el" href="TreeView_8cpp_source.html#l00258">cloudViewer::visualization::gui::TreeView::AddTextItem()</a>, <a class="el" href="Font_8cpp_source.html#l00031">cloudViewer::visualization::gui::FontDescription::AddTypefaceForCodePoints()</a>, <a class="el" href="Font_8cpp_source.html#l00026">cloudViewer::visualization::gui::FontDescription::AddTypefaceForLanguage()</a>, <a class="el" href="Application_8cpp_source.html#l00457">cloudViewer::visualization::gui::Application::AddWindow()</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1UIImage.html#a39d90b8df32cb3142ed8d48db3265359a8e1bde3c3d303163521522cf1d62f21f">cloudViewer::visualization::gui::UIImage::ANY</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1UIImage.html#a39d90b8df32cb3142ed8d48db3265359a219a680d521171d782d747577e8d2c7c">cloudViewer::visualization::gui::UIImage::ASPECT</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a2909dd0e0336f10b6da9735b859a3d19">BOLD</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a3b841056ec36a9d520960db28cf0b88c">BOLD_ITALIC</a>, <a class="el" href="Layout_8h_source.html#l00022">cloudViewer::visualization::gui::Margins::bottom</a>, <a class="el" href="Widget_8cpp_source.html#l00077">cloudViewer::visualization::gui::Widget::CalcPreferredSize()</a>, <a class="el" href="Combobox_8cpp_source.html#l00061">cloudViewer::visualization::gui::Combobox::ChangeItem()</a>, <a class="el" href="TreeView_8cpp_source.html#l00294">cloudViewer::visualization::gui::TreeView::Clear()</a>, <a class="el" href="Combobox_8cpp_source.html#l00051">cloudViewer::visualization::gui::Combobox::ClearItems()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00559">cloudViewer::visualization::gui::Window::Close()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00648">cloudViewer::visualization::gui::Window::CloseDialog()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a9b501abbba40c5510a36e51934904084a5fd4e4caa04c7a478debcf06da9a3b0c">cloudViewer::visualization::gui::Widget::CONSUMED</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846da5fd4e4caa04c7a478debcf06da9a3b0c">CONSUMED</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">context</a>, <a class="el" href="Application_8h_source.html#l00057">cloudViewer::visualization::gui::Application::DEFAULT_FONT_ID</a>, <a class="el" href="Theme_8h_source.html#l00030">cloudViewer::visualization::gui::Theme::default_layout_spacing</a>, <a class="el" href="Theme_8h_source.html#l00029">cloudViewer::visualization::gui::Theme::default_margin</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00989">cloudViewer::visualization::gui::SceneWidget::EnableSceneCaching()</a>, <a class="el" href="Theme_8h_source.html#l00028">cloudViewer::visualization::gui::Theme::font_size</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00997">cloudViewer::visualization::gui::SceneWidget::ForceRedraw()</a>, <a class="el" href="Color_8cpp_source.html#l00037">cloudViewer::visualization::gui::Color::GetAlpha()</a>, <a class="el" href="Widget_8cpp_source.html#l00055">cloudViewer::visualization::gui::Widget::GetBackgroundColor()</a>, <a class="el" href="Color_8cpp_source.html#l00036">cloudViewer::visualization::gui::Color::GetBlue()</a>, <a class="el" href="Gui_8cpp_source.html#l00033">cloudViewer::visualization::gui::Rect::GetBottom()</a>, <a class="el" href="TreeView_8cpp_source.html#l00324">cloudViewer::visualization::gui::TreeView::GetCanSelectItemsWithChildren()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00879">cloudViewer::visualization::gui::SceneWidget::GetCenterOfRotation()</a>, <a class="el" href="TreeView_8cpp_source.html#l00049">cloudViewer::visualization::gui::CheckableTextTreeCell::GetCheckbox()</a>, <a class="el" href="TreeView_8cpp_source.html#l00107">cloudViewer::visualization::gui::LUTTreeCell::GetCheckbox()</a>, <a class="el" href="Widget_8cpp_source.html#l00047">cloudViewer::visualization::gui::Widget::GetChildren()</a>, <a class="el" href="TreeView_8cpp_source.html#l00113">cloudViewer::visualization::gui::LUTTreeCell::GetColorEdit()</a>, <a class="el" href="TreeView_8cpp_source.html#l00176">cloudViewer::visualization::gui::ColormapTreeCell::GetColorEdit()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00526">cloudViewer::visualization::gui::Window::GetContentRect()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00076">cloudViewer::visualization::gui::NumberEdit::GetDecimalPrecision()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00051">cloudViewer::visualization::gui::NumberEdit::GetDoubleValue()</a>, <a class="el" href="Slider_8cpp_source.html#l00046">cloudViewer::visualization::gui::Slider::GetDoubleValue()</a>, <a class="el" href="Label_8cpp_source.html#l00061">cloudViewer::visualization::gui::Label::GetFontId()</a>, <a class="el" href="Layout_8cpp_source.html#l00399">cloudViewer::visualization::gui::CollapsableVert::GetFontId()</a>, <a class="el" href="Widget_8cpp_source.html#l00051">cloudViewer::visualization::gui::Widget::GetFrame()</a>, <a class="el" href="WidgetProxy_8cpp_source.html#l00047">cloudViewer::visualization::gui::WidgetProxy::GetFrame()</a>, <a class="el" href="Color_8cpp_source.html#l00035">cloudViewer::visualization::gui::Color::GetGreen()</a>, <a class="el" href="Layout_8cpp_source.html#l00118">cloudViewer::visualization::gui::Margins::GetHoriz()</a>, <a class="el" href="Button_8cpp_source.html#l00052">cloudViewer::visualization::gui::Button::GetHorizontalPaddingEm()</a>, <a class="el" href="Application_8cpp_source.html#l00179">cloudViewer::visualization::gui::Application::GetInstance()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00049">cloudViewer::visualization::gui::NumberEdit::GetIntValue()</a>, <a class="el" href="Slider_8cpp_source.html#l00044">cloudViewer::visualization::gui::Slider::GetIntValue()</a>, <a class="el" href="Button_8cpp_source.html#l00069">cloudViewer::visualization::gui::Button::GetIsOn()</a>, <a class="el" href="ToggleSwitch_8cpp_source.html#l00040">cloudViewer::visualization::gui::ToggleSwitch::GetIsOn()</a>, <a class="el" href="Layout_8cpp_source.html#l00388">cloudViewer::visualization::gui::CollapsableVert::GetIsOpen()</a>, <a class="el" href="Button_8cpp_source.html#l00065">cloudViewer::visualization::gui::Button::GetIsToggleable()</a>, <a class="el" href="Combobox_8cpp_source.html#l00096">cloudViewer::visualization::gui::Combobox::GetItem()</a>, <a class="el" href="TreeView_8cpp_source.html#l00300">cloudViewer::visualization::gui::TreeView::GetItem()</a>, <a class="el" href="TreeView_8cpp_source.html#l00053">cloudViewer::visualization::gui::CheckableTextTreeCell::GetLabel()</a>, <a class="el" href="TreeView_8cpp_source.html#l00111">cloudViewer::visualization::gui::LUTTreeCell::GetLabel()</a>, <a class="el" href="Gui_8cpp_source.html#l00035">cloudViewer::visualization::gui::Rect::GetLeft()</a>, <a class="el" href="Layout_8cpp_source.html#l00573">cloudViewer::visualization::gui::VGrid::GetMargins()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00063">cloudViewer::visualization::gui::NumberEdit::GetMaximumValue()</a>, <a class="el" href="Slider_8cpp_source.html#l00058">cloudViewer::visualization::gui::Slider::GetMaximumValue()</a>, <a class="el" href="Application_8cpp_source.html#l00434">cloudViewer::visualization::gui::Application::GetMenubar()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00061">cloudViewer::visualization::gui::NumberEdit::GetMinimumValue()</a>, <a class="el" href="Slider_8cpp_source.html#l00056">cloudViewer::visualization::gui::Slider::GetMinimumValue()</a>, <a class="el" href="TreeView_8cpp_source.html#l00172">cloudViewer::visualization::gui::ColormapTreeCell::GetNumberEdit()</a>, <a class="el" href="Combobox_8cpp_source.html#l00092">cloudViewer::visualization::gui::Combobox::GetNumberOfItems()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00451">cloudViewer::visualization::gui::Window::GetOSFrame()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00056">cloudViewer::visualization::gui::TextEdit::GetPlaceholderText()</a>, <a class="el" href="Label3D_8cpp_source.html#l00038">cloudViewer::visualization::gui::Label3D::GetPosition()</a>, <a class="el" href="Layout_8cpp_source.html#l00550">cloudViewer::visualization::gui::Horiz::GetPreferredHeight()</a>, <a class="el" href="Layout_8cpp_source.html#l00363">cloudViewer::visualization::gui::Vert::GetPreferredWidth()</a>, <a class="el" href="Layout_8cpp_source.html#l00575">cloudViewer::visualization::gui::VGrid::GetPreferredWidth()</a>, <a class="el" href="Color_8cpp_source.html#l00034">cloudViewer::visualization::gui::Color::GetRed()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00447">cloudViewer::visualization::gui::Window::GetRenderer()</a>, <a class="el" href="Application_8cpp_source.html#l00675">cloudViewer::visualization::gui::Application::GetResourcePath()</a>, <a class="el" href="Gui_8cpp_source.html#l00037">cloudViewer::visualization::gui::Rect::GetRight()</a>, <a class="el" href="TreeView_8cpp_source.html#l00234">cloudViewer::visualization::gui::TreeView::GetRootItem()</a>, <a class="el" href="UIImage_8cpp_source.html#l00153">cloudViewer::visualization::gui::UIImage::GetScaling()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00538">cloudViewer::visualization::gui::Window::GetScaling()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00955">cloudViewer::visualization::gui::SceneWidget::GetScene()</a>, <a class="el" href="Combobox_8cpp_source.html#l00100">cloudViewer::visualization::gui::Combobox::GetSelectedIndex()</a>, <a class="el" href="ListView_8cpp_source.html#l00047">cloudViewer::visualization::gui::ListView::GetSelectedIndex()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00047">cloudViewer::visualization::gui::RadioButton::GetSelectedIndex()</a>, <a class="el" href="StackedWidget_8cpp_source.html#l00028">cloudViewer::visualization::gui::StackedWidget::GetSelectedIndex()</a>, <a class="el" href="TreeView_8cpp_source.html#l00332">cloudViewer::visualization::gui::TreeView::GetSelectedItemId()</a>, <a class="el" href="Combobox_8cpp_source.html#l00102">cloudViewer::visualization::gui::Combobox::GetSelectedValue()</a>, <a class="el" href="ListView_8cpp_source.html#l00049">cloudViewer::visualization::gui::ListView::GetSelectedValue()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00049">cloudViewer::visualization::gui::RadioButton::GetSelectedValue()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00521">cloudViewer::visualization::gui::Window::GetSize()</a>, <a class="el" href="Layout_8cpp_source.html#l00572">cloudViewer::visualization::gui::VGrid::GetSpacing()</a>, <a class="el" href="Button_8cpp_source.html#l00048">cloudViewer::visualization::gui::Button::GetText()</a>, <a class="el" href="Label_8cpp_source.html#l00050">cloudViewer::visualization::gui::Label::GetText()</a>, <a class="el" href="Label3D_8cpp_source.html#l00034">cloudViewer::visualization::gui::Label3D::GetText()</a>, <a class="el" href="Layout_8cpp_source.html#l00397">cloudViewer::visualization::gui::CollapsableVert::GetText()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00052">cloudViewer::visualization::gui::TextEdit::GetText()</a>, <a class="el" href="Label_8cpp_source.html#l00057">cloudViewer::visualization::gui::Label::GetTextColor()</a>, <a class="el" href="Label3D_8cpp_source.html#l00044">cloudViewer::visualization::gui::Label3D::GetTextColor()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00445">cloudViewer::visualization::gui::Window::GetTheme()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00464">cloudViewer::visualization::gui::Window::GetTitle()</a>, <a class="el" href="Widget_8cpp_source.html#l00075">cloudViewer::visualization::gui::Widget::GetTooltip()</a>, <a class="el" href="Gui_8cpp_source.html#l00031">cloudViewer::visualization::gui::Rect::GetTop()</a>, <a class="el" href="ImageWidget_8cpp_source.html#l00068">cloudViewer::visualization::gui::ImageWidget::GetUIImage()</a>, <a class="el" href="ColorEdit_8cpp_source.html#l00042">cloudViewer::visualization::gui::ColorEdit::GetValue()</a>, <a class="el" href="ProgressBar_8cpp_source.html#l00032">cloudViewer::visualization::gui::ProgressBar::GetValue()</a>, <a class="el" href="VectorEdit_8cpp_source.html#l00036">cloudViewer::visualization::gui::VectorEdit::GetValue()</a>, <a class="el" href="Layout_8cpp_source.html#l00120">cloudViewer::visualization::gui::Margins::GetVert()</a>, <a class="el" href="Button_8cpp_source.html#l00056">cloudViewer::visualization::gui::Button::GetVerticalPaddingEm()</a>, <a class="el" href="WidgetProxy_8cpp_source.html#l00031">cloudViewer::visualization::gui::WidgetProxy::GetWidget()</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846da9a5c682455ce10cef6dfee3aef3730a5">HANDLED</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="Gui_8h_source.html#l00024">cloudViewer::visualization::gui::Size::height</a>, <a class="el" href="Gui_8h_source.html#l00034">cloudViewer::visualization::gui::Rect::height</a>, <a class="el" href="Widget_8h_source.html#l00086">cloudViewer::visualization::gui::Widget::Constraints::height</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a9b501abbba40c5510a36e51934904084a92c30de24509d2778c9515bab375d253">cloudViewer::visualization::gui::Widget::IGNORED</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a0ab54a938daf9cb59db5fd89441f846da92c30de24509d2778c9515bab375d253">IGNORED</a>, <a class="el" href="FilamentRenderer_8cpp_source.html#l00184">image</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00136">InitializeForPython()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00590">cloudViewer::visualization::gui::Window::IsActiveWindow()</a>, <a class="el" href="Checkbox_8cpp_source.html#l00041">cloudViewer::visualization::gui::Checkbox::IsChecked()</a>, <a class="el" href="Widget_8cpp_source.html#l00069">cloudViewer::visualization::gui::Widget::IsEnabled()</a>, <a class="el" href="Widget_8cpp_source.html#l00065">cloudViewer::visualization::gui::Widget::IsVisible()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00549">cloudViewer::visualization::gui::Window::IsVisible()</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a25093123b8943308104129e1d762f3b7">ITALIC</a>, <a class="el" href="SceneWidget_8cpp_source.html#l01198">cloudViewer::visualization::gui::SceneWidget::Key()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00283">cloudViewer::visualization::gui::PySceneWidget::Key()</a>, <a class="el" href="Layout_8h_source.html#l00019">cloudViewer::visualization::gui::Margins::left</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00871">cloudViewer::visualization::gui::SceneWidget::LookAt()</a>, <a class="el" href="Font_8h_source.html#l00023">cloudViewer::visualization::gui::FontDescription::MONOSPACE</a>, <a class="el" href="SceneWidget_8cpp_source.html#l01166">cloudViewer::visualization::gui::SceneWidget::Mouse()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00262">cloudViewer::visualization::gui::PySceneWidget::Mouse()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00129">name</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1UIImage.html#a39d90b8df32cb3142ed8d48db3265359ab50339a10e1de285ac99d4c3990b8693">cloudViewer::visualization::gui::UIImage::NONE</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a05233c9e0cd4054c9b0fcd4a41ba3d17a1e23852820b9154316c7c06e2b7ba051">NORMAL</a>, <a class="el" href="Application_8cpp_source.html#l00427">cloudViewer::visualization::gui::Application::Now()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00094">cloudViewer::visualization::gui::PyWindow::on_layout_</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1FileDialog.html#aaed7a8daf46c5b6defd11a8aa6d6c29baa38bd5138bf35514df41a1795ebbf5c3">cloudViewer::visualization::gui::FileDialog::OPEN</a>, <a class="el" href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">cloudViewer::t::geometry::path</a>, <a class="el" href="WidgetStack_8cpp_source.html#l00028">cloudViewer::visualization::gui::WidgetStack::PopWidget()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00573">cloudViewer::visualization::gui::Window::PostRedraw()</a>, <a class="el" href="Application_8cpp_source.html#l00670">cloudViewer::visualization::gui::Application::PostToMainThread()</a>, <a class="el" href="WidgetStack_8cpp_source.html#l00023">cloudViewer::visualization::gui::WidgetStack::PushWidget()</a>, <a class="el" href="Application_8cpp_source.html#l00481">cloudViewer::visualization::gui::Application::Quit()</a>, <a class="el" href="Combobox_8cpp_source.html#l00074">cloudViewer::visualization::gui::Combobox::RemoveItem()</a>, <a class="el" href="TreeView_8cpp_source.html#l00263">cloudViewer::visualization::gui::TreeView::RemoveItem()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l01073">cloudViewer::visualization::gui::SceneWidget::RemoveLabel()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00158">RenderToImageWithoutWindow()</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="Layout_8h_source.html#l00021">cloudViewer::visualization::gui::Margins::right</a>, <a class="el" href="Application_8cpp_source.html#l00664">cloudViewer::visualization::gui::Application::RunInThread()</a>, <a class="el" href="Application_8cpp_source.html#l00535">cloudViewer::visualization::gui::Application::RunOneTick()</a>, <a class="el" href="Font_8h_source.html#l00022">cloudViewer::visualization::gui::FontDescription::SANS_SERIF</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1gui_1_1FileDialog.html#aaed7a8daf46c5b6defd11a8aa6d6c29baf5cf47ab06d0d98b0d16d10c82d87953">cloudViewer::visualization::gui::FileDialog::SAVE</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00798">cloudViewer::visualization::gui::SceneWidget::SceneWidget()</a>, <a class="el" href="Widget_8cpp_source.html#l00061">cloudViewer::visualization::gui::Widget::SetBackgroundColor()</a>, <a class="el" href="TreeView_8cpp_source.html#l00328">cloudViewer::visualization::gui::TreeView::SetCanSelectItemsWithChildren()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00883">cloudViewer::visualization::gui::SceneWidget::SetCenterOfRotation()</a>, <a class="el" href="Checkbox_8cpp_source.html#l00043">cloudViewer::visualization::gui::Checkbox::SetChecked()</a>, <a class="el" href="Color_8cpp_source.html#l00039">cloudViewer::visualization::gui::Color::SetColor()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00078">cloudViewer::visualization::gui::NumberEdit::SetDecimalPrecision()</a>, <a class="el" href="Widget_8cpp_source.html#l00071">cloudViewer::visualization::gui::Widget::SetEnabled()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00595">cloudViewer::visualization::gui::Window::SetFocusWidget()</a>, <a class="el" href="Application_8cpp_source.html#l00364">cloudViewer::visualization::gui::Application::SetFont()</a>, <a class="el" href="Label_8cpp_source.html#l00063">cloudViewer::visualization::gui::Label::SetFontId()</a>, <a class="el" href="Layout_8cpp_source.html#l00401">cloudViewer::visualization::gui::CollapsableVert::SetFontId()</a>, <a class="el" href="Widget_8cpp_source.html#l00053">cloudViewer::visualization::gui::Widget::SetFrame()</a>, <a class="el" href="Layout_8cpp_source.html#l00386">cloudViewer::visualization::gui::CollapsableVert::SetIsOpen()</a>, <a class="el" href="ListView_8cpp_source.html#l00042">cloudViewer::visualization::gui::ListView::SetItems()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00042">cloudViewer::visualization::gui::RadioButton::SetItems()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00065">cloudViewer::visualization::gui::NumberEdit::SetLimits()</a>, <a class="el" href="Slider_8cpp_source.html#l00060">cloudViewer::visualization::gui::Slider::SetLimits()</a>, <a class="el" href="ListView_8cpp_source.html#l00062">cloudViewer::visualization::gui::ListView::SetMaxVisibleItems()</a>, <a class="el" href="Application_8cpp_source.html#l00438">cloudViewer::visualization::gui::Application::SetMenubar()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00571">cloudViewer::visualization::gui::Window::SetNeedsLayout()</a>, <a class="el" href="Button_8cpp_source.html#l00071">cloudViewer::visualization::gui::Button::SetOn()</a>, <a class="el" href="ToggleSwitch_8cpp_source.html#l00042">cloudViewer::visualization::gui::ToggleSwitch::SetOn()</a>, <a class="el" href="FileDialog_8cpp_source.html#l00358">cloudViewer::visualization::gui::FileDialog::SetOnCancel()</a>, <a class="el" href="Checkbox_8cpp_source.html#l00045">cloudViewer::visualization::gui::Checkbox::SetOnChecked()</a>, <a class="el" href="Button_8cpp_source.html#l00077">cloudViewer::visualization::gui::Button::SetOnClicked()</a>, <a class="el" href="ToggleSwitch_8cpp_source.html#l00044">cloudViewer::visualization::gui::ToggleSwitch::SetOnClicked()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00611">cloudViewer::visualization::gui::Window::SetOnClose()</a>, <a class="el" href="FileDialog_8cpp_source.html#l00362">cloudViewer::visualization::gui::FileDialog::SetOnDone()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00206">cloudViewer::visualization::gui::PyImageWidget::SetOnKey()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00260">cloudViewer::visualization::gui::PySceneWidget::SetOnKey()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00615">cloudViewer::visualization::gui::Window::SetOnKeyEvent()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00602">cloudViewer::visualization::gui::Window::SetOnMenuItemActivated()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00205">cloudViewer::visualization::gui::PyImageWidget::SetOnMouse()</a>, <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00259">cloudViewer::visualization::gui::PySceneWidget::SetOnMouse()</a>, <a class="el" href="TabControl_8cpp_source.html#l00050">cloudViewer::visualization::gui::TabControl::SetOnSelectedTabChanged()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00064">cloudViewer::visualization::gui::RadioButton::SetOnSelectionChanged()</a>, <a class="el" href="TreeView_8cpp_source.html#l00344">cloudViewer::visualization::gui::TreeView::SetOnSelectionChanged()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00892">cloudViewer::visualization::gui::SceneWidget::SetOnSunDirectionChanged()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00064">cloudViewer::visualization::gui::TextEdit::SetOnTextChanged()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00607">cloudViewer::visualization::gui::Window::SetOnTickEvent()</a>, <a class="el" href="WidgetStack_8cpp_source.html#l00044">cloudViewer::visualization::gui::WidgetStack::SetOnTop()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00069">cloudViewer::visualization::gui::TextEdit::SetOnValueChanged()</a>, <a class="el" href="ListView_8cpp_source.html#l00071">cloudViewer::visualization::gui::ListView::SetOnValueChanged()</a>, <a class="el" href="Combobox_8cpp_source.html#l00128">cloudViewer::visualization::gui::Combobox::SetOnValueChanged()</a>, <a class="el" href="ColorEdit_8cpp_source.html#l00044">cloudViewer::visualization::gui::ColorEdit::SetOnValueChanged()</a>, <a class="el" href="VectorEdit_8cpp_source.html#l00046">cloudViewer::visualization::gui::VectorEdit::SetOnValueChanged()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00086">cloudViewer::visualization::gui::NumberEdit::SetOnValueChanged()</a>, <a class="el" href="Slider_8cpp_source.html#l00070">cloudViewer::visualization::gui::Slider::SetOnValueChanged()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00458">cloudViewer::visualization::gui::Window::SetOSFrame()</a>, <a class="el" href="FileDialog_8cpp_source.html#l00311">cloudViewer::visualization::gui::FileDialog::SetPath()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00060">cloudViewer::visualization::gui::TextEdit::SetPlaceholderText()</a>, <a class="el" href="Label3D_8cpp_source.html#l00040">cloudViewer::visualization::gui::Label3D::SetPosition()</a>, <a class="el" href="Layout_8cpp_source.html#l00551">cloudViewer::visualization::gui::Horiz::SetPreferredHeight()</a>, <a class="el" href="Layout_8cpp_source.html#l00364">cloudViewer::visualization::gui::Vert::SetPreferredWidth()</a>, <a class="el" href="Layout_8cpp_source.html#l00576">cloudViewer::visualization::gui::VGrid::SetPreferredWidth()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00082">cloudViewer::visualization::gui::NumberEdit::SetPreferredWidth()</a>, <a class="el" href="UIImage_8cpp_source.html#l00151">cloudViewer::visualization::gui::UIImage::SetScaling()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00925">cloudViewer::visualization::gui::SceneWidget::SetScene()</a>, <a class="el" href="Combobox_8cpp_source.html#l00111">cloudViewer::visualization::gui::Combobox::SetSelectedIndex()</a>, <a class="el" href="ListView_8cpp_source.html#l00058">cloudViewer::visualization::gui::ListView::SetSelectedIndex()</a>, <a class="el" href="RadioButton_8cpp_source.html#l00058">cloudViewer::visualization::gui::RadioButton::SetSelectedIndex()</a>, <a class="el" href="StackedWidget_8cpp_source.html#l00024">cloudViewer::visualization::gui::StackedWidget::SetSelectedIndex()</a>, <a class="el" href="TreeView_8cpp_source.html#l00340">cloudViewer::visualization::gui::TreeView::SetSelectedItemId()</a>, <a class="el" href="Combobox_8cpp_source.html#l00117">cloudViewer::visualization::gui::Combobox::SetSelectedValue()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00508">cloudViewer::visualization::gui::Window::SetSize()</a>, <a class="el" href="Button_8cpp_source.html#l00050">cloudViewer::visualization::gui::Button::SetText()</a>, <a class="el" href="Label_8cpp_source.html#l00052">cloudViewer::visualization::gui::Label::SetText()</a>, <a class="el" href="Label3D_8cpp_source.html#l00036">cloudViewer::visualization::gui::Label3D::SetText()</a>, <a class="el" href="Layout_8cpp_source.html#l00390">cloudViewer::visualization::gui::CollapsableVert::SetText()</a>, <a class="el" href="TextEdit_8cpp_source.html#l00054">cloudViewer::visualization::gui::TextEdit::SetText()</a>, <a class="el" href="Label_8cpp_source.html#l00059">cloudViewer::visualization::gui::Label::SetTextColor()</a>, <a class="el" href="Label3D_8cpp_source.html#l00046">cloudViewer::visualization::gui::Label3D::SetTextColor()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00466">cloudViewer::visualization::gui::Window::SetTitle()</a>, <a class="el" href="Button_8cpp_source.html#l00067">cloudViewer::visualization::gui::Button::SetToggleable()</a>, <a class="el" href="Widget_8cpp_source.html#l00073">cloudViewer::visualization::gui::Widget::SetTooltip()</a>, <a class="el" href="ImageWidget_8cpp_source.html#l00072">cloudViewer::visualization::gui::ImageWidget::SetUIImage()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00823">cloudViewer::visualization::gui::SceneWidget::SetupCamera()</a>, <a class="el" href="ColorEdit_8cpp_source.html#l00036">cloudViewer::visualization::gui::ColorEdit::SetValue()</a>, <a class="el" href="VectorEdit_8cpp_source.html#l00038">cloudViewer::visualization::gui::VectorEdit::SetValue()</a>, <a class="el" href="NumberEdit_8cpp_source.html#l00053">cloudViewer::visualization::gui::NumberEdit::SetValue()</a>, <a class="el" href="Slider_8cpp_source.html#l00048">cloudViewer::visualization::gui::Slider::SetValue()</a>, <a class="el" href="ProgressBar_8cpp_source.html#l00030">cloudViewer::visualization::gui::ProgressBar::SetValue()</a>, <a class="el" href="SceneWidget_8cpp_source.html#l00967">cloudViewer::visualization::gui::SceneWidget::SetViewControls()</a>, <a class="el" href="Widget_8cpp_source.html#l00067">cloudViewer::visualization::gui::Widget::SetVisible()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00554">cloudViewer::visualization::gui::Window::Show()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00619">cloudViewer::visualization::gui::Window::ShowDialog()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00674">cloudViewer::visualization::gui::Window::ShowMenu()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00661">cloudViewer::visualization::gui::Window::ShowMessageBox()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00130">size</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00500">cloudViewer::visualization::gui::Window::SizeToFit()</a>, <a class="el" href="visualization_8h_source.html#l00049">cloudViewer::visualization::TakeOwnership()</a>, <a class="el" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00074">theme</a>, <a class="el" href="Layout_8h_source.html#l00020">cloudViewer::visualization::gui::Margins::top</a>, <a class="el" href="ImageWidget_8cpp_source.html#l00060">cloudViewer::visualization::gui::ImageWidget::UpdateImage()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>, <a class="el" href="Gui_8h_source.html#l00023">cloudViewer::visualization::gui::Size::width</a>, <a class="el" href="Gui_8h_source.html#l00033">cloudViewer::visualization::gui::Rect::width</a>, <a class="el" href="Widget_8h_source.html#l00085">cloudViewer::visualization::gui::Widget::Constraints::width</a>, <a class="el" href="Gui_8h_source.html#l00031">cloudViewer::visualization::gui::Rect::x</a>, and <a class="el" href="Gui_8h_source.html#l00032">cloudViewer::visualization::gui::Rect::y</a>.</p>
+
+</div>
+</div>
+<a id="a0665d5de208264d9b860893dc42850b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0665d5de208264d9b860893dc42850b6">&#9670;&nbsp;</a></span>pybind_gui_events()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::visualization::gui::pybind_gui_events </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="events_8cpp_source.html#l00019">19</a> of file <a class="el" href="events_8cpp_source.html">events.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a8fee09600275e481bf02664984b935ffadfbfc9cc7a235560f04cb1a5faf1ec3e">ALT</a>, <a class="el" href="Events_8h_source.html#l00078">cloudViewer::visualization::gui::MouseEvent::button</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a09f1cb67d88809debdcafc185ef6da00a37dfcbe9aa70f4a2cb807f89ae46f452">BUTTON4</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a09f1cb67d88809debdcafc185ef6da00a3a97ffd9000332b656379f8b600c4172">BUTTON5</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a8fee09600275e481bf02664984b935ffa32f7eee2581c72a5561c21df3013a89a">CTRL</a>, <a class="el" href="Events_8h_source.html#l00210">cloudViewer::visualization::gui::KeyEvent::isRepeat</a>, <a class="el" href="Events_8h_source.html#l00209">cloudViewer::visualization::gui::KeyEvent::key</a>, <a class="el" href="Events_8h_source.html#l00118">KEY_0</a>, <a class="el" href="Events_8h_source.html#l00119">KEY_1</a>, <a class="el" href="Events_8h_source.html#l00120">KEY_2</a>, <a class="el" href="Events_8h_source.html#l00121">KEY_3</a>, <a class="el" href="Events_8h_source.html#l00122">KEY_4</a>, <a class="el" href="Events_8h_source.html#l00123">KEY_5</a>, <a class="el" href="Events_8h_source.html#l00124">KEY_6</a>, <a class="el" href="Events_8h_source.html#l00125">KEY_7</a>, <a class="el" href="Events_8h_source.html#l00126">KEY_8</a>, <a class="el" href="Events_8h_source.html#l00127">KEY_9</a>, <a class="el" href="Events_8h_source.html#l00141">KEY_A</a>, <a class="el" href="Events_8h_source.html#l00176">KEY_ALT</a>, <a class="el" href="Events_8h_source.html#l00108">KEY_AMPERSAND</a>, <a class="el" href="Events_8h_source.html#l00112">KEY_ASTERISK</a>, <a class="el" href="Events_8h_source.html#l00134">KEY_AT</a>, <a class="el" href="Events_8h_source.html#l00142">KEY_B</a>, <a class="el" href="Events_8h_source.html#l00136">KEY_BACKSLASH</a>, <a class="el" href="Events_8h_source.html#l00098">KEY_BACKSPACE</a>, <a class="el" href="Events_8h_source.html#l00140">KEY_BACKTICK</a>, <a class="el" href="Events_8h_source.html#l00143">KEY_C</a>, <a class="el" href="Events_8h_source.html#l00178">KEY_CAPSLOCK</a>, <a class="el" href="Events_8h_source.html#l00138">KEY_CARET</a>, <a class="el" href="Events_8h_source.html#l00128">KEY_COLON</a>, <a class="el" href="Events_8h_source.html#l00114">KEY_COMMA</a>, <a class="el" href="Events_8h_source.html#l00144">KEY_D</a>, <a class="el" href="Events_8h_source.html#l00171">KEY_DELETE</a>, <a class="el" href="Events_8h_source.html#l00106">KEY_DOLLAR_SIGN</a>, <a class="el" href="Events_8h_source.html#l00104">KEY_DOUBLE_QUOTE</a>, <a class="el" href="Events_8h_source.html#l00182">KEY_DOWN</a>, <a class="el" href="Events_8h_source.html#l00145">KEY_E</a>, <a class="el" href="Events_8h_source.html#l00185">KEY_END</a>, <a class="el" href="Events_8h_source.html#l00100">KEY_ENTER</a>, <a class="el" href="Events_8h_source.html#l00131">KEY_EQUALS</a>, <a class="el" href="Events_8h_source.html#l00101">KEY_ESCAPE</a>, <a class="el" href="Events_8h_source.html#l00103">KEY_EXCLAMATION</a>, <a class="el" href="Events_8h_source.html#l00146">KEY_F</a>, <a class="el" href="Events_8h_source.html#l00188">KEY_F1</a>, <a class="el" href="Events_8h_source.html#l00197">KEY_F10</a>, <a class="el" href="Events_8h_source.html#l00198">KEY_F11</a>, <a class="el" href="Events_8h_source.html#l00199">KEY_F12</a>, <a class="el" href="Events_8h_source.html#l00189">KEY_F2</a>, <a class="el" href="Events_8h_source.html#l00190">KEY_F3</a>, <a class="el" href="Events_8h_source.html#l00191">KEY_F4</a>, <a class="el" href="Events_8h_source.html#l00192">KEY_F5</a>, <a class="el" href="Events_8h_source.html#l00193">KEY_F6</a>, <a class="el" href="Events_8h_source.html#l00194">KEY_F7</a>, <a class="el" href="Events_8h_source.html#l00195">KEY_F8</a>, <a class="el" href="Events_8h_source.html#l00196">KEY_F9</a>, <a class="el" href="Events_8h_source.html#l00147">KEY_G</a>, <a class="el" href="Events_8h_source.html#l00132">KEY_GREATER_THAN</a>, <a class="el" href="Events_8h_source.html#l00148">KEY_H</a>, <a class="el" href="Events_8h_source.html#l00105">KEY_HASH</a>, <a class="el" href="Events_8h_source.html#l00184">KEY_HOME</a>, <a class="el" href="Events_8h_source.html#l00149">KEY_I</a>, <a class="el" href="Events_8h_source.html#l00183">KEY_INSERT</a>, <a class="el" href="Events_8h_source.html#l00150">KEY_J</a>, <a class="el" href="Events_8h_source.html#l00151">KEY_K</a>, <a class="el" href="Events_8h_source.html#l00152">KEY_L</a>, <a class="el" href="Events_8h_source.html#l00174">KEY_LCTRL</a>, <a class="el" href="Events_8h_source.html#l00179">KEY_LEFT</a>, <a class="el" href="Events_8h_source.html#l00167">KEY_LEFT_BRACE</a>, <a class="el" href="Events_8h_source.html#l00135">KEY_LEFT_BRACKET</a>, <a class="el" href="Events_8h_source.html#l00110">KEY_LEFT_PAREN</a>, <a class="el" href="Events_8h_source.html#l00130">KEY_LESS_THAN</a>, <a class="el" href="Events_8h_source.html#l00172">KEY_LSHIFT</a>, <a class="el" href="Events_8h_source.html#l00153">KEY_M</a>, <a class="el" href="Events_8h_source.html#l00177">KEY_META</a>, <a class="el" href="Events_8h_source.html#l00115">KEY_MINUS</a>, <a class="el" href="Events_8h_source.html#l00154">KEY_N</a>, <a class="el" href="Events_8h_source.html#l00097">KEY_NONE</a>, <a class="el" href="Events_8h_source.html#l00155">KEY_O</a>, <a class="el" href="Events_8h_source.html#l00156">KEY_P</a>, <a class="el" href="Events_8h_source.html#l00187">KEY_PAGEDOWN</a>, <a class="el" href="Events_8h_source.html#l00186">KEY_PAGEUP</a>, <a class="el" href="Events_8h_source.html#l00107">KEY_PERCENT</a>, <a class="el" href="Events_8h_source.html#l00116">KEY_PERIOD</a>, <a class="el" href="Events_8h_source.html#l00168">KEY_PIPE</a>, <a class="el" href="Events_8h_source.html#l00113">KEY_PLUS</a>, <a class="el" href="Events_8h_source.html#l00157">KEY_Q</a>, <a class="el" href="Events_8h_source.html#l00133">KEY_QUESTION_MARK</a>, <a class="el" href="Events_8h_source.html#l00158">KEY_R</a>, <a class="el" href="Events_8h_source.html#l00175">KEY_RCTRL</a>, <a class="el" href="Events_8h_source.html#l00180">KEY_RIGHT</a>, <a class="el" href="Events_8h_source.html#l00169">KEY_RIGHT_BRACE</a>, <a class="el" href="Events_8h_source.html#l00137">KEY_RIGHT_BRACKET</a>, <a class="el" href="Events_8h_source.html#l00111">KEY_RIGHT_PAREN</a>, <a class="el" href="Events_8h_source.html#l00173">KEY_RSHIFT</a>, <a class="el" href="Events_8h_source.html#l00159">KEY_S</a>, <a class="el" href="Events_8h_source.html#l00129">KEY_SEMICOLON</a>, <a class="el" href="Events_8h_source.html#l00109">KEY_SINGLE_QUOTE</a>, <a class="el" href="Events_8h_source.html#l00117">KEY_SLASH</a>, <a class="el" href="Events_8h_source.html#l00102">KEY_SPACE</a>, <a class="el" href="Events_8h_source.html#l00160">KEY_T</a>, <a class="el" href="Events_8h_source.html#l00099">KEY_TAB</a>, <a class="el" href="Events_8h_source.html#l00170">KEY_TILDE</a>, <a class="el" href="Events_8h_source.html#l00161">KEY_U</a>, <a class="el" href="Events_8h_source.html#l00139">KEY_UNDERSCORE</a>, <a class="el" href="Events_8h_source.html#l00200">KEY_UNKNOWN</a>, <a class="el" href="Events_8h_source.html#l00181">KEY_UP</a>, <a class="el" href="Events_8h_source.html#l00162">KEY_V</a>, <a class="el" href="Events_8h_source.html#l00163">KEY_W</a>, <a class="el" href="Events_8h_source.html#l00164">KEY_X</a>, <a class="el" href="Events_8h_source.html#l00165">KEY_Y</a>, <a class="el" href="Events_8h_source.html#l00166">KEY_Z</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a09f1cb67d88809debdcafc185ef6da00a684d325a7303f52e64011467ff5c5758">LEFT</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a8fee09600275e481bf02664984b935ffae59f1c4fb1aa1d70a8c3eb59ff3e461b">META</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a09f1cb67d88809debdcafc185ef6da00a43eedd8685eb86592022f8da962e3474">MIDDLE</a>, <a class="el" href="Events_8h_source.html#l00072">cloudViewer::visualization::gui::MouseEvent::modifiers</a>, <a class="el" href="structcloudViewer_1_1visualization_1_1gui_1_1MouseEvent.html#a1d84bfea41a80d390b7d9a87601542fa">cloudViewer::visualization::gui::MouseEvent::move</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a09f1cb67d88809debdcafc185ef6da00ab50339a10e1de285ac99d4c3990b8693">NONE</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a09f1cb67d88809debdcafc185ef6da00a21507b40c80068eda19865706fdc2403">RIGHT</a>, <a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html#a8fee09600275e481bf02664984b935ffa46afff2b309b8b16a46d812172a9235c">SHIFT</a>, <a class="el" href="Events_8h_source.html#l00069">cloudViewer::visualization::gui::MouseEvent::type</a>, <a class="el" href="Events_8h_source.html#l00205">cloudViewer::visualization::gui::KeyEvent::type</a>, <a class="el" href="structcloudViewer_1_1visualization_1_1gui_1_1MouseEvent.html#a032143998c7bc672e96c9a966f00ae30">cloudViewer::visualization::gui::MouseEvent::wheel</a>, <a class="el" href="Events_8h_source.html#l00070">cloudViewer::visualization::gui::MouseEvent::x</a>, and <a class="el" href="Events_8h_source.html#l00071">cloudViewer::visualization::gui::MouseEvent::y</a>.</p>
+
+</div>
+</div>
+<a id="a8b130f1f7b2080306a66043e9e43ef84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b130f1f7b2080306a66043e9e43ef84">&#9670;&nbsp;</a></span>RenderToDepthImageWithoutWindow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">geometry::Image</a> &gt; cloudViewer::visualization::gui::RenderToDepthImageWithoutWindow </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcloudViewer_1_1visualization_1_1rendering_1_1CloudViewerScene.html">rendering::CloudViewerScene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>height</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>z_in_view_space</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00165">165</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="Application_8cpp_source.html#l00179">cloudViewer::visualization::gui::Application::GetInstance()</a>, <a class="el" href="CloudViewerScene_8cpp_source.html#l00476">cloudViewer::visualization::rendering::CloudViewerScene::GetRenderer()</a>, <a class="el" href="CloudViewerScene_8cpp_source.html#l00468">cloudViewer::visualization::rendering::CloudViewerScene::GetScene()</a>, <a class="el" href="CloudViewerScene_8cpp_source.html#l00116">cloudViewer::visualization::rendering::CloudViewerScene::GetView()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="Application_8cpp_source.html#l00705">cloudViewer::visualization::gui::Application::RenderToDepthImage()</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="rendering_8cpp_source.html#l00061">cloudViewer::visualization::rendering::PyOffscreenRenderer::RenderToDepthImage()</a>.</p>
+
+</div>
+</div>
+<a id="a2d57a1245f54ebd1cb0be60fbd1b8ca7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d57a1245f54ebd1cb0be60fbd1b8ca7">&#9670;&nbsp;</a></span>RenderToImageWithoutWindow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">geometry::Image</a> &gt; cloudViewer::visualization::gui::RenderToImageWithoutWindow </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcloudViewer_1_1visualization_1_1rendering_1_1CloudViewerScene.html">rendering::CloudViewerScene</a> *&#160;</td>
+          <td class="paramname"><em>scene</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>height</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00158">158</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="Application_8cpp_source.html#l00179">cloudViewer::visualization::gui::Application::GetInstance()</a>, <a class="el" href="CloudViewerScene_8cpp_source.html#l00476">cloudViewer::visualization::rendering::CloudViewerScene::GetRenderer()</a>, <a class="el" href="CloudViewerScene_8cpp_source.html#l00468">cloudViewer::visualization::rendering::CloudViewerScene::GetScene()</a>, <a class="el" href="CloudViewerScene_8cpp_source.html#l00116">cloudViewer::visualization::rendering::CloudViewerScene::GetView()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="Application_8cpp_source.html#l00681">cloudViewer::visualization::gui::Application::RenderToImage()</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00309">pybind_gui_classes()</a>, and <a class="el" href="rendering_8cpp_source.html#l00057">cloudViewer::visualization::rendering::PyOffscreenRenderer::RenderToImage()</a>.</p>
 
 </div>
 </div>
@@ -1202,6 +1501,24 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a72ae5389b25329f62118d2fb3274a78b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72ae5389b25329f62118d2fb3274a78b">&#9670;&nbsp;</a></span>g_installed_atexit</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool cloudViewer::visualization::gui::g_installed_atexit = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00127">127</a> of file <a class="el" href="visualization_2gui_2gui_8cpp_source.html">gui.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualization_2gui_2gui_8cpp_source.html#l00130">install_cleanup_atexit()</a>.</p>
+
+</div>
+</div>
 <a id="a7b536d79a1bb48388ae57612909ebdc0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7b536d79a1bb48388ae57612909ebdc0">&#9670;&nbsp;</a></span>kImageTexParamName</h2>
 
@@ -1310,7 +1627,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1visualization.html">visualization</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1visualization_1_1gui.html">gui</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:37 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:17 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

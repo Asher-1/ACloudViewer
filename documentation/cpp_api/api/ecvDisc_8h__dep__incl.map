@@ -1,4 +1,8 @@
 <map id="/root/ACloudViewer/libs/CV_db/include/ecvDisc.h" name="/root/ACloudViewer/libs/CV_db/include/ecvDisc.h">
-<area shape="rect" id="node1" title=" " alt="" coords="33,5,179,61"/>
-<area shape="rect" id="node2" href="$ccDisc_8cpp.html" title=" " alt="" coords="5,109,207,180"/>
+<area shape="rect" id="node1" title=" " alt="" coords="480,5,627,61"/>
+<area shape="rect" id="node2" href="$primitives_8cpp.html" title=" " alt="" coords="5,117,192,173"/>
+<area shape="rect" id="node3" href="$ecvPropertiesTreeDelegate_8cpp.html" title=" " alt="" coords="217,117,413,173"/>
+<area shape="rect" id="node4" href="$ecvPrimitiveFactoryDlg_8cpp.html" title=" " alt="" coords="437,124,669,165"/>
+<area shape="rect" id="node5" href="$MainWindow_8cpp.html" title=" " alt="" coords="694,124,858,165"/>
+<area shape="rect" id="node6" href="$ccDisc_8cpp.html" title=" " alt="" coords="882,109,1083,180"/>
 </map>

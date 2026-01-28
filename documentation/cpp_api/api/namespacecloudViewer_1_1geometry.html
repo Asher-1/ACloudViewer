@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -87,7 +96,9 @@ $(document).ready(function(){initNavTree('namespacecloudViewer_1_1geometry.html'
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">cloudViewer::geometry Namespace Reference</div>  </div>
 </div><!--header-->
@@ -179,6 +190,10 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1AvgColorVoxel.html">AvgColorVoxel</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Class to aggregate color values from different votes in one voxel Computes the average color value in the voxel.  <a href="classcloudViewer_1_1geometry_1_1AvgColorVoxel.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1PyOctreeNode.html">PyOctreeNode</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html">PyOctreeLeafNode</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -198,6 +213,80 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a83d06c44c7b0d814f4c4535405166750"><td class="memItemLeft" align="right" valign="top">typedef std::vector&lt; std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1RGBDImage.html">RGBDImage</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a83d06c44c7b0d814f4c4535405166750">RGBDImagePyramid</a></td></tr>
 <tr class="memdesc:a83d06c44c7b0d814f4c4535405166750"><td class="mdescLeft">&#160;</td><td class="mdescRight">Typedef and functions for RGBDImagePyramid.  <a href="namespacecloudViewer_1_1geometry.html#a83d06c44c7b0d814f4c4535405166750">More...</a><br /></td></tr>
 <tr class="separator:a83d06c44c7b0d814f4c4535405166750"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ac44e84292ccf0f979be3cc62880a14d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ac44e84292ccf0f979be3cc62880a14d0">pybind_boundingvolume</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ac44e84292ccf0f979be3cc62880a14d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab14b335d19eed6cd12bcc4ba9b93285f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ab14b335d19eed6cd12bcc4ba9b93285f">pybind_cloudbase</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ab14b335d19eed6cd12bcc4ba9b93285f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf295218c2619f95a7ac51e89e2f0876"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#acf295218c2619f95a7ac51e89e2f0876">pybind_cloudbase_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:acf295218c2619f95a7ac51e89e2f0876"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91e61f32df52dcb920ebc1ea872a8ec7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a91e61f32df52dcb920ebc1ea872a8ec7">pybind_facet</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a91e61f32df52dcb920ebc1ea872a8ec7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0c81684a2a9a881da50c3a4a9dfe431"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#af0c81684a2a9a881da50c3a4a9dfe431">pybind_facet_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:af0c81684a2a9a881da50c3a4a9dfe431"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a24f03f982c6c2420f8f3bf71f81dbfe1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a24f03f982c6c2420f8f3bf71f81dbfe1">pybind_geometry_classes</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a24f03f982c6c2420f8f3bf71f81dbfe1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60560ce0a08c14eb36a1021a0936c0f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a60560ce0a08c14eb36a1021a0936c0f4">pybind_geometry</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a60560ce0a08c14eb36a1021a0936c0f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a635eb5472fedcc9d299966fafa56f939"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a635eb5472fedcc9d299966fafa56f939">pybind_pointcloud</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a635eb5472fedcc9d299966fafa56f939"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2ee6017dd0188e0ddddfb9cd96f39f6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ae2ee6017dd0188e0ddddfb9cd96f39f6">pybind_keypoint</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ae2ee6017dd0188e0ddddfb9cd96f39f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f1be8e2155a821e4599068873fa0a56"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a5f1be8e2155a821e4599068873fa0a56">pybind_voxelgrid</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a5f1be8e2155a821e4599068873fa0a56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95d6cf444743d38ee6ddf842450cf95a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a95d6cf444743d38ee6ddf842450cf95a">pybind_lineset</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a95d6cf444743d38ee6ddf842450cf95a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac934323a7c065bfbc62d7a965e10aff8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ac934323a7c065bfbc62d7a965e10aff8">pybind_meshbase</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ac934323a7c065bfbc62d7a965e10aff8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb02b0cb711612b82275b5410cd14388"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#aeb02b0cb711612b82275b5410cd14388">pybind_trianglemesh</a> (py::module &amp;m)</td></tr>
+<tr class="separator:aeb02b0cb711612b82275b5410cd14388"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9ec129b8372ccae333401e23f2b4063"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#af9ec129b8372ccae333401e23f2b4063">pybind_primitives</a> (py::module &amp;m)</td></tr>
+<tr class="separator:af9ec129b8372ccae333401e23f2b4063"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66279e5dd8456e1779030c894295278c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a66279e5dd8456e1779030c894295278c">pybind_polyline</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a66279e5dd8456e1779030c894295278c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9e1ab230df5d3d623cb8de6f36ffecd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ad9e1ab230df5d3d623cb8de6f36ffecd">pybind_halfedgetrianglemesh</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ad9e1ab230df5d3d623cb8de6f36ffecd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a867c06b52507f4f805508cb20b6f3dee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a867c06b52507f4f805508cb20b6f3dee">pybind_image</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a867c06b52507f4f805508cb20b6f3dee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81fd0e8bc7a2288a611da40dc8a0f346"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a81fd0e8bc7a2288a611da40dc8a0f346">pybind_tetramesh</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a81fd0e8bc7a2288a611da40dc8a0f346"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9a8d15c73f669dcfc57aedd0bf634ab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ab9a8d15c73f669dcfc57aedd0bf634ab">pybind_kdtreeflann</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ab9a8d15c73f669dcfc57aedd0bf634ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a8b9df50c9abb22fcde4efdf129ba3a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a9a8b9df50c9abb22fcde4efdf129ba3a">pybind_pointcloud_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a9a8b9df50c9abb22fcde4efdf129ba3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad54cc4ddf80ba7cdb553ef7a2df9b10e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ad54cc4ddf80ba7cdb553ef7a2df9b10e">pybind_voxelgrid_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ad54cc4ddf80ba7cdb553ef7a2df9b10e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37c9a0c57bb4184feb45175487e5a00a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a37c9a0c57bb4184feb45175487e5a00a">pybind_meshbase_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a37c9a0c57bb4184feb45175487e5a00a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab78e0a197a085db024affec47a80f9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#aab78e0a197a085db024affec47a80f9e">pybind_trianglemesh_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:aab78e0a197a085db024affec47a80f9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88f38644381eecf844857f45e5b8bf5a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a88f38644381eecf844857f45e5b8bf5a">pybind_primitives_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a88f38644381eecf844857f45e5b8bf5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb8d06bbd45546a28fc06c8dce846ebb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#aeb8d06bbd45546a28fc06c8dce846ebb">pybind_polyline_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:aeb8d06bbd45546a28fc06c8dce846ebb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae397b0524a48749972bb6878c6292afc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ae397b0524a48749972bb6878c6292afc">pybind_lineset_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ae397b0524a48749972bb6878c6292afc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f5197dba1bf5e8489737e61cbd86cc8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a5f5197dba1bf5e8489737e61cbd86cc8">pybind_image_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a5f5197dba1bf5e8489737e61cbd86cc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c84e1a4e7921a32188a13a9b65ec385"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a5c84e1a4e7921a32188a13a9b65ec385">pybind_octree_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a5c84e1a4e7921a32188a13a9b65ec385"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad86967ca3dec413b3c7e4cca95950224"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ad86967ca3dec413b3c7e4cca95950224">pybind_octree</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ad86967ca3dec413b3c7e4cca95950224"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa60818500c7b1137bdd289aa94bdd85c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#aa60818500c7b1137bdd289aa94bdd85c">pybind_half_edge</a> (py::module &amp;m)</td></tr>
+<tr class="separator:aa60818500c7b1137bdd289aa94bdd85c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cf2c2a3f8cf2a6f53ba1e9e7040874c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a3cf2c2a3f8cf2a6f53ba1e9e7040874c">pybind_keypoint_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a3cf2c2a3f8cf2a6f53ba1e9e7040874c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae34ebbbd5a44d8504527ceb8afaaf82a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ae34ebbbd5a44d8504527ceb8afaaf82a">pybind_tetramesh_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ae34ebbbd5a44d8504527ceb8afaaf82a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ad5447a855c9d99cef6712bb76a1d2c1a"><td class="memItemLeft" align="right" valign="top">static const std::unordered_map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#ad5447a855c9d99cef6712bb76a1d2c1a">map_shared_argument_docstrings</a></td></tr>
+<tr class="separator:ad5447a855c9d99cef6712bb76a1d2c1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bcbe8f086bd193142f69dc0e647e5a6"><td class="memItemLeft" align="right" valign="top">static const std::unordered_map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1geometry.html#a9bcbe8f086bd193142f69dc0e647e5a6">map_octree_argument_docstrings</a></td></tr>
+<tr class="separator:a9bcbe8f086bd193142f69dc0e647e5a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="a123b6a0a431d03bd0def27450c67a3d1"></a>
@@ -316,13 +405,833 @@ Typedefs</h2></td></tr>
 
 </div>
 </div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="ac44e84292ccf0f979be3cc62880a14d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac44e84292ccf0f979be3cc62880a14d0">&#9670;&nbsp;</a></span>pybind_boundingvolume()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_boundingvolume </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2boundingvolume_8cpp_source.html#l00021">21</a> of file <a class="el" href="geometry_2boundingvolume_8cpp_source.html">boundingvolume.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="BoundingBox_8h_source.html#l00260">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::addEigen()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00110">cloudViewer::OrientedBoundingBox::center_</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="BoundingBox_8h_source.html#l00125">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::clear()</a>, <a class="el" href="OrientedBoundingBox_8cpp_source.html#l00022">cloudViewer::OrientedBoundingBox::Clear()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00117">cloudViewer::OrientedBoundingBox::color_</a>, <a class="el" href="BoundingBox_8h_source.html#l00192">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::computeVolume()</a>, <a class="el" href="BoundingBox_8h_source.html#l00236">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::containsEigen()</a>, <a class="el" href="classecvOrientedBBox.html#aabe26d353a5b5aa71636736f9057b825">ecvOrientedBBox::CreateFromAxisAlignedBoundingBox()</a>, <a class="el" href="classccBBox.html#ac57222193b85f26f67b2c55f014dd9ab">ccBBox::CreateFromPoints()</a>, <a class="el" href="classecvOrientedBBox.html#a9cedc77c169fb20c6e05622a043d057e">ecvOrientedBBox::CreateFromPoints()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00115">cloudViewer::OrientedBoundingBox::extent_</a>, <a class="el" href="BoundingBox_8h_source.html#l00283">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getBounds()</a>, <a class="el" href="OrientedBoundingBox_8cpp_source.html#l00034">cloudViewer::OrientedBoundingBox::GetBoxPoints()</a>, <a class="el" href="classccBBox.html#af05c705d1e09b5be2a9f0aa65165fcff">ccBBox::GetBoxPoints()</a>, <a class="el" href="BoundingBox_8h_source.html#l00267">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::GetColor()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00063">cloudViewer::OrientedBoundingBox::GetColor()</a>, <a class="el" href="BoundingBox_8h_source.html#l00175">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getDiagNormd()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00049">cloudViewer::OrientedBoundingBox::GetExtent()</a>, <a class="el" href="ecvBBox_8h_source.html#l00147">ccBBox::GetExtent()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00055">cloudViewer::OrientedBoundingBox::GetHalfExtent()</a>, <a class="el" href="ecvBBox_8h_source.html#l00152">ccBBox::GetHalfExtent()</a>, <a class="el" href="BoundingBox_8h_source.html#l00185">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getMaxBoxDim()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00058">cloudViewer::OrientedBoundingBox::GetMaxExtent()</a>, <a class="el" href="ecvBBox_8h_source.html#l00156">ccBBox::GetMaxExtent()</a>, <a class="el" href="BoundingBox_8h_source.html#l00178">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getMinBoxDim()</a>, <a class="el" href="classccBBox.html#a7f21a236b212f3e03288c1392d0d792c">ccBBox::GetPrintInfo()</a>, <a class="el" href="BoundingBox_8h_source.html#l00271">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getXPercentage()</a>, <a class="el" href="BoundingBox_8h_source.html#l00275">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getYPercentage()</a>, <a class="el" href="BoundingBox_8h_source.html#l00279">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::getZPercentage()</a>, <a class="el" href="BoundingBox_8h_source.html#l00203">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::isValid()</a>, <a class="el" href="BoundingBox_8h_source.html#l00209">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::minDistTo()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00113">cloudViewer::OrientedBoundingBox::R_</a>, <a class="el" href="BoundingBox_8h_source.html#l00265">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::SetColor()</a>, <a class="el" href="OrientedBoundingBox_8h_source.html#l00061">cloudViewer::OrientedBoundingBox::SetColor()</a>, <a class="el" href="ecvBBox_8h_source.html#l00135">ccBBox::SetMaxBounds()</a>, <a class="el" href="ecvBBox_8h_source.html#l00132">ccBBox::SetMinBounds()</a>, <a class="el" href="BoundingBox_8h_source.html#l00200">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::setValidity()</a>, <a class="el" href="BoundingBox_8h_source.html#l00262">cloudViewer::BoundingBoxTpl&lt; PointCoordinateType &gt;::volume()</a>, and <a class="el" href="OrientedBoundingBox_8cpp_source.html#l00030">cloudViewer::OrientedBoundingBox::volume()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ab14b335d19eed6cd12bcc4ba9b93285f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab14b335d19eed6cd12bcc4ba9b93285f">&#9670;&nbsp;</a></span>pybind_cloudbase()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_cloudbase </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="cloudbase_8cpp_source.html#l00030">30</a> of file <a class="el" href="cloudbase_8cpp_source.html">cloudbase.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00166">cloudViewer::ReferenceCloud::add()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00174">cloudViewer::ReferenceCloud::capacity()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classccGenericPointCloud.html#af1c9d4653bfa8d0aa7480ef3b2393161">ccGenericPointCloud::clear()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00026">cloudViewer::ReferenceCloud::clear()</a>, <a class="el" href="classccGenericPointCloud.html#aaaecc3db819b1463550846acb535815f">ccGenericPointCloud::computeMeanAndCovariance()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a1721a624f9694430f84ce9c98d954ed3">cloudViewer::GenericCloud::enableScalarField()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00133">cloudViewer::ReferenceCloud::forwardIterator()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a108063b0a87eff68e9575ea07db940f8">cloudViewer::GenericCloud::getBoundingBox()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00113">cloudViewer::ReferenceCloud::getCurrentPointGlobalIndex()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00119">cloudViewer::ReferenceCloud::getCurrentPointScalarValue()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a92fb0560290d58171c67563d84e6a278">cloudViewer::GenericCloud::getNextPoint()</a>, <a class="el" href="classccGenericPointCloud.html#ad00d85f6a9610ed53b8ad0ecf64af650">ccGenericPointCloud::getPointDisplayedDistance()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="classccGenericPointCloud.html#ae283f74a9e17edec382cc9aa68773fa4">ccGenericPointCloud::getPointNormalIndex()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="ecvGenericPointCloud_8h_source.html#l00283">ccGenericPointCloud::getPointSize()</a>, <a class="el" href="GenericCloud_8h_source.html#l00037">cloudViewer::GenericCloud::hasPoints()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00227">cloudViewer::ReferenceCloud::invalidateBoundingBox()</a>, <a class="el" href="classccGenericPointCloud.html#ab0461ebf7a6fe6eafa8722028082d047">ccGenericPointCloud::invertVisibilityArray()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#af4515f3701b553e1e756332af1fee02a">cloudViewer::GenericCloud::isScalarFieldEnabled()</a>, <a class="el" href="classccGenericPointCloud.html#a49380308a317569ca81fe07773ab4dfe">ccGenericPointCloud::isVisibilityTableInstantiated()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a2f05e939821a2ef1d333715127e6fcb7">cloudViewer::GenericCloud::placeIteratorAtBeginning()</a>, <a class="el" href="classccGenericPointCloud.html#a350a257b37f76aed1c4b79c56cdbf5fc">ccGenericPointCloud::refreshBB()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00195">cloudViewer::ReferenceCloud::removeCurrentPointGlobalIndex()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00146">cloudViewer::ReferenceCloud::removePointGlobalIndex()</a>, <a class="el" href="classccGenericPointCloud.html#a75913b7dfdad92a08c78be8980b5a113">ccGenericPointCloud::removePoints()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, <a class="el" href="classccGenericPointCloud.html#ad6b2f1656aa613434e88d88f23d0c8cb">ccGenericPointCloud::resetVisibilityArray()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00126">cloudViewer::ReferenceCloud::setCurrentPointScalarValue()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00127">cloudViewer::ReferenceCloud::setPointIndex()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aef2261d89fae22ce9a5a5ee06ccb4c37">cloudViewer::GenericCloud::setPointScalarValue()</a>, <a class="el" href="ecvGenericPointCloud_8h_source.html#l00275">ccGenericPointCloud::setPointSize()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00185">cloudViewer::ReferenceCloud::swap()</a>, <a class="el" href="GenericCloud_8h_source.html#l00065">cloudViewer::GenericCloud::testVisibility()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00072">ecvColor::RgbTpl&lt; Type &gt;::ToEigen()</a>, and <a class="el" href="classccGenericPointCloud.html#aea6155d5676d1aa89dd89748197678c0">ccGenericPointCloud::unallocateVisibilityArray()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="acf295218c2619f95a7ac51e89e2f0876"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf295218c2619f95a7ac51e89e2f0876">&#9670;&nbsp;</a></span>pybind_cloudbase_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_cloudbase_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="cloudbase_8cpp_source.html#l00479">479</a> of file <a class="el" href="cloudbase_8cpp_source.html">cloudbase.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a91e61f32df52dcb920ebc1ea872a8ec7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a91e61f32df52dcb920ebc1ea872a8ec7">&#9670;&nbsp;</a></span>pybind_facet()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_facet </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="facet_8cpp_source.html#l00030">30</a> of file <a class="el" href="facet_8cpp_source.html">facet.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classccFacet.html#a040c8511fbd9dc351b3d3067a4df82c9">ccFacet::clone()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="classccPolyline.html#a04728e894670d9446bdeb403ff16cf03">ccPolyline::computeLength()</a>, <a class="el" href="classccFacet.html#aa05b1ea269b36f92568a7f223fa82764">ccFacet::Create()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00086">ecvColor::RgbTpl&lt; Type &gt;::FromEigen()</a>, <a class="el" href="ecvFacet_8h_source.html#l00078">ccFacet::getCenter()</a>, <a class="el" href="ecvFacet_8h_source.html#l00086">ccFacet::getContour()</a>, <a class="el" href="ecvFacet_8h_source.html#l00091">ccFacet::getContourVertices()</a>, <a class="el" href="classccFacet.html#aebdfc859cda39f619e3f2b62cfd6e075">ccFacet::getNormalVectorMesh()</a>, <a class="el" href="ecvFacet_8h_source.html#l00098">ccFacet::getOriginPoints()</a>, <a class="el" href="ecvFacet_8h_source.html#l00072">ccFacet::getPlaneEquation()</a>, <a class="el" href="ecvFacet_8h_source.html#l00081">ccFacet::getPolygon()</a>, <a class="el" href="ecvFacet_8h_source.html#l00068">ccFacet::getRMS()</a>, <a class="el" href="ecvFacet_8h_source.html#l00070">ccFacet::getSurface()</a>, <a class="el" href="classccFacet.html#a6580d5173f98188a0df1a5892d909164">ccFacet::invertNormal()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00129">name</a>, <a class="el" href="ecvFacet_8h_source.html#l00148">ccFacet::PaintUniformColor()</a>, <a class="el" href="classccFacet.html#a8c9ff728ba1efe93d5c822f632ea410c">ccFacet::setColor()</a>, <a class="el" href="ecvFacet_8h_source.html#l00107">ccFacet::setContour()</a>, <a class="el" href="ecvFacet_8h_source.html#l00109">ccFacet::setContourVertices()</a>, <a class="el" href="ecvFacet_8h_source.html#l00113">ccFacet::setOriginPoints()</a>, <a class="el" href="ecvFacet_8h_source.html#l00105">ccFacet::setPolygon()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, and <a class="el" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">ccMesh::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="af0c81684a2a9a881da50c3a4a9dfe431"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0c81684a2a9a881da50c3a4a9dfe431">&#9670;&nbsp;</a></span>pybind_facet_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_facet_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="facet_8cpp_source.html#l00237">237</a> of file <a class="el" href="facet_8cpp_source.html">facet.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a60560ce0a08c14eb36a1021a0936c0f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60560ce0a08c14eb36a1021a0936c0f4">&#9670;&nbsp;</a></span>pybind_geometry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_geometry </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">1021</a> of file <a class="el" href="geometry_2geometry_8cpp_source.html">geometry.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="geometry_2boundingvolume_8cpp_source.html#l00021">pybind_boundingvolume()</a>, <a class="el" href="cloudbase_8cpp_source.html#l00030">pybind_cloudbase()</a>, <a class="el" href="cloudbase_8cpp_source.html#l00479">pybind_cloudbase_methods()</a>, <a class="el" href="facet_8cpp_source.html#l00030">pybind_facet()</a>, <a class="el" href="facet_8cpp_source.html#l00237">pybind_facet_methods()</a>, <a class="el" href="geometry_2geometry_8cpp_source.html#l00057">pybind_geometry_classes()</a>, <a class="el" href="halfedgemesh_8cpp_source.html#l00056">pybind_halfedgetrianglemesh()</a>, <a class="el" href="geometry_2image_8cpp_source.html#l00040">pybind_image()</a>, <a class="el" href="geometry_2image_8cpp_source.html#l00274">pybind_image_methods()</a>, <a class="el" href="kdtreeflann_8cpp_source.html#l00017">pybind_kdtreeflann()</a>, <a class="el" href="keypoint_8cpp_source.html#l00052">pybind_keypoint()</a>, <a class="el" href="geometry_2lineset_8cpp_source.html#l00020">pybind_lineset()</a>, <a class="el" href="geometry_2lineset_8cpp_source.html#l00129">pybind_lineset_methods()</a>, <a class="el" href="meshbase_8cpp_source.html#l00024">pybind_meshbase()</a>, <a class="el" href="meshbase_8cpp_source.html#l00509">pybind_meshbase_methods()</a>, <a class="el" href="octree_8cpp_source.html#l00038">pybind_octree()</a>, <a class="el" href="octree_8cpp_source.html#l00348">pybind_octree_methods()</a>, <a class="el" href="geometry_2pointcloud_8cpp_source.html#l00028">pybind_pointcloud()</a>, <a class="el" href="geometry_2pointcloud_8cpp_source.html#l01021">pybind_pointcloud_methods()</a>, <a class="el" href="polyline_8cpp_source.html#l00031">pybind_polyline()</a>, <a class="el" href="polyline_8cpp_source.html#l00277">pybind_polyline_methods()</a>, <a class="el" href="primitives_8cpp_source.html#l00037">pybind_primitives()</a>, <a class="el" href="primitives_8cpp_source.html#l01029">pybind_primitives_methods()</a>, <a class="el" href="tetramesh_8cpp_source.html#l00018">pybind_tetramesh()</a>, <a class="el" href="geometry_2trianglemesh_8cpp_source.html#l00023">pybind_trianglemesh()</a>, <a class="el" href="voxelgrid_8cpp_source.html#l00024">pybind_voxelgrid()</a>, and <a class="el" href="voxelgrid_8cpp_source.html#l00244">pybind_voxelgrid_methods()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="cloudViewer__pybind_8cpp_source.html#l00027">cloudViewer::PYBIND11_MODULE()</a>.</p>
+
+</div>
+</div>
+<a id="a24f03f982c6c2420f8f3bf71f81dbfe1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24f03f982c6c2420f8f3bf71f81dbfe1">&#9670;&nbsp;</a></span>pybind_geometry_classes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_geometry_classes </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2geometry_8cpp_source.html#l00057">57</a> of file <a class="el" href="geometry_2geometry_8cpp_source.html">geometry.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild()</a>, <a class="el" href="CVTypes_8h_source.html#l00154">CV_TYPES::BBOX</a>, <a class="el" href="CVTypes_8h_source.html#l00128">CV_TYPES::BOX</a>, <a class="el" href="CVTypes_8h_source.html#l00118">CV_TYPES::CAMERA_SENSOR</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00082">ccDrawableObject::colorsShown()</a>, <a class="el" href="CVTypes_8h_source.html#l00123">CV_TYPES::CONE</a>, <a class="el" href="CVTypes_8h_source.html#l00179">CV_TYPES::CUSTOM_H_OBJECT</a>, <a class="el" href="CVTypes_8h_source.html#l00126">CV_TYPES::CYLINDER</a>, <a class="el" href="CVTypes_8h_source.html#l00129">CV_TYPES::DISH</a>, <a class="el" href="classccDrawableObject.html#a3b85b17f1463c84d7f868c9bee4d97a0">ccDrawableObject::enableGLTransformation()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00155">ccDrawableObject::enableTempColor()</a>, <a class="el" href="CVTypes_8h_source.html#l00130">CV_TYPES::EXTRU</a>, <a class="el" href="CVTypes_8h_source.html#l00109">CV_TYPES::FACET</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00086">ecvColor::RgbTpl&lt; Type &gt;::FromEigen()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00054">ccGLMatrixTpl&lt; float &gt;::FromEigenMatrix()</a>, <a class="el" href="CVTypes_8h_source.html#l00117">CV_TYPES::GBL_SENSOR</a>, <a class="el" href="classccHObject.html#a3817540ce25b70106566ac760c0a2493">ccHObject::GetAxisAlignedBoundingBox()</a>, <a class="el" href="ecvHObject_8h_source.html#l00150">ccHObject::GetCenter()</a>, <a class="el" href="ecvHObject_8h_source.html#l00325">ccHObject::getChild()</a>, <a class="el" href="ecvHObject_8h_source.html#l00232">ccHObject::getClassID()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00191">ccDrawableObject::getGLTransformation()</a>, <a class="el" href="ecvHObject_8h_source.html#l00148">ccHObject::GetMax2DBound()</a>, <a class="el" href="ecvHObject_8h_source.html#l00147">ccHObject::GetMaxBound()</a>, <a class="el" href="ecvHObject_8h_source.html#l00145">ccHObject::GetMin2DBound()</a>, <a class="el" href="ecvHObject_8h_source.html#l00144">ccHObject::GetMinBound()</a>, <a class="el" href="ecvObject_8h_source.html#l00072">ccObject::getName()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00160">ccDrawableObject::getOpacity()</a>, <a class="el" href="classccHObject.html#a43b508f70ef34fba0aec7ed5d5316964">ccHObject::GetOrientedBoundingBox()</a>, <a class="el" href="classccHObject.html#a19931028cc0a393a8b2de2ca548b3a22">ccHObject::getOwnBB()</a>, <a class="el" href="ecvHObject_8h_source.html#l00245">ccHObject::getParent()</a>, <a class="el" href="classccHObject.html#ac24463954526539cf59ae7bc14f59249">ccHObject::GetRotationMatrixFromAxisAngle()</a>, <a class="el" href="classccHObject.html#a47555f65021b51d96f26ed2b47e20f9c">ccHObject::GetRotationMatrixFromEulerAngle()</a>, <a class="el" href="classccHObject.html#aa0dc5a5b7580a6d5b81a4e8d5ca998ea">ccHObject::GetRotationMatrixFromQuaternion()</a>, <a class="el" href="classccHObject.html#a90e5a0805f144852bb7462976567dcb2">ccHObject::GetRotationMatrixFromXYZ()</a>, <a class="el" href="classccHObject.html#afddd2075f5f61554faca176e84a5309f">ccHObject::GetRotationMatrixFromXZY()</a>, <a class="el" href="classccHObject.html#a0ccf43440c296dc4b2fac469bc8f8e53">ccHObject::GetRotationMatrixFromYXZ()</a>, <a class="el" href="classccHObject.html#a20ed75d59cbbe582719caf0dfbcc6ceb">ccHObject::GetRotationMatrixFromYZX()</a>, <a class="el" href="classccHObject.html#a9f1f1d3c52467cfdca09112e461cd9f7">ccHObject::GetRotationMatrixFromZXY()</a>, <a class="el" href="classccHObject.html#aebf4444d792ed8466b85c774d1dfba22">ccHObject::GetRotationMatrixFromZYX()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00143">ccDrawableObject::getTempColor()</a>, <a class="el" href="ecvObject_8h_source.html#l00086">ccObject::getUniqueID()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00080">ccDrawableObject::hasColors()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00099">ccDrawableObject::hasDisplayedScalarField()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00089">ccDrawableObject::hasNormals()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00105">ccDrawableObject::hasScalarFields()</a>, <a class="el" href="CVTypes_8h_source.html#l00114">CV_TYPES::IMAGE</a>, <a class="el" href="CVTypes_8h_source.html#l00156">CV_TYPES::IMAGE2</a>, <a class="el" href="ecvObject_8h_source.html#l00131">ccObject::isA()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00138">ccDrawableObject::isColorOverridden()</a>, <a class="el" href="ecvObject_8h_source.html#l00123">ccObject::isCustom()</a>, <a class="el" href="ecvHObject_8h_source.html#l00142">ccHObject::IsEmpty()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00186">ccDrawableObject::isGLTransEnabled()</a>, <a class="el" href="ecvHObject_8h_source.html#l00237">ccHObject::isGroup()</a>, <a class="el" href="ecvObject_8h_source.html#l00124">ccObject::isHierarchy()</a>, <a class="el" href="ecvObject_8h_source.html#l00128">ccObject::isKindOf()</a>, <a class="el" href="ecvObject_8h_source.html#l00122">ccObject::isLeaf()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00068">ccDrawableObject::isSelected()</a>, <a class="el" href="classccHObject.html#a4f18fd99665649ae671fb887e48fcfe4">ccHObject::isSerializable()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00056">ccDrawableObject::isVisibilityLocked()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00038">ccDrawableObject::isVisible()</a>, <a class="el" href="CVTypes_8h_source.html#l00140">CV_TYPES::LABEL_2D</a>, <a class="el" href="CVTypes_8h_source.html#l00152">CV_TYPES::LINESET</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00063">ccDrawableObject::lockVisibility()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="CVTypes_8h_source.html#l00132">CV_TYPES::MATERIAL_SET</a>, <a class="el" href="CVTypes_8h_source.html#l00105">CV_TYPES::MESH</a>, <a class="el" href="CVTypes_8h_source.html#l00107">CV_TYPES::MESH_GROUP</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00129">name</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00128">ccDrawableObject::nameShownIn3D()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00091">ccDrawableObject::normalsShown()</a>, <a class="el" href="CVTypes_8h_source.html#l00124">CV_TYPES::OLD_CYLINDER_ID</a>, <a class="el" href="CVTypes_8h_source.html#l00155">CV_TYPES::ORIENTED_BBOX</a>, <a class="el" href="CVTypes_8h_source.html#l00120">CV_TYPES::PLANE</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="CVTypes_8h_source.html#l00111">CV_TYPES::POINT_KDTREE</a>, <a class="el" href="CVTypes_8h_source.html#l00110">CV_TYPES::POINT_OCTREE</a>, <a class="el" href="CVTypes_8h_source.html#l00157">CV_TYPES::POINT_OCTREE2</a>, <a class="el" href="CVTypes_8h_source.html#l00112">CV_TYPES::POLY_LINE</a>, <a class="el" href="CVTypes_8h_source.html#l00119">CV_TYPES::PRIMITIVE</a>, <a class="el" href="CVTypes_8h_source.html#l00131">CV_TYPES::QUADRIC</a>, <a class="el" href="classccHObject.html#a52eab47ef3562a0aa9a94ef4f7e1f533">ccHObject::removeAllChildren()</a>, <a class="el" href="classccHObject.html#ace0ce5ec7efa7f4b101a1b2a5c80a963">ccHObject::removeChild()</a>, <a class="el" href="classccDrawableObject.html#ae334e99134d502855f2f77bf5242bdf7">ccDrawableObject::resetGLTransformation()</a>, <a class="el" href="CVTypes_8h_source.html#l00158">CV_TYPES::RGBD_IMAGE</a>, <a class="el" href="ecvHObject_8h_source.html#l00186">ccHObject::Rotate()</a>, <a class="el" href="classccDrawableObject.html#ac54759ae801e83b38070b8ff480059f6">ccDrawableObject::rotateGL()</a>, <a class="el" href="ecvHObject_8h_source.html#l00176">ccHObject::Scale()</a>, <a class="el" href="CVTypes_8h_source.html#l00116">CV_TYPES::SENSOR</a>, <a class="el" href="classccDrawableObject.html#ae3b78df637291448db4fbf79e7c9640b">ccDrawableObject::setGLTransformation()</a>, <a class="el" href="classccHObject.html#a1172ad4113ed07560b58e65e1600b78c">ccHObject::setLineWidthRecursive()</a>, <a class="el" href="ecvObject_8h_source.html#l00075">ccObject::setName()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00163">ccDrawableObject::setOpacity()</a>, <a class="el" href="classccHObject.html#a7d28a89dc197e089208b6b43648b50b7">ccHObject::setPointSizeRecursive()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00070">ccDrawableObject::setSelected()</a>, <a class="el" href="classccDrawableObject.html#a14d3f57fd3e63511c10385fc761ef6ab">ccDrawableObject::setTempColor()</a>, <a class="el" href="classccObject.html#abceb2845d0396130583cdebbbe8b989c">ccObject::setUniqueID()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00040">ccDrawableObject::setVisible()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00117">ccDrawableObject::sfShown()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00084">ccDrawableObject::showColors()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00125">ccDrawableObject::showNameIn3D()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00093">ccDrawableObject::showNormals()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00108">ccDrawableObject::showSF()</a>, <a class="el" href="CVTypes_8h_source.html#l00121">CV_TYPES::SPHERE</a>, <a class="el" href="docstring_8cpp_source.html#l00024">cloudViewer::docstring::static_property</a>, <a class="el" href="CVTypes_8h_source.html#l00106">CV_TYPES::SUB_MESH</a>, <a class="el" href="CVTypes_8h_source.html#l00149">CV_TYPES::TETRA_MESH</a>, <a class="el" href="classccHObjectCaster.html#a95b89959c1917504d3878245b34850a3">ccHObjectCaster::To2DLabel()</a>, <a class="el" href="classccHObjectCaster.html#a3d073bf17e92e66f085c0a523bc27aeb">ccHObjectCaster::To2DViewportLabel()</a>, <a class="el" href="classccHObjectCaster.html#a9d27cf176c4513269fd1e1d62d1dc820">ccHObjectCaster::To2DViewportObject()</a>, <a class="el" href="classccHObjectCaster.html#a2f934bb8b9c978dda1d1b7e861ce5635">ccHObjectCaster::ToBBox()</a>, <a class="el" href="classccHObjectCaster.html#aab55c0854ddfe92fbb7c97079efc0049">ccHObjectCaster::ToBox()</a>, <a class="el" href="classccHObjectCaster.html#a4d3ab899e172af4cb08fa3d369554976">ccHObjectCaster::ToCameraSensor()</a>, <a class="el" href="classccHObjectCaster.html#ae0fc25243792f001a533c409e25e3458">ccHObjectCaster::ToCone()</a>, <a class="el" href="classccHObjectCaster.html#aa188fc2ecd080e88c75bffe2065acda0">ccHObjectCaster::ToCoordinateSystem()</a>, <a class="el" href="classccHObjectCaster.html#a58b9ab6f4c658729bedfb10f2267646f">ccHObjectCaster::ToCylinder()</a>, <a class="el" href="classccHObjectCaster.html#a5a88b863025302dd7bda4427ecd7026f">ccHObjectCaster::ToDish()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00072">ecvColor::RgbTpl&lt; Type &gt;::ToEigen()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00067">ccGLMatrixTpl&lt; float &gt;::ToEigenMatrix4()</a>, <a class="el" href="classccHObjectCaster.html#a85a540c74bdcd142ec5dc20a501f6b72">ccHObjectCaster::ToExtru()</a>, <a class="el" href="classccHObjectCaster.html#abbc6ece878b3839e6a3063833d98797a">ccHObjectCaster::ToFacet()</a>, <a class="el" href="classccHObjectCaster.html#ae4e6f0daf93aa7c78823b85a3951f9d9">ccHObjectCaster::ToGBLSensor()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00086">ccDrawableObject::toggleColors()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00121">ccDrawableObject::toggleMaterials()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00095">ccDrawableObject::toggleNormals()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00114">ccDrawableObject::toggleSF()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00131">ccDrawableObject::toggleShowName()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00043">ccDrawableObject::toggleVisibility()</a>, <a class="el" href="classccHObjectCaster.html#ab19fea3a9018d25239460c74076b32bb">ccHObjectCaster::ToImage()</a>, <a class="el" href="classccHObjectCaster.html#a467f3a60dd01b5c5ddbb5942d0ce01e6">ccHObjectCaster::ToImage2()</a>, <a class="el" href="classccHObjectCaster.html#a7645b162aca8ce435206bfcebe3ca739">ccHObjectCaster::ToKdTree()</a>, <a class="el" href="classccHObjectCaster.html#a74caa5588e446678233abc49783826d7">ccHObjectCaster::ToLineSet()</a>, <a class="el" href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh()</a>, <a class="el" href="classccHObjectCaster.html#a58e1b64c3a73bd33df1446b0ae527f22">ccHObjectCaster::ToOctree2()</a>, <a class="el" href="classccHObjectCaster.html#a6cbaa87a072d931a4ed0895468ed37df">ccHObjectCaster::ToOctreeProxy()</a>, <a class="el" href="classccHObjectCaster.html#ad6f99c6fc39ad24b0c721b0a4a43002d">ccHObjectCaster::ToOrientedBBox()</a>, <a class="el" href="classccHObjectCaster.html#ae64167d0947422a29229b79f48cefeb3">ccHObjectCaster::ToPlane()</a>, <a class="el" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud()</a>, <a class="el" href="classccHObjectCaster.html#a8790708a85b06828aadf67a5376f5338">ccHObjectCaster::ToPolyline()</a>, <a class="el" href="classccHObjectCaster.html#ae059f5b3a084d6aaec290ad32a0efdb9">ccHObjectCaster::ToQuadric()</a>, <a class="el" href="classccHObjectCaster.html#a7a675ab5535565abeab24f83d5895830">ccHObjectCaster::ToRGBDImage()</a>, <a class="el" href="CVTypes_8h_source.html#l00122">CV_TYPES::TORUS</a>, <a class="el" href="classccHObjectCaster.html#a9af2a2196d0070b1640d8ad34b407b3c">ccHObjectCaster::ToSensor()</a>, <a class="el" href="classccHObjectCaster.html#adfb739e726975444cf3550473dc706dc">ccHObjectCaster::ToSphere()</a>, <a class="el" href="classccHObjectCaster.html#ab1b8ab2407787eebb48b49f8bd7a7563">ccHObjectCaster::ToSubMesh()</a>, <a class="el" href="classccHObjectCaster.html#aef3a1b1ea1ba2f20e3eace9d74cc76c9">ccHObjectCaster::ToTorus()</a>, <a class="el" href="classccHObjectCaster.html#ad70baef06ba68192892bc8bb12c42ec1">ccHObjectCaster::ToTransBuffer()</a>, <a class="el" href="classccHObjectCaster.html#ae1b069365a3dae74c1e24e8edbc8c096">ccHObjectCaster::ToVoxelGrid()</a>, <a class="el" href="ecvHObject_8h_source.html#l00157">ccHObject::Transform()</a>, <a class="el" href="ecvHObject_8h_source.html#l00165">ccHObject::Translate()</a>, <a class="el" href="classccDrawableObject.html#a00ff8347089d1241dbfc3628daf98772">ccDrawableObject::translateGL()</a>, <a class="el" href="CVTypes_8h_source.html#l00142">CV_TYPES::VIEWPORT_2D_LABEL</a>, <a class="el" href="CVTypes_8h_source.html#l00141">CV_TYPES::VIEWPORT_2D_OBJECT</a>, and <a class="el" href="CVTypes_8h_source.html#l00151">CV_TYPES::VOXEL_GRID</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="aa60818500c7b1137bdd289aa94bdd85c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa60818500c7b1137bdd289aa94bdd85c">&#9670;&nbsp;</a></span>pybind_half_edge()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_half_edge </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="halfedgemesh_8cpp_source.html#l00018">18</a> of file <a class="el" href="halfedgemesh_8cpp_source.html">halfedgemesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00046">cloudViewer::geometry::HalfEdgeTriangleMesh::HalfEdge::IsBoundary()</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00050">cloudViewer::geometry::HalfEdgeTriangleMesh::HalfEdge::next_</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00056">cloudViewer::geometry::HalfEdgeTriangleMesh::HalfEdge::triangle_index_</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00052">cloudViewer::geometry::HalfEdgeTriangleMesh::HalfEdge::twin_</a>, and <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00054">cloudViewer::geometry::HalfEdgeTriangleMesh::HalfEdge::vertex_indices_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="halfedgemesh_8cpp_source.html#l00056">pybind_halfedgetrianglemesh()</a>.</p>
+
+</div>
+</div>
+<a id="ad9e1ab230df5d3d623cb8de6f36ffecd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9e1ab230df5d3d623cb8de6f36ffecd">&#9670;&nbsp;</a></span>pybind_halfedgetrianglemesh()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_halfedgetrianglemesh </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="halfedgemesh_8cpp_source.html#l00056">56</a> of file <a class="el" href="halfedgemesh_8cpp_source.html">halfedgemesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1geometry_1_1HalfEdgeTriangleMesh.html#a2851356a3ce317df695de11817ff384f">cloudViewer::geometry::HalfEdgeTriangleMesh::boundaryHalfEdgesFromVertex()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1HalfEdgeTriangleMesh.html#a0694789019317be407dc922793e657ca">cloudViewer::geometry::HalfEdgeTriangleMesh::boundaryVerticesFromVertex()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1HalfEdgeTriangleMesh.html#a7488d2722528fca5e6a7bd05548c7eaa">cloudViewer::geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1HalfEdgeTriangleMesh.html#aa3d2e80d19f5ec768a8613f5ca9f35f9">cloudViewer::geometry::HalfEdgeTriangleMesh::getBoundaries()</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00125">cloudViewer::geometry::HalfEdgeTriangleMesh::half_edges_</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1HalfEdgeTriangleMesh.html#a612cc7a8479a1c57a10fe5c85be74e92">cloudViewer::geometry::HalfEdgeTriangleMesh::hasHalfEdges()</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00129">cloudViewer::geometry::HalfEdgeTriangleMesh::ordered_half_edge_from_vertex_</a>, <a class="el" href="halfedgemesh_8cpp_source.html#l00018">pybind_half_edge()</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00123">cloudViewer::geometry::HalfEdgeTriangleMesh::triangle_normals_</a>, <a class="el" href="CV__db_2include_2HalfEdgeTriangleMesh_8h_source.html#l00121">cloudViewer::geometry::HalfEdgeTriangleMesh::triangles_</a>, and <a class="el" href="ecvMeshBase_8h_source.html#l00132">cloudViewer::geometry::ecvMeshBase::vertices_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a867c06b52507f4f805508cb20b6f3dee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a867c06b52507f4f805508cb20b6f3dee">&#9670;&nbsp;</a></span>pybind_image()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_image </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2image_8cpp_source.html#l00040">40</a> of file <a class="el" href="geometry_2image_8cpp_source.html">image.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html#ad43947fcb5050d5e94aa36931e6a6982a300afed56bc38348d5e806ecf930a9cb">cloudViewer::geometry::Image::Gaussian3</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html#ad43947fcb5050d5e94aa36931e6a6982a30a53e4fb7f656f7793d5ae170790207">cloudViewer::geometry::Image::Gaussian5</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html#ad43947fcb5050d5e94aa36931e6a6982abe1b7c8ce24192b14f4e44d2f2f2abee">cloudViewer::geometry::Image::Gaussian7</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="FilamentRenderer_8cpp_source.html#l00184">image</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html#ad43947fcb5050d5e94aa36931e6a6982a6aa0fdf8d4c47b32d05edeac15cc89a7">cloudViewer::geometry::Image::Sobel3Dx</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html#ad43947fcb5050d5e94aa36931e6a6982a87eaa9187879c9e668bf249d5b7bf8b8">cloudViewer::geometry::Image::Sobel3Dy</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a5f5197dba1bf5e8489737e61cbd86cc8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f5197dba1bf5e8489737e61cbd86cc8">&#9670;&nbsp;</a></span>pybind_image_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_image_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2image_8cpp_source.html#l00274">274</a> of file <a class="el" href="geometry_2image_8cpp_source.html">image.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ab9a8d15c73f669dcfc57aedd0bf634ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9a8d15c73f669dcfc57aedd0bf634ab">&#9670;&nbsp;</a></span>pybind_kdtreeflann()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_kdtreeflann </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="kdtreeflann_8cpp_source.html#l00017">17</a> of file <a class="el" href="kdtreeflann_8cpp_source.html">kdtreeflann.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="ecvKDTreeSearchParam_8h_source.html#l00037">cloudViewer::geometry::KDTreeSearchParam::GetSearchType()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1KDTreeSearchParam.html#a5f0f81d2cdc8c297a3b4bfc1c5c8e61aafb1b6e23a3767d2a31ef7899e6dd3f1e">cloudViewer::geometry::KDTreeSearchParam::Hybrid</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1KDTreeSearchParam.html#a5f0f81d2cdc8c297a3b4bfc1c5c8e61aaaf55844c416ce5e300bfc857a3866c3b">cloudViewer::geometry::KDTreeSearchParam::Knn</a>, <a class="el" href="ecvKDTreeSearchParam_8h_source.html#l00057">cloudViewer::geometry::KDTreeSearchParamKNN::knn_</a>, <a class="el" href="ecvKDTreeSearchParam_8h_source.html#l00094">cloudViewer::geometry::KDTreeSearchParamHybrid::max_nn_</a>, <a class="el" href="ecvKDTreeFlann_8h_source.html#l00094">cloudViewer::geometry::KDTreeFlann::Query()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1KDTreeSearchParam.html#a5f0f81d2cdc8c297a3b4bfc1c5c8e61aad1106ccca74e98877ed6d7890c70bb2c">cloudViewer::geometry::KDTreeSearchParam::Radius</a>, <a class="el" href="ecvKDTreeSearchParam_8h_source.html#l00073">cloudViewer::geometry::KDTreeSearchParamRadius::radius_</a>, <a class="el" href="ecvKDTreeSearchParam_8h_source.html#l00092">cloudViewer::geometry::KDTreeSearchParamHybrid::radius_</a>, <a class="el" href="ecvKDTreeFlann_8h_source.html#l00069">cloudViewer::geometry::KDTreeFlann::Search()</a>, <a class="el" href="ecvKDTreeFlann_8h_source.html#l00170">cloudViewer::geometry::KDTreeFlann::SearchHybrid()</a>, <a class="el" href="ecvKDTreeFlann_8h_source.html#l00121">cloudViewer::geometry::KDTreeFlann::SearchKNN()</a>, <a class="el" href="ecvKDTreeFlann_8h_source.html#l00144">cloudViewer::geometry::KDTreeFlann::SearchRadius()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1KDTreeFlann.html#a38c4ed6b407673c804653b7389e8c4e4">cloudViewer::geometry::KDTreeFlann::SetFeature()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1KDTreeFlann.html#adb0260fea2c7c9009b15541a2f98b265">cloudViewer::geometry::KDTreeFlann::SetGeometry()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1KDTreeFlann.html#a346b26b36b440729d3c82b628f413341">cloudViewer::geometry::KDTreeFlann::SetMatrixData()</a>, and <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ae2ee6017dd0188e0ddddfb9cd96f39f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae2ee6017dd0188e0ddddfb9cd96f39f6">&#9670;&nbsp;</a></span>pybind_keypoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_keypoint </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="keypoint_8cpp_source.html#l00052">52</a> of file <a class="el" href="keypoint_8cpp_source.html">keypoint.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="keypoint_8cpp_source.html#l00022">pybind_keypoint_methods()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a3cf2c2a3f8cf2a6f53ba1e9e7040874c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3cf2c2a3f8cf2a6f53ba1e9e7040874c">&#9670;&nbsp;</a></span>pybind_keypoint_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_keypoint_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="keypoint_8cpp_source.html#l00022">22</a> of file <a class="el" href="keypoint_8cpp_source.html">keypoint.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="namespacecloudViewer_1_1geometry_1_1keypoint.html#a59cb24b67259746cb339b8f99496bda3">cloudViewer::geometry::keypoint::ComputeISSKeypoints()</a>, and <a class="el" href="docstring_8cpp_source.html#l00076">cloudViewer::docstring::FunctionDocInject()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="keypoint_8cpp_source.html#l00052">pybind_keypoint()</a>.</p>
+
+</div>
+</div>
+<a id="a95d6cf444743d38ee6ddf842450cf95a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a95d6cf444743d38ee6ddf842450cf95a">&#9670;&nbsp;</a></span>pybind_lineset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_lineset </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2lineset_8cpp_source.html#l00020">20</a> of file <a class="el" href="geometry_2lineset_8cpp_source.html">lineset.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00160">cloudViewer::geometry::LineSet::colors_</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1LineSet.html#a52966868cb1151bb12e41fe349ed238a">cloudViewer::geometry::LineSet::CreateCameraVisualization()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1LineSet.html#abf55f20372280029b56bc821fb3fef45">cloudViewer::geometry::LineSet::CreateFromAxisAlignedBoundingBox()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1LineSet.html#abc007a3c5eb85bd68060a5a061bae422">cloudViewer::geometry::LineSet::CreateFromOrientedBoundingBox()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1LineSet.html#abcfa11842d5776fe1a20be88416e2687">cloudViewer::geometry::LineSet::CreateFromPointCloudCorrespondences()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1LineSet.html#a4695d55e75893a78535e50bb1db1db68">cloudViewer::geometry::LineSet::CreateFromTetraMesh()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1LineSet.html#abdb1e27ad0e14eb61e91e6ef5f4ed03e">cloudViewer::geometry::LineSet::CreateFromTriangleMesh()</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00092">cloudViewer::geometry::LineSet::GetLineCoordinate()</a>, <a class="el" href="ecvDrawableObject_8h_source.html#l00080">ccDrawableObject::hasColors()</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00082">cloudViewer::geometry::LineSet::HasLines()</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00079">cloudViewer::geometry::LineSet::HasPoints()</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00110">cloudViewer::camera::PinholeCameraIntrinsic::height_</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00116">cloudViewer::camera::PinholeCameraIntrinsic::intrinsic_matrix_</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00158">cloudViewer::geometry::LineSet::lines_</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00101">cloudViewer::geometry::LineSet::PaintUniformColor()</a>, <a class="el" href="CV__db_2include_2LineSet_8h_source.html#l00156">cloudViewer::geometry::LineSet::points_</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, and <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00108">cloudViewer::camera::PinholeCameraIntrinsic::width_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ae397b0524a48749972bb6878c6292afc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae397b0524a48749972bb6878c6292afc">&#9670;&nbsp;</a></span>pybind_lineset_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_lineset_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2lineset_8cpp_source.html#l00129">129</a> of file <a class="el" href="geometry_2lineset_8cpp_source.html">lineset.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ac934323a7c065bfbc62d7a965e10aff8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac934323a7c065bfbc62d7a965e10aff8">&#9670;&nbsp;</a></span>pybind_meshbase()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_meshbase </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="meshbase_8cpp_source.html#l00024">24</a> of file <a class="el" href="meshbase_8cpp_source.html">meshbase.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericTriangle.html#a05daf220ca75c5201c22019459f015c3">cloudViewer::GenericTriangle::_getA()</a>, <a class="el" href="classcloudViewer_1_1GenericTriangle.html#af32e76478a64667415f7c3f827af15f5">cloudViewer::GenericTriangle::_getB()</a>, <a class="el" href="classcloudViewer_1_1GenericTriangle.html#af170e0b439cf53e84332fa97dd3c3fc1">cloudViewer::GenericTriangle::_getC()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a598ef450b49f92f605e84cb335897c38">cloudViewer::GenericMesh::_getNextTriangle()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a7263f099e96e023b09f3bf8f85486a62ab1c94ca2fbc3e78fc30069c8d0f01680">cloudViewer::GenericMesh::All</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad841a61414d183e11410981bd79c07bfab1897515d548a960afe49ecf66a29021">cloudViewer::GenericMesh::Average</a>, <a class="el" href="classccGenericMesh.html#ae83256ea7cc8870155a6c65f86ba3ea2">ccGenericMesh::capacity()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a7263f099e96e023b09f3bf8f85486a62acb5feb1b7314637725a2e73bdc9f7295">cloudViewer::GenericMesh::Color</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1ecvMeshBase.html#a86651f9d85d16cffc78614fad4aa5605">cloudViewer::geometry::ecvMeshBase::ComputeConvexHull()</a>, <a class="el" href="PointProjectionTools_8h_source.html#l00023">cloudViewer::DELAUNAY_2D_AXIS_ALIGNED</a>, <a class="el" href="PointProjectionTools_8h_source.html#l00025">cloudViewer::DELAUNAY_2D_BEST_LS_PLANE</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00207">ccGenericMesh::enableStippling()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a55213f9f6c05c6cc7766ede41239bf64">cloudViewer::GenericMesh::getBoundingBox()</a>, <a class="el" href="classccGenericMesh.html#af431655dd2b80549a336a44f2bc91c65">ccGenericMesh::hasMaterials()</a>, <a class="el" href="classccGenericMesh.html#a183cd4ce8846a3a931f89cab53605614">ccGenericMesh::hasTextures()</a>, <a class="el" href="GenericMesh_8h_source.html#l00060">cloudViewer::GenericMesh::hasTriangles()</a>, <a class="el" href="classccGenericMesh.html#a59d71d3af4e35bd3c8af1574cbd3b6f8">ccGenericMesh::hasTriNormals()</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00096">cloudViewer::geometry::ecvMeshBase::HasVertexColors()</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00090">cloudViewer::geometry::ecvMeshBase::HasVertexNormals()</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00087">cloudViewer::geometry::ecvMeshBase::HasVertices()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00185">ccGenericMesh::isShownAsPoints()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00179">ccGenericMesh::isShownAsWire()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00198">ccGenericMesh::materialsShown()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a7263f099e96e023b09f3bf8f85486a62a960b44c579bc2f6818d2daaf9e4c16f0">cloudViewer::GenericMesh::Normal</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00053">normal</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00102">cloudViewer::geometry::ecvMeshBase::NormalizeNormals()</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00115">cloudViewer::geometry::ecvMeshBase::PaintUniformColor()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad24beb13c85a002ef4c0ddb496452141">cloudViewer::GenericMesh::placeIteratorAtBeginning()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad841a61414d183e11410981bd79c07bfadd6dfa467092f93b67f60fb75476b794">cloudViewer::GenericMesh::Quadric</a>, <a class="el" href="classccGenericMesh.html#ae9f168bd295275b50464fced85a825f4">ccGenericMesh::refreshBB()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00201">ccGenericMesh::showMaterials()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00189">ccGenericMesh::showPoints()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00195">ccGenericMesh::showTriNorms()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00182">ccGenericMesh::showWired()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a0ca723078d1f8194be24861cd6e1d7c8">cloudViewer::GenericMesh::size()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a8b71116cd3f8fc34e822831e0de8b3acac5d48c613aa395e2f92d06e97b85aa97">cloudViewer::GenericMesh::Smoothed</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a8b71116cd3f8fc34e822831e0de8b3aca111552792d2df37209e4e9815a8524a8">cloudViewer::GenericMesh::Spokes</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00204">ccGenericMesh::stipplingEnabled()</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00072">ecvColor::RgbTpl&lt; Type &gt;::ToEigen()</a>, <a class="el" href="ecvGenericMesh_8h_source.html#l00192">ccGenericMesh::triNormsShown()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a7263f099e96e023b09f3bf8f85486a62ab22b929ba52471a02d18bb3a4e4472e6">cloudViewer::GenericMesh::Vertex</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00136">cloudViewer::geometry::ecvMeshBase::vertex_colors_</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00047">vertex_index</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00134">cloudViewer::geometry::ecvMeshBase::vertex_normals_</a>, and <a class="el" href="ecvMeshBase_8h_source.html#l00132">cloudViewer::geometry::ecvMeshBase::vertices_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a37c9a0c57bb4184feb45175487e5a00a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37c9a0c57bb4184feb45175487e5a00a">&#9670;&nbsp;</a></span>pybind_meshbase_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_meshbase_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="meshbase_8cpp_source.html#l00509">509</a> of file <a class="el" href="meshbase_8cpp_source.html">meshbase.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ad86967ca3dec413b3c7e4cca95950224"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad86967ca3dec413b3c7e4cca95950224">&#9670;&nbsp;</a></span>pybind_octree()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_octree </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="octree_8cpp_source.html#l00038">38</a> of file <a class="el" href="octree_8cpp_source.html">octree.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CV__db_2include_2Octree_8h_source.html#l00065">cloudViewer::geometry::OctreeNodeInfo::child_index_</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="CV__db_2include_2Octree_8h_source.html#l00062">cloudViewer::geometry::OctreeNodeInfo::depth_</a>, <a class="el" href="CV__db_2include_2Octree_8h_source.html#l00058">cloudViewer::geometry::OctreeNodeInfo::origin_</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00130">size</a>, and <a class="el" href="CV__db_2include_2Octree_8h_source.html#l00060">cloudViewer::geometry::OctreeNodeInfo::size_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a5c84e1a4e7921a32188a13a9b65ec385"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5c84e1a4e7921a32188a13a9b65ec385">&#9670;&nbsp;</a></span>pybind_octree_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_octree_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="octree_8cpp_source.html#l00348">348</a> of file <a class="el" href="octree_8cpp_source.html">octree.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a635eb5472fedcc9d299966fafa56f939"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a635eb5472fedcc9d299966fafa56f939">&#9670;&nbsp;</a></span>pybind_pointcloud()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_pointcloud </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2pointcloud_8cpp_source.html#l00028">28</a> of file <a class="el" href="geometry_2pointcloud_8cpp_source.html">pointcloud.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classccPointCloud.html#ace56377662ad3d24abbe1ce550988a80">ccPointCloud::addEigenColors()</a>, <a class="el" href="classccPointCloud.html#a3c0843874c73aa78a54c370805a413f5">ccPointCloud::addEigenNorms()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00722">ccPointCloud::addGreyColor()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00300">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::addPoints()</a>, <a class="el" href="classccPointCloud.html#a62f3f94a091c6adf5e7ea5ea4dcde014">ccPointCloud::addScalarField()</a>, <a class="el" href="classccPointCloud.html#aeb65392fe155e8c1d2d6f59fba8a943e">ccPointCloud::append()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00540">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::capacity()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classccPointCloud.html#ab24fc31f20fab1cc972c7c714a0aa829">ccPointCloud::cloneThis()</a>, <a class="el" href="classccPointCloud.html#a8cda41e32f1420f239cd85f24c68fa30">ccPointCloud::ClusterDBSCAN()</a>, <a class="el" href="classccPointCloud.html#a9a149d6749a7385411950555f15ec564">ccPointCloud::colorize()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00276">ccPointCloud::colorsHaveChanged()</a>, <a class="el" href="classccPointCloud.html#ae7ac61d7ed10323dacf516878180e27f">ccPointCloud::ComputeConvexHull()</a>, <a class="el" href="classccPointCloud.html#acd88d452f30f4e75613a0046337786c2">ccPointCloud::computeCPSet()</a>, <a class="el" href="classccPointCloud.html#adeff331ecaba61e1142e47b34121e646">ccPointCloud::computeGravityCenter()</a>, <a class="el" href="classccPointCloud.html#a494fea20e70eb1d805451b7e902ee521">ccPointCloud::ComputeMahalanobisDistance()</a>, <a class="el" href="classccPointCloud.html#a419d94925e59aba6f397d2a4700cedcd">ccPointCloud::ComputeNearestNeighborDistance()</a>, <a class="el" href="classccPointCloud.html#ad3727242ddf6e9b5036cc13f20682aa7">ccPointCloud::ComputePointCloudDistance()</a>, <a class="el" href="classccPointCloud.html#a52cb683bc7d49394c23b681086405ed9">ccPointCloud::ComputeResolution()</a>, <a class="el" href="classccPointCloud.html#ad6139894b082c35136ad93f335f4e192">ccPointCloud::convertCurrentScalarFieldToColors()</a>, <a class="el" href="classccPointCloud.html#aa3884dc1f7eb1f0d9fcb2ee7b3887641">ccPointCloud::convertNormalToDipDirSFs()</a>, <a class="el" href="classccPointCloud.html#a1d3f8716a4a52e3aef8b1dc5f2621ca7">ccPointCloud::convertNormalToRGB()</a>, <a class="el" href="classccPointCloud.html#a4d22391f47cf2b98009861404970559e">ccPointCloud::convertRGBToGreyScale()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l01316">ccPointCloud::covariances_</a>, <a class="el" href="classccPointCloud.html#a33ac38b2f6cc33d56af23b007df975f1">ccPointCloud::CreateFromDepthImage()</a>, <a class="el" href="classccPointCloud.html#a09515dabc710fa5bdbb2c260fe6a54c5">ccPointCloud::CreateFromRGBDImage()</a>, <a class="el" href="classccPointCloud.html#a03e1411f31ce281334821b181defb1b8">ccPointCloud::Crop()</a>, <a class="el" href="classccPointCloud.html#ac5e7ca060d0dd15adb35d3e0f1dde9bc">ccPointCloud::crop2D()</a>, <a class="el" href="classccPointCloud.html#a35008594d018baeccb7e17fd3e795fdc">ccPointCloud::deleteAllScalarFields()</a>, <a class="el" href="classccPointCloud.html#ac0a4ed452db28911235629c17ba1da63">ccPointCloud::deleteScalarField()</a>, <a class="el" href="classccPointCloud.html#a66ff48f44efe24c3f6ec07e43f121029">ccPointCloud::enhanceRGBWithIntensitySF()</a>, <a class="el" href="classccPointCloud.html#ae2f3cda8dba4d42e1f93cf40b303c91a">ccPointCloud::EstimateCovariances()</a>, <a class="el" href="classccPointCloud.html#a221b904010ae18ab7105770f3218d438">ccPointCloud::EstimateNormals()</a>, <a class="el" href="classccPointCloud.html#abb5dd425dd18ac15497d28f0b9f05a0a">ccPointCloud::EstimatePerPointCovariances()</a>, <a class="el" href="classccPointCloud.html#a8710ecaf1f79b6c185e9625d6d187807">ccPointCloud::exportCoordToSF()</a>, <a class="el" href="classccPointCloud.html#a61d54147f362cc655405d1060ba79db7">ccPointCloud::FarthestPointDownSample()</a>, <a class="el" href="classccPointCloud.html#ad4ec67f2ca5e9ae672b2750c1c108b78">ccPointCloud::filterPointsByScalarValue()</a>, <a class="el" href="classccPointCloud.html#abded2fcc86c453cacc98478834f3a7f1">ccPointCloud::From()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="classccPointCloud.html#ac8086d3f8ddd39e2295db4750e760f7b">ccPointCloud::getCurrentDisplayedScalarField()</a>, <a class="el" href="classccPointCloud.html#ab00bbafe2ce0c44a64f8df741c713097">ccPointCloud::getCurrentDisplayedScalarFieldIndex()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00391">cloudViewer::PointCloudTpl&lt; T &gt;::getCurrentInScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00413">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::getCurrentInScalarFieldIndex()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00400">cloudViewer::PointCloudTpl&lt; T &gt;::getCurrentOutScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00426">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::getCurrentOutScalarFieldIndex()</a>, <a class="el" href="classccPointCloud.html#acd3df9ec9e229164982dbfeabc12f91a">ccPointCloud::getEigenColor()</a>, <a class="el" href="classccPointCloud.html#a20f7ef6518438ae5565484eac22906d4">ccPointCloud::getEigenColors()</a>, <a class="el" href="classccPointCloud.html#a4934adf543572b943900b011a0322cbd">ccPointCloud::getEigenNormal()</a>, <a class="el" href="classccPointCloud.html#aef9035997d341f2badd0bd954e43e717">ccPointCloud::getEigenNormals()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00320">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::getEigenPoint()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00324">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::getEigenPoints()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00345">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::getNumberOfScalarFields()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00354">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00375">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarFieldIndexByName()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00365">cloudViewer::PointCloudTpl&lt; T &gt;::getScalarFieldName()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00988">ccPointCloud::HasCovariances()</a>, <a class="el" href="classccPointCloud.html#a1bac85afff81c3da9ac290c5497a1450">ccPointCloud::hasSensor()</a>, <a class="el" href="classccPointCloud.html#a1d379d8e02829ccc8ec052ed852c9dc8">ccPointCloud::HiddenPointRemoval()</a>, <a class="el" href="classccPointCloud.html#a9ed075e228a6f8621de35662eb9e86a8">ccPointCloud::hidePointsByScalarValue()</a>, <a class="el" href="classccPointCloud.html#a6451937f8ba2fb511d0ba504d67dcd24">ccPointCloud::interpolateColorsFrom()</a>, <a class="el" href="classccPointCloud.html#a78cdd1db73ce3575be43be00d1e3bfbb">ccPointCloud::invalidateBoundingBox()</a>, <a class="el" href="classccPointCloud.html#af998274aefb6ba14bf96c6461d2f0ce8">ccPointCloud::invertNormals()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00961">ccPointCloud::IsEmpty()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00188">ccPolyline::IsEmpty()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00129">name</a>, <a class="el" href="classccPointCloud.html#a1bf21b829aaf50bf9e99bf6786f66cca">ccPointCloud::NormalizeNormals()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00280">ccPointCloud::normalsHaveChanged()</a>, <a class="el" href="classccPointCloud.html#a77334211f1eb6ad3cba33fa87fec5305">ccPointCloud::OrientNormalsConsistentTangentPlane()</a>, <a class="el" href="classccPointCloud.html#a840a9a70385bc85c18bf74bfe0992cba">ccPointCloud::OrientNormalsToAlignWithDirection()</a>, <a class="el" href="classccPointCloud.html#a3f539a80824b938036d0e83da3a22a7a">ccPointCloud::OrientNormalsTowardsCameraLocation()</a>, <a class="el" href="classccPointCloud.html#ae612f6f70eb678f6e2c02dab5ebd68ed">ccPointCloud::PaintUniformColor()</a>, <a class="el" href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">ccPointCloud::partialClone()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00284">ccPointCloud::pointsHaveChanged()</a>, <a class="el" href="classccPointCloud.html#a9b7951d3783ab8f41fd679c7a0414fc0">ccPointCloud::RandomDownSample()</a>, <a class="el" href="classccPointCloud.html#a975b393bf4a628a6d1e095e2304aa88a">ccPointCloud::RemoveNonFinitePoints()</a>, <a class="el" href="classccPointCloud.html#ab0e067c15964524b8e4b9c6d7096ef41">ccPointCloud::RemoveRadiusOutliers()</a>, <a class="el" href="classccPointCloud.html#a7f491c47ad0862d28f86a6e7693e1553">ccPointCloud::RemoveStatisticalOutliers()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00481">cloudViewer::PointCloudTpl&lt; T &gt;::renameScalarField()</a>, <a class="el" href="classccPointCloud.html#a7daad7286b0cc90bded6efc84ee40619">ccPointCloud::reserve()</a>, <a class="el" href="classccPointCloud.html#a9fa7cb33a2c3e655cdc30b66bce5c11f">ccPointCloud::reserveTheNormsTable()</a>, <a class="el" href="classccPointCloud.html#ae8d2cfbcd60d60a252e57c97acfc2b58">ccPointCloud::reserveThePointsTable()</a>, <a class="el" href="classccPointCloud.html#aa9333aaf6255b952902a8d4129922a02">ccPointCloud::reserveTheRGBTable()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00233">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::reset()</a>, <a class="el" href="classccPointCloud.html#abe8df9cd9f90ec74e219482500f710e8">ccPointCloud::resize()</a>, <a class="el" href="classccPointCloud.html#a686417cb2d0577eb6a0c0ee885fe9480">ccPointCloud::resizeTheRGBTable()</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="classccPointCloud.html#a46a677d50af96fd6daaf24874e7f6c67">ccPointCloud::SegmentPlane()</a>, <a class="el" href="classccPointCloud.html#aef5b28dd7b64afea7681237ee6d7fd7c">ccPointCloud::SelectByIndex()</a>, <a class="el" href="classccPointCloud.html#a078f5c40abcc10c7ace07c4fb0527682">ccPointCloud::setCurrentDisplayedScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00408">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::setCurrentInScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00421">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::setCurrentOutScalarField()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00435">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::setCurrentScalarField()</a>, <a class="el" href="classccPointCloud.html#a0bf4704decc2178204df6aa1fe43e16f">ccPointCloud::setEigenColor()</a>, <a class="el" href="classccPointCloud.html#a3ad836e610174939479ccce410d0bf9a">ccPointCloud::setEigenNormal()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00272">cloudViewer::PointCloudTpl&lt; ccGenericPointCloud &gt;::setEigenPoint()</a>, <a class="el" href="classccPointCloud.html#a16167fddfedd6bc1336f85aa37a4ec38">ccPointCloud::setRGBColorByBanding()</a>, <a class="el" href="classccPointCloud.html#aeb38a2e4fb9eaee3c91ab6352be52922">ccPointCloud::setRGBColorWithCurrentScalarField()</a>, <a class="el" href="classccPointCloud.html#a13aa753f1e8afbc4d5f840e0af3092ee">ccPointCloud::sfColorScaleShown()</a>, <a class="el" href="classccPointCloud.html#a72e8452d30195f71b84ff6bae8492edd">ccPointCloud::showSFColorsScale()</a>, <a class="el" href="ecvPointCloud_8h_source.html#l00357">ccPointCloud::shrinkToFit()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00038">cloudViewer::PointCloudTpl&lt; T &gt;::size()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, <a class="el" href="classccPointCloud.html#a748a4edd25f31a509076e56c718f951f">ccPointCloud::unalloactePoints()</a>, <a class="el" href="classccPointCloud.html#a2db2ba12a877dbed9013b33b50dca366">ccPointCloud::unallocateColors()</a>, <a class="el" href="classccPointCloud.html#ab8c5a40cd817ba60f700d505d39cabdf">ccPointCloud::unallocateNorms()</a>, <a class="el" href="classccPointCloud.html#af85eb9bdf03ccb69847edcb8a0752ef7">ccPointCloud::UniformDownSample()</a>, <a class="el" href="classccPointCloud.html#ac9ccedac5b743b7116aa7a3d0b34129f">ccPointCloud::VoxelDownSample()</a>, and <a class="el" href="classccPointCloud.html#a0032b345e2eeb9a4885db687b800d046">ccPointCloud::VoxelDownSampleAndTrace()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a9a8b9df50c9abb22fcde4efdf129ba3a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a8b9df50c9abb22fcde4efdf129ba3a">&#9670;&nbsp;</a></span>pybind_pointcloud_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_pointcloud_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2pointcloud_8cpp_source.html#l01021">1021</a> of file <a class="el" href="geometry_2pointcloud_8cpp_source.html">pointcloud.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a66279e5dd8456e1779030c894295278c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66279e5dd8456e1779030c894295278c">&#9670;&nbsp;</a></span>pybind_polyline()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_polyline </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="polyline_8cpp_source.html#l00031">31</a> of file <a class="el" href="polyline_8cpp_source.html">polyline.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classccPolyline.html#ab113c81d417a3a22ea9926f5478f894c">ccPolyline::add()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classccCircle.html#a479b93e6bf87ee1809d6f08b46757473">ccCircle::clone()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="classccPolyline.html#a04728e894670d9446bdeb403ff16cf03">ccPolyline::computeLength()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00086">ecvColor::RgbTpl&lt; Type &gt;::FromEigen()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00133">ccPolyline::getArrowIndex()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00134">ccPolyline::getArrowLength()</a>, <a class="el" href="ecvCircle_8h_source.html#l00050">ccCircle::getRadius()</a>, <a class="el" href="ecvCircle_8h_source.html#l00058">ccCircle::getResolution()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00139">ccPolyline::getVertexMarkerWidth()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00094">ccPolyline::getWidth()</a>, <a class="el" href="ecvObject_8h_source.html#l00024">ccUniqueIDGenerator::InvalidUniqueID</a>, <a class="el" href="ecvPolyline_8h_source.html#l00063">ccPolyline::is2DMode()</a>, <a class="el" href="Polyline_8h_source.html#l00026">cloudViewer::Polyline::isClosed()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00071">ccPolyline::needTransform()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00210">ccPolyline::PaintUniformColor()</a>, <a class="el" href="classccPolyline.html#aba0aa8237c4df3904b7ff57ca9489374">ccPolyline::segmentCount()</a>, <a class="el" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">ccPolyline::set2DMode()</a>, <a class="el" href="Polyline_8h_source.html#l00029">cloudViewer::Polyline::setClosed()</a>, <a class="el" href="classccCircle.html#ab30861a08b86cc103d389c3ac26665fb">ccCircle::setRadius()</a>, <a class="el" href="classccCircle.html#af1edac00fa83444333b795f560ee63d0">ccCircle::setResolution()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00068">ccPolyline::setTransformFlag()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00137">ccPolyline::setVertexMarkerWidth()</a>, <a class="el" href="classccPolyline.html#afa5cd7899b0e778f6773080e70f7b3e9">ccPolyline::setWidth()</a>, <a class="el" href="classccPolyline.html#a6614ddda967a04b240910085ba6b7676">ccPolyline::showArrow()</a>, <a class="el" href="ecvPolyline_8h_source.html#l00129">ccPolyline::showVertices()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00072">ecvColor::RgbTpl&lt; Type &gt;::ToEigen()</a>, and <a class="el" href="ecvPolyline_8h_source.html#l00131">ccPolyline::verticesShown()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="aeb8d06bbd45546a28fc06c8dce846ebb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeb8d06bbd45546a28fc06c8dce846ebb">&#9670;&nbsp;</a></span>pybind_polyline_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_polyline_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="polyline_8cpp_source.html#l00277">277</a> of file <a class="el" href="polyline_8cpp_source.html">polyline.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="af9ec129b8372ccae333401e23f2b4063"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9ec129b8372ccae333401e23f2b4063">&#9670;&nbsp;</a></span>pybind_primitives()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_primitives </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="primitives_8cpp_source.html#l00037">37</a> of file <a class="el" href="primitives_8cpp_source.html">primitives.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvCoordinateSystem_8h_source.html#l00058">ccCoordinateSystem::axisLinesAreShown()</a>, <a class="el" href="ecvCoordinateSystem_8h_source.html#l00054">ccCoordinateSystem::axisPlanesAreShown()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="ecvMesh_8h_source.html#l00353">ccMesh::clearTriNormals()</a>, <a class="el" href="classccGenericPrimitive.html#ab8249bcc1daf6064b2246d688efb85eb">ccGenericPrimitive::clone()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="classccQuadric.html#af86a4a50c0484cd91f0ac2179ac92728">ccQuadric::Fit()</a>, <a class="el" href="classccPlane.html#a79432f21217b352bb4c172ba67538e8c">ccPlane::flip()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="ecvColorTypes_8h_source.html#l00086">ecvColor::RgbTpl&lt; Type &gt;::FromEigen()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00054">ccGLMatrixTpl&lt; float &gt;::FromEigenMatrix()</a>, <a class="el" href="ecvTorus_8h_source.html#l00076">ccTorus::getAngleRad()</a>, <a class="el" href="ecvCoordinateSystem_8h_source.html#l00063">ccCoordinateSystem::getAxisWidth()</a>, <a class="el" href="ecvDish_8h_source.html#l00053">ccDish::getBaseRadius()</a>, <a class="el" href="classccCone.html#ac06ac4df4b7365019d22b75dc4cfec99">ccCone::getBottomCenter()</a>, <a class="el" href="ecvCone_8h_source.html#l00060">ccCone::getBottomRadius()</a>, <a class="el" href="ecvPlane_8h_source.html#l00056">ccPlane::getCenter()</a>, <a class="el" href="ecvBox_8h_source.html#l00047">ccBox::getDimensions()</a>, <a class="el" href="ecvCoordinateSystem_8h_source.html#l00068">ccCoordinateSystem::getDisplayScale()</a>, <a class="el" href="ecvGenericPrimitive_8h_source.html#l00072">ccGenericPrimitive::getDrawingPrecision()</a>, <a class="el" href="classccPlane.html#ad376328afa133732fec53eb67377c210">ccPlane::getEquation()</a>, <a class="el" href="ecvQuadric_8h_source.html#l00065">ccQuadric::getEquationCoefs()</a>, <a class="el" href="ecvQuadric_8h_source.html#l00069">ccQuadric::getEquationDims()</a>, <a class="el" href="classccQuadric.html#a6e8f9f944e48ab699144f3c847559b2b">ccQuadric::getEquationString()</a>, <a class="el" href="classccGenericPrimitive.html#ac930e5d2d382af3a8e494d7fbbad3a23">ccGenericPrimitive::getGLTransformationHistory()</a>, <a class="el" href="ecvCone_8h_source.html#l00052">ccCone::getHeight()</a>, <a class="el" href="ecvDish_8h_source.html#l00059">ccDish::getHeight()</a>, <a class="el" href="ecvTorus_8h_source.html#l00060">ccTorus::getInsideRadius()</a>, <a class="el" href="classccCone.html#a203851edfd7a65db30cadd18b944c794">ccCone::getLargeCenter()</a>, <a class="el" href="classccCone.html#a281df4691b21f1f4f871494b35d6d77c">ccCone::getLargeRadius()</a>, <a class="el" href="ecvQuadric_8h_source.html#l00062">ccQuadric::getMaxCorner()</a>, <a class="el" href="ecvQuadric_8h_source.html#l00060">ccQuadric::getMinCorner()</a>, <a class="el" href="ecvPlane_8h_source.html#l00073">ccPlane::getNormal()</a>, <a class="el" href="ecvCoordinateSystem_8h_source.html#l00075">ccCoordinateSystem::getOrigin()</a>, <a class="el" href="ecvTorus_8h_source.html#l00064">ccTorus::getOutsideRadius()</a>, <a class="el" href="ecvExtru_8h_source.html#l00050">ccExtru::getProfile()</a>, <a class="el" href="ecvDisc_8h_source.html#l00041">ccDisc::getRadius()</a>, <a class="el" href="ecvSphere_8h_source.html#l00045">ccSphere::getRadius()</a>, <a class="el" href="ecvTorus_8h_source.html#l00074">ccTorus::getRectSection()</a>, <a class="el" href="ecvTorus_8h_source.html#l00069">ccTorus::getRectSectionHeight()</a>, <a class="el" href="ecvDish_8h_source.html#l00055">ccDish::getSecondRadius()</a>, <a class="el" href="classccCone.html#a88c70f656796c52b3aaa9ae1ad2cbdbc">ccCone::getSmallCenter()</a>, <a class="el" href="classccCone.html#a6937fb566af2596751b7b8af507ec001">ccCone::getSmallRadius()</a>, <a class="el" href="ecvExtru_8h_source.html#l00047">ccExtru::getThickness()</a>, <a class="el" href="classccCone.html#a64d76b5ceb2bbd9527b49766260e4867">ccCone::getTopCenter()</a>, <a class="el" href="ecvCone_8h_source.html#l00070">ccCone::getTopRadius()</a>, <a class="el" href="ecvGenericPrimitive_8h_source.html#l00077">ccGenericPrimitive::getTransformation()</a>, <a class="el" href="classccGenericPrimitive.html#a3ee573fdbc529cfe0b9977589c170a88">ccGenericPrimitive::getTypeName()</a>, <a class="el" href="ecvPlane_8h_source.html#l00050">ccPlane::getXWidth()</a>, <a class="el" href="classccCoordinateSystem.html#a39e1f8e01b4169478cc958c896fc371c">ccCoordinateSystem::getXYplane()</a>, <a class="el" href="ecvPlane_8h_source.html#l00053">ccPlane::getYWidth()</a>, <a class="el" href="classccCoordinateSystem.html#aa993fa1613c235c98cc1574af2e10f74">ccCoordinateSystem::getYZplane()</a>, <a class="el" href="classccCoordinateSystem.html#a2d673542c59221ac362518e5c88ea74e">ccCoordinateSystem::getZXplane()</a>, <a class="el" href="ecvGenericPrimitive_8h_source.html#l00052">ccGenericPrimitive::hasDrawingPrecision()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="ecvCone_8h_source.html#l00094">ccCone::isSnoutMode()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="CVConst_8h_source.html#l00019">M_PI</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00129">name</a>, <a class="el" href="O3DVisualizer_8cpp_source.html#l00271">profile</a>, <a class="el" href="classccQuadric.html#aefc25f020f4cd875b47f2045adfb7d5e">ccQuadric::projectOnQuadric()</a>, <a class="el" href="classccCoordinateSystem.html#ae840fcaaf351bc0ba23b0bce7802c50f">ccCoordinateSystem::setAxisWidth()</a>, <a class="el" href="classccCone.html#addcd8a4a70f901fbdd18b5848ecbfbda">ccCone::setBottomRadius()</a>, <a class="el" href="classccGenericPrimitive.html#a54ed85506dc3799350b727ed7b35f2cd">ccGenericPrimitive::setColor()</a>, <a class="el" href="ecvBox_8h_source.html#l00041">ccBox::setDimensions()</a>, <a class="el" href="classccCoordinateSystem.html#a932cb6ada6ba3530d2b0f71b45cf13ad">ccCoordinateSystem::setDisplayScale()</a>, <a class="el" href="classccGenericPrimitive.html#a54ea295dc65c9d42de48208b4af872c5">ccGenericPrimitive::setDrawingPrecision()</a>, <a class="el" href="classccCone.html#aacf52ec79c0997b539a4c9402b78e11a">ccCone::setHeight()</a>, <a class="el" href="classccDisc.html#a62001086f9a2f1cb37b6ed64cc920805">ccDisc::setRadius()</a>, <a class="el" href="classccSphere.html#aab560ea30caaac8af60d90a2c049f5fb">ccSphere::setRadius()</a>, <a class="el" href="classccCone.html#a7baf81fe81126d3c09761e6c19fbbde7">ccCone::setTopRadius()</a>, <a class="el" href="ecvPlane_8h_source.html#l00061">ccPlane::setXWidth()</a>, <a class="el" href="ecvPlane_8h_source.html#l00067">ccPlane::setYWidth()</a>, <a class="el" href="classccCoordinateSystem.html#a3ebd6ec765261e1eab1e277e087d6a38">ccCoordinateSystem::ShowAxisLines()</a>, <a class="el" href="classccCoordinateSystem.html#a618cd121581adab189e89a3850f10641">ccCoordinateSystem::ShowAxisPlanes()</a>, <a class="el" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">ccMesh::size()</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00067">ccGLMatrixTpl&lt; double &gt;::ToEigenMatrix4()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>, <a class="el" href="CVGeom_8h_source.html#l00036">Vector2Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00036">Vector2Tpl&lt; Type &gt;::y</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a88f38644381eecf844857f45e5b8bf5a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88f38644381eecf844857f45e5b8bf5a">&#9670;&nbsp;</a></span>pybind_primitives_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_primitives_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="primitives_8cpp_source.html#l01029">1029</a> of file <a class="el" href="primitives_8cpp_source.html">primitives.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="a81fd0e8bc7a2288a611da40dc8a0f346"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a81fd0e8bc7a2288a611da40dc8a0f346">&#9670;&nbsp;</a></span>pybind_tetramesh()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_tetramesh </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="tetramesh_8cpp_source.html#l00018">18</a> of file <a class="el" href="tetramesh_8cpp_source.html">tetramesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1TetraMesh.html#a8f115035968c196ee9997e7459a84dea">cloudViewer::geometry::TetraMesh::CreateFromPointCloud()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1TetraMesh.html#a34759bd0bcdb23e4655bd22c9b4cef50">cloudViewer::geometry::TetraMesh::ExtractTriangleMesh()</a>, <a class="el" href="ecvTetraMesh_8h_source.html#l00084">cloudViewer::geometry::TetraMesh::HasTetras()</a>, <a class="el" href="ecvMeshBase_8h_source.html#l00087">cloudViewer::geometry::ecvMeshBase::HasVertices()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1TetraMesh.html#a5dba4711e8c438e7f2d7917e3b4c18c3">cloudViewer::geometry::TetraMesh::RemoveDegenerateTetras()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1TetraMesh.html#a3bff714821445c34ac78905669d7f6ca">cloudViewer::geometry::TetraMesh::RemoveDuplicatedTetras()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1TetraMesh.html#a870dc4843c2620da481c13120ea5c209">cloudViewer::geometry::TetraMesh::RemoveDuplicatedVertices()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1TetraMesh.html#a4f0e41a3398e232c9549602c94ec06ce">cloudViewer::geometry::TetraMesh::RemoveUnreferencedVertices()</a>, <a class="el" href="ecvTetraMesh_8h_source.html#l00108">cloudViewer::geometry::TetraMesh::tetras_</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, and <a class="el" href="ecvMeshBase_8h_source.html#l00132">cloudViewer::geometry::ecvMeshBase::vertices_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ae34ebbbd5a44d8504527ceb8afaaf82a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae34ebbbd5a44d8504527ceb8afaaf82a">&#9670;&nbsp;</a></span>pybind_tetramesh_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_tetramesh_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="tetramesh_8cpp_source.html#l00099">99</a> of file <a class="el" href="tetramesh_8cpp_source.html">tetramesh.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aeb02b0cb711612b82275b5410cd14388"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeb02b0cb711612b82275b5410cd14388">&#9670;&nbsp;</a></span>pybind_trianglemesh()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_trianglemesh </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2trianglemesh_8cpp_source.html#l00023">23</a> of file <a class="el" href="geometry_2trianglemesh_8cpp_source.html">trianglemesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classccMesh.html#a13988e68b050e166e6f2ae394f8d1dd5">ccMesh::addEigenVertices()</a>, <a class="el" href="classccMesh.html#a6664832f3e83aff95db9118b4e81a547">ccMesh::addTriangleMtlIndex()</a>, <a class="el" href="classccMesh.html#aae9c6612262ee2efe9d02e6d4256a632">ccMesh::addTriangleNormalIndexes()</a>, <a class="el" href="ecvMesh_8h_source.html#l00265">ccMesh::addTriangles()</a>, <a class="el" href="classccMesh.html#a7b220069c53c302d57e62ab8178c1e73">ccMesh::addTriangleTexCoordIndexes()</a>, <a class="el" href="classccMesh.html#a7872ce42daf575b5f935abfe49837343">ccMesh::addVertexColors()</a>, <a class="el" href="classccMesh.html#ae53198d51a5f5bd9e3dfbb5122b6a344">ccMesh::addVertexNormals()</a>, <a class="el" href="ecvMesh_8h_source.html#l00622">ccMesh::adjacency_list_</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#a7263f099e96e023b09f3bf8f85486a62ab1c94ca2fbc3e78fc30069c8d0f01680">cloudViewer::GenericMesh::All</a>, <a class="el" href="classccMesh.html#aa41a84ecc7b70ad80eefa3c30d5c4d26">ccMesh::arePerTriangleNormalsEnabled()</a>, <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad841a61414d183e11410981bd79c07bfab1897515d548a960afe49ecf66a29021">cloudViewer::GenericMesh::Average</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="classccMesh.html#abbd2c5e83726ceb8ac06c7993f397600">ccMesh::clear()</a>, <a class="el" href="ecvMesh_8h_source.html#l00353">ccMesh::clearTriNormals()</a>, <a class="el" href="classccMesh.html#a1080a2e0aa15396375fa0fa11ded1db7">ccMesh::cloneMesh()</a>, <a class="el" href="classccPointCloud.html#ab24fc31f20fab1cc972c7c714a0aa829">ccPointCloud::cloneThis()</a>, <a class="el" href="classccMesh.html#a2e8b2e4029fea76f39beb8da5be3c1bd">ccMesh::ClusterConnectedTriangles()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="classccMesh.html#a996f5fb8fdb510d5e1ce33c6a45dc510">ccMesh::ComputeAdjacencyList()</a>, <a class="el" href="classccMesh.html#ab072882b983c92791d2693103daa00cd">ccMesh::ComputeConvexHull()</a>, <a class="el" href="classccMesh.html#af763d6ff7080f620a32903c8bf23ca4e">ccMesh::computeNormals()</a>, <a class="el" href="classccMesh.html#ad50d7c3ac708e3f8e3e16d3b9045209e">ccMesh::ComputeTriangleArea()</a>, <a class="el" href="classccMesh.html#af2ce995e6c035a74606b6b4511da9bca">ccMesh::ComputeTriangleNormals()</a>, <a class="el" href="classccMesh.html#a881e7c80939495cf1e500ef3eeb87d24">ccMesh::ComputeTrianglePlane()</a>, <a class="el" href="classccMesh.html#adbe67d2ec8f364eeaeab0e3a93bac9e9">ccMesh::ComputeVertexNormals()</a>, <a class="el" href="classccMesh.html#a452273e335a0630ed83314e2e132b603">ccMesh::convertMaterialsToVertexColors()</a>, <a class="el" href="classccMesh.html#a15c03ddebea33eceb8ce41b597d3ef26">ccMesh::CreateArrow()</a>, <a class="el" href="classccMesh.html#a6f757668472e0770edca86a3c928db2d">ccMesh::CreateBox()</a>, <a class="el" href="classccMesh.html#a80f0d68b324c25b060547bccba570922">ccMesh::CreateCone()</a>, <a class="el" href="classccMesh.html#a340ac85e02c96e97993784cc7b147a34">ccMesh::CreateCoordinateFrame()</a>, <a class="el" href="classccMesh.html#a0e5cf6268338d7e8ce34e5153b4b80af">ccMesh::CreateCylinder()</a>, <a class="el" href="classccMesh.html#a98dfe5904dde4772f98c2be3b7909fdb">ccMesh::CreateFromPointCloudAlphaShape()</a>, <a class="el" href="classccMesh.html#a86a50b78ac873e9c3d57e7144a5f2090">ccMesh::CreateFromPointCloudBallPivoting()</a>, <a class="el" href="classccMesh.html#a0c6ce9284213acc5b516b44ba7a0ad68">ccMesh::CreateFromPointCloudPoisson()</a>, <a class="el" href="classccMesh.html#a4e5901740ac98fd5b99ddc40b3e07a44">ccMesh::CreateIcosahedron()</a>, <a class="el" href="classccMesh.html#a4d4b72015398b116ae62a63d09e26aba">ccMesh::CreateMobius()</a>, <a class="el" href="classccMesh.html#ab6fbc7a75b8714445cc8716dbd32beb5">ccMesh::createNewMeshFromSelection()</a>, <a class="el" href="classccMesh.html#af21266e462f231bd7423e17565848890">ccMesh::CreateOctahedron()</a>, <a class="el" href="classccMesh.html#a8f0411adb866b83d315bb21cc1a50036">ccMesh::CreatePlane()</a>, <a class="el" href="classccMesh.html#aa6dbeaed146ec6bbf8e94eb1ca043410">ccMesh::CreateSphere()</a>, <a class="el" href="classccMesh.html#a75fc54222d2c1b9cbaa36a8d9aab6f0f">ccMesh::CreateTetrahedron()</a>, <a class="el" href="classccMesh.html#abcd1f70f37a17475dae12c6f7d9f9c3b">ccMesh::CreateTorus()</a>, <a class="el" href="classccMesh.html#a00df4bda0f1312ca6c0e0bbfa538f679">ccMesh::Crop()</a>, <a class="el" href="classccMesh.html#a2125cb3e6c7be2552ee88fcdeb7af14c">ccMesh::DeformAsRigidAsPossible()</a>, <a class="el" href="classccMesh.html#a4467f50b3e5e34ab32aa710c4d502411">ccMesh::EulerPoincareCharacteristic()</a>, <a class="el" href="classccMesh.html#ae3d3f2bd941c7818971e9c4fcc851094">ccMesh::FilterSharpen()</a>, <a class="el" href="classccMesh.html#a09615c3c71e2d8cbd734090d2337cb68">ccMesh::FilterSmoothLaplacian()</a>, <a class="el" href="classccMesh.html#ad2666d24bd6b1c89cbb232575fdb983e">ccMesh::FilterSmoothSimple()</a>, <a class="el" href="classccMesh.html#a58ff7961c2b6962cf25dc5cd0b39e331">ccMesh::FilterSmoothTaubin()</a>, <a class="el" href="classccMesh.html#a3160c1074810b6679e912029dd251515">ccMesh::flipTriangles()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00054">ccGLMatrixTpl&lt; float &gt;::FromEigenMatrix()</a>, <a class="el" href="classccMesh.html#a4305ece66060d69446f21ff50edbb6a8">ccMesh::GetEdgeToTrianglesMap()</a>, <a class="el" href="classccMesh.html#a70fe89a7e52300a150a1e9677ecacee4">ccMesh::GetEdgeToVerticesMap()</a>, <a class="el" href="classccMesh.html#a88e6fc0d4665fc5c954d5903a666f8e5">ccMesh::getEigenVertices()</a>, <a class="el" href="ecvMesh_8h_source.html#l00965">ccMesh::GetEigneOrderedTriangle()</a>, <a class="el" href="classccMesh.html#af0afd37cbf0a134cfbd3c54ba5e410d1">ccMesh::GetNonManifoldEdges()</a>, <a class="el" href="classccMesh.html#a0f1a4e55c41d7fbd095d08ebd944152a">ccMesh::GetNonManifoldVertices()</a>, <a class="el" href="ecvMesh_8h_source.html#l01005">ccMesh::GetOrderedEdge()</a>, <a class="el" href="classccMesh.html#a7f55e8fab332702ae0928c7ea6e559ef">ccMesh::GetSelfIntersectingTriangles()</a>, <a class="el" href="classccMesh.html#a497ad8f994150fc55b04c50629721c1f">ccMesh::GetSurfaceArea()</a>, <a class="el" href="classccMesh.html#ac9e762ddf771016051a0dc515a5f0095">ccMesh::getTriangle()</a>, <a class="el" href="classccMesh.html#a0a4307ed76fa877f1408460f503886d6">ccMesh::GetTriangleArea()</a>, <a class="el" href="classccMesh.html#a56b2281c6d793fd30a41845d36376f9a">ccMesh::getTriangleNorm()</a>, <a class="el" href="classccMesh.html#a15e48634562cd2da73eec83a6264e94b">ccMesh::getTriangleNormalIndexes()</a>, <a class="el" href="classccMesh.html#a62d94a44abf5d63d8e8b75f2a5b738bb">ccMesh::getTriangleNorms()</a>, <a class="el" href="classccMesh.html#a8a2c764a4e4308d7e520e6b581ce7c07">ccMesh::GetTrianglePlane()</a>, <a class="el" href="classccMesh.html#a3779db47e15eb5361a90d022e605995a">ccMesh::getTriangles()</a>, <a class="el" href="classccMesh.html#a9db3336de8f69cbb803f40dd81c8fc16">ccMesh::getVertexColor()</a>, <a class="el" href="classccMesh.html#a58e9c4e0eeffcf6594c570e5d8877f0f">ccMesh::getVertexColors()</a>, <a class="el" href="classccMesh.html#ae30253bbc0ae5d1d1c91304ccdf6dfbf">ccMesh::getVertexNormal()</a>, <a class="el" href="classccMesh.html#ac1a38d7cb9316af527dda222f1aea40f">ccMesh::getVertexNormals()</a>, <a class="el" href="classccMesh.html#a87ad72172cf967bfa070fa8e3057727a">ccMesh::getVertice()</a>, <a class="el" href="classccMesh.html#a94bcea81efb85c6f30680788e8dc12d9">ccMesh::getVerticeSize()</a>, <a class="el" href="classccMesh.html#a7763f0a34358d47fb654d7fbc4bbf60e">ccMesh::GetVolume()</a>, <a class="el" href="ecvMesh_8h_source.html#l00712">ccMesh::hasAdjacencyList()</a>, <a class="el" href="classccMesh.html#a5a7153e14d319eda056a1903d3a78a7e">ccMesh::hasColors()</a>, <a class="el" href="ecvMesh_8h_source.html#l00726">ccMesh::hasEigenTextures()</a>, <a class="el" href="classccMesh.html#ab99f937c52161887b7ac8f5a25762a24">ccMesh::hasNormals()</a>, <a class="el" href="ecvMesh_8h_source.html#l00421">ccMesh::hasPerTriangleMtlIndexes()</a>, <a class="el" href="ecvMesh_8h_source.html#l00721">ccMesh::hasTriangleMaterialIds()</a>, <a class="el" href="GenericMesh_8h_source.html#l00060">cloudViewer::GenericMesh::hasTriangles()</a>, <a class="el" href="ecvMesh_8h_source.html#l00717">ccMesh::hasTriangleUvs()</a>, <a class="el" href="ecvMesh_8h_source.html#l00208">ccMesh::HasVertices()</a>, <a class="el" href="cuda_2result__set_8h_source.html#l00036">infinity()</a>, <a class="el" href="classccMesh.html#ac081d725fa4a280eafd7228ea3d43992">ccMesh::IsBoundingBoxIntersecting()</a>, <a class="el" href="classccMesh.html#ac8f2b8932880d54a918b6bef29222547">ccMesh::IsEdgeManifold()</a>, <a class="el" href="classccMesh.html#a00aabd447750907e0eabc8bd4b943a2a">ccMesh::IsIntersecting()</a>, <a class="el" href="classccMesh.html#ab73aad032f14d5ec61ce8788ab515041">ccMesh::IsOrientable()</a>, <a class="el" href="classccMesh.html#a5696d0e12a4730ebabf121394caab1e3">ccMesh::IsSelfIntersecting()</a>, <a class="el" href="classccMesh.html#a3c749feba89415131581ff94cac945f3">ccMesh::IsVertexManifold()</a>, <a class="el" href="classccMesh.html#abfe1486c25f4945c8ba585becd9208e3">ccMesh::IsWatertight()</a>, <a class="el" href="classccMesh.html#a29b3a35c302a537cf9db913ff9f3121e">ccMesh::laplacianSmooth()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="classccMesh.html#a0e7c2905edf10e9f8bfeb78297f04f64">ccMesh::merge()</a>, <a class="el" href="classccMesh.html#ae764c5c40120377f1fdc126fa74f5b8a">ccMesh::MergeCloseVertices()</a>, <a class="el" href="classccMesh.html#af7f80bb2b9a5cfae78760e9da0bc20c0">ccMesh::NormalizeNormals()</a>, <a class="el" href="classccMesh.html#a44824cff5ca39f45c82f3abb2cdfead8">ccMesh::OrientTriangles()</a>, <a class="el" href="classccMesh.html#a91e4a4eab342ac6545927e8e6730f749">ccMesh::PaintUniformColor()</a>, <a class="el" href="classccMesh.html#a22c1135ab49a5afbbc11dea1086fa6e9">ccMesh::partialClone()</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="classccMesh.html#a38b3a0162c4cacc8ee3816625f0bed15">ccMesh::processScalarField()</a>, <a class="el" href="classccMesh.html#ab119663bea25c6a53220a9ce1f8c98cb">ccMesh::RemoveDegenerateTriangles()</a>, <a class="el" href="classccMesh.html#a2568d602f219ddcdbd2fd7d008473f05">ccMesh::RemoveDuplicatedTriangles()</a>, <a class="el" href="classccMesh.html#a4cdfc85f1208a0d979b22d35476f7860">ccMesh::RemoveDuplicatedVertices()</a>, <a class="el" href="classccMesh.html#a59f6468b38aa3a4677c29c25d0e7e801">ccMesh::RemoveNonManifoldEdges()</a>, <a class="el" href="classccMesh.html#acb37f09d60b21bc42bd0594861b3c3cd">ccMesh::removePerTriangleMtlIndexes()</a>, <a class="el" href="classccMesh.html#a40ab765428fe8a9feb371952d02fbf44">ccMesh::removePerTriangleNormalIndexes()</a>, <a class="el" href="classccMesh.html#a8c859f5479697ab27f83e629f5dbb980">ccMesh::removePerTriangleTexCoordIndexes()</a>, <a class="el" href="classccMesh.html#a9897175bd92bc5416fbd2e315d360dae">ccMesh::removeTriangles()</a>, <a class="el" href="classccMesh.html#a69c6a0c9ea434dc57b18655b06f26236">ccMesh::RemoveTrianglesByIndex()</a>, <a class="el" href="classccMesh.html#a264ce7727f571cac9237e62abc737094">ccMesh::RemoveTrianglesByMask()</a>, <a class="el" href="classccMesh.html#a875e52c51ab44d8323fda7fdd6c717a8">ccMesh::RemoveUnreferencedVertices()</a>, <a class="el" href="classccMesh.html#a95d64318417925454ad88795b0aa1044">ccMesh::RemoveVerticesByIndex()</a>, <a class="el" href="classccMesh.html#ac04cebe33d22ad6d23c72a59f1dd61f5">ccMesh::RemoveVerticesByMask()</a>, <a class="el" href="classccMesh.html#a73965f60029078d2a544c89736baa51f">ccMesh::reserve()</a>, <a class="el" href="classccMesh.html#a303ce8971b9edbc2032b689b94ab7198">ccMesh::reservePerTriangleMtlIndexes()</a>, <a class="el" href="classccMesh.html#a8d6b557176f2e2bb06d8a9accee04d19">ccMesh::reservePerTriangleNormalIndexes()</a>, <a class="el" href="classccMesh.html#ab237f92edb32fb072a30a4f0b340c1d2">ccMesh::reservePerTriangleTexCoordIndexes()</a>, <a class="el" href="classccMesh.html#a9c10521de7307b3c24f70378f90fd2eb">ccMesh::resize()</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="classccMesh.html#a975e262b0fec1ae0651957437a27e098">ccMesh::SamplePointsPoissonDisk()</a>, <a class="el" href="classccMesh.html#aa44ea89641416c8f23c281ed1c087e2d">ccMesh::SamplePointsUniformly()</a>, <a class="el" href="classccMesh.html#a285d5ff6970f16cd96da1cff7dab7334">ccMesh::SelectByIndex()</a>, <a class="el" href="classccMesh.html#a5f2ef91d734dbd4de4c7b1d34296761e">ccMesh::setAssociatedCloud()</a>, <a class="el" href="classccMesh.html#a4c261d90d64169934d972b8fe8c5cd29">ccMesh::setTriangle()</a>, <a class="el" href="classccMesh.html#a671a60fafe3a4fe2c2ac63b265eaa5bb">ccMesh::setTriangleMtlIndex()</a>, <a class="el" href="classccMesh.html#a3f213de99b3982eca3cf2766cc764e97">ccMesh::setTriangleNorm()</a>, <a class="el" href="classccMesh.html#a85a2a2c5b8bec8a9a7fba7c569b90979">ccMesh::setTriangleNormalIndexes()</a>, <a class="el" href="classccMesh.html#acb4f08d45c9ba07e60fca784f8c8e3ac">ccMesh::setTriangleNorms()</a>, <a class="el" href="classccMesh.html#a70fad79053f56f341df5efa6cafcbbde">ccMesh::setTriangles()</a>, <a class="el" href="classccMesh.html#ac7ef273be2cff7890eaea80da904b1a2">ccMesh::setTriangleTexCoordIndexes()</a>, <a class="el" href="classccMesh.html#ab33bbb0d70e17fa03cc508af91f9544f">ccMesh::setVertexColor()</a>, <a class="el" href="classccMesh.html#a9c5098009b0d8a9f25dafa9897140fe2">ccMesh::setVertexColors()</a>, <a class="el" href="classccMesh.html#a36a29be672f81d871339f70df33ad578">ccMesh::setVertexNormal()</a>, <a class="el" href="classccMesh.html#acff2bb6f0c9a428e2ab05ed8155275d6">ccMesh::setVertice()</a>, <a class="el" href="classccMesh.html#a7581c576563af5fe86d99b9fbb5238ba">ccMesh::shiftTriangleIndexes()</a>, <a class="el" href="ecvMesh_8h_source.html#l00302">ccMesh::shrinkToFit()</a>, <a class="el" href="classccMesh.html#ad542e15165595ddbce1d1c6be674bb11">ccMesh::shrinkVertexToFit()</a>, <a class="el" href="classccMesh.html#a937c6c0548a5d2a721becc7a4daf5fa5">ccMesh::SimplifyQuadricDecimation()</a>, <a class="el" href="classccMesh.html#a1cb11f8446359c16c3b77cd9ab13c781">ccMesh::SimplifyVertexClustering()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00038">cloudViewer::PointCloudTpl&lt; T &gt;::size()</a>, <a class="el" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">ccMesh::size()</a>, <a class="el" href="classccMesh.html#a294c1813aa9f313fd3ea6551850ff673">ccMesh::subdivide()</a>, <a class="el" href="classccMesh.html#a822777fdc5af79d06d6539daa0f024b4">ccMesh::SubdivideLoop()</a>, <a class="el" href="classccMesh.html#a6923ae17cbf7d899014c85614afc165b">ccMesh::SubdivideMidpoint()</a>, <a class="el" href="classccMesh.html#a5343438fac79088097b2a2d7aa4e100d">ccMesh::swapTriangles()</a>, <a class="el" href="ecvMesh_8h_source.html#l00709">ccMesh::textures_</a>, <a class="el" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud()</a>, <a class="el" href="classccMesh.html#a50b8c626b46da951f4ef999a83e9b4db">ccMesh::transformTriNormals()</a>, <a class="el" href="ecvMesh_8h_source.html#l00707">ccMesh::triangle_material_ids_</a>, <a class="el" href="ecvMesh_8h_source.html#l00625">ccMesh::triangle_uvs_</a>, <a class="el" href="classccMesh.html#a61e27f38e4de663603b969e6428225d8">ccMesh::Triangulate()</a>, <a class="el" href="classccMesh.html#a40042a57bd5b56bbff0ff5976bcda725">ccMesh::TriangulateTwoPolylines()</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00131">type</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="aab78e0a197a085db024affec47a80f9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab78e0a197a085db024affec47a80f9e">&#9670;&nbsp;</a></span>pybind_trianglemesh_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_trianglemesh_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="geometry_2trianglemesh_8cpp_source.html#l01259">1259</a> of file <a class="el" href="geometry_2trianglemesh_8cpp_source.html">trianglemesh.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5f1be8e2155a821e4599068873fa0a56"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f1be8e2155a821e4599068873fa0a56">&#9670;&nbsp;</a></span>pybind_voxelgrid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_voxelgrid </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="voxelgrid_8cpp_source.html#l00024">24</a> of file <a class="el" href="voxelgrid_8cpp_source.html">voxelgrid.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#ae866646c8d8cb1baae10fb8480cd8940">cloudViewer::geometry::VoxelGrid::AddVoxel()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a99ff4f13f6fbb560cdabe652d3f422b5afcefd647d6a866603c627b11347c707a">cloudViewer::geometry::VoxelGrid::AVG</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a4b957920ed5a79728d916c81e572311f">cloudViewer::geometry::VoxelGrid::CarveDepthMap()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a612821326afe9b491a3064d9d0cf5ffd">cloudViewer::geometry::VoxelGrid::CarveSilhouette()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a90a6840cb7565fa9a538cc3f15ec3330">cloudViewer::geometry::VoxelGrid::CheckIfIncluded()</a>, <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="LineSetBuffers_8cpp_source.html#l00046">color</a>, <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00058">cloudViewer::geometry::Voxel::color_</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#ad17a3e8fbd89ae5d932efc4099cc6cd7">cloudViewer::geometry::VoxelGrid::CreateDense()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a190d41119f128fd4c2703279e5bd08b1">cloudViewer::geometry::VoxelGrid::CreateFromOctree()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a63e4e3cbba6007d0dfb1f2e6bee7ec6b">cloudViewer::geometry::VoxelGrid::CreateFromPointCloud()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a86a670a3c01e525c8d60b2c9d20fccdb">cloudViewer::geometry::VoxelGrid::CreateFromPointCloudWithinBounds()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a5779d8d90260f34246d4a07fa0d1efda">cloudViewer::geometry::VoxelGrid::CreateFromTriangleMesh()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#afb210f6b812ca4179b88c54fab049f81">cloudViewer::geometry::VoxelGrid::CreateFromTriangleMeshWithinBounds()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#ab858999904f8a52d139ba094e53e0b82">cloudViewer::geometry::VoxelGrid::GetVoxel()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#af2680f55ffef43f50995386f68c5461f">cloudViewer::geometry::VoxelGrid::GetVoxels()</a>, <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00056">cloudViewer::geometry::Voxel::grid_index_</a>, <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00108">cloudViewer::geometry::VoxelGrid::HasColors()</a>, <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00106">cloudViewer::geometry::VoxelGrid::HasVoxels()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a99ff4f13f6fbb560cdabe652d3f422b5a26a4b44a837bf97b972628509912b4a5">cloudViewer::geometry::VoxelGrid::MAX</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a99ff4f13f6fbb560cdabe652d3f422b5ace31e2a082d17e038fcc6e3006166653">cloudViewer::geometry::VoxelGrid::MIN</a>, <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00266">cloudViewer::geometry::VoxelGrid::origin_</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#ad1cae7ffb8b03c5c72bd94f6b9d78522">cloudViewer::geometry::VoxelGrid::RemoveVoxel()</a>, <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00269">cloudViewer::geometry::VoxelGrid::rotation_</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a99ff4f13f6fbb560cdabe652d3f422b5a6970bdc2201030b9c03fbdcf3973858a">cloudViewer::geometry::VoxelGrid::SUM</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1VoxelGrid.html#a850cf6250b2651c3733a33d5a7f4657e">cloudViewer::geometry::VoxelGrid::ToOctree()</a>, and <a class="el" href="CV__db_2include_2VoxelGrid_8h_source.html#l00264">cloudViewer::geometry::VoxelGrid::voxel_size_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<a id="ad54cc4ddf80ba7cdb553ef7a2df9b10e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad54cc4ddf80ba7cdb553ef7a2df9b10e">&#9670;&nbsp;</a></span>pybind_voxelgrid_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::geometry::pybind_voxelgrid_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="voxelgrid_8cpp_source.html#l00244">244</a> of file <a class="el" href="voxelgrid_8cpp_source.html">voxelgrid.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="geometry_2geometry_8cpp_source.html#l01021">pybind_geometry()</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Variable Documentation</h2>
+<a id="a9bcbe8f086bd193142f69dc0e647e5a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9bcbe8f086bd193142f69dc0e647e5a6">&#9670;&nbsp;</a></span>map_octree_argument_docstrings</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const std::unordered_map&lt;std::string, std::string&gt; cloudViewer::geometry::map_octree_argument_docstrings</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= {</div>
+<div class="line">                {<span class="stringliteral">&quot;origin&quot;</span>, <span class="stringliteral">&quot;Origin coordinates.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;size&quot;</span>, <span class="stringliteral">&quot;Size of the Octree.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;color&quot;</span>, <span class="stringliteral">&quot;Color of the point.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;point&quot;</span>, <span class="stringliteral">&quot;Coordinates of the point.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;max_depth&quot;</span>, <span class="stringliteral">&quot;Maximum depth of the octree.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;point_cloud&quot;</span>, <span class="stringliteral">&quot;Input point cloud.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;size_expand&quot;</span>,</div>
+<div class="line">                 <span class="stringliteral">&quot;A small expansion size such that the octree is slightly &quot;</span></div>
+<div class="line">                 <span class="stringliteral">&quot;bigger than the original point cloud bounds to accomodate &quot;</span></div>
+<div class="line">                 <span class="stringliteral">&quot;all points.&quot;</span>}}</div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="octree_8cpp_source.html#l00026">26</a> of file <a class="el" href="octree_8cpp_source.html">octree.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad5447a855c9d99cef6712bb76a1d2c1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5447a855c9d99cef6712bb76a1d2c1a">&#9670;&nbsp;</a></span>map_shared_argument_docstrings</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const std::unordered_map&lt;std::string, std::string&gt; cloudViewer::geometry::map_shared_argument_docstrings</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= {</div>
+<div class="line">                {<span class="stringliteral">&quot;color&quot;</span>, <span class="stringliteral">&quot;The color image.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;convert_rgb_to_intensity&quot;</span>,</div>
+<div class="line">                 <span class="stringliteral">&quot;Whether to convert RGB image to intensity image.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;depth&quot;</span>, <span class="stringliteral">&quot;The depth image.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;depth_scale&quot;</span>,</div>
+<div class="line">                 <span class="stringliteral">&quot;The ratio to scale depth values. The depth values will first &quot;</span></div>
+<div class="line">                 <span class="stringliteral">&quot;be scaled and then truncated.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;depth_trunc&quot;</span>,</div>
+<div class="line">                 <span class="stringliteral">&quot;Depth values larger than ``depth_trunc`` gets truncated to &quot;</span></div>
+<div class="line">                 <span class="stringliteral">&quot;0. The depth values will first be scaled and then &quot;</span></div>
+<div class="line">                 <span class="stringliteral">&quot;truncated.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;filter_type&quot;</span>, <span class="stringliteral">&quot;The filter type to be applied.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;image&quot;</span>, <span class="stringliteral">&quot;The Image object.&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;image_pyramid&quot;</span>, <span class="stringliteral">&quot;The ImagePyramid object&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;num_of_levels &quot;</span>, <span class="stringliteral">&quot;Levels of the image pyramid&quot;</span>},</div>
+<div class="line">                {<span class="stringliteral">&quot;with_gaussian_filter&quot;</span>,</div>
+<div class="line">                 <span class="stringliteral">&quot;When ``True``, image in the pyramid will first be filtered &quot;</span></div>
+<div class="line">                 <span class="stringliteral">&quot;by a 3x3 Gaussian kernel before down sampling.&quot;</span>}}</div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="geometry_2image_8cpp_source.html#l00020">20</a> of file <a class="el" href="geometry_2image_8cpp_source.html">image.cpp</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1geometry.html">geometry</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

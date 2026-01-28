@@ -1,6 +1,9 @@
 <map id="ScalarDialog" name="ScalarDialog">
-<area shape="rect" id="node1" title=" " alt="" coords="120,80,224,107"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="105,5,239,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="263,5,390,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="197,184,301,211"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,95,80,121"/>
+<area shape="rect" id="node3" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="105,95,239,121"/>
+<area shape="rect" id="node4" title=" " alt="" coords="263,95,390,121"/>
+<area shape="rect" id="node5" href="$classccPickingHub.html" title="Point/triangle picking hub." alt="" coords="415,95,524,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="361,5,436,32"/>
+<area shape="rect" id="node7" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="460,5,620,32"/>
 </map>

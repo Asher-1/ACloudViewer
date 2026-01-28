@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -131,7 +140,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8h_source.html',''); init
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">   43</a></span>&#160;    <span class="keyword">typedef</span> QMap&lt;QString, ccPointCloud*&gt; <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">NamedClouds</a>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a869871c8b59360b84cc141d4dd09c166">LoadTrainingFile</a>(QString filename,</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a869871c8b59360b84cc141d4dd09c166">LoadTrainingFile</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                                 <a class="code" href="structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611">Feature::Set</a>&amp; rawFeatures,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                 std::vector&lt;double&gt;&amp; scales,</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                 <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">NamedClouds</a>&amp; loadedClouds,</div>
@@ -140,20 +149,20 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8h_source.html',''); init
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                 QWidget* parent = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a75777b6337a789caeb7f0f9701e4a4d2">LoadClassifierCloudLabels</a>(</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            QString filename,</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            QList&lt;QString&gt;&amp; labels,</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            QString&amp; corePointsLabel,</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keywordtype">bool</span>&amp; filenamesSpecified,</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;            QMap&lt;QString, QString&gt;&amp; rolesAndNames);</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a328e212d3016c7723ac1b1b8bb266776">LoadClassifier</a>(QString filename,</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a328e212d3016c7723ac1b1b8bb266776">LoadClassifier</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                               <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">NamedClouds</a>&amp; clouds,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                               <a class="code" href="structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611">Feature::Set</a>&amp; rawFeatures,</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                               <a class="code" href="classmasc_1_1Classifier.html">masc::Classifier</a>&amp; classifier,</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                               QWidget* parent = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#a1bafdcef103416af8e9357c6ad5f9309">LoadFile</a>(</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;            <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;            <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            <a class="code" href="classmasc_1_1Tools.html#ae58f96850248fffa5516f3e5caf73e04">Tools::NamedClouds</a>* clouds,</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;            <span class="keywordtype">bool</span> cloudsAreProvided,</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            std::vector&lt;Feature::Shared&gt;* rawFeatures =</div>
@@ -164,7 +173,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8h_source.html',''); init
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;            <a class="code" href="structmasc_1_1TrainParameters.html">TrainParameters</a>* parameters = <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            QWidget* parent = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">SaveClassifier</a>(QString filename,</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classmasc_1_1Tools.html#ab848822b34b3fb471e0e0224336e2b16">SaveClassifier</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                               <span class="keyword">const</span> <a class="code" href="structmasc_1_1Feature.html#a519645912a31de3a31e5490c93ad7611">Feature::Set</a>&amp; features,</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                               <span class="keyword">const</span> QString corePointsRole,</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                               <span class="keyword">const</span> <a class="code" href="classmasc_1_1Classifier.html">masc::Classifier</a>&amp; classifier,</div>
@@ -191,6 +200,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8h_source.html',''); init
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;};</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;};  <span class="comment">// namespace masc</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFeaturesInterface_8h_html"><div class="ttname"><a href="FeaturesInterface_8h.html">FeaturesInterface.h</a></div></div>
 <div class="ttc" id="aGenericProgressCallback_8h_html"><div class="ttname"><a href="GenericProgressCallback_8h.html">GenericProgressCallback.h</a></div></div>
 <div class="ttc" id="aclassSFCollector_html"><div class="ttname"><a href="classSFCollector.html">SFCollector</a></div><div class="ttdoc">SF collector.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldCollector_8h_source.html#l00042">ScalarFieldCollector.h:42</a></div></div>
@@ -223,7 +233,7 @@ $(document).ready(function(){initNavTree('q3DMASCTools_8h_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="q3DMASCTools_8h.html">q3DMASCTools.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,7 +110,7 @@ $(document).ready(function(){initNavTree('m3c2_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="qM3C2Dialog_8h.html">qM3C2Dialog.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="qM3C2Process_8h.html">qM3C2Process.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;stdexcept&gt;</span></div>
@@ -119,7 +128,7 @@ $(document).ready(function(){initNavTree('m3c2_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="comment">// These should be arguments but pybind11 trips on them</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="comment">// in standalone mode, with a TypeError, not sure why</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    QWidget *parentWidget = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    ecvMainAppInterface *app = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *app = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">if</span> (app != <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <span class="comment">// It makes CC crash</span></div>
@@ -184,6 +193,7 @@ $(document).ready(function(){initNavTree('m3c2_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="m3c2_8cpp.html#ac4925ab9d743ff2083645cb66bb086f3">define_m3c2_plugin</a>(m);</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;}</div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html"><div class="ttname"><a href="classqM3C2Dialog.html">qM3C2Dialog</a></div><div class="ttdoc">M3C2 plugin's main dialog.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8h_source.html#l00022">qM3C2Dialog.h:22</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html_a0df81dc2326345ec57860ec2dafeedfc"><div class="ttname"><a href="classqM3C2Dialog.html#a0df81dc2326345ec57860ec2dafeedfc">qM3C2Dialog::setCorePointsCloud</a></div><div class="ttdeci">void setCorePointsCloud(ccPointCloud *cloud)</div><div class="ttdoc">Sets the core points cloud.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8h_source.html#l00044">qM3C2Dialog.h:44</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html_a3f27c1764740f74a711f118c450ee389"><div class="ttname"><a href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">qM3C2Dialog::loadParamsFromFile</a></div><div class="ttdeci">void loadParamsFromFile()</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8cpp_source.html#l00637">qM3C2Dialog.cpp:637</a></div></div>
@@ -197,11 +207,12 @@ $(document).ready(function(){initNavTree('m3c2_8cpp_source.html',''); initResiza
 <div class="ttc" id="aclassqM3C2Dialog_html_ae34ff0bba665ba2a78deca5552eb9f73"><div class="ttname"><a href="classqM3C2Dialog.html#ae34ff0bba665ba2a78deca5552eb9f73">qM3C2Dialog::keepOriginalCloud</a></div><div class="ttdeci">bool keepOriginalCloud() const</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8cpp_source.html#l00391">qM3C2Dialog.cpp:391</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html_afe868d3cdea93af549e6ac9cc681ecd5"><div class="ttname"><a href="classqM3C2Dialog.html#afe868d3cdea93af549e6ac9cc681ecd5">qM3C2Dialog::saveParamsToPersistentSettings</a></div><div class="ttdeci">void saveParamsToPersistentSettings()</div><div class="ttdoc">Saves parameters to persistent settings.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8cpp_source.html#l00584">qM3C2Dialog.cpp:584</a></div></div>
 <div class="ttc" id="aclassqM3C2Process_html_ab55646fcec9c5c609ae3827d5be6a94c"><div class="ttname"><a href="classqM3C2Process.html#ab55646fcec9c5c609ae3827d5be6a94c">qM3C2Process::Compute</a></div><div class="ttdeci">static bool Compute(const qM3C2Dialog &amp;dlg, QString &amp;errorMessage, ccPointCloud *&amp;outputCloud, bool allowDialogs, QWidget *parentWidget=nullptr, ecvMainAppInterface *app=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Process_8cpp_source.html#l00428">qM3C2Process.cpp:428</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="am3c2_8cpp_html_a7c17ebc7e7ae1d84ed59cc87113fa6f2"><div class="ttname"><a href="m3c2_8cpp.html#a7c17ebc7e7ae1d84ed59cc87113fa6f2">PYBIND11_MODULE</a></div><div class="ttdeci">PYBIND11_MODULE(pym3c2, m)</div><div class="ttdef"><b>Definition:</b> <a href="m3c2_8cpp_source.html#l00092">m3c2.cpp:92</a></div></div>
 <div class="ttc" id="am3c2_8cpp_html_ac4925ab9d743ff2083645cb66bb086f3"><div class="ttname"><a href="m3c2_8cpp.html#ac4925ab9d743ff2083645cb66bb086f3">define_m3c2_plugin</a></div><div class="ttdeci">void define_m3c2_plugin(py::module_ &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="m3c2_8cpp_source.html#l00049">m3c2.cpp:49</a></div></div>
 <div class="ttc" id="am3c2_8cpp_html_afdf48b996674cc1b7d831ec2d974a708"><div class="ttname"><a href="m3c2_8cpp.html#afdf48b996674cc1b7d831ec2d974a708">ComputeWrapper</a></div><div class="ttdeci">ccPointCloud * ComputeWrapper(const qM3C2Dialog &amp;dlg, bool allowDialogs)</div><div class="ttdef"><b>Definition:</b> <a href="m3c2_8cpp_source.html#l00024">m3c2.cpp:24</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="aqM3C2Dialog_8h_html"><div class="ttname"><a href="qM3C2Dialog_8h.html">qM3C2Dialog.h</a></div></div>
 <div class="ttc" id="aqM3C2Process_8h_html"><div class="ttname"><a href="qM3C2Process_8h.html">qM3C2Process.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -210,7 +221,7 @@ $(document).ready(function(){initNavTree('m3c2_8cpp_source.html',''); initResiza
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_4800849608e762b60e34f231eccde69e.html">plugins</a></li><li class="navelem"><a class="el" href="dir_9908078d9650cbac63a4451c79321bce.html">m3c2</a></li><li class="navelem"><a class="el" href="m3c2_8cpp.html">m3c2.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

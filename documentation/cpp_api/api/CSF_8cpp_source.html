@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -103,7 +112,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Vec3_8h.html">Vec3.h</a>&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">// CC (for debug)</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;QCoreApplication&gt;</span></div>
@@ -129,11 +138,11 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="classCSF.html#a4c4df695a128f2e396e1644948f87038">   40</a></span>&#160;<a class="code" href="classCSF.html#a4c4df695a128f2e396e1644948f87038">CSF::~CSF</a>() {}</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="classCSF.html#a96bcad9adc4f4df3d1d905a2bc6f5ec5">   42</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classCSF.html#a96bcad9adc4f4df3d1d905a2bc6f5ec5">CSF::readPointsFromFile</a>(std::string filename) {</div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="classCSF.html#a96bcad9adc4f4df3d1d905a2bc6f5ec5">   42</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classCSF.html#a96bcad9adc4f4df3d1d905a2bc6f5ec5">CSF::readPointsFromFile</a>(std::string <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    point_cloud.clear();</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordflow">try</span> {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        std::ifstream fin(filename.c_str(), std::ios::in);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        std::ifstream fin(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), std::ios::in);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordtype">char</span> line[500];</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        std::string x, y, z;</div>
@@ -164,7 +173,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                       std::vector&lt;int&gt;&amp; offGroundIndexes,</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                       <span class="keywordtype">bool</span> exportClothMesh,</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                       <a class="code" href="classccMesh.html">ccMesh</a>*&amp; clothMesh,</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                       ecvMainAppInterface* app <span class="comment">/*=0*/</span>,</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                       <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app <span class="comment">/*=0*/</span>,</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                       QWidget* parent <span class="comment">/*=0*/</span>) {</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="comment">// constants</span></div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">double</span> cloth_y_height = 0.05;  <span class="comment">// origin cloth height</span></div>
@@ -197,7 +206,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    <a class="code" href="classCSF.html#ad039b64432431fb31de4e71a4fc64f39">params</a>.<a class="code" href="structCSF_1_1Parameters.html#ab0ffe668597117045c1c1c0c3ca92b97">cloth_resolution</a>, 0.3, 9999, <a class="code" href="classCSF.html#ad039b64432431fb31de4e71a4fc64f39">params</a>.<a class="code" href="structCSF_1_1Parameters.html#abf40e922b7964a5608943035f4a87933">rigidness</a>,</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                    <a class="code" href="classCSF.html#ad039b64432431fb31de4e71a4fc64f39">params</a>.<a class="code" href="structCSF_1_1Parameters.html#a0057c4f7a29e0d6bbc95899dbae3310a">time_step</a>);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <span class="keywordflow">if</span> (app) {</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;[CSF] Cloth creation: %1 ms&quot;</span>)</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;[CSF] Cloth creation: %1 ms&quot;</span>)</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                                       .arg(<a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.restart()));</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        }</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
@@ -210,7 +219,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        <span class="comment">// ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</span></div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160; </div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        <span class="keywordflow">if</span> (app) {</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;            app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                    QString(<span class="stringliteral">&quot;[CSF] Rasterization: %1 ms&quot;</span>).arg(<a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.restart()));</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        }</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
@@ -259,7 +268,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        QCoreApplication::processEvents();</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <span class="keywordflow">if</span> (app) {</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;                    QString(<span class="stringliteral">&quot;[CSF] Iterations: %1 ms&quot;</span>).arg(<a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.restart()));</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        }</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
@@ -272,7 +281,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            cloth.<a class="code" href="classCloth.html#a555ef57ef429b40a1d8ecb0fe96e54b6">movableFilter</a>();</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160; </div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;            <span class="keywordflow">if</span> (app) {</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;[CSF] Movable filter: %1 ms&quot;</span>)</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;[CSF] Movable filter: %1 ms&quot;</span>)</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                                           .arg(<a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.restart()));</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            }</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        }</div>
@@ -282,7 +291,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                                               <a class="code" href="classCSF.html#ad039b64432431fb31de4e71a4fc64f39">params</a>.<a class="code" href="structCSF_1_1Parameters.html#a15e86e3f24517189ccc9a087e7f9e64c">class_threshold</a>,</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                                               groundIndexes, offGroundIndexes);</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        <span class="keywordflow">if</span> (app) {</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;[CSF] Distance computation: %1 ms&quot;</span>)</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;[CSF] Distance computation: %1 ms&quot;</span>)</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                                       .arg(<a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.restart()));</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        }</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160; </div>
@@ -298,10 +307,10 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;}</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160; </div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;<span class="comment">// Exporting the ground points to file.</span></div>
-<div class="line"><a name="l00211"></a><span class="lineno"><a class="line" href="classCSF.html#a0664e11dc80a27ce69c4dd8f51538cd4">  211</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCSF.html#a0664e11dc80a27ce69c4dd8f51538cd4">CSF::saveGroundPoints</a>(<span class="keyword">const</span> std::vector&lt;int&gt;&amp; grp, std::string path) {</div>
+<div class="line"><a name="l00211"></a><span class="lineno"><a class="line" href="classCSF.html#a0664e11dc80a27ce69c4dd8f51538cd4">  211</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCSF.html#a0664e11dc80a27ce69c4dd8f51538cd4">CSF::saveGroundPoints</a>(<span class="keyword">const</span> std::vector&lt;int&gt;&amp; grp, std::string <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>) {</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    std::string filepath = <span class="stringliteral">&quot;terr_ground.txt&quot;</span>;</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordflow">if</span> (path != <span class="stringliteral">&quot;&quot;</span>) {</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        filepath = path;</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> != <span class="stringliteral">&quot;&quot;</span>) {</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        filepath = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>;</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    }</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    std::ofstream f1(filepath, std::ios::out);</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="keywordflow">if</span> (!f1) <span class="keywordflow">return</span>;</div>
@@ -315,10 +324,10 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    f1.close();</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;}</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
-<div class="line"><a name="l00228"></a><span class="lineno"><a class="line" href="classCSF.html#abaca3a5e3b0a2d499867cebf4e17b26e">  228</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCSF.html#abaca3a5e3b0a2d499867cebf4e17b26e">CSF::saveOffGroundPoints</a>(<span class="keyword">const</span> std::vector&lt;int&gt;&amp; grp, std::string path) {</div>
+<div class="line"><a name="l00228"></a><span class="lineno"><a class="line" href="classCSF.html#abaca3a5e3b0a2d499867cebf4e17b26e">  228</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCSF.html#abaca3a5e3b0a2d499867cebf4e17b26e">CSF::saveOffGroundPoints</a>(<span class="keyword">const</span> std::vector&lt;int&gt;&amp; grp, std::string <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>) {</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    std::string filepath = <span class="stringliteral">&quot;off-ground points.txt&quot;</span>;</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordflow">if</span> (path != <span class="stringliteral">&quot;&quot;</span>) {</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        filepath = path;</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> != <span class="stringliteral">&quot;&quot;</span>) {</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        filepath = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>;</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    }</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    std::ofstream f1(filepath, std::ios::out);</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordflow">if</span> (!f1) <span class="keywordflow">return</span>;</div>
@@ -332,6 +341,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    f1.close();</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;}</div>
 <div class="ttc" id="aCSF_8h_html"><div class="ttname"><a href="CSF_8h.html">CSF.h</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aCloth_8h_html"><div class="ttname"><a href="Cloth_8h.html">Cloth.h</a></div></div>
 <div class="ttc" id="aCloud2CloudDist_8h_html"><div class="ttname"><a href="Cloud2CloudDist_8h.html">Cloud2CloudDist.h</a></div></div>
 <div class="ttc" id="aRasterization_8h_html"><div class="ttname"><a href="Rasterization_8h.html">Rasterization.h</a></div></div>
@@ -357,9 +367,13 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div class="ttc" id="aclassRasterization_html_a834843218249d27e2dc8d17d43747dde"><div class="ttname"><a href="classRasterization.html#a834843218249d27e2dc8d17d43747dde">Rasterization::RasterTerrain</a></div><div class="ttdeci">static bool RasterTerrain(Cloth &amp;cloth, const wl::PointCloud &amp;pc, std::vector&lt; double &gt; &amp;heightVal, unsigned KNN=1)</div><div class="ttdef"><b>Definition:</b> <a href="Rasterization_8cpp_source.html#l00086">Rasterization.cpp:86</a></div></div>
 <div class="ttc" id="aclassVec3_html"><div class="ttname"><a href="classVec3.html">Vec3</a></div><div class="ttdef"><b>Definition:</b> <a href="Vec3_8h_source.html#l00013">Vec3.h:14</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="aclasswl_1_1PointCloud_html"><div class="ttname"><a href="classwl_1_1PointCloud.html">wl::PointCloud</a></div><div class="ttdef"><b>Definition:</b> <a href="wlPointCloud_8h_source.html#l00028">wlPointCloud.h:28</a></div></div>
 <div class="ttc" id="aclasswl_1_1PointCloud_html_a5dfa1df9f0bdc9db77177cf8b9c2bd50"><div class="ttname"><a href="classwl_1_1PointCloud.html#a5dfa1df9f0bdc9db77177cf8b9c2bd50">wl::PointCloud::computeBoundingBox</a></div><div class="ttdeci">void computeBoundingBox(Point &amp;bbMin, Point &amp;bbMax)</div><div class="ttdef"><b>Definition:</b> <a href="wlPointCloud_8h_source.html#l00030">wlPointCloud.h:30</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa2763013e3ec9c4434c6f9a82d2752fc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">cloudViewer::utility::floor</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; floor(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00075">MiniVec.h:75</a></div></div>
 <div class="ttc" id="astructCSF_1_1Parameters_html_a0057c4f7a29e0d6bbc95899dbae3310a"><div class="ttname"><a href="structCSF_1_1Parameters.html#a0057c4f7a29e0d6bbc95899dbae3310a">CSF::Parameters::time_step</a></div><div class="ttdeci">double time_step</div><div class="ttdef"><b>Definition:</b> <a href="CSF_8h_source.html#l00052">CSF.h:52</a></div></div>
 <div class="ttc" id="astructCSF_1_1Parameters_html_a0f62a03ad61dc7a077494f16fe6e5d4d"><div class="ttname"><a href="structCSF_1_1Parameters.html#a0f62a03ad61dc7a077494f16fe6e5d4d">CSF::Parameters::iterations</a></div><div class="ttdeci">int iterations</div><div class="ttdef"><b>Definition:</b> <a href="CSF_8h_source.html#l00060">CSF.h:60</a></div></div>
@@ -379,7 +393,7 @@ $(document).ready(function(){initNavTree('CSF_8cpp_source.html',''); initResizab
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html">qCSF</a></li><li class="navelem"><a class="el" href="dir_cffe619bb7a47da2969b1923c068f1d5.html">src</a></li><li class="navelem"><a class="el" href="CSF_8cpp.html">CSF.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

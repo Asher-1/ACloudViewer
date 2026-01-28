@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -111,7 +120,7 @@ $(document).ready(function(){initNavTree('qCloudLayers_8cpp_source.html',''); in
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;qCloudLayers::qCloudLayers(QObject* parent)</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;      ccStdPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qCloudLayers/info.json&quot;</span>),</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;      <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qCloudLayers/info.json&quot;</span>),</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;      m_action(nullptr),</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;      m_cloudLayersDlg(nullptr) {}</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
@@ -128,9 +137,9 @@ $(document).ready(function(){initNavTree('qCloudLayers_8cpp_source.html',''); in
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;QList&lt;QAction*&gt; qCloudLayers::getActions() {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="comment">// default action</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordflow">if</span> (!m_action) {</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        m_action = <span class="keyword">new</span> QAction(getName(), <span class="keyword">this</span>);</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        m_action-&gt;setToolTip(getDescription());</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        m_action-&gt;setIcon(getIcon());</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        m_action = <span class="keyword">new</span> QAction(<a class="code" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a>(), <span class="keyword">this</span>);</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        m_action-&gt;setToolTip(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>());</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        m_action-&gt;setIcon(<a class="code" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a>());</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <span class="comment">// connect signal</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        connect(m_action, &amp;QAction::triggered, <span class="keyword">this</span>, &amp;<a class="code" href="classqCloudLayers.html#aa4f81cb71d970b6c846120467ba1e037">qCloudLayers::doAction</a>);</div>
@@ -140,17 +149,17 @@ $(document).ready(function(){initNavTree('qCloudLayers_8cpp_source.html',''); in
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;}</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classqCloudLayers.html#aa4f81cb71d970b6c846120467ba1e037">   52</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqCloudLayers.html#aa4f81cb71d970b6c846120467ba1e037">qCloudLayers::doAction</a>() {</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">if</span> (!m_app) {</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>) {</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    }</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="comment">// check selection</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = m_app-&gt;getSelectedEntities();</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (!m_app-&gt;haveOneSelection() ||</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#aa82d85d231c02ba97e30f448a4207229">haveOneSelection</a>() ||</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        !selectedEntities.front()-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;Select only one point cloud!&quot;</span>,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;Select only one point cloud!&quot;</span>,</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    }</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
@@ -158,32 +167,47 @@ $(document).ready(function(){initNavTree('qCloudLayers_8cpp_source.html',''); in
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud = <span class="keyword">static_cast&lt;</span><a class="code" href="classccPointCloud.html">ccPointCloud</a>*<span class="keyword">&gt;</span>(selectedEntities.front());</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span> (!cloud-&gt;<a class="code" href="classccPointCloud.html#ae3eee425df467b5117d605c633e9662b">hasScalarFields</a>()) {</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Cloud has no scalar field&quot;</span>);</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Cloud has no scalar field&quot;</span>);</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    }</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="comment">// set colors schema to RGB</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    m_app-&gt;updateUI();</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">if</span> (!m_cloudLayersDlg) {</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        m_cloudLayersDlg = <span class="keyword">new</span> <a class="code" href="classccCloudLayersDlg.html">ccCloudLayersDlg</a>(m_app, m_app-&gt;getMainWindow());</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        m_app-&gt;registerOverlayDialog(m_cloudLayersDlg, Qt::TopRightCorner);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        m_cloudLayersDlg = <span class="keyword">new</span> <a class="code" href="classccCloudLayersDlg.html">ccCloudLayersDlg</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>, <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#af1c2fa13696dd334170da55655505e74">registerOverlayDialog</a>(m_cloudLayersDlg, Qt::TopRightCorner);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    }</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    m_cloudLayersDlg-&gt;linkWith(m_app-&gt;getActiveWindow());</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    m_cloudLayersDlg-&gt;<a class="code" href="classccOverlayDialog.html#ad671119d7c72c3837d8b4653be3f746c">linkWith</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>());</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    m_cloudLayersDlg-&gt;<a class="code" href="classccCloudLayersDlg.html#a5e8a2199064e54fb5a079c69dcd600dc">setPointCloud</a>(cloud);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordflow">if</span> (m_cloudLayersDlg-&gt;<a class="code" href="classccCloudLayersDlg.html#aa7102066240e476534e748c8fa6ff00a">start</a>()) {</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        m_app-&gt;updateOverlayDialogsPlacement();</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a51a4a61282a98fb6d8d2ebee0817653c">updateOverlayDialogsPlacement</a>();</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    }</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;}</div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html"><div class="ttname"><a href="classccCloudLayersDlg.html">ccCloudLayersDlg</a></div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8h_source.html#l00039">ccCloudLayersDlg.h:39</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html_a5e8a2199064e54fb5a079c69dcd600dc"><div class="ttname"><a href="classccCloudLayersDlg.html#a5e8a2199064e54fb5a079c69dcd600dc">ccCloudLayersDlg::setPointCloud</a></div><div class="ttdeci">void setPointCloud(ccPointCloud *cloud)</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00135">ccCloudLayersDlg.cpp:135</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html_aa7102066240e476534e748c8fa6ff00a"><div class="ttname"><a href="classccCloudLayersDlg.html#aa7102066240e476534e748c8fa6ff00a">ccCloudLayersDlg::start</a></div><div class="ttdeci">bool start() override</div><div class="ttdoc">inherited from ccOverlayDialog</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00101">ccCloudLayersDlg.cpp:101</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_a8a1a1767db7a925da80ee8a356ce423b"><div class="ttname"><a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">ccDefaultPluginInterface::getName</a></div><div class="ttdeci">virtual QString getName() const override</div><div class="ttdoc">Returns (short) name (for menu entry, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00100">ecvDefaultPluginInterface.cpp:100</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_aae6336c05f8e7de1be072565b8d6256c"><div class="ttname"><a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">ccDefaultPluginInterface::getDescription</a></div><div class="ttdeci">virtual QString getDescription() const override</div><div class="ttdoc">Returns long name/description (for tooltip, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00104">ecvDefaultPluginInterface.cpp:104</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_ac9d5f749c5b30b78dab3cc78812e8d8e"><div class="ttname"><a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">ccDefaultPluginInterface::getIcon</a></div><div class="ttdeci">virtual QIcon getIcon() const override</div><div class="ttdoc">Returns icon.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00108">ecvDefaultPluginInterface.cpp:108</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
+<div class="ttc" id="aclassccOverlayDialog_html_ad671119d7c72c3837d8b4653be3f746c"><div class="ttname"><a href="classccOverlayDialog.html#ad671119d7c72c3837d8b4653be3f746c">ccOverlayDialog::linkWith</a></div><div class="ttdeci">virtual bool linkWith(QWidget *win)</div><div class="ttdoc">Links the overlay dialog with a MDI window.</div><div class="ttdef"><b>Definition:</b> <a href="ecvOverlayDialog_8cpp_source.html#l00032">ecvOverlayDialog.cpp:32</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html_ae3eee425df467b5117d605c633e9662b"><div class="ttname"><a href="classccPointCloud.html#ae3eee425df467b5117d605c633e9662b">ccPointCloud::hasScalarFields</a></div><div class="ttdeci">bool hasScalarFields() const override</div><div class="ttdoc">Returns whether one or more scalar fields are instantiated.</div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_af46bcfd10da04c21300a7f1a59b29d86"><div class="ttname"><a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">ccStdPluginInterface::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Main application interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00085">ecvStdPluginInterface.h:85</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a04bbf3c01e3d49efbfd74c2e5fa76ccb"><div class="ttname"><a href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">ecvMainAppInterface::updateUI</a></div><div class="ttdeci">virtual void updateUI()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a51a4a61282a98fb6d8d2ebee0817653c"><div class="ttname"><a href="classecvMainAppInterface.html#a51a4a61282a98fb6d8d2ebee0817653c">ecvMainAppInterface::updateOverlayDialogsPlacement</a></div><div class="ttdeci">virtual void updateOverlayDialogsPlacement()=0</div><div class="ttdoc">Forces the update of all registered MDI 'overlay' dialogs.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_aa82d85d231c02ba97e30f448a4207229"><div class="ttname"><a href="classecvMainAppInterface.html#aa82d85d231c02ba97e30f448a4207229">ecvMainAppInterface::haveOneSelection</a></div><div class="ttdeci">bool haveOneSelection() const</div><div class="ttdoc">Checks if we have exactly one selection.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00113">ecvMainAppInterface.h:113</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_af1c2fa13696dd334170da55655505e74"><div class="ttname"><a href="classecvMainAppInterface.html#af1c2fa13696dd334170da55655505e74">ecvMainAppInterface::registerOverlayDialog</a></div><div class="ttdeci">virtual void registerOverlayDialog(ccOverlayDialog *dlg, Qt::Corner pos)=0</div><div class="ttdoc">Registers a MDI area 'overlay' dialog.</div></div>
 <div class="ttc" id="aclassqCloudLayers_html_aa4f81cb71d970b6c846120467ba1e037"><div class="ttname"><a href="classqCloudLayers.html#aa4f81cb71d970b6c846120467ba1e037">qCloudLayers::doAction</a></div><div class="ttdeci">void doAction()</div><div class="ttdoc">Slot called when associated action is triggered.</div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_8cpp_source.html#l00052">qCloudLayers.cpp:52</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
@@ -193,7 +217,7 @@ $(document).ready(function(){initNavTree('qCloudLayers_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_0ddd015bacd93a2b1d2bac93db97fdae.html">qCloudLayers</a></li><li class="navelem"><a class="el" href="dir_9fc569ce28825700fc5877d0412b9c64.html">src</a></li><li class="navelem"><a class="el" href="qCloudLayers_8cpp.html">qCloudLayers.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

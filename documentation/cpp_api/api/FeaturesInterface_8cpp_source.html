@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -138,9 +147,9 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="comment">// QString(resultSFName)  + &quot;, SFCollector::Behavior &quot; +</span></div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="comment">// QString::number(behavior));</span></div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <a class="code" href="classccScalarField.html">ccScalarField</a>* newSF = <span class="keyword">new</span> <a class="code" href="classccScalarField.html">ccScalarField</a>(resultSFName);</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordflow">if</span> (!newSF-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#af59c7661f41183c56f6320f3db1c7e0a">resizeSafe</a>(cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            newSF-&gt;<a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordflow">if</span> (!newSF-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#aa8a9a41063c08fd1d1c0a4109491cd9f">resizeSafe</a>(cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            newSF-&gt;<a class="code" href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">release</a>();</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        }</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        cloud-&gt;<a class="code" href="classccPointCloud.html#a62f3f94a091c6adf5e7ea5ea4dcde014">addScalarField</a>(newSF);</div>
@@ -225,10 +234,10 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;}</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160; </div>
-<div class="line"><a name="l00138"></a><span class="lineno"><a class="line" href="structmasc_1_1Feature.html#a4d885ea621e76622e5763c9f7a006de4">  138</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="structmasc_1_1Feature.html#a4d885ea621e76622e5763c9f7a006de4">Feature::SaveSources</a>(<span class="keyword">const</span> <a class="code" href="structmasc_1_1Feature_1_1Source.html#afd0c559309a0bbab00537ee2d72d6ec2">Source::Set</a>&amp; sources, QString filename) {</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00138"></a><span class="lineno"><a class="line" href="structmasc_1_1Feature.html#a4d885ea621e76622e5763c9f7a006de4">  138</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="structmasc_1_1Feature.html#a4d885ea621e76622e5763c9f7a006de4">Feature::SaveSources</a>(<span class="keyword">const</span> <a class="code" href="structmasc_1_1Feature_1_1Source.html#afd0c559309a0bbab00537ee2d72d6ec2">Source::Set</a>&amp; sources, QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::WriteOnly | QFile::Text)) {</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to open file for writing: &quot;</span> + filename);</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to open file for writing: &quot;</span> + <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    }</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
@@ -241,17 +250,17 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;}</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
-<div class="line"><a name="l00154"></a><span class="lineno"><a class="line" href="structmasc_1_1Feature.html#a64f12fe324305890fe972faeae8b1328">  154</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="structmasc_1_1Feature.html#a64f12fe324305890fe972faeae8b1328">Feature::LoadSources</a>(<a class="code" href="structmasc_1_1Feature_1_1Source.html#afd0c559309a0bbab00537ee2d72d6ec2">Source::Set</a>&amp; sources, QString filename) {</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00154"></a><span class="lineno"><a class="line" href="structmasc_1_1Feature.html#a64f12fe324305890fe972faeae8b1328">  154</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="structmasc_1_1Feature.html#a64f12fe324305890fe972faeae8b1328">Feature::LoadSources</a>(<a class="code" href="structmasc_1_1Feature_1_1Source.html#afd0c559309a0bbab00537ee2d72d6ec2">Source::Set</a>&amp; sources, QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::ReadOnly | QFile::Text)) {</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to open file for reading: &quot;</span> + filename);</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to open file for reading: &quot;</span> + <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    }</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160; </div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    QTextStream stream(&amp;file);</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    QString header = stream.readLine();</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="keywordflow">if</span> (!header.startsWith(<span class="stringliteral">&quot;#Features_SF&quot;</span>)) {</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Unexpected header&quot;</span>);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Unexpected header&quot;</span>);</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    }</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
@@ -261,7 +270,7 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <span class="keywordflow">if</span> (line.isEmpty()) <span class="keywordflow">continue</span>;  <span class="comment">// unexpected but we can survive</span></div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        QStringList tokens = line.split(<span class="charliteral">&#39;:&#39;</span>);</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="keywordflow">if</span> (tokens.size() != 2) {</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Malformed file&quot;</span>);</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Malformed file&quot;</span>);</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        }</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160; </div>
@@ -270,7 +279,7 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="keywordtype">int</span> sourceType = tokens[0].toInt(&amp;ok);</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        <span class="keywordflow">if</span> (!ok || sourceType &lt; <a class="code" href="structmasc_1_1Feature_1_1Source.html#ae18a3e1b642f8a572118637789a6111bacbddc3f60dd6606960e4122802d3795b">Feature::Source::ScalarField</a> ||</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            sourceType &gt; <a class="code" href="structmasc_1_1Feature_1_1Source.html#ae18a3e1b642f8a572118637789a6111bab84ac8a391480aa3a3d3bd2c92fc3b1a">Feature::Source::Blue</a>) {</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Unhandled source type&quot;</span>);</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Unhandled source type&quot;</span>);</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;        }</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        src.<a class="code" href="structmasc_1_1Feature_1_1Source.html#af075af3d4f0b2ad0b57f19bc2a7ba462">type</a> = <span class="keyword">static_cast&lt;</span><a class="code" href="structmasc_1_1Feature_1_1Source.html#ae18a3e1b642f8a572118637789a6111b">Feature::Source::Type</a><span class="keyword">&gt;</span>(sourceType);</div>
@@ -287,7 +296,7 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        sources.reserve(features.size());</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    }</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
@@ -298,10 +307,11 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;}</div>
 <div class="ttc" id="aCVConst_8h_html_aaa9d7ace0c01a72fa505949da3727f7d"><div class="ttname"><a href="CVConst_8h.html#aaa9d7ace0c01a72fa505949da3727f7d">NAN_VALUE</a></div><div class="ttdeci">constexpr ScalarType NAN_VALUE</div><div class="ttdoc">NaN as a ScalarType value.</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00076">CVConst.h:76</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFeaturesInterface_8h_html"><div class="ttname"><a href="FeaturesInterface_8h.html">FeaturesInterface.h</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_ab8ad53d1acfbe69894cd01504d42b0a1"><div class="ttname"><a href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCCShareable_html_a2ea8a973d6ed745b1abf65155167a49e"><div class="ttname"><a href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8cpp_source.html#l00035">CVShareable.cpp:35</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassIScalarFieldWrapper_html"><div class="ttname"><a href="classIScalarFieldWrapper.html">IScalarFieldWrapper</a></div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldWrappers_8h_source.html#l00035">ScalarFieldWrappers.h:35</a></div></div>
 <div class="ttc" id="aclassIScalarFieldWrapper_html_a4750a2a0d2ae918838ba8aa576678feb"><div class="ttname"><a href="classIScalarFieldWrapper.html#a4750a2a0d2ae918838ba8aa576678feb">IScalarFieldWrapper::size</a></div><div class="ttdeci">virtual size_t size() const =0</div></div>
 <div class="ttc" id="aclassIScalarFieldWrapper_html_aa2dc3c964fef460737147e468f3ffd25"><div class="ttname"><a href="classIScalarFieldWrapper.html#aa2dc3c964fef460737147e468f3ffd25">IScalarFieldWrapper::pointValue</a></div><div class="ttdeci">virtual double pointValue(unsigned index) const =0</div></div>
@@ -319,7 +329,7 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a078acc10755088a704d18d575482d0ec"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a078acc10755088a704d18d575482d0ec">cloudViewer::ScalarField::computeMinAndMax</a></div><div class="ttdeci">virtual void computeMinAndMax()</div><div class="ttdoc">Determines the min and max values.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00123">ScalarField.h:123</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a3f4b03878754e8a774ba422b31ac5440"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a3f4b03878754e8a774ba422b31ac5440">cloudViewer::ScalarField::getValue</a></div><div class="ttdeci">ScalarType &amp; getValue(std::size_t index)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00092">ScalarField.h:92</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a4f659aa5dd4563ab557c7f154bc3fcae"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a4f659aa5dd4563ab557c7f154bc3fcae">cloudViewer::ScalarField::setValue</a></div><div class="ttdeci">void setValue(std::size_t index, ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00096">ScalarField.h:96</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_af59c7661f41183c56f6320f3db1c7e0a"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#af59c7661f41183c56f6320f3db1c7e0a">cloudViewer::ScalarField::resizeSafe</a></div><div class="ttdeci">bool resizeSafe(std::size_t count, bool initNewElements=false, ScalarType valueForNewElements=0)</div><div class="ttdoc">Resizes memory (no exception thrown)</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_aa8a9a41063c08fd1d1c0a4109491cd9f"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#aa8a9a41063c08fd1d1c0a4109491cd9f">cloudViewer::ScalarField::resizeSafe</a></div><div class="ttdeci">bool resizeSafe(std::size_t count, bool initNewElements=false, ScalarType valueForNewElements=0)</div><div class="ttdoc">Resizes memory (no exception thrown)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarField_8cpp_source.html#l00081">ScalarField.cpp:81</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="aecvScalarField_8h_html"><div class="ttname"><a href="ecvScalarField_8h.html">ecvScalarField.h</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
@@ -352,7 +362,7 @@ $(document).ready(function(){initNavTree('FeaturesInterface_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="FeaturesInterface_8cpp.html">FeaturesInterface.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

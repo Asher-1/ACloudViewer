@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -103,8 +112,9 @@ Inheritance diagram for CVLog:</div>
 <div class="dyncontent">
 <div class="center"><img src="classCVLog__inherit__graph.png" border="0" usemap="#aCVLog_inherit__map" alt="Inheritance graph"/></div>
 <map name="aCVLog_inherit__map" id="aCVLog_inherit__map">
-<area shape="rect" title="Main log interface." alt="" coords="30,5,93,32"/>
+<area shape="rect" title="Main log interface." alt="" coords="94,5,157,32"/>
 <area shape="rect" href="classPyPrintLogger.html" title=" " alt="" coords="5,80,117,107"/>
+<area shape="rect" href="classecvConsole.html" title="Console." alt="" coords="142,80,239,107"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -120,7 +130,7 @@ Public Types</h2></td></tr>
 , <a class="el" href="classCVLog.html#a9ec2d345e360523551943fdba3378780adbe156a47218b1804663d54e5d5a513e">DEBUG_FLAG</a> = 8
 <br />
  }</td></tr>
-<tr class="memdesc:a9ec2d345e360523551943fdba3378780"><td class="mdescLeft">&#160;</td><td class="mdescRight">Message level.  <a href="classCVLog.html#a9ec2d345e360523551943fdba3378780">More...</a><br /></td></tr>
+<tr class="memdesc:a9ec2d345e360523551943fdba3378780"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structMessage.html" title="Message.">Message</a> level.  <a href="classCVLog.html#a9ec2d345e360523551943fdba3378780">More...</a><br /></td></tr>
 <tr class="separator:a9ec2d345e360523551943fdba3378780"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -134,72 +144,72 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:adb59a14c5d71ef63182ae29133199b0b"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classCVLog.html">CVLog</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#adb59a14c5d71ef63182ae29133199b0b">TheInstance</a> ()</td></tr>
-<tr class="memdesc:adb59a14c5d71ef63182ae29133199b0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the static and unique instance.  <a href="classCVLog.html#adb59a14c5d71ef63182ae29133199b0b">More...</a><br /></td></tr>
-<tr class="separator:adb59a14c5d71ef63182ae29133199b0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ada39d05be58b1924de534b79a5867170"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ada39d05be58b1924de534b79a5867170">RegisterInstance</a> (<a class="el" href="classCVLog.html">CVLog</a> *logInstance)</td></tr>
-<tr class="memdesc:ada39d05be58b1924de534b79a5867170"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers a unique instance.  <a href="classCVLog.html#ada39d05be58b1924de534b79a5867170">More...</a><br /></td></tr>
-<tr class="separator:ada39d05be58b1924de534b79a5867170"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4fdf80d13522669575daad84f7ba9bf1"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a4fdf80d13522669575daad84f7ba9bf1">EnableMessageBackup</a> (bool state)</td></tr>
-<tr class="memdesc:a4fdf80d13522669575daad84f7ba9bf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables the message backup system.  <a href="classCVLog.html#a4fdf80d13522669575daad84f7ba9bf1">More...</a><br /></td></tr>
-<tr class="separator:a4fdf80d13522669575daad84f7ba9bf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7d4835ba3f3ea79a5f2a7d48aaecb5c"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ab7d4835ba3f3ea79a5f2a7d48aaecb5c">VerbosityLevel</a> ()</td></tr>
-<tr class="memdesc:ab7d4835ba3f3ea79a5f2a7d48aaecb5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the current verbosity level.  <a href="classCVLog.html#ab7d4835ba3f3ea79a5f2a7d48aaecb5c">More...</a><br /></td></tr>
-<tr class="separator:ab7d4835ba3f3ea79a5f2a7d48aaecb5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af20a151f1eeaa62ffe6dc20784e2b4e0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af20a151f1eeaa62ffe6dc20784e2b4e0">SetVerbosityLevel</a> (int level)</td></tr>
-<tr class="memdesc:af20a151f1eeaa62ffe6dc20784e2b4e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the verbosity level.  <a href="classCVLog.html#af20a151f1eeaa62ffe6dc20784e2b4e0">More...</a><br /></td></tr>
-<tr class="separator:af20a151f1eeaa62ffe6dc20784e2b4e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af2ed33e05ca3cab1aa8d9292b87765ca"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">LogMessage</a> (const QString &amp;message, int level)</td></tr>
-<tr class="memdesc:af2ed33e05ca3cab1aa8d9292b87765ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Static shortcut to <a class="el" href="classCVLog.html#a4232bbaef2d69819c22a9dfc12e66d8d" title="Generic message logging method.">CVLog::logMessage</a>.  <a href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">More...</a><br /></td></tr>
-<tr class="separator:af2ed33e05ca3cab1aa8d9292b87765ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6e9e5f0b0ff4a2c2940185f043cadfb"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#aa6e9e5f0b0ff4a2c2940185f043cadfb">PrintVerbose</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:aa6e9e5f0b0ff4a2c2940185f043cadfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a verbose formatted message in console.  <a href="classCVLog.html#aa6e9e5f0b0ff4a2c2940185f043cadfb">More...</a><br /></td></tr>
-<tr class="separator:aa6e9e5f0b0ff4a2c2940185f043cadfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9c1fc6d9da24243c5253725724a0c1d"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ac9c1fc6d9da24243c5253725724a0c1d">PrintVerbose</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:ac9c1fc6d9da24243c5253725724a0c1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintVerbose.  <a href="classCVLog.html#ac9c1fc6d9da24243c5253725724a0c1d">More...</a><br /></td></tr>
-<tr class="separator:ac9c1fc6d9da24243c5253725724a0c1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa28f523a139f6c8343acacf9df97a6fd"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">Print</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:aa28f523a139f6c8343acacf9df97a6fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a formatted message in console.  <a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">More...</a><br /></td></tr>
-<tr class="separator:aa28f523a139f6c8343acacf9df97a6fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ca0c72f6755b28027b99b16e6433f97"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a7ca0c72f6755b28027b99b16e6433f97">Print</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a7ca0c72f6755b28027b99b16e6433f97"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::Print.  <a href="classCVLog.html#a7ca0c72f6755b28027b99b16e6433f97">More...</a><br /></td></tr>
-<tr class="separator:a7ca0c72f6755b28027b99b16e6433f97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1899ac54088886772cdb1450960508de"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a1899ac54088886772cdb1450960508de">PrintHigh</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:a1899ac54088886772cdb1450960508de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out an important formatted message in console.  <a href="classCVLog.html#a1899ac54088886772cdb1450960508de">More...</a><br /></td></tr>
-<tr class="separator:a1899ac54088886772cdb1450960508de"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1bb9d0c42fe5873be2e0ee34b4cc9d9"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#aa1bb9d0c42fe5873be2e0ee34b4cc9d9">PrintHigh</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:aa1bb9d0c42fe5873be2e0ee34b4cc9d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintHigh.  <a href="classCVLog.html#aa1bb9d0c42fe5873be2e0ee34b4cc9d9">More...</a><br /></td></tr>
-<tr class="separator:aa1bb9d0c42fe5873be2e0ee34b4cc9d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f2bdbc25c84bbcce78166ad1047ee06"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">PrintDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:a9f2bdbc25c84bbcce78166ad1047ee06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Print, but works only in Debug mode.  <a href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">More...</a><br /></td></tr>
-<tr class="separator:a9f2bdbc25c84bbcce78166ad1047ee06"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0475492fb55e589531404a63606919e3"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a0475492fb55e589531404a63606919e3">PrintDebug</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a0475492fb55e589531404a63606919e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintDebug.  <a href="classCVLog.html#a0475492fb55e589531404a63606919e3">More...</a><br /></td></tr>
-<tr class="separator:a0475492fb55e589531404a63606919e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5fa9d49971249fc22958b1f9ebfdc789"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">Warning</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:a5fa9d49971249fc22958b1f9ebfdc789"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a formatted warning message in console.  <a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">More...</a><br /></td></tr>
-<tr class="separator:a5fa9d49971249fc22958b1f9ebfdc789"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af97e3460a2850fd59329bbbeb2157cbd"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af97e3460a2850fd59329bbbeb2157cbd">Warning</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:af97e3460a2850fd59329bbbeb2157cbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::Warning.  <a href="classCVLog.html#af97e3460a2850fd59329bbbeb2157cbd">More...</a><br /></td></tr>
-<tr class="separator:af97e3460a2850fd59329bbbeb2157cbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af86f70fa47d71d64dd9b1546ff0fcb48"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48">WarningDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:af86f70fa47d71d64dd9b1546ff0fcb48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Warning, but works only in Debug mode.  <a href="classCVLog.html#af86f70fa47d71d64dd9b1546ff0fcb48">More...</a><br /></td></tr>
-<tr class="separator:af86f70fa47d71d64dd9b1546ff0fcb48"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a611a3ff3d092dbc2fd30efde311526da"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a611a3ff3d092dbc2fd30efde311526da">WarningDebug</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a611a3ff3d092dbc2fd30efde311526da"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::WarningDebug.  <a href="classCVLog.html#a611a3ff3d092dbc2fd30efde311526da">More...</a><br /></td></tr>
-<tr class="separator:a611a3ff3d092dbc2fd30efde311526da"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af943c02dcca9d57434d6b8e35d8d713d"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">Error</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:af943c02dcca9d57434d6b8e35d8d713d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Display an error dialog with formatted message.  <a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">More...</a><br /></td></tr>
-<tr class="separator:af943c02dcca9d57434d6b8e35d8d713d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2cd762e02214b37467ee30147023dc84"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a2cd762e02214b37467ee30147023dc84">Error</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a2cd762e02214b37467ee30147023dc84"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of 'Error'.  <a href="classCVLog.html#a2cd762e02214b37467ee30147023dc84">More...</a><br /></td></tr>
-<tr class="separator:a2cd762e02214b37467ee30147023dc84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83533fdb779dc913ddc5905a2389e0ab"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a83533fdb779dc913ddc5905a2389e0ab">ErrorDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
-<tr class="memdesc:a83533fdb779dc913ddc5905a2389e0ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Error, but works only in Debug mode.  <a href="classCVLog.html#a83533fdb779dc913ddc5905a2389e0ab">More...</a><br /></td></tr>
-<tr class="separator:a83533fdb779dc913ddc5905a2389e0ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ac2dcdf36b4ab95698222a21111682d"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a6ac2dcdf36b4ab95698222a21111682d">ErrorDebug</a> (const QString &amp;message)</td></tr>
-<tr class="memdesc:a6ac2dcdf36b4ab95698222a21111682d"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::ErrorDebug.  <a href="classCVLog.html#a6ac2dcdf36b4ab95698222a21111682d">More...</a><br /></td></tr>
-<tr class="separator:a6ac2dcdf36b4ab95698222a21111682d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8512ea566298aeb657288c105289d49"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classCVLog.html">CVLog</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ad8512ea566298aeb657288c105289d49">TheInstance</a> ()</td></tr>
+<tr class="memdesc:ad8512ea566298aeb657288c105289d49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the static and unique instance.  <a href="classCVLog.html#ad8512ea566298aeb657288c105289d49">More...</a><br /></td></tr>
+<tr class="separator:ad8512ea566298aeb657288c105289d49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af12d381b04566edb619622f4704b0dbc"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af12d381b04566edb619622f4704b0dbc">RegisterInstance</a> (<a class="el" href="classCVLog.html">CVLog</a> *logInstance)</td></tr>
+<tr class="memdesc:af12d381b04566edb619622f4704b0dbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers a unique instance.  <a href="classCVLog.html#af12d381b04566edb619622f4704b0dbc">More...</a><br /></td></tr>
+<tr class="separator:af12d381b04566edb619622f4704b0dbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87322469ae676c4c39cecd46e18cdb30"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a87322469ae676c4c39cecd46e18cdb30">EnableMessageBackup</a> (bool state)</td></tr>
+<tr class="memdesc:a87322469ae676c4c39cecd46e18cdb30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables the message backup system.  <a href="classCVLog.html#a87322469ae676c4c39cecd46e18cdb30">More...</a><br /></td></tr>
+<tr class="separator:a87322469ae676c4c39cecd46e18cdb30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadeef146667a829c56b09228cb79cc0a"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#aadeef146667a829c56b09228cb79cc0a">VerbosityLevel</a> ()</td></tr>
+<tr class="memdesc:aadeef146667a829c56b09228cb79cc0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the current verbosity level.  <a href="classCVLog.html#aadeef146667a829c56b09228cb79cc0a">More...</a><br /></td></tr>
+<tr class="separator:aadeef146667a829c56b09228cb79cc0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a828f1fd16b9e4931b98dbcf458f75316"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a828f1fd16b9e4931b98dbcf458f75316">SetVerbosityLevel</a> (int level)</td></tr>
+<tr class="memdesc:a828f1fd16b9e4931b98dbcf458f75316"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the verbosity level.  <a href="classCVLog.html#a828f1fd16b9e4931b98dbcf458f75316">More...</a><br /></td></tr>
+<tr class="separator:a828f1fd16b9e4931b98dbcf458f75316"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98c01f821dbb91ecb6c735b600f78de7"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">LogMessage</a> (const QString &amp;message, int level)</td></tr>
+<tr class="memdesc:a98c01f821dbb91ecb6c735b600f78de7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Static shortcut to <a class="el" href="classCVLog.html#a4232bbaef2d69819c22a9dfc12e66d8d" title="Generic message logging method.">CVLog::logMessage</a>.  <a href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">More...</a><br /></td></tr>
+<tr class="separator:a98c01f821dbb91ecb6c735b600f78de7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90ad89e8d220d6484f50e8bfba487591"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a90ad89e8d220d6484f50e8bfba487591">PrintVerbose</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a90ad89e8d220d6484f50e8bfba487591"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a verbose formatted message in console.  <a href="classCVLog.html#a90ad89e8d220d6484f50e8bfba487591">More...</a><br /></td></tr>
+<tr class="separator:a90ad89e8d220d6484f50e8bfba487591"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6ab29a39219392c12a7129f798284a"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a9f6ab29a39219392c12a7129f798284a">PrintVerbose</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:a9f6ab29a39219392c12a7129f798284a"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintVerbose.  <a href="classCVLog.html#a9f6ab29a39219392c12a7129f798284a">More...</a><br /></td></tr>
+<tr class="separator:a9f6ab29a39219392c12a7129f798284a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d2082aa909f4090da3caa69d709e2cb"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">Print</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a3d2082aa909f4090da3caa69d709e2cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a formatted message in console.  <a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">More...</a><br /></td></tr>
+<tr class="separator:a3d2082aa909f4090da3caa69d709e2cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82da05709be71d01e3d08f8f744851a4"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a82da05709be71d01e3d08f8f744851a4">Print</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:a82da05709be71d01e3d08f8f744851a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::Print.  <a href="classCVLog.html#a82da05709be71d01e3d08f8f744851a4">More...</a><br /></td></tr>
+<tr class="separator:a82da05709be71d01e3d08f8f744851a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0668e2f8fa9115dc5c0c7b3d2c8df03f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a0668e2f8fa9115dc5c0c7b3d2c8df03f">PrintHigh</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a0668e2f8fa9115dc5c0c7b3d2c8df03f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out an important formatted message in console.  <a href="classCVLog.html#a0668e2f8fa9115dc5c0c7b3d2c8df03f">More...</a><br /></td></tr>
+<tr class="separator:a0668e2f8fa9115dc5c0c7b3d2c8df03f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72eaac5a32b2271adca1555f9c12e30f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a72eaac5a32b2271adca1555f9c12e30f">PrintHigh</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:a72eaac5a32b2271adca1555f9c12e30f"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintHigh.  <a href="classCVLog.html#a72eaac5a32b2271adca1555f9c12e30f">More...</a><br /></td></tr>
+<tr class="separator:a72eaac5a32b2271adca1555f9c12e30f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a235aef414cd0e85f7463aba5041b9c9f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">PrintDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a235aef414cd0e85f7463aba5041b9c9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Print, but works only in Debug mode.  <a href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">More...</a><br /></td></tr>
+<tr class="separator:a235aef414cd0e85f7463aba5041b9c9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa976fd6e376334551fe4e62aae9b4825"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#aa976fd6e376334551fe4e62aae9b4825">PrintDebug</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:aa976fd6e376334551fe4e62aae9b4825"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::PrintDebug.  <a href="classCVLog.html#aa976fd6e376334551fe4e62aae9b4825">More...</a><br /></td></tr>
+<tr class="separator:aa976fd6e376334551fe4e62aae9b4825"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34dde1c025c42c8df938bbd9fdf97e7f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">Warning</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a34dde1c025c42c8df938bbd9fdf97e7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints out a formatted warning message in console.  <a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">More...</a><br /></td></tr>
+<tr class="separator:a34dde1c025c42c8df938bbd9fdf97e7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51acd7b8f336bedf7940ed1bde7a6dd4"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a51acd7b8f336bedf7940ed1bde7a6dd4">Warning</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:a51acd7b8f336bedf7940ed1bde7a6dd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::Warning.  <a href="classCVLog.html#a51acd7b8f336bedf7940ed1bde7a6dd4">More...</a><br /></td></tr>
+<tr class="separator:a51acd7b8f336bedf7940ed1bde7a6dd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13164c2ec296b4b12bed06584761ad3c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a13164c2ec296b4b12bed06584761ad3c">WarningDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a13164c2ec296b4b12bed06584761ad3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Warning, but works only in Debug mode.  <a href="classCVLog.html#a13164c2ec296b4b12bed06584761ad3c">More...</a><br /></td></tr>
+<tr class="separator:a13164c2ec296b4b12bed06584761ad3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46a555553bdda397f67e214aadfd258b"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a46a555553bdda397f67e214aadfd258b">WarningDebug</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:a46a555553bdda397f67e214aadfd258b"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::WarningDebug.  <a href="classCVLog.html#a46a555553bdda397f67e214aadfd258b">More...</a><br /></td></tr>
+<tr class="separator:a46a555553bdda397f67e214aadfd258b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2f3cbaa178ff5745feafef782cb3a4c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">Error</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:af2f3cbaa178ff5745feafef782cb3a4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Display an error dialog with formatted message.  <a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">More...</a><br /></td></tr>
+<tr class="separator:af2f3cbaa178ff5745feafef782cb3a4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1a88f55330ab44f2b5d6b9c223f54d6"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ad1a88f55330ab44f2b5d6b9c223f54d6">Error</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:ad1a88f55330ab44f2b5d6b9c223f54d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of 'Error'.  <a href="classCVLog.html#ad1a88f55330ab44f2b5d6b9c223f54d6">More...</a><br /></td></tr>
+<tr class="separator:ad1a88f55330ab44f2b5d6b9c223f54d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29c6b8ed59bd709c2d1b6d6dc821e628"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#a29c6b8ed59bd709c2d1b6d6dc821e628">ErrorDebug</a> (const char *<a class="el" href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a>,...)</td></tr>
+<tr class="memdesc:a29c6b8ed59bd709c2d1b6d6dc821e628"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as Error, but works only in Debug mode.  <a href="classCVLog.html#a29c6b8ed59bd709c2d1b6d6dc821e628">More...</a><br /></td></tr>
+<tr class="separator:a29c6b8ed59bd709c2d1b6d6dc821e628"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae96ba58a4e3f4271093345330ad673cb"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCVLog.html#ae96ba58a4e3f4271093345330ad673cb">ErrorDebug</a> (const QString &amp;message)</td></tr>
+<tr class="memdesc:ae96ba58a4e3f4271093345330ad673cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">QString version of ccLog::ErrorDebug.  <a href="classCVLog.html#ae96ba58a4e3f4271093345330ad673cb">More...</a><br /></td></tr>
+<tr class="separator:ae96ba58a4e3f4271093345330ad673cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Main log interface. </p>
@@ -219,7 +229,7 @@ Static Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Message level. </p>
+<p><a class="el" href="structMessage.html" title="Message.">Message</a> level. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a9ec2d345e360523551943fdba3378780ae949015bd273d182622cf21494bfadc1"></a>LOG_VERBOSE&#160;</td><td class="fielddoc"><p>Verbose message (Debug) </p>
 </td></tr>
@@ -270,8 +280,8 @@ Static Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4fdf80d13522669575daad84f7ba9bf1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4fdf80d13522669575daad84f7ba9bf1">&#9670;&nbsp;</a></span>EnableMessageBackup()</h2>
+<a id="a87322469ae676c4c39cecd46e18cdb30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87322469ae676c4c39cecd46e18cdb30">&#9670;&nbsp;</a></span>EnableMessageBackup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -280,7 +290,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void CVLog::EnableMessageBackup </td>
+          <td class="memname">void CVLog::EnableMessageBackup </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>state</em></td><td>)</td>
@@ -297,10 +307,16 @@ Static Public Member Functions</h2></td></tr>
 <p>Enables the message backup system. </p>
 <p>Stores the messages until a valid logging instance is registered. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00055">55</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00039">s_backupEnabled</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="app_2main_8cpp_source.html#l00225">InitEnvironment()</a>.</p>
+
 </div>
 </div>
-<a id="af943c02dcca9d57434d6b8e35d8d713d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af943c02dcca9d57434d6b8e35d8d713d">&#9670;&nbsp;</a></span>Error() <span class="overload">[1/2]</span></h2>
+<a id="af2f3cbaa178ff5745feafef782cb3a4c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af2f3cbaa178ff5745feafef782cb3a4c">&#9670;&nbsp;</a></span>Error() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -309,7 +325,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::Error </td>
+          <td class="memname">bool CVLog::Error </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -336,12 +352,16 @@ Static Public Member Functions</h2></td></tr>
 <p>Display an error dialog with formatted message. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'false' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="G3PointAction_8cpp_source.html#l01257">G3Point::G3PointAction::angles()</a>, <a class="el" href="FastGlobalRegistrationDlg_8cpp_source.html#l00137">FastGlobalRegistrationDialog::autoEstimateRadius()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00680">ccTrace::buildGradientCost()</a>, <a class="el" href="ccCloudLayersHelper_8cpp_source.html#l00023">ccCloudLayersHelper::ccCloudLayersHelper()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01317">G3Point::G3PointAction::cleanLabels()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00795">G3Point::G3PointAction::cluster()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01975">G3Point::G3PointAction::clusterAndOrClean()</a>, <a class="el" href="ecvSerializableObject_8h_source.html#l00113">ccSerializableObject::CorruptError()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="qCloudLayers_8cpp_source.html#l00052">qCloudLayers::doAction()</a>, <a class="el" href="qHoughNormals_8cpp_source.html#l00063">qHoughNormals::doAction()</a>, <a class="el" href="qRANSAC__SD_8cpp_source.html#l00121">qRansacSD::doAction()</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">qSRA::doProjectCloudDistsInGrid()</a>, <a class="el" href="PythonInterpreter_8cpp_source.html#l00150">PythonInterpreter::executeFunction()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00149">GrainsAsEllipsoids::exportResultsAsCloud()</a>, <a class="el" href="fastMarchingForFacetExtraction_8cpp_source.html#l00413">FastMarchingForFacetExtraction::ExtractPlanarFacets()</a>, <a class="el" href="LasSaveDialog_8cpp_source.html#l00557">LasSaveDialog::extraFieldsToSave()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00730">masc::Classifier::fromFile()</a>, <a class="el" href="qSRA_8cpp_source.html#l00240">GetConeProfile()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00097">G3Point::getRandomColors()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00058">TreeIso::Init_seg_pcd()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00143">TreeIso::Intermediate_seg_pcd()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00761">G3Point::G3PointAction::keep()</a>, <a class="el" href="StaticVector_8h_source.html#l00468">cloudViewer::loadArrayFromFile()</a>, <a class="el" href="StaticVector_8h_source.html#l00628">cloudViewer::loadArrayFromFileIntoArray()</a>, <a class="el" href="StaticVector_8h_source.html#l00221">cloudViewer::loadArrayOfArraysFromFile()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00134">IcmFilter::LoadCalibratedImages()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00036">IcmFilter::loadFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00238">SimpleBinFilter::loadFile()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00474">DRCFilter::loadFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00091">LasIOFilter::loadFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00982">LASFilter::loadFile()</a>, <a class="el" href="BundlerFilter_8cpp_source.html#l00080">BundlerFilter::loadFileExtended()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01460">LoadScan()</a>, <a class="el" href="ecvSerializableObject_8h_source.html#l00104">ccSerializableObject::MemoryError()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00657">G3Point::G3PointAction::merge()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00168">G3PointPlots::onExportToImage()</a>, <a class="el" href="qTrain3DMASCDialog_8cpp_source.html#l00228">Train3DMASCDialog::openTraceFile()</a>, <a class="el" href="HSVDialog_8cpp_source.html#l00063">HSVDialog::pickPoint()</a>, <a class="el" href="RgbDialog_8cpp_source.html#l00048">RgbDialog::pickPoint_first()</a>, <a class="el" href="ScalarDialog_8cpp_source.html#l00048">ScalarDialog::pickPoint_first()</a>, <a class="el" href="RgbDialog_8cpp_source.html#l00070">RgbDialog::pickPoint_second()</a>, <a class="el" href="ScalarDialog_8cpp_source.html#l00070">ScalarDialog::pickPoint_second()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01031">masc::Tools::PrepareFeatures()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01011">qAnimationDlg::preview()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00609">G3Point::G3PointAction::processNewStacks()</a>, <a class="el" href="ecvSerializableObject_8h_source.html#l00095">ccSerializableObject::ReadError()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01358">qAnimationDlg::render()</a>, <a class="el" href="confusionmatrix_8cpp_source.html#l00277">ConfusionMatrix::save()</a>, <a class="el" href="StaticVector_8h_source.html#l00319">cloudViewer::saveArrayToFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00043">masc::Tools::SaveClassifier()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00128">SaveScan()</a>, <a class="el" href="MAFilter_8cpp_source.html#l00081">MAFilter::saveToFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter::saveToFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00208">LASFilter::saveToFile()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01920">G3Point::G3PointAction::segment()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00459">qAnimationDlg::smoothTrajectory()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00387">GrainsAsEllipsoids::updateBBoxOnlyOne()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00791">GrainsAsEllipsoids::updateMeshAndLineSet()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00590">qAnimationDlg::updateSmoothCameraTrajectory()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01094">G3Point::G3PointAction::wolman()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00804">Tiler::writeAll()</a>, and <a class="el" href="ecvSerializableObject_8h_source.html#l00086">ccSerializableObject::WriteError()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00143">143</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00047">LOG_ERROR</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00825">ccPointPairRegistrationDlg::addAlignedPoint()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00323">ecvAnnotationsTool::addAssociatedEntity()</a>, <a class="el" href="ecvFilterTool_8cpp_source.html#l00095">ecvFilterTool::addAssociatedEntity()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00477">ecvMeasurementTool::addAssociatedEntity()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00511">ccGraphicalSegmentationTool::addPointToPolyline()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00722">ccPointPairRegistrationDlg::addReferencePoint()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01257">G3Point::G3PointAction::angles()</a>, <a class="el" href="ecvScalarFieldArithmeticsDlg_8cpp_source.html#l00169">ccScalarFieldArithmeticsDlg::Apply()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00395">ccLibAlgorithms::ApplyCCLibAlgorithm()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00557">ccLibAlgorithms::ApplyScaleMatchingAlgorithm()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l01130">ccGraphicalSegmentationTool::applySegmentation()</a>, <a class="el" href="ecvNormalComputationDlg_8cpp_source.html#l00175">ccNormalComputationDlg::autoEstimateRadius()</a>, <a class="el" href="FastGlobalRegistrationDlg_8cpp_source.html#l00137">FastGlobalRegistrationDialog::autoEstimateRadius()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00680">ccTrace::buildGradientCost()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l01193">ccPointPairRegistrationDlg::callHornRegistration()</a>, <a class="el" href="ccCloudLayersHelper_8cpp_source.html#l00023">ccCloudLayersHelper::ccCloudLayersHelper()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00029">ccColorFromScalarDlg::ccColorFromScalarDlg()</a>, <a class="el" href="ecvDefaultPluginInterface_8cpp_source.html#l00059">ccDefaultPluginInterface::ccDefaultPluginInterface()</a>, <a class="el" href="ecvRenderToFileDlg_8cpp_source.html#l00028">ccRenderToFileDlg::ccRenderToFileDlg()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00264">ccEntityAction::changeColorLevels()</a>, <a class="el" href="ecvColorScaleEditorDlg_8cpp_source.html#l00527">ccColorScaleEditorDialog::checkCustomLabelsList()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01317">G3Point::G3PointAction::cleanLabels()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00795">G3Point::G3PointAction::cluster()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01975">G3Point::G3PointAction::clusterAndOrClean()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00294">ccComparisonDlg::computeApproxDistances()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00179">ccHistogramWindow::computeBinArrayFromSF()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00678">ccComparisonDlg::computeDistances()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00146">ccLibAlgorithms::ComputeGeomCharacteristic()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01570">ccEntityAction::computeNormals()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00395">ccVolumeCalcTool::convertGridToCloud()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01951">ccEntityAction::convertNormalsTo()</a>, <a class="el" href="ecvSerializableObject_8h_source.html#l00113">ccSerializableObject::CorruptError()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00114">ecvMeasurementTool::createMeasurementTool()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02675">ccEntityAction::DBScanCluster()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00448">ccComparisonDlg::determineBestOctreeLevel()</a>, <a class="el" href="ecvUtils_8cpp_source.html#l00013">ecvUtils::DisplayLockedVerticesWarning()</a>, <a class="el" href="MainWindow_8cpp_source.html#l02062">MainWindow::dispToConsole()</a>, <a class="el" href="qCloudLayers_8cpp_source.html#l00052">qCloudLayers::doAction()</a>, <a class="el" href="qHoughNormals_8cpp_source.html#l00063">qHoughNormals::doAction()</a>, <a class="el" href="qRANSAC__SD_8cpp_source.html#l00121">qRansacSD::doAction()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00836">ccGraphicalSegmentationTool::doActionUseExistingPolyline()</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">qSRA::doProjectCloudDistsInGrid()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l01401">ccDBRoot::dropMimeData()</a>, <a class="el" href="ecvAnimationParamDlg_8cpp_source.html#l00322">ecvAnimationParamDlg::enableListener()</a>, <a class="el" href="MainWindow_8cpp_source.html#l04994">MainWindow::enablePickingOperation()</a>, <a class="el" href="ecvCommandLineParser_8cpp_source.html#l00052">ccCommandLineParser::error()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00332">ccAlignDlg::estimateDelta()</a>, <a class="el" href="PythonInterpreter_8cpp_source.html#l00150">PythonInterpreter::executeFunction()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00471">ecvAnnotationsTool::exportAnnotationToSF()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01304">ccEntityAction::exportCoordToSF()</a>, <a class="el" href="ecvColorScaleEditorDlg_8cpp_source.html#l00496">ccColorScaleEditorDialog::exportCustomLabelsList()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l02159">ccDBRoot::exportImages()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00684">ecvMeasurementTool::exportMeasurement()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01341">ccEntityAction::exportNormalToSF()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00149">GrainsAsEllipsoids::exportResultsAsCloud()</a>, <a class="el" href="matrixDisplayDlg_8cpp_source.html#l00102">MatrixDisplayDlg::exportToASCII()</a>, <a class="el" href="ecvPointListPickingDlg_8cpp_source.html#l00370">ccPointListPickingDlg::exportToASCII()</a>, <a class="el" href="ecvPointListPickingDlg_8cpp_source.html#l00208">ccPointListPickingDlg::exportToNewCloud()</a>, <a class="el" href="ecvPointListPickingDlg_8cpp_source.html#l00240">ccPointListPickingDlg::exportToNewPolyline()</a>, <a class="el" href="ecvContourExtractor_8cpp_source.html#l00659">ccContourExtractor::ExtractFlatContour()</a>, <a class="el" href="fastMarchingForFacetExtraction_8cpp_source.html#l00413">FastMarchingForFacetExtraction::ExtractPlanarFacets()</a>, <a class="el" href="LasSaveDialog_8cpp_source.html#l00557">LasSaveDialog::extraFieldsToSave()</a>, <a class="el" href="CVTools_8cpp_source.html#l00181">CVTools::FileMappingReader()</a>, <a class="el" href="CVTools_8cpp_source.html#l00234">CVTools::FileMappingWriter()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>, <a class="el" href="ecvBoundingBoxEditorDlg_8cpp_source.html#l00482">ccBoundingBoxEditorDlg::fromClipboardClicked()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00730">masc::Classifier::fromFile()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l01699">ccDBRoot::gatherRecursiveInformation()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00804">ccRasterizeTool::generateCloud()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01408">ccRasterizeTool::generateHillshade()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00870">ccRasterizeTool::generateMesh()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00933">ccRasterizeTool::generateRaster()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00225">ccComparisonDlg::getBestOctreeLevel()</a>, <a class="el" href="qSRA_8cpp_source.html#l00240">GetConeProfile()</a>, <a class="el" href="ecvPointListPickingDlg_8cpp_source.html#l00103">ccPointListPickingDlg::getPickedPoints()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00097">G3Point::getRandomColors()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00152">ccAlignDlg::getSampledData()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00101">ccAlignDlg::getSampledModel()</a>, <a class="el" href="ecvFilterTool_8cpp_source.html#l00187">ecvFilterTool::getSlice()</a>, <a class="el" href="ecvRegistrationTools_8cpp_source.html#l00036">ccRegistrationTools::ICP()</a>, <a class="el" href="ecvInnerRect2DFinder_8cpp_source.html#l00052">ccInnerRect2DFinder::init()</a>, <a class="el" href="ecvWaveformDialog_8cpp_source.html#l00103">ccWaveWidget::init()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00333">ccPointPairRegistrationDlg::init()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00058">TreeIso::Init_seg_pcd()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00143">TreeIso::Intermediate_seg_pcd()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00292">ccEntityAction::interpolateColors()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00352">ccEntityAction::interpolateSFs()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00284">ccComparisonDlg::isValid()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00761">G3Point::G3PointAction::keep()</a>, <a class="el" href="StaticVector_8h_source.html#l00468">cloudViewer::loadArrayFromFile()</a>, <a class="el" href="StaticVector_8h_source.html#l00628">cloudViewer::loadArrayFromFileIntoArray()</a>, <a class="el" href="StaticVector_8h_source.html#l00221">cloudViewer::loadArrayOfArraysFromFile()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00134">IcmFilter::LoadCalibratedImages()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00036">IcmFilter::loadFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00238">SimpleBinFilter::loadFile()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00474">DRCFilter::loadFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00091">LasIOFilter::loadFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00982">LASFilter::loadFile()</a>, <a class="el" href="BundlerFilter_8cpp_source.html#l00080">BundlerFilter::loadFileExtended()</a>, <a class="el" href="ecvApplyTransformationDlg_8cpp_source.html#l00295">ccApplyTransformationDlg::loadFromASCIIFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01460">LoadScan()</a>, <a class="el" href="app_2main_8cpp_source.html#l00271">main()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00565">ccColorFromScalarDlg::maxChanged()</a>, <a class="el" href="ecvSerializableObject_8h_source.html#l00104">ccSerializableObject::MemoryError()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00657">G3Point::G3PointAction::merge()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00541">ccColorFromScalarDlg::minChanged()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00946">ccHistogramWindowDlg::onExportToImage()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00168">G3PointPlots::onExportToImage()</a>, <a class="el" href="ecvTracePolylineTool_8cpp_source.html#l00407">ccTracePolylineTool::onItemPicked()</a>, <a class="el" href="ecvWaveformDialog_8cpp_source.html#l00391">ccWaveDialog::onPointPickingButtonToggled()</a>, <a class="el" href="qTrain3DMASCDialog_8cpp_source.html#l00228">Train3DMASCDialog::openTraceFile()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01847">ccEntityAction::orientNormalsFM()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01899">ccEntityAction::orientNormalsMST()</a>, <a class="el" href="HSVDialog_8cpp_source.html#l00063">HSVDialog::pickPoint()</a>, <a class="el" href="RgbDialog_8cpp_source.html#l00048">RgbDialog::pickPoint_first()</a>, <a class="el" href="ScalarDialog_8cpp_source.html#l00048">ScalarDialog::pickPoint_first()</a>, <a class="el" href="RgbDialog_8cpp_source.html#l00070">RgbDialog::pickPoint_second()</a>, <a class="el" href="ScalarDialog_8cpp_source.html#l00070">ScalarDialog::pickPoint_second()</a>, <a class="el" href="ecvPlaneEditDlg_8cpp_source.html#l00178">ccPlaneEditDlg::pickPointAsCenter()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00152">ccComparisonDlg::prepareEntitiesForComparison()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01031">masc::Tools::PrepareFeatures()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01011">qAnimationDlg::preview()</a>, <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l02331">CommandMergeMeshes::process()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00609">G3Point::G3PointAction::processNewStacks()</a>, <a class="el" href="CVTools_8cpp_source.html#l00280">CVTools::QMappingReader()</a>, <a class="el" href="CVTools_8cpp_source.html#l00331">CVTools::QMappingWriter()</a>, <a class="el" href="ecvSerializableObject_8h_source.html#l00095">ccSerializableObject::ReadError()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00945">ccPointPairRegistrationDlg::removeAlignedPoint()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l01013">ccPointPairRegistrationDlg::removeRefPoint()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01358">qAnimationDlg::render()</a>, <a class="el" href="ecvTracePolylineTool_8cpp_source.html#l00515">ccTracePolylineTool::restart()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00646">ecvLayoutManager::restoreCustomLayout()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00627">ecvLayoutManager::restoreDefaultLayout()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00610">ccEntityAction::rgbGaussianFilter()</a>, <a class="el" href="confusionmatrix_8cpp_source.html#l00277">ConfusionMatrix::save()</a>, <a class="el" href="StaticVector_8h_source.html#l00319">cloudViewer::saveArrayToFile()</a>, <a class="el" href="ecvBoundingBoxEditorDlg_8cpp_source.html#l00243">ccBoundingBoxEditorDlg::saveBoxAndAccept()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00043">masc::Tools::SaveClassifier()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00614">ecvLayoutManager::saveCustomLayout()</a>, <a class="el" href="MainWindow_8cpp_source.html#l05287">MainWindow::saveGUIElementsPos()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00128">SaveScan()</a>, <a class="el" href="MAFilter_8cpp_source.html#l00081">MAFilter::saveToFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter::saveToFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00208">LASFilter::saveToFile()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01920">G3Point::G3PointAction::segment()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00660">ccGraphicalSegmentationTool::segment()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00490">SendError()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00514">ccColorFromScalarDlg::setDefaultSatValuePerChannel()</a>, <a class="el" href="ecvConsole_8cpp_source.html#l00454">ecvConsole::setLogFile()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01396">ccEntityAction::sfArithmetic()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01063">ccEntityAction::sfConvertToRandomRGB()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00829">ccEntityAction::sfGaussianFilter()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00459">qAnimationDlg::smoothTrajectory()</a>, <a class="el" href="ecvPoissonReconDlg_8cpp_source.html#l00285">ecvPoissonReconDlg::start()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00365">ecvAnnotationsTool::start()</a>, <a class="el" href="ecvFilterByLabelDlg_8cpp_source.html#l00059">ecvFilterByLabelDlg::start()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00244">ccPointPairRegistrationDlg::start()</a>, <a class="el" href="ecvPointPickingGenericInterface_8cpp_source.html#l00045">ccPointPickingGenericInterface::start()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02341">ccEntityAction::statisticalTest()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00387">GrainsAsEllipsoids::updateBBoxOnlyOne()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00492">ccColorFromScalarDlg::updateChannel()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00632">ccRasterizeTool::updateGridAndDisplay()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00427">ccVolumeCalcTool::updateGridAndDisplay()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00385">ccColorFromScalarDlg::updateHistogram()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00791">GrainsAsEllipsoids::updateMeshAndLineSet()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00458">ccGraphicalSegmentationTool::updatePolyLine()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00590">qAnimationDlg::updateSmoothCameraTrajectory()</a>, <a class="el" href="ecvColorFromScalarDlg_8cpp_source.html#l00457">ccColorFromScalarDlg::updateSpinBoxLimits()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01094">G3Point::G3PointAction::wolman()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00804">Tiler::writeAll()</a>, and <a class="el" href="ecvSerializableObject_8h_source.html#l00086">ccSerializableObject::WriteError()</a>.</p>
 
 </div>
 </div>
-<a id="a2cd762e02214b37467ee30147023dc84"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2cd762e02214b37467ee30147023dc84">&#9670;&nbsp;</a></span>Error() <span class="overload">[2/2]</span></h2>
+<a id="ad1a88f55330ab44f2b5d6b9c223f54d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1a88f55330ab44f2b5d6b9c223f54d6">&#9670;&nbsp;</a></span>Error() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -350,7 +370,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::Error </td>
+          <td class="memname">bool CVLog::Error </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -366,10 +386,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of 'Error'. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00148">148</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00047">LOG_ERROR</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="a83533fdb779dc913ddc5905a2389e0ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83533fdb779dc913ddc5905a2389e0ab">&#9670;&nbsp;</a></span>ErrorDebug() <span class="overload">[1/2]</span></h2>
+<a id="a29c6b8ed59bd709c2d1b6d6dc821e628"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29c6b8ed59bd709c2d1b6d6dc821e628">&#9670;&nbsp;</a></span>ErrorDebug() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -378,7 +402,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::ErrorDebug </td>
+          <td class="memname">bool CVLog::ErrorDebug </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -405,10 +429,14 @@ Static Public Member Functions</h2></td></tr>
 <p>Same as Error, but works only in Debug mode. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'false' </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00181">181</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00049">DEBUG_FLAG</a>, <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00047">LOG_ERROR</a>.</p>
+
 </div>
 </div>
-<a id="a6ac2dcdf36b4ab95698222a21111682d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6ac2dcdf36b4ab95698222a21111682d">&#9670;&nbsp;</a></span>ErrorDebug() <span class="overload">[2/2]</span></h2>
+<a id="ae96ba58a4e3f4271093345330ad673cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae96ba58a4e3f4271093345330ad673cb">&#9670;&nbsp;</a></span>ErrorDebug() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -417,7 +445,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::ErrorDebug </td>
+          <td class="memname">bool CVLog::ErrorDebug </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -433,10 +461,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::ErrorDebug. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00188">188</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00049">DEBUG_FLAG</a>, <a class="el" href="CVLog_8h_source.html#l00047">LOG_ERROR</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="af2ed33e05ca3cab1aa8d9292b87765ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af2ed33e05ca3cab1aa8d9292b87765ca">&#9670;&nbsp;</a></span>LogMessage()</h2>
+<a id="a98c01f821dbb91ecb6c735b600f78de7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98c01f821dbb91ecb6c735b600f78de7">&#9670;&nbsp;</a></span>LogMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -445,7 +477,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void CVLog::LogMessage </td>
+          <td class="memname">void CVLog::LogMessage </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em>, </td>
@@ -471,7 +503,11 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Static shortcut to <a class="el" href="classCVLog.html#a4232bbaef2d69819c22a9dfc12e66d8d" title="Generic message logging method.">CVLog::logMessage</a>. </p>
 
-<p class="reference">Referenced by <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, and <a class="el" href="Utilities_8h_source.html#l00060">ccLogger&lt; level &gt;::flush()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00064">64</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classCVLog.html#a4232bbaef2d69819c22a9dfc12e66d8d">logMessage()</a>, <a class="el" href="CVLog_8cpp_source.html#l00039">s_backupEnabled</a>, <a class="el" href="CVLog_8cpp_source.html#l00041">s_backupMessages</a>, <a class="el" href="CVLog_8cpp_source.html#l00051">s_instance</a>, and <a class="el" href="CVLog_8cpp_source.html#l00047">s_verbosityLevel</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="LogWidget_8cpp_source.html#l00089">cloudViewer::LogWidget::Append()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="CVLog_8cpp_source.html#l00148">Error()</a>, <a class="el" href="CVLog_8cpp_source.html#l00188">ErrorDebug()</a>, <a class="el" href="Utilities_8h_source.html#l00060">ccLogger&lt; level &gt;::flush()</a>, <a class="el" href="CVLog_8cpp_source.html#l00118">Print()</a>, <a class="el" href="CVLog_8cpp_source.html#l00160">PrintDebug()</a>, <a class="el" href="CVLog_8cpp_source.html#l00128">PrintHigh()</a>, <a class="el" href="CVLog_8cpp_source.html#l00108">PrintVerbose()</a>, <a class="el" href="CVLog_8cpp_source.html#l00138">Warning()</a>, <a class="el" href="CVLog_8cpp_source.html#l00174">WarningDebug()</a>, and <a class="el" href="LogWidget_8cpp_source.html#l00071">cloudViewer::LogWidget::~LogWidget()</a>.</p>
 
 </div>
 </div>
@@ -519,12 +555,14 @@ Static Public Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p>Implemented in <a class="el" href="classPyPrintLogger.html#ae2264fd1d955b2c21247ff8414d632d5">PyPrintLogger</a>.</p>
+<p>Implemented in <a class="el" href="classPyPrintLogger.html#ae2264fd1d955b2c21247ff8414d632d5">PyPrintLogger</a>, and <a class="el" href="classecvConsole.html#af05fceef6397bfcc0a39ddc04b1b3dc9">ecvConsole</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>, and <a class="el" href="CVLog_8cpp_source.html#l00081">RegisterInstance()</a>.</p>
 
 </div>
 </div>
-<a id="aa28f523a139f6c8343acacf9df97a6fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa28f523a139f6c8343acacf9df97a6fd">&#9670;&nbsp;</a></span>Print() <span class="overload">[1/2]</span></h2>
+<a id="a3d2082aa909f4090da3caa69d709e2cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d2082aa909f4090da3caa69d709e2cb">&#9670;&nbsp;</a></span>Print() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -533,7 +571,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::Print </td>
+          <td class="memname">bool CVLog::Print </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -560,12 +598,16 @@ Static Public Member Functions</h2></td></tr>
 <p>Prints out a formatted message in console. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'true' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8cpp_source.html#l00101">fgr::CApp::AdvancedMatching()</a>, <a class="el" href="TemplateAlignment_8cpp_source.html#l00251">TemplateAlignment::applyTransformation()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00101">masc::Classifier::classify()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01317">G3Point::G3PointAction::cleanLabels()</a>, <a class="el" href="qTrain3DMASCDialog_8cpp_source.html#l00295">Train3DMASCDialog::closeTraceFile()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00795">G3Point::G3PointAction::cluster()</a>, <a class="el" href="CorrespondenceMatching_8cpp_source.html#l00137">CorrespondenceMatching::compute()</a>, <a class="el" href="TemplateAlignment_8cpp_source.html#l00143">TemplateAlignment::compute()</a>, <a class="el" href="ConvexConcaveHullReconstruction_8cpp_source.html#l00080">ConvexConcaveHullReconstruction::compute()</a>, <a class="el" href="GreedyTriangulation_8cpp_source.html#l00104">GreedyTriangulation::compute()</a>, <a class="el" href="MarchingCubeReconstruction_8cpp_source.html#l00095">MarchingCubeReconstruction::compute()</a>, <a class="el" href="NurbsCurveFitting_8cpp_source.html#l00096">NurbsCurveFitting::compute()</a>, <a class="el" href="NurbsSurfaceReconstruction_8cpp_source.html#l00097">NurbsSurfaceReconstruction::compute()</a>, <a class="el" href="PoissonReconstruction_8cpp_source.html#l00105">PoissonReconstruction::compute()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00189">FastGlobalRegistrationFilter::compute()</a>, <a class="el" href="qColorimetricSegmenter_8cpp_source.html#l01193">ComputeKmeansClustering()</a>, <a class="el" href="PointFeature_8cpp_source.html#l00380">ComputeMathOpWithNearestNeighbor()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00294">masc::Classifier::evaluate()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00078">G3PointPlots::exportToCSV()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00070">G3Point::G3PointAction::GetG3PointAction()</a>, <a class="el" href="qCloudLayers_2src_2ccMouseCircle_8cpp_source.html#l00059">ccMouseCircle::getRadiusWorld()</a>, <a class="el" href="STEPFilter_8cpp_source.html#l00114">STEPFilter::importStepFile()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00058">TreeIso::Init_seg_pcd()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00143">TreeIso::Intermediate_seg_pcd()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00761">G3Point::G3PointAction::keep()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00061">LasWaveformLoader::LasWaveformLoader()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00134">IcmFilter::LoadCalibratedImages()</a>, <a class="el" href="CSVMatrixFilter_8cpp_source.html#l00045">CSVMatrixFilter::loadFile()</a>, <a class="el" href="PcdFilter_8cpp_source.html#l01221">PcdFilter::loadFile()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00036">IcmFilter::loadFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00187">PovFilter::loadFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00238">SimpleBinFilter::loadFile()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00474">DRCFilter::loadFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l01349">FBXFilter::loadFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00848">LASFWFFilter::loadFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00091">LasIOFilter::loadFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00982">LASFilter::loadFile()</a>, <a class="el" href="RDBFilter_8cpp_source.html#l00220">RDBFilter::loadFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00745">masc::Tools::LoadFile()</a>, <a class="el" href="IoAbstractLoader_8cpp_source.html#l00275">IoAbstractLoader::loadFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l02024">LoadImage()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01460">LoadScan()</a>, <a class="el" href="Utilities_8h_source.html#l00140">LogPythonHome()</a>, <a class="el" href="Utilities_8h_source.html#l00116">LogPythonPath()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00657">G3Point::G3PointAction::merge()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00239">IoUtils::newCCMeshFromAIMesh()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00971">NodeToConsole()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00168">G3PointPlots::onExportToImage()</a>, <a class="el" href="HSVDialog_8cpp_source.html#l00087">HSVDialog::onItemPicked()</a>, <a class="el" href="RgbDialog_8cpp_source.html#l00092">RgbDialog::onItemPicked()</a>, <a class="el" href="ScalarDialog_8cpp_source.html#l00092">ScalarDialog::onItemPicked()</a>, <a class="el" href="qTrain3DMASCDialog_8cpp_source.html#l00228">Train3DMASCDialog::openTraceFile()</a>, <a class="el" href="LasExtraScalarField_8cpp_source.html#l00191">LasExtraScalarField::ParseExtraScalarFields()</a>, <a class="el" href="ContextBasedFeature_8cpp_source.html#l00065">masc::ContextBasedFeature::prepare()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01031">masc::Tools::PrepareFeatures()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00128">SaveScan()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00045">SimpleBinFilter::saveToFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00469">FBXFilter::saveToFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00201">LASFWFFilter::saveToFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter::saveToFile()</a>, <a class="el" href="qColorimetricSegmenter_8cpp_source.html#l00031">ShowDurationNow()</a>, <a class="el" href="LasTiler_8cpp_source.html#l00014">TileLasReader()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00704">masc::Classifier::toFile()</a>, and <a class="el" href="G3PointAction_8cpp_source.html#l01094">G3Point::G3PointAction::wolman()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00113">113</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00044">LOG_STANDARD</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8cpp_source.html#l00101">fgr::CApp::AdvancedMatching()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l01328">ccPointPairRegistrationDlg::align()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l01628">ccDBRoot::alignCameraWithEntity()</a>, <a class="el" href="ecvGraphicalTransformationTool_8cpp_source.html#l00377">ccGraphicalTransformationTool::apply()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l01513">ccPointPairRegistrationDlg::apply()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00395">ccLibAlgorithms::ApplyCCLibAlgorithm()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00557">ccLibAlgorithms::ApplyScaleMatchingAlgorithm()</a>, <a class="el" href="TemplateAlignment_8cpp_source.html#l00251">TemplateAlignment::applyTransformation()</a>, <a class="el" href="ecvWaveformDialog_8cpp_source.html#l00308">ccWaveDialog::ccWaveDialog()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00101">masc::Classifier::classify()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l01317">G3Point::G3PointAction::cleanLabels()</a>, <a class="el" href="qTrain3DMASCDialog_8cpp_source.html#l00295">Train3DMASCDialog::closeTraceFile()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00795">G3Point::G3PointAction::cluster()</a>, <a class="el" href="CorrespondenceMatching_8cpp_source.html#l00137">CorrespondenceMatching::compute()</a>, <a class="el" href="TemplateAlignment_8cpp_source.html#l00143">TemplateAlignment::compute()</a>, <a class="el" href="ConvexConcaveHullReconstruction_8cpp_source.html#l00080">ConvexConcaveHullReconstruction::compute()</a>, <a class="el" href="GreedyTriangulation_8cpp_source.html#l00104">GreedyTriangulation::compute()</a>, <a class="el" href="MarchingCubeReconstruction_8cpp_source.html#l00095">MarchingCubeReconstruction::compute()</a>, <a class="el" href="NurbsCurveFitting_8cpp_source.html#l00096">NurbsCurveFitting::compute()</a>, <a class="el" href="NurbsSurfaceReconstruction_8cpp_source.html#l00097">NurbsSurfaceReconstruction::compute()</a>, <a class="el" href="PoissonReconstruction_8cpp_source.html#l00105">PoissonReconstruction::compute()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00189">FastGlobalRegistrationFilter::compute()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00294">ccComparisonDlg::computeApproxDistances()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00678">ccComparisonDlg::computeDistances()</a>, <a class="el" href="qColorimetricSegmenter_8cpp_source.html#l01193">ComputeKmeansClustering()</a>, <a class="el" href="PointFeature_8cpp_source.html#l00380">ComputeMathOpWithNearestNeighbor()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02072">ccEntityAction::computeOctree()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02493">ccEntityAction::computeStatParams()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00496">ccPointPairRegistrationDlg::convertToSphereCenter()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02675">ccEntityAction::DBScanCluster()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="MainWindow_8cpp_source.html#l02062">MainWindow::dispToConsole()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00946">ccGraphicalSegmentationTool::doExportSegmentationPolyline()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00294">masc::Classifier::evaluate()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00471">ecvAnnotationsTool::exportAnnotationToSF()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02044">ccRasterizeTool::exportContourLines()</a>, <a class="el" href="ecvColorScaleEditorDlg_8cpp_source.html#l00747">ccColorScaleEditorDialog::exportCurrentScale()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00817">ccVolumeCalcTool::exportGridAsCloud()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l02159">ccDBRoot::exportImages()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00684">ecvMeasurementTool::exportMeasurement()</a>, <a class="el" href="matrixDisplayDlg_8cpp_source.html#l00102">MatrixDisplayDlg::exportToASCII()</a>, <a class="el" href="ecvPointListPickingDlg_8cpp_source.html#l00370">ccPointListPickingDlg::exportToASCII()</a>, <a class="el" href="matrixDisplayDlg_8cpp_source.html#l00128">MatrixDisplayDlg::exportToClipboard()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00866">ccHistogramWindowDlg::exportToCSV()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00078">G3PointPlots::exportToCSV()</a>, <a class="el" href="ecvPropertiesTreeDelegate_8cpp_source.html#l00200">ccPropertiesTreeDelegate::fillModel()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00804">ccRasterizeTool::generateCloud()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00870">ccRasterizeTool::generateMesh()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00070">G3Point::G3PointAction::GetG3PointAction()</a>, <a class="el" href="qCloudLayers_2src_2ccMouseCircle_8cpp_source.html#l00059">ccMouseCircle::getRadiusWorld()</a>, <a class="el" href="ecvRegistrationTools_8cpp_source.html#l00036">ccRegistrationTools::ICP()</a>, <a class="el" href="ecvColorScaleEditorDlg_8cpp_source.html#l00780">ccColorScaleEditorDialog::importScale()</a>, <a class="el" href="STEPFilter_8cpp_source.html#l00114">STEPFilter::importStepFile()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00058">TreeIso::Init_seg_pcd()</a>, <a class="el" href="app_2main_8cpp_source.html#l00225">InitEnvironment()</a>, <a class="el" href="MainWindow_8cpp_source.html#l01545">MainWindow::initPlugins()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00143">TreeIso::Intermediate_seg_pcd()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00761">G3Point::G3PointAction::keep()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00061">LasWaveformLoader::LasWaveformLoader()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00134">IcmFilter::LoadCalibratedImages()</a>, <a class="el" href="CSVMatrixFilter_8cpp_source.html#l00045">CSVMatrixFilter::loadFile()</a>, <a class="el" href="PcdFilter_8cpp_source.html#l01221">PcdFilter::loadFile()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00036">IcmFilter::loadFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00187">PovFilter::loadFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00238">SimpleBinFilter::loadFile()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00474">DRCFilter::loadFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l01349">FBXFilter::loadFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00848">LASFWFFilter::loadFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00091">LasIOFilter::loadFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00982">LASFilter::loadFile()</a>, <a class="el" href="RDBFilter_8cpp_source.html#l00220">RDBFilter::loadFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00745">masc::Tools::LoadFile()</a>, <a class="el" href="IoAbstractLoader_8cpp_source.html#l00275">IoAbstractLoader::loadFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l02024">LoadImage()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01460">LoadScan()</a>, <a class="el" href="Utilities_8h_source.html#l00140">LogPythonHome()</a>, <a class="el" href="Utilities_8h_source.html#l00116">LogPythonPath()</a>, <a class="el" href="app_2main_8cpp_source.html#l00271">main()</a>, <a class="el" href="MainWindow_8cpp_source.html#l00275">MainWindow::MainWindow()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00657">G3Point::G3PointAction::merge()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00239">IoUtils::newCCMeshFromAIMesh()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00971">NodeToConsole()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00946">ccHistogramWindowDlg::onExportToImage()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00168">G3PointPlots::onExportToImage()</a>, <a class="el" href="HSVDialog_8cpp_source.html#l00087">HSVDialog::onItemPicked()</a>, <a class="el" href="RgbDialog_8cpp_source.html#l00092">RgbDialog::onItemPicked()</a>, <a class="el" href="ScalarDialog_8cpp_source.html#l00092">ScalarDialog::onItemPicked()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00737">ecvMeasurementTool::onItemPicked()</a>, <a class="el" href="ecvPrimitiveFactoryDlg_8cpp_source.html#l00204">ecvPrimitiveFactoryDlg::onMatrixTextChange()</a>, <a class="el" href="qTrain3DMASCDialog_8cpp_source.html#l00228">Train3DMASCDialog::openTraceFile()</a>, <a class="el" href="LasExtraScalarField_8cpp_source.html#l00191">LasExtraScalarField::ParseExtraScalarFields()</a>, <a class="el" href="ContextBasedFeature_8cpp_source.html#l00065">masc::ContextBasedFeature::prepare()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01031">masc::Tools::PrepareFeatures()</a>, <a class="el" href="ecvCommandLineParser_8cpp_source.html#l00044">ccCommandLineParser::print()</a>, <a class="el" href="app_2main_8cpp_source.html#l00190">PrintSystemHardwareInfo()</a>, <a class="el" href="ecvPointPropertiesDlg_8cpp_source.html#l00222">ccPointPropertiesDlg::processPickedPoint()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02732">ccEntityAction::RansacSegmentation()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00610">ccEntityAction::rgbGaussianFilter()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00128">SaveScan()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00045">SimpleBinFilter::saveToFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00469">FBXFilter::saveToFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00201">LASFWFFilter::saveToFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter::saveToFile()</a>, <a class="el" href="ecvConsole_8cpp_source.html#l00454">ecvConsole::setLogFile()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01426">ccEntityAction::sfFromColor()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00829">ccEntityAction::sfGaussianFilter()</a>, <a class="el" href="qColorimetricSegmenter_8cpp_source.html#l00031">ShowDurationNow()</a>, <a class="el" href="ecvPoissonReconDlg_8cpp_source.html#l00285">ecvPoissonReconDlg::start()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02341">ccEntityAction::statisticalTest()</a>, <a class="el" href="LasTiler_8cpp_source.html#l00014">TileLasReader()</a>, <a class="el" href="ecvBoundingBoxEditorDlg_8cpp_source.html#l00508">ccBoundingBoxEditorDlg::toClipboardClicked()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00704">masc::Classifier::toFile()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>, <a class="el" href="ecvPlaneEditDlg_8cpp_source.html#l00249">ccPlaneEditDlg::updatePlane()</a>, and <a class="el" href="G3PointAction_8cpp_source.html#l01094">G3Point::G3PointAction::wolman()</a>.</p>
 
 </div>
 </div>
-<a id="a7ca0c72f6755b28027b99b16e6433f97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7ca0c72f6755b28027b99b16e6433f97">&#9670;&nbsp;</a></span>Print() <span class="overload">[2/2]</span></h2>
+<a id="a82da05709be71d01e3d08f8f744851a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82da05709be71d01e3d08f8f744851a4">&#9670;&nbsp;</a></span>Print() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -574,7 +616,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::Print </td>
+          <td class="memname">bool CVLog::Print </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -590,10 +632,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::Print. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00118">118</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00044">LOG_STANDARD</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="a9f2bdbc25c84bbcce78166ad1047ee06"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f2bdbc25c84bbcce78166ad1047ee06">&#9670;&nbsp;</a></span>PrintDebug() <span class="overload">[1/2]</span></h2>
+<a id="a235aef414cd0e85f7463aba5041b9c9f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a235aef414cd0e85f7463aba5041b9c9f">&#9670;&nbsp;</a></span>PrintDebug() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -602,7 +648,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::PrintDebug </td>
+          <td class="memname">bool CVLog::PrintDebug </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -629,12 +675,16 @@ Static Public Member Functions</h2></td></tr>
 <p>Same as Print, but works only in Debug mode. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'true' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="IoUtils_8cpp_source.html#l00122">IoUtils::createMaterialSetForMesh()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00750">FromFbxMesh()</a>, <a class="el" href="StaticVector_8h_source.html#l00468">cloudViewer::loadArrayFromFile()</a>, <a class="el" href="StaticVector_8h_source.html#l00628">cloudViewer::loadArrayFromFileIntoArray()</a>, <a class="el" href="StaticVector_8h_source.html#l00221">cloudViewer::loadArrayOfArraysFromFile()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00368">PhotoScanFilter::loadFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00187">PovFilter::loadFile()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00621">qAnimationDlg::onAutoStepsDurationToggled()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00766">qAnimationDlg::onTotalTimeChanged()</a>, <a class="el" href="StaticVector_8h_source.html#l00175">cloudViewer::saveArrayOfArraysToFile()</a>, <a class="el" href="StaticVector_8h_source.html#l00319">cloudViewer::saveArrayToFile()</a>, and <a class="el" href="FBXFilter_8cpp_source.html#l00051">ToFbxMesh()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00153">153</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00049">DEBUG_FLAG</a>, <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00044">LOG_STANDARD</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00398">ecvMeasurementTool::addInstance()</a>, <a class="el" href="MainWindow_8cpp_source.html#l02210">MainWindow::addToDB()</a>, <a class="el" href="ecvGraphicalTransformationTool_8cpp_source.html#l00377">ccGraphicalTransformationTool::apply()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00122">IoUtils::createMaterialSetForMesh()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00448">ccComparisonDlg::determineBestOctreeLevel()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00750">FromFbxMesh()</a>, <a class="el" href="CVTools_8cpp_source.html#l00056">CVTools::FromUnicode()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="MainWindow_8cpp_source.html#l01545">MainWindow::initPlugins()</a>, <a class="el" href="StaticVector_8h_source.html#l00468">cloudViewer::loadArrayFromFile()</a>, <a class="el" href="StaticVector_8h_source.html#l00628">cloudViewer::loadArrayFromFileIntoArray()</a>, <a class="el" href="StaticVector_8h_source.html#l00221">cloudViewer::loadArrayOfArraysFromFile()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00368">PhotoScanFilter::loadFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00187">PovFilter::loadFile()</a>, <a class="el" href="ecvConsole_8cpp_source.html#l00109">myMessageOutput()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00621">qAnimationDlg::onAutoStepsDurationToggled()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00766">qAnimationDlg::onTotalTimeChanged()</a>, <a class="el" href="StaticVector_8h_source.html#l00175">cloudViewer::saveArrayOfArraysToFile()</a>, <a class="el" href="StaticVector_8h_source.html#l00319">cloudViewer::saveArrayToFile()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00496">ecvLayoutManager::setupDefaultLayout()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00051">ToFbxMesh()</a>, and <a class="el" href="CVTools_8cpp_source.html#l00068">CVTools::ToUnicode()</a>.</p>
 
 </div>
 </div>
-<a id="a0475492fb55e589531404a63606919e3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0475492fb55e589531404a63606919e3">&#9670;&nbsp;</a></span>PrintDebug() <span class="overload">[2/2]</span></h2>
+<a id="aa976fd6e376334551fe4e62aae9b4825"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa976fd6e376334551fe4e62aae9b4825">&#9670;&nbsp;</a></span>PrintDebug() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -643,7 +693,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::PrintDebug </td>
+          <td class="memname">bool CVLog::PrintDebug </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -659,10 +709,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::PrintDebug. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00160">160</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00049">DEBUG_FLAG</a>, <a class="el" href="CVLog_8h_source.html#l00044">LOG_STANDARD</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="a1899ac54088886772cdb1450960508de"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1899ac54088886772cdb1450960508de">&#9670;&nbsp;</a></span>PrintHigh() <span class="overload">[1/2]</span></h2>
+<a id="a0668e2f8fa9115dc5c0c7b3d2c8df03f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0668e2f8fa9115dc5c0c7b3d2c8df03f">&#9670;&nbsp;</a></span>PrintHigh() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -671,7 +725,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::PrintHigh </td>
+          <td class="memname">bool CVLog::PrintHigh </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -698,10 +752,14 @@ Static Public Member Functions</h2></td></tr>
 <p>Prints out an important formatted message in console. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'true' </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00123">123</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00045">LOG_IMPORTANT</a>.</p>
+
 </div>
 </div>
-<a id="aa1bb9d0c42fe5873be2e0ee34b4cc9d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa1bb9d0c42fe5873be2e0ee34b4cc9d9">&#9670;&nbsp;</a></span>PrintHigh() <span class="overload">[2/2]</span></h2>
+<a id="a72eaac5a32b2271adca1555f9c12e30f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72eaac5a32b2271adca1555f9c12e30f">&#9670;&nbsp;</a></span>PrintHigh() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -710,7 +768,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::PrintHigh </td>
+          <td class="memname">bool CVLog::PrintHigh </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -726,10 +784,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::PrintHigh. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00128">128</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00045">LOG_IMPORTANT</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="aa6e9e5f0b0ff4a2c2940185f043cadfb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa6e9e5f0b0ff4a2c2940185f043cadfb">&#9670;&nbsp;</a></span>PrintVerbose() <span class="overload">[1/2]</span></h2>
+<a id="a90ad89e8d220d6484f50e8bfba487591"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90ad89e8d220d6484f50e8bfba487591">&#9670;&nbsp;</a></span>PrintVerbose() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -738,7 +800,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::PrintVerbose </td>
+          <td class="memname">bool CVLog::PrintVerbose </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -765,10 +827,16 @@ Static Public Member Functions</h2></td></tr>
 <p>Prints out a verbose formatted message in console. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'true' </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00103">103</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00043">LOG_VERBOSE</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvLayoutManager_8cpp_source.html#l00646">ecvLayoutManager::restoreCustomLayout()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00627">ecvLayoutManager::restoreDefaultLayout()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00540">ecvLayoutManager::restoreGUILayout()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00614">ecvLayoutManager::saveCustomLayout()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00514">ecvLayoutManager::saveGUILayout()</a>, and <a class="el" href="ecvLayoutManager_8cpp_source.html#l00496">ecvLayoutManager::setupDefaultLayout()</a>.</p>
+
 </div>
 </div>
-<a id="ac9c1fc6d9da24243c5253725724a0c1d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac9c1fc6d9da24243c5253725724a0c1d">&#9670;&nbsp;</a></span>PrintVerbose() <span class="overload">[2/2]</span></h2>
+<a id="a9f6ab29a39219392c12a7129f798284a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6ab29a39219392c12a7129f798284a">&#9670;&nbsp;</a></span>PrintVerbose() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -777,7 +845,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::PrintVerbose </td>
+          <td class="memname">bool CVLog::PrintVerbose </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -793,10 +861,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::PrintVerbose. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00108">108</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00043">LOG_VERBOSE</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="ada39d05be58b1924de534b79a5867170"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada39d05be58b1924de534b79a5867170">&#9670;&nbsp;</a></span>RegisterInstance()</h2>
+<a id="af12d381b04566edb619622f4704b0dbc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af12d381b04566edb619622f4704b0dbc">&#9670;&nbsp;</a></span>RegisterInstance()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -805,7 +877,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void CVLog::RegisterInstance </td>
+          <td class="memname">void CVLog::RegisterInstance </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classCVLog.html">CVLog</a> *&#160;</td>
           <td class="paramname"><em>logInstance</em></td><td>)</td>
@@ -821,12 +893,16 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Registers a unique instance. </p>
 
-<p class="reference">Referenced by <a class="el" href="pycc_8cpp_source.html#l00133">define_pycc()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00081">81</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classCVLog.html#a4232bbaef2d69819c22a9dfc12e66d8d">logMessage()</a>, <a class="el" href="CVLog_8cpp_source.html#l00041">s_backupMessages</a>, and <a class="el" href="CVLog_8cpp_source.html#l00051">s_instance</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="pycc_8cpp_source.html#l00133">define_pycc()</a>, <a class="el" href="ecvConsole_8cpp_source.html#l00178">ecvConsole::Init()</a>, <a class="el" href="ecvConsole_8cpp_source.html#l00090">ecvConsole::ReleaseInstance()</a>, and <a class="el" href="ecvConsole_8cpp_source.html#l00081">ecvConsole::TheInstance()</a>.</p>
 
 </div>
 </div>
-<a id="af20a151f1eeaa62ffe6dc20784e2b4e0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af20a151f1eeaa62ffe6dc20784e2b4e0">&#9670;&nbsp;</a></span>SetVerbosityLevel()</h2>
+<a id="a828f1fd16b9e4931b98dbcf458f75316"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a828f1fd16b9e4931b98dbcf458f75316">&#9670;&nbsp;</a></span>SetVerbosityLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -835,7 +911,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void CVLog::SetVerbosityLevel </td>
+          <td class="memname">void CVLog::SetVerbosityLevel </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>level</em></td><td>)</td>
@@ -852,10 +928,14 @@ Static Public Member Functions</h2></td></tr>
 <p>Sets the verbosity level. </p>
 <p>Messages below this level will be filtered out. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00059">59</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00047">LOG_ERROR</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, and <a class="el" href="CVLog_8cpp_source.html#l00047">s_verbosityLevel</a>.</p>
+
 </div>
 </div>
-<a id="adb59a14c5d71ef63182ae29133199b0b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adb59a14c5d71ef63182ae29133199b0b">&#9670;&nbsp;</a></span>TheInstance()</h2>
+<a id="ad8512ea566298aeb657288c105289d49"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8512ea566298aeb657288c105289d49">&#9670;&nbsp;</a></span>TheInstance()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -864,7 +944,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classCVLog.html">CVLog</a>* CVLog::TheInstance </td>
+          <td class="memname"><a class="el" href="classCVLog.html">CVLog</a> * CVLog::TheInstance </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -879,12 +959,16 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Returns the static and unique instance. </p>
 
-<p class="reference">Referenced by <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00053">53</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00051">s_instance</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="ecvCommandLineParser_8cpp_source.html#l00223">ccCommandLineParser::exportEntity()</a>, and <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l05187">CommandLogFile::process()</a>.</p>
 
 </div>
 </div>
-<a id="ab7d4835ba3f3ea79a5f2a7d48aaecb5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab7d4835ba3f3ea79a5f2a7d48aaecb5c">&#9670;&nbsp;</a></span>VerbosityLevel()</h2>
+<a id="aadeef146667a829c56b09228cb79cc0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadeef146667a829c56b09228cb79cc0a">&#9670;&nbsp;</a></span>VerbosityLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -893,7 +977,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static int CVLog::VerbosityLevel </td>
+          <td class="memname">int CVLog::VerbosityLevel </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -908,10 +992,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Returns the current verbosity level. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00057">57</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00047">s_verbosityLevel</a>.</p>
+
 </div>
 </div>
-<a id="a5fa9d49971249fc22958b1f9ebfdc789"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5fa9d49971249fc22958b1f9ebfdc789">&#9670;&nbsp;</a></span>Warning() <span class="overload">[1/2]</span></h2>
+<a id="a34dde1c025c42c8df938bbd9fdf97e7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34dde1c025c42c8df938bbd9fdf97e7f">&#9670;&nbsp;</a></span>Warning() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -920,7 +1008,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::Warning </td>
+          <td class="memname">bool CVLog::Warning </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -947,12 +1035,16 @@ Static Public Member Functions</h2></td></tr>
 <p>Prints out a formatted warning message in console. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'false' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="LASFilter_8cpp_source.html#l00926">LasCloudChunk::addLasFieldsToCloud()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00754">ccTrace::buildCurvatureCost()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00680">ccTrace::buildGradientCost()</a>, <a class="el" href="G3Point_8cpp_source.html#l00032">G3PointFactory::buildObject()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00048">CCCloudToDraco()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00192">CCMeshToDraco()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01017">ChildNodeToConsole()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00101">masc::Classifier::classify()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00034">NormsIndexesTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00067">NormsTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00095">ColorsTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00123">RGBAColorsTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00164">TextureCoordsContainer::clone()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00189">FastGlobalRegistrationFilter::compute()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00075">ComputeFeatures()</a>, <a class="el" href="AnglesCustomPlot_8cpp_source.html#l00041">AnglesCustomPlot::computeHistogram()</a>, <a class="el" href="qColorimetricSegmenter_8cpp_source.html#l01193">ComputeKmeansClustering()</a>, <a class="el" href="NeighborhoodFeature_8cpp_source.html#l00196">masc::NeighborhoodFeature::computeValue()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00124">ConverFromTo()</a>, <a class="el" href="ecvArray_8h_source.html#l00043">ccArray&lt; Type, N, ComponentType &gt;::copy()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00187">CreateFeaturesFromCommand()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00122">IoUtils::createMaterialSetForMesh()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00330">CreateTempFile()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="pycc_8cpp_source.html#l00133">define_pycc()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00139">DisplayCurrentNodeInfo()</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">qSRA::doProjectCloudDistsInGrid()</a>, <a class="el" href="q3DMASC_8cpp_source.html#l00241">q3DMASCPlugin::doTrainAction()</a>, <a class="el" href="PythonInterpreter_8cpp_source.html#l00052">PythonInterpreter::executeFile()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00078">G3PointPlots::exportToCSV()</a>, <a class="el" href="fastMarchingForFacetExtraction_8cpp_source.html#l00413">FastMarchingForFacetExtraction::ExtractPlanarFacets()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00195">masc::Feature::ExtractSources()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00046">ExtraLasField::ExtraLasField()</a>, <a class="el" href="LasExtraScalarFieldCard_8cpp_source.html#l00185">LasExtraScalarFieldCard::fillField()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00976">G3Point::G3PointAction::fit()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00750">FromFbxMesh()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00730">masc::Classifier::fromFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00110">FromQByteArray()</a>, <a class="el" href="kdTreeForFacetExtraction_8cpp_source.html#l00052">ccKdTreeForFacetExtraction::FuseCells()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00070">G3Point::G3PointAction::GetG3PointAction()</a>, <a class="el" href="LASFields_8h_source.html#l00113">LasField::GetLASFields()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00052">GetSource()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00065">GrainsAsEllipsoids::GrainsAsEllipsoids()</a>, <a class="el" href="LasScalarField_8cpp_source.html#l00068">LasScalarField::IdFromName()</a>, <a class="el" href="STEPFilter_8cpp_source.html#l00114">STEPFilter::importStepFile()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00061">LasWaveformLoader::LasWaveformLoader()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00134">IcmFilter::LoadCalibratedImages()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00101">masc::Tools::LoadClassifierCloudLabels()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00339">LoadCloud()</a>, <a class="el" href="CSVMatrixFilter_8cpp_source.html#l00045">CSVMatrixFilter::loadFile()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00368">PhotoScanFilter::loadFile()</a>, <a class="el" href="PcdFilter_8cpp_source.html#l01221">PcdFilter::loadFile()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00036">IcmFilter::loadFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00187">PovFilter::loadFile()</a>, <a class="el" href="SalomeHydroFilter_8cpp_source.html#l00109">SalomeHydroFilter::loadFile()</a>, <a class="el" href="SinusxFilter_8cpp_source.html#l00148">SinusxFilter::loadFile()</a>, <a class="el" href="SoiFilter_8cpp_source.html#l00026">SoiFilter::loadFile()</a>, <a class="el" href="PDMSFilter_8cpp_source.html#l00036">PDMSFilter::loadFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00238">SimpleBinFilter::loadFile()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00474">DRCFilter::loadFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l02302">E57Filter::loadFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l01349">FBXFilter::loadFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00848">LASFWFFilter::loadFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00091">LasIOFilter::loadFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00982">LASFilter::loadFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00745">masc::Tools::LoadFile()</a>, <a class="el" href="IoAbstractLoader_8cpp_source.html#l00275">IoAbstractLoader::loadFile()</a>, <a class="el" href="BundlerFilter_8cpp_source.html#l00080">BundlerFilter::loadFileExtended()</a>, <a class="el" href="LasMetadata_8cpp_source.html#l00213">LasMetadata::LoadGlobalEncoding()</a>, <a class="el" href="E57Filter_8cpp_source.html#l02024">LoadImage()</a>, <a class="el" href="qM3C2Dialog_8cpp_source.html#l00412">qM3C2Dialog::loadParamsFrom()</a>, <a class="el" href="LasMetadata_8cpp_source.html#l00109">LasMetadata::LoadProjectUUID()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01460">LoadScan()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00154">masc::Feature::LoadSources()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00169">LasWaveformLoader::loadWaveform()</a>, <a class="el" href="LasExtraScalarField_8cpp_source.html#l00389">LasExtraScalarField::MatchExtraBytesToScalarFields()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00239">IoUtils::newCCMeshFromAIMesh()</a>, <a class="el" href="LasSaver_8cpp_source.html#l00118">LasSaver::open()</a>, <a class="el" href="LasExtraScalarField_8cpp_source.html#l00191">LasExtraScalarField::ParseExtraScalarFields()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00037">ParseWaveformDescriptorVlrs()</a>, <a class="el" href="LasDetails_8cpp_source.html#l00155">LasDetails::PointFormatsAvailableForVersion()</a>, <a class="el" href="ccCompass_8cpp_source.html#l00675">ccCompass::pointPicked()</a>, <a class="el" href="CorePoints_8cpp_source.html#l00021">masc::CorePoints::prepare()</a>, <a class="el" href="ContextBasedFeature_8cpp_source.html#l00065">masc::ContextBasedFeature::prepare()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01031">masc::Tools::PrepareFeatures()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00807">PrepareLASField()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00029">masc::Feature::PrepareSF()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01011">qAnimationDlg::preview()</a>, <a class="el" href="LasMetadata_8cpp_source.html#l00022">LasMetadata::ProjectionVLRToString()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01512">masc::Tools::RandomSubset()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00695">ReadCloud()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00633">ReadCorePoints()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00569">ReadScales()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01358">qAnimationDlg::render()</a>, <a class="el" href="ecvArray_8h_source.html#l00070">ccArray&lt; Type, N, ComponentType &gt;::resizeSafe()</a>, <a class="el" href="StaticVector_8h_source.html#l00319">cloudViewer::saveArrayToFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00043">masc::Tools::SaveClassifier()</a>, <a class="el" href="LasSaver_8cpp_source.html#l00150">LasSaver::saveNextPoint()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00128">SaveScan()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00393">SaveScene()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00138">masc::Feature::SaveSources()</a>, <a class="el" href="PcdFilter_8cpp_source.html#l00891">PcdFilter::saveToFile()</a>, <a class="el" href="PNFilter_8cpp_source.html#l00041">PNFilter::saveToFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00064">PovFilter::saveToFile()</a>, <a class="el" href="PVFilter_8cpp_source.html#l00040">PVFilter::saveToFile()</a>, <a class="el" href="SalomeHydroFilter_8cpp_source.html#l00041">SalomeHydroFilter::saveToFile()</a>, <a class="el" href="SinusxFilter_8cpp_source.html#l00050">SinusxFilter::saveToFile()</a>, <a class="el" href="HeightProfileFilter_8cpp_source.html#l00036">HeightProfileFilter::saveToFile()</a>, <a class="el" href="MascaretFilter_8cpp_source.html#l00075">MascaretFilter::saveToFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00045">SimpleBinFilter::saveToFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00718">E57Filter::saveToFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00469">FBXFilter::saveToFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00201">LASFWFFilter::saveToFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter::saveToFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00208">LASFilter::saveToFile()</a>, <a class="el" href="STEPFilter_8cpp_source.html#l00070">STEPFilter::SetDefaultLinearDeflection()</a>, <a class="el" href="PythonPlugin_8cpp_source.html#l00509">PythonPlugin::setMainAppInterface()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00459">qAnimationDlg::smoothTrajectory()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01203">qAnimationDlg::textureAnimationPreview()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01258">qAnimationDlg::textureAnimationRender()</a>, <a class="el" href="LasTiler_8cpp_source.html#l00014">TileLasReader()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00051">ToFbxMesh()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00704">masc::Classifier::toFile()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00367">qAnimationDlg::updateCameraTrajectory()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00791">GrainsAsEllipsoids::updateMeshAndLineSet()</a>, <a class="el" href="qM3C2Tools_8cpp_source.html#l00346">qM3C2Normals::UpdateNormalOrientationsWithCloud()</a>, <a class="el" href="Consoles_8h_source.html#l00082">ccConsoleOutput::write()</a>, and <a class="el" href="Consoles_8h_source.html#l00129">ListWidgetConsole::write()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00133">133</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00046">LOG_WARNING</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvGraphicalTransformationTool_8cpp_source.html#l00212">ccGraphicalTransformationTool::addEntity()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00325">ccGraphicalSegmentationTool::addEntity()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00398">ecvMeasurementTool::addInstance()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00926">LasCloudChunk::addLasFieldsToCloud()</a>, <a class="el" href="ecvPickingHub_8cpp_source.html#l00104">ccPickingHub::addListener()</a>, <a class="el" href="MainWindow_8cpp_source.html#l02210">MainWindow::addToDB()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l01328">ccPointPairRegistrationDlg::align()</a>, <a class="el" href="ecvPropertiesTreeDelegate_8cpp_source.html#l00349">ccPropertiesTreeDelegate::appendWideRow()</a>, <a class="el" href="ecvFilterByLabelDlg_8cpp_source.html#l00224">ecvFilterByLabelDlg::apply()</a>, <a class="el" href="ecvGraphicalTransformationTool_8cpp_source.html#l00377">ccGraphicalTransformationTool::apply()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l01513">ccPointPairRegistrationDlg::apply()</a>, <a class="el" href="ecvScalarFieldArithmeticsDlg_8cpp_source.html#l00169">ccScalarFieldArithmeticsDlg::Apply()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l01002">ccComparisonDlg::applyAndExit()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00395">ccLibAlgorithms::ApplyCCLibAlgorithm()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00557">ccLibAlgorithms::ApplyScaleMatchingAlgorithm()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l01130">ccGraphicalSegmentationTool::applySegmentation()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00754">ccTrace::buildCurvatureCost()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00680">ccTrace::buildGradientCost()</a>, <a class="el" href="G3Point_8cpp_source.html#l00032">G3PointFactory::buildObject()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00048">CCCloudToDraco()</a>, <a class="el" href="ecvComputeOctreeDlg_8cpp_source.html#l00016">ccComputeOctreeDlg::ccComputeOctreeDlg()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00192">CCMeshToDraco()</a>, <a class="el" href="ecvWaveformDialog_8cpp_source.html#l00308">ccWaveDialog::ccWaveDialog()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01017">ChildNodeToConsole()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00101">masc::Classifier::classify()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02200">ccEntityAction::clearProperty()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00034">NormsIndexesTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00067">NormsTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00095">ColorsTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00123">RGBAColorsTableType::clone()</a>, <a class="el" href="ecvAdvancedTypes_8h_source.html#l00164">TextureCoordsContainer::clone()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00189">FastGlobalRegistrationFilter::compute()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00294">ccComparisonDlg::computeApproxDistances()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00179">ccHistogramWindow::computeBinArrayFromSF()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00678">ccComparisonDlg::computeDistances()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00075">ComputeFeatures()</a>, <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00146">ccLibAlgorithms::ComputeGeomCharacteristic()</a>, <a class="el" href="AnglesCustomPlot_8cpp_source.html#l00041">AnglesCustomPlot::computeHistogram()</a>, <a class="el" href="qColorimetricSegmenter_8cpp_source.html#l01193">ComputeKmeansClustering()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02072">ccEntityAction::computeOctree()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02493">ccEntityAction::computeStatParams()</a>, <a class="el" href="NeighborhoodFeature_8cpp_source.html#l00196">masc::NeighborhoodFeature::computeValue()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="FastGlobalRegistrationFilter_8cpp_source.html#l00124">ConverFromTo()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00356">ccVolumeCalcTool::ConvertGridToCloud()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00558">ccRasterizeTool::convertGridToCloud()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01951">ccEntityAction::convertNormalsTo()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00468">ccEntityAction::convertTextureToColor()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00496">ccPointPairRegistrationDlg::convertToSphereCenter()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l02794">ccEntityAction::ConvexHull()</a>, <a class="el" href="ecvArray_8h_source.html#l00043">ccArray&lt; Type, N, ComponentType &gt;::copy()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00187">CreateFeaturesFromCommand()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00122">IoUtils::createMaterialSetForMesh()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00330">CreateTempFile()</a>, <a class="el" href="ecvCropTool_8cpp_source.html#l00023">ccCropTool::Crop()</a>, <a class="el" href="ccLog_8cpp_source.html#l00020">define_ccLog()</a>, <a class="el" href="pycc_8cpp_source.html#l00133">define_pycc()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l00593">ccDBRoot::deleteSelectedEntities()</a>, <a class="el" href="ecvComparisonDlg_8cpp_source.html#l00448">ccComparisonDlg::determineBestOctreeLevel()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00139">DisplayCurrentNodeInfo()</a>, <a class="el" href="ecvUtils_8cpp_source.html#l00013">ecvUtils::DisplayLockedVerticesWarning()</a>, <a class="el" href="MainWindow_8cpp_source.html#l02062">MainWindow::dispToConsole()</a>, <a class="el" href="ecvGraphicalSegmentationTool_8cpp_source.html#l00946">ccGraphicalSegmentationTool::doExportSegmentationPolyline()</a>, <a class="el" href="qSRA_8cpp_source.html#l00456">qSRA::doProjectCloudDistsInGrid()</a>, <a class="el" href="q3DMASC_8cpp_source.html#l00241">q3DMASCPlugin::doTrainAction()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l02106">ccDBRoot::editLabelScalarValue()</a>, <a class="el" href="ecvSubsamplingDlg_8cpp_source.html#l00243">ccSubsamplingDlg::enableSFModulation()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00514">ccEntityAction::enhanceRGBWithIntensities()</a>, <a class="el" href="PythonInterpreter_8cpp_source.html#l00052">PythonInterpreter::executeFile()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00471">ecvAnnotationsTool::exportAnnotationToSF()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l02159">ccDBRoot::exportImages()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00684">ecvMeasurementTool::exportMeasurement()</a>, <a class="el" href="ecvGraphicalTransformationTool_8cpp_source.html#l00343">ccGraphicalTransformationTool::exportNewEntities()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01341">ccEntityAction::exportNormalToSF()</a>, <a class="el" href="ecvFilterTool_8cpp_source.html#l00198">ecvFilterTool::exportSlice()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00866">ccHistogramWindowDlg::exportToCSV()</a>, <a class="el" href="G3PointPlots_8cpp_source.html#l00078">G3PointPlots::exportToCSV()</a>, <a class="el" href="ecvContourExtractor_8cpp_source.html#l00659">ccContourExtractor::ExtractFlatContour()</a>, <a class="el" href="fastMarchingForFacetExtraction_8cpp_source.html#l00413">FastMarchingForFacetExtraction::ExtractPlanarFacets()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00195">masc::Feature::ExtractSources()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00046">ExtraLasField::ExtraLasField()</a>, <a class="el" href="CVTools_8cpp_source.html#l00181">CVTools::FileMappingReader()</a>, <a class="el" href="CVTools_8cpp_source.html#l00234">CVTools::FileMappingWriter()</a>, <a class="el" href="LasExtraScalarFieldCard_8cpp_source.html#l00185">LasExtraScalarFieldCard::fillField()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00976">G3Point::G3PointAction::fit()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00153">ccHistogramWindow::fromBinArray()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00750">FromFbxMesh()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00730">masc::Classifier::fromFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00110">FromQByteArray()</a>, <a class="el" href="kdTreeForFacetExtraction_8cpp_source.html#l00052">ccKdTreeForFacetExtraction::FuseCells()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00804">ccRasterizeTool::generateCloud()</a>, <a class="el" href="StaticVector_8cpp_source.html#l00014">cloudViewer::getArrayLengthFromFile()</a>, <a class="el" href="G3PointAction_8cpp_source.html#l00070">G3Point::G3PointAction::GetG3PointAction()</a>, <a class="el" href="LASFields_8h_source.html#l00113">LasField::GetLASFields()</a>, <a class="el" href="ecvSubsamplingDlg_8cpp_source.html#l00056">ccSubsamplingDlg::getSampledCloud()</a>, <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l00220">GetScalarFieldIndex()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00052">GetSource()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00065">GrainsAsEllipsoids::GrainsAsEllipsoids()</a>, <a class="el" href="ecvRegistrationTools_8cpp_source.html#l00036">ccRegistrationTools::ICP()</a>, <a class="el" href="LasScalarField_8cpp_source.html#l00068">LasScalarField::IdFromName()</a>, <a class="el" href="ecvColorScaleEditorDlg_8cpp_source.html#l00780">ccColorScaleEditorDialog::importScale()</a>, <a class="el" href="STEPFilter_8cpp_source.html#l00114">STEPFilter::importStepFile()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01195">ccEntityAction::importToSF()</a>, <a class="el" href="MainWindow_8cpp_source.html#l01545">MainWindow::initPlugins()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00061">LasWaveformLoader::LasWaveformLoader()</a>, <a class="el" href="ecvOverlayDialog_8cpp_source.html#l00032">ccOverlayDialog::linkWith()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00134">IcmFilter::LoadCalibratedImages()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00101">masc::Tools::LoadClassifierCloudLabels()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00339">LoadCloud()</a>, <a class="el" href="CSVMatrixFilter_8cpp_source.html#l00045">CSVMatrixFilter::loadFile()</a>, <a class="el" href="PhotoScanFilter_8cpp_source.html#l00368">PhotoScanFilter::loadFile()</a>, <a class="el" href="PcdFilter_8cpp_source.html#l01221">PcdFilter::loadFile()</a>, <a class="el" href="IcmFilter_8cpp_source.html#l00036">IcmFilter::loadFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00187">PovFilter::loadFile()</a>, <a class="el" href="SalomeHydroFilter_8cpp_source.html#l00109">SalomeHydroFilter::loadFile()</a>, <a class="el" href="SinusxFilter_8cpp_source.html#l00148">SinusxFilter::loadFile()</a>, <a class="el" href="SoiFilter_8cpp_source.html#l00026">SoiFilter::loadFile()</a>, <a class="el" href="PDMSFilter_8cpp_source.html#l00036">PDMSFilter::loadFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00238">SimpleBinFilter::loadFile()</a>, <a class="el" href="DRCFilter_8cpp_source.html#l00474">DRCFilter::loadFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l02302">E57Filter::loadFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l01349">FBXFilter::loadFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00848">LASFWFFilter::loadFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00091">LasIOFilter::loadFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00982">LASFilter::loadFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00745">masc::Tools::LoadFile()</a>, <a class="el" href="IoAbstractLoader_8cpp_source.html#l00275">IoAbstractLoader::loadFile()</a>, <a class="el" href="BundlerFilter_8cpp_source.html#l00080">BundlerFilter::loadFileExtended()</a>, <a class="el" href="ecvApplyTransformationDlg_8cpp_source.html#l00320">ccApplyTransformationDlg::loadFromClipboard()</a>, <a class="el" href="LasMetadata_8cpp_source.html#l00213">LasMetadata::LoadGlobalEncoding()</a>, <a class="el" href="E57Filter_8cpp_source.html#l02024">LoadImage()</a>, <a class="el" href="qM3C2Dialog_8cpp_source.html#l00412">qM3C2Dialog::loadParamsFrom()</a>, <a class="el" href="LasMetadata_8cpp_source.html#l00109">LasMetadata::LoadProjectUUID()</a>, <a class="el" href="E57Filter_8cpp_source.html#l01460">LoadScan()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00154">masc::Feature::LoadSources()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00169">LasWaveformLoader::loadWaveform()</a>, <a class="el" href="MainWindow_8cpp_source.html#l00275">MainWindow::MainWindow()</a>, <a class="el" href="LasExtraScalarField_8cpp_source.html#l00389">LasExtraScalarField::MatchExtraBytesToScalarFields()</a>, <a class="el" href="ecvConsole_8cpp_source.html#l00109">myMessageOutput()</a>, <a class="el" href="IoUtils_8cpp_source.html#l00239">IoUtils::newCCMeshFromAIMesh()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00737">ecvMeasurementTool::onItemPicked()</a>, <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00586">ccPointPairRegistrationDlg::onItemPicked()</a>, <a class="el" href="ecvPointPickingGenericInterface_8cpp_source.html#l00073">ccPointPickingGenericInterface::onItemPicked()</a>, <a class="el" href="MainWindow_8cpp_source.html#l05051">MainWindow::onItemPicked()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00811">ecvMeasurementTool::onPointPickingRequested()</a>, <a class="el" href="LasSaver_8cpp_source.html#l00118">LasSaver::open()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01847">ccEntityAction::orientNormalsFM()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01899">ccEntityAction::orientNormalsMST()</a>, <a class="el" href="LasExtraScalarField_8cpp_source.html#l00191">LasExtraScalarField::ParseExtraScalarFields()</a>, <a class="el" href="LasWaveformLoader_8cpp_source.html#l00037">ParseWaveformDescriptorVlrs()</a>, <a class="el" href="LasDetails_8cpp_source.html#l00155">LasDetails::PointFormatsAvailableForVersion()</a>, <a class="el" href="ccCompass_8cpp_source.html#l00675">ccCompass::pointPicked()</a>, <a class="el" href="ecvTracePolylineTool_8cpp_source.html#l00135">ccTracePolylineTool::polylineOverSampling()</a>, <a class="el" href="CorePoints_8cpp_source.html#l00021">masc::CorePoints::prepare()</a>, <a class="el" href="ContextBasedFeature_8cpp_source.html#l00065">masc::ContextBasedFeature::prepare()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01031">masc::Tools::PrepareFeatures()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00807">PrepareLASField()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00029">masc::Feature::PrepareSF()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01011">qAnimationDlg::preview()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00459">CommandVolume25D::process()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01532">ccEntityAction::processMeshSF()</a>, <a class="el" href="LasMetadata_8cpp_source.html#l00022">LasMetadata::ProjectionVLRToString()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l01512">masc::Tools::RandomSubset()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00695">ReadCloud()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00633">ReadCorePoints()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00569">ReadScales()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l00554">ccDBRoot::removeElement()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l00513">ccDBRoot::removeElements()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00427">ecvMeasurementTool::removeInstance()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01358">qAnimationDlg::render()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00201">ecvLayoutManager::repositionUnifiedPluginToolbar()</a>, <a class="el" href="ecvGraphicalTransformationTool_8cpp_source.html#l00332">ccGraphicalTransformationTool::reset()</a>, <a class="el" href="ecvArray_8h_source.html#l00070">ccArray&lt; Type, N, ComponentType &gt;::resizeSafe()</a>, <a class="el" href="ecvLayoutManager_8cpp_source.html#l00646">ecvLayoutManager::restoreCustomLayout()</a>, <a class="el" href="StaticVector_8h_source.html#l00319">cloudViewer::saveArrayToFile()</a>, <a class="el" href="q3DMASCTools_8cpp_source.html#l00043">masc::Tools::SaveClassifier()</a>, <a class="el" href="LasSaver_8cpp_source.html#l00150">LasSaver::saveNextPoint()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00128">SaveScan()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00393">SaveScene()</a>, <a class="el" href="FeaturesInterface_8cpp_source.html#l00138">masc::Feature::SaveSources()</a>, <a class="el" href="PcdFilter_8cpp_source.html#l00891">PcdFilter::saveToFile()</a>, <a class="el" href="PNFilter_8cpp_source.html#l00041">PNFilter::saveToFile()</a>, <a class="el" href="PovFilter_8cpp_source.html#l00064">PovFilter::saveToFile()</a>, <a class="el" href="PVFilter_8cpp_source.html#l00040">PVFilter::saveToFile()</a>, <a class="el" href="SalomeHydroFilter_8cpp_source.html#l00041">SalomeHydroFilter::saveToFile()</a>, <a class="el" href="SinusxFilter_8cpp_source.html#l00050">SinusxFilter::saveToFile()</a>, <a class="el" href="HeightProfileFilter_8cpp_source.html#l00036">HeightProfileFilter::saveToFile()</a>, <a class="el" href="MascaretFilter_8cpp_source.html#l00075">MascaretFilter::saveToFile()</a>, <a class="el" href="SimpleBinFilter_8cpp_source.html#l00045">SimpleBinFilter::saveToFile()</a>, <a class="el" href="E57Filter_8cpp_source.html#l00718">E57Filter::saveToFile()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00469">FBXFilter::saveToFile()</a>, <a class="el" href="LASFWFFilter_8cpp_source.html#l00201">LASFWFFilter::saveToFile()</a>, <a class="el" href="LasIOFilter_8cpp_source.html#l00444">LasIOFilter::saveToFile()</a>, <a class="el" href="LASFilter_8cpp_source.html#l00208">LASFilter::saveToFile()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l01971">ccDBRoot::selectChildrenByTypeAndName()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l01109">ccDBRoot::selectEntities()</a>, <a class="el" href="ecvDBRoot_8cpp_source.html#l01054">ccDBRoot::selectEntity()</a>, <a class="el" href="ModelViewerWidget_8cpp_source.html#l00302">cloudViewer::ModelViewerWidget::SelectObject()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00490">SendError()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00089">ccEntityAction::setColor()</a>, <a class="el" href="ecvHistogramWindow_8cpp_source.html#l00170">ccHistogramWindow::setCurveValues()</a>, <a class="el" href="STEPFilter_8cpp_source.html#l00070">STEPFilter::SetDefaultLinearDeflection()</a>, <a class="el" href="ecvFilterByLabelDlg_8cpp_source.html#l00189">ecvFilterByLabelDlg::setInputEntity()</a>, <a class="el" href="PythonPlugin_8cpp_source.html#l00509">PythonPlugin::setMainAppInterface()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01164">ccEntityAction::sfAddIdField()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01426">ccEntityAction::sfFromColor()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l00829">ccEntityAction::sfGaussianFilter()</a>, <a class="el" href="ecvEntityAction_8cpp_source.html#l01138">ccEntityAction::sfRename()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00459">qAnimationDlg::smoothTrajectory()</a>, <a class="el" href="ecvPoissonReconDlg_8cpp_source.html#l00285">ecvPoissonReconDlg::start()</a>, <a class="el" href="ecvMeasurementTool_8cpp_source.html#l00534">ecvMeasurementTool::start()</a>, <a class="el" href="ecvTracePolylineTool_8cpp_source.html#l00284">ccTracePolylineTool::start()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01203">qAnimationDlg::textureAnimationPreview()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l01258">qAnimationDlg::textureAnimationRender()</a>, <a class="el" href="LasTiler_8cpp_source.html#l00014">TileLasReader()</a>, <a class="el" href="FBXFilter_8cpp_source.html#l00051">ToFbxMesh()</a>, <a class="el" href="q3DMASCClassifier_8cpp_source.html#l00704">masc::Classifier::toFile()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00287">ecvAnnotationsTool::toggleBox()</a>, <a class="el" href="ecvAnnotationsTool_8cpp_source.html#l00303">ecvAnnotationsTool::toggleOrigin()</a>, <a class="el" href="qAnimationDlg_8cpp_source.html#l00367">qAnimationDlg::updateCameraTrajectory()</a>, <a class="el" href="GrainsAsEllipsoids_8cpp_source.html#l00791">GrainsAsEllipsoids::updateMeshAndLineSet()</a>, <a class="el" href="qM3C2Tools_8cpp_source.html#l00346">qM3C2Normals::UpdateNormalOrientationsWithCloud()</a>, <a class="el" href="ecvCommandLineParser_8cpp_source.html#l00048">ccCommandLineParser::warning()</a>, <a class="el" href="Consoles_8h_source.html#l00082">ccConsoleOutput::write()</a>, <a class="el" href="Consoles_8h_source.html#l00129">ListWidgetConsole::write()</a>, <a class="el" href="MainWindow_8cpp_source.html#l04655">MainWindow::zoomOnEntities()</a>, and <a class="el" href="MainWindow_8cpp_source.html#l04646">MainWindow::zoomOnSelectedEntities()</a>.</p>
 
 </div>
 </div>
-<a id="af97e3460a2850fd59329bbbeb2157cbd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af97e3460a2850fd59329bbbeb2157cbd">&#9670;&nbsp;</a></span>Warning() <span class="overload">[2/2]</span></h2>
+<a id="a51acd7b8f336bedf7940ed1bde7a6dd4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51acd7b8f336bedf7940ed1bde7a6dd4">&#9670;&nbsp;</a></span>Warning() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -961,7 +1053,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::Warning </td>
+          <td class="memname">bool CVLog::Warning </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -977,10 +1069,14 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::Warning. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00138">138</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00046">LOG_WARNING</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<a id="af86f70fa47d71d64dd9b1546ff0fcb48"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af86f70fa47d71d64dd9b1546ff0fcb48">&#9670;&nbsp;</a></span>WarningDebug() <span class="overload">[1/2]</span></h2>
+<a id="a13164c2ec296b4b12bed06584761ad3c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a13164c2ec296b4b12bed06584761ad3c">&#9670;&nbsp;</a></span>WarningDebug() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -989,7 +1085,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::WarningDebug </td>
+          <td class="memname">bool CVLog::WarningDebug </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>format</em>, </td>
@@ -1016,10 +1112,14 @@ Static Public Member Functions</h2></td></tr>
 <p>Same as Warning, but works only in Debug mode. </p>
 <p>Works just like the 'printf' command. </p><dl class="section return"><dt>Returns</dt><dd>always 'false' </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00167">167</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00049">DEBUG_FLAG</a>, <a class="el" href="CVLog_8cpp_source.html#l00094">LOG_ARGS</a>, and <a class="el" href="CVLog_8h_source.html#l00046">LOG_WARNING</a>.</p>
+
 </div>
 </div>
-<a id="a611a3ff3d092dbc2fd30efde311526da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a611a3ff3d092dbc2fd30efde311526da">&#9670;&nbsp;</a></span>WarningDebug() <span class="overload">[2/2]</span></h2>
+<a id="a46a555553bdda397f67e214aadfd258b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a46a555553bdda397f67e214aadfd258b">&#9670;&nbsp;</a></span>WarningDebug() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1028,7 +1128,7 @@ Static Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool CVLog::WarningDebug </td>
+          <td class="memname">bool CVLog::WarningDebug </td>
           <td>(</td>
           <td class="paramtype">const QString &amp;&#160;</td>
           <td class="paramname"><em>message</em></td><td>)</td>
@@ -1044,10 +1144,15 @@ Static Public Member Functions</h2></td></tr>
 
 <p>QString version of ccLog::WarningDebug. </p>
 
+<p class="definition">Definition at line <a class="el" href="CVLog_8cpp_source.html#l00174">174</a> of file <a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVLog_8h_source.html#l00049">DEBUG_FLAG</a>, <a class="el" href="CVLog_8h_source.html#l00046">LOG_WARNING</a>, and <a class="el" href="CVLog_8cpp_source.html#l00064">LogMessage()</a>.</p>
+
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/include/<a class="el" href="CVLog_8h_source.html">CVLog.h</a></li>
+<li>/root/ACloudViewer/core/src/<a class="el" href="CVLog_8cpp_source.html">CVLog.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1055,7 +1160,7 @@ Static Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classCVLog.html">CVLog</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:34 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

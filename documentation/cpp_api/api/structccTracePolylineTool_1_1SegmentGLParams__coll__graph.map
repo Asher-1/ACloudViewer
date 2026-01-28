@@ -1,0 +1,10 @@
+<map id="ccTracePolylineTool::SegmentGLParams" name="ccTracePolylineTool::SegmentGLParams">
+<area shape="rect" id="node1" title="Viewport parameters (used for picking)" alt="" coords="121,440,274,481"/>
+<area shape="rect" id="node2" href="$structccGLCameraParameters.html" title="OpenGL camera parameters." alt="" coords="11,351,189,377"/>
+<area shape="rect" id="node3" href="$classccGLMatrixd.html" title="Double version of ccGLMatrixTpl." alt="" coords="49,247,151,273"/>
+<area shape="rect" id="node4" href="$classccGLMatrixTpl.html" title=" " alt="" coords="5,171,195,197"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="17,5,172,32"/>
+<area shape="rect" id="node6" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="117,81,270,108"/>
+<area shape="rect" id="node7" href="$classVector2Tpl.html" title=" " alt="" coords="213,351,379,377"/>
+<area shape="rect" id="node8" href="$classVector2Tpl.html" title="2D Vector" alt="" coords="221,247,371,273"/>
+</map>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,8 +106,8 @@ $(document).ready(function(){initNavTree('Reduction_8h_source.html',''); initRes
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Helper_8h.html">Helper.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;unordered_set&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
@@ -173,8 +182,8 @@ $(document).ready(function(){initNavTree('Reduction_8h_source.html',''); initRes
 <div class="ttc" id="aTensor_8h_html"><div class="ttname"><a href="Tensor_8h.html">Tensor.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1SizeVector_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1SizeVector.html">cloudViewer::core::SizeVector</a></div><div class="ttdef"><b>Definition:</b> <a href="SizeVector_8h_source.html#l00070">SizeVector.h:70</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
-<div class="ttc" id="acore_2include_2Helper_8h_html"><div class="ttname"><a href="core_2include_2Helper_8h.html">Helper.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a036adf1f8aafec41a49ae7d6886b51ea"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a036adf1f8aafec41a49ae7d6886b51ea">cloudViewer::core::kernel::ReductionSYCL</a></div><div class="ttdeci">void ReductionSYCL(const Tensor &amp;src, Tensor &amp;dst, const SizeVector &amp;dims, bool keepdim, ReductionOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="ReductionSYCL_8cpp_source.html#l00211">ReductionSYCL.cpp:211</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a15bbc64c55522b4175dccbb1056f62ef"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a15bbc64c55522b4175dccbb1056f62ef">cloudViewer::core::kernel::s_arg_reduce_ops</a></div><div class="ttdeci">static const std::unordered_set&lt; ReductionOpCode, utility::hash_enum_class &gt; s_arg_reduce_ops</div><div class="ttdef"><b>Definition:</b> <a href="Reduction_8h_source.html#l00041">Reduction.h:41</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a3ab0cbcfe49776b49b4de58514f48f88"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a3ab0cbcfe49776b49b4de58514f48f88">cloudViewer::core::kernel::ReductionOpCode</a></div><div class="ttdeci">ReductionOpCode</div><div class="ttdef"><b>Definition:</b> <a href="Reduction_8h_source.html#l00022">Reduction.h:22</a></div></div>
@@ -188,16 +197,16 @@ $(document).ready(function(){initNavTree('Reduction_8h_source.html',''); initRes
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a3ab0cbcfe49776b49b4de58514f48f88aed36a1ef76a59ee3f15180e0441188ad"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a3ab0cbcfe49776b49b4de58514f48f88aed36a1ef76a59ee3f15180e0441188ad">cloudViewer::core::kernel::ReductionOpCode::Any</a></div><div class="ttdeci">@ Any</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a97e59664137d00779bfe8576f3495b1d"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a97e59664137d00779bfe8576f3495b1d">cloudViewer::core::kernel::ReductionCPU</a></div><div class="ttdeci">void ReductionCPU(const Tensor &amp;src, Tensor &amp;dst, const SizeVector &amp;dims, bool keepdim, ReductionOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="ReductionCPU_8cpp_source.html#l00278">ReductionCPU.cpp:278</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ac394a330284cff4836c93e16d0ed00d7"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ac394a330284cff4836c93e16d0ed00d7">cloudViewer::core::kernel::s_regular_reduce_ops</a></div><div class="ttdeci">static const std::unordered_set&lt; ReductionOpCode, utility::hash_enum_class &gt; s_regular_reduce_ops</div><div class="ttdef"><b>Definition:</b> <a href="Reduction_8h_source.html#l00034">Reduction.h:34</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ac57d45ff1af9a2413dd4dd7b55610265"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ac57d45ff1af9a2413dd4dd7b55610265">cloudViewer::core::kernel::Reduction</a></div><div class="ttdeci">void Reduction(const Tensor &amp;src, Tensor &amp;dst, const SizeVector &amp;dims, bool keepdim, ReductionOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="Reduction_8cpp_source.html#l00016">Reduction.cpp:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ac57d45ff1af9a2413dd4dd7b55610265"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ac57d45ff1af9a2413dd4dd7b55610265">cloudViewer::core::kernel::Reduction</a></div><div class="ttdeci">void Reduction(const Tensor &amp;src, Tensor &amp;dst, const SizeVector &amp;dims, bool keepdim, ReductionOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2kernel_2Reduction_8cpp_source.html#l00016">Reduction.cpp:16</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_afba9dbc00287b31709ffd4b9a2168620"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#afba9dbc00287b31709ffd4b9a2168620">cloudViewer::core::kernel::s_boolean_reduce_ops</a></div><div class="ttdeci">static const std::unordered_set&lt; ReductionOpCode, utility::hash_enum_class &gt; s_boolean_reduce_ops</div><div class="ttdef"><b>Definition:</b> <a href="Reduction_8h_source.html#l00046">Reduction.h:46</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_45b440cfe532bda991cb85e5a82a2a21.html">kernel</a></li><li class="navelem"><a class="el" href="Reduction_8h.html">Reduction.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

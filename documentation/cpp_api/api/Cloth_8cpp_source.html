@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -520,12 +529,12 @@ $(document).ready(function(){initNavTree('Cloth_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    }</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;}</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160; </div>
-<div class="line"><a name="l00434"></a><span class="lineno"><a class="line" href="classCloth.html#a06310be0f1086d5482c0cbb8cc2afc76">  434</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCloth.html#a06310be0f1086d5482c0cbb8cc2afc76">Cloth::saveToFile</a>(std::string path) {</div>
+<div class="line"><a name="l00434"></a><span class="lineno"><a class="line" href="classCloth.html#a06310be0f1086d5482c0cbb8cc2afc76">  434</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCloth.html#a06310be0f1086d5482c0cbb8cc2afc76">Cloth::saveToFile</a>(std::string <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>) {</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;    std::string filepath = <span class="stringliteral">&quot;cloth_nodes.txt&quot;</span>;</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;    <span class="keywordflow">if</span> (path == <span class="stringliteral">&quot;&quot;</span>) {</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> == <span class="stringliteral">&quot;&quot;</span>) {</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        filepath = <span class="stringliteral">&quot;cloth_nodes.txt&quot;</span>;</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;        filepath = path;</div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;        filepath = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>;</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    }</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    std::ofstream f1(filepath);</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    <span class="keywordflow">if</span> (!f1) <span class="keywordflow">return</span>;</div>
@@ -539,12 +548,12 @@ $(document).ready(function(){initNavTree('Cloth_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    f1.close();</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;}</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160; </div>
-<div class="line"><a name="l00453"></a><span class="lineno"><a class="line" href="classCloth.html#a935715c4b7c6a91a62407fdef43b280e">  453</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCloth.html#a935715c4b7c6a91a62407fdef43b280e">Cloth::saveMovableToFile</a>(std::string path) {</div>
+<div class="line"><a name="l00453"></a><span class="lineno"><a class="line" href="classCloth.html#a935715c4b7c6a91a62407fdef43b280e">  453</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classCloth.html#a935715c4b7c6a91a62407fdef43b280e">Cloth::saveMovableToFile</a>(std::string <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>) {</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    std::string filepath = <span class="stringliteral">&quot;cloth_movable.txt&quot;</span>;</div>
-<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;    <span class="keywordflow">if</span> (path == <span class="stringliteral">&quot;&quot;</span>) {</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> == <span class="stringliteral">&quot;&quot;</span>) {</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;        filepath = <span class="stringliteral">&quot;cloth_movable.txt&quot;</span>;</div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;        filepath = path;</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;        filepath = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>;</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;    }</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;    std::ofstream f1(filepath);</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;    <span class="keywordflow">if</span> (!f1) <span class="keywordflow">return</span>;</div>
@@ -603,13 +612,14 @@ $(document).ready(function(){initNavTree('Cloth_8cpp_source.html',''); initResiz
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html">qCSF</a></li><li class="navelem"><a class="el" href="dir_cffe619bb7a47da2969b1923c068f1d5.html">src</a></li><li class="navelem"><a class="el" href="Cloth_8cpp.html">Cloth.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

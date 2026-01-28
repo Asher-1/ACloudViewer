@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('GuiSettingsView_8cpp_source.html','');
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="GuiSettingsView_8h.html">visualization/visualizer/GuiSettingsView.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;cmath&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
@@ -128,11 +137,11 @@ $(document).ready(function(){initNavTree('GuiSettingsView_8cpp_source.html','');
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;}</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1GuiSettingsView.html#adcfdb9c8916824278300610f3e29643d">   40</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1GuiSettingsView.html#adcfdb9c8916824278300610f3e29643d">GuiSettingsView::GuiSettingsView</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1GuiSettingsModel.html">GuiSettingsModel</a> &amp;model,</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                                 <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Theme.html">gui::Theme</a> &amp;<a class="code" href="Window_8cpp.html#ae477daa3671f8a013b2e2df174d7b564">theme</a>,</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                                 <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Theme.html">gui::Theme</a> &amp;<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#ae477daa3671f8a013b2e2df174d7b564">theme</a>,</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                                 <span class="keyword">const</span> std::string &amp;resource_path,</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                                 std::function&lt;<span class="keywordtype">void</span>(<span class="keyword">const</span> <span class="keywordtype">char</span> *)&gt; on_load_ibl)</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    : model_(model), on_load_ibl_(on_load_ibl) {</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">const</span> <span class="keyword">auto</span> em = <a class="code" href="Window_8cpp.html#ae477daa3671f8a013b2e2df174d7b564">theme</a>.font_size;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">const</span> <span class="keyword">auto</span> em = <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#ae477daa3671f8a013b2e2df174d7b564">theme</a>.font_size;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">int</span> lm = int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(0.5 * em));</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">int</span> grid_spacing = int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(0.25 * em));</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
@@ -574,7 +583,6 @@ $(document).ready(function(){initNavTree('GuiSettingsView_8cpp_source.html','');
 <div class="ttc" id="aSlider_8h_html"><div class="ttname"><a href="Slider_8h.html">Slider.h</a></div></div>
 <div class="ttc" id="aTheme_8h_html"><div class="ttname"><a href="Theme_8h.html">Theme.h</a></div></div>
 <div class="ttc" id="aVectorEdit_8h_html"><div class="ttname"><a href="VectorEdit_8h.html">VectorEdit.h</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_ae477daa3671f8a013b2e2df174d7b564"><div class="ttname"><a href="Window_8cpp.html#ae477daa3671f8a013b2e2df174d7b564">theme</a></div><div class="ttdeci">const Theme * theme</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00074">Window.cpp:74</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1GuiSettingsModel_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1GuiSettingsModel.html">cloudViewer::visualization::GuiSettingsModel</a></div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsModel_8h_source.html#l00017">GuiSettingsModel.h:17</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1GuiSettingsModel_html_a07000f12b191b392455b5a303f4b4c56"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1GuiSettingsModel.html#a07000f12b191b392455b5a303f4b4c56">cloudViewer::visualization::GuiSettingsModel::GetUserHasCustomizedLighting</a></div><div class="ttdeci">bool GetUserHasCustomizedLighting() const</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsModel_8cpp_source.html#l00382">GuiSettingsModel.cpp:382</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1GuiSettingsModel_html_a085d590d5a07eb62dd17f22877fcd29d"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1GuiSettingsModel.html#a085d590d5a07eb62dd17f22877fcd29d">cloudViewer::visualization::GuiSettingsModel::GetBackgroundColor</a></div><div class="ttdeci">const Eigen::Vector3f &amp; GetBackgroundColor() const</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsModel_8cpp_source.html#l00221">GuiSettingsModel.cpp:221</a></div></div>
@@ -620,16 +628,17 @@ $(document).ready(function(){initNavTree('GuiSettingsView_8cpp_source.html','');
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Slider_html_a937fbf3a148fc6f7e2c511409904f247"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Slider.html#a937fbf3a148fc6f7e2c511409904f247">cloudViewer::visualization::gui::Slider::Type</a></div><div class="ttdeci">Type</div><div class="ttdef"><b>Definition:</b> <a href="Slider_8h_source.html#l00020">Slider.h:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Slider_html_a937fbf3a148fc6f7e2c511409904f247ac394568c28c58a4b3e613e13876364d6"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Slider.html#a937fbf3a148fc6f7e2c511409904f247ac394568c28c58a4b3e613e13876364d6">cloudViewer::visualization::gui::Slider::INT</a></div><div class="ttdeci">@ INT</div><div class="ttdef"><b>Definition:</b> <a href="Slider_8h_source.html#l00020">Slider.h:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_a92d40fc8dd1cb85bdad9869f639bf767"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a92d40fc8dd1cb85bdad9869f639bf767">cloudViewer::visualization::gui::Widget::AddChild</a></div><div class="ttdeci">virtual void AddChild(std::shared_ptr&lt; Widget &gt; child)</div><div class="ttdef"><b>Definition:</b> <a href="Widget_8cpp_source.html#l00043">Widget.cpp:43</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a084f69e0bea29dc2c6eb6bb31ec5739c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a084f69e0bea29dc2c6eb6bb31ec5739c">cloudViewer::utility::filesystem::ListFilesInDirectory</a></div><div class="ttdeci">bool ListFilesInDirectory(const std::string &amp;directory, std::vector&lt; std::string &gt; &amp;filenames)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_af79673c77b8ab2db46803c8014ce0911"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">cloudViewer::utility::filesystem::GetFileNameWithoutDirectory</a></div><div class="ttdeci">std::string GetFileNameWithoutDirectory(const std::string &amp;filename)</div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_ae477daa3671f8a013b2e2df174d7b564"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#ae477daa3671f8a013b2e2df174d7b564">theme</a></div><div class="ttdeci">const Theme * theme</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00074">Window.cpp:74</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a084f69e0bea29dc2c6eb6bb31ec5739c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a084f69e0bea29dc2c6eb6bb31ec5739c">cloudViewer::utility::filesystem::ListFilesInDirectory</a></div><div class="ttdeci">bool ListFilesInDirectory(const std::string &amp;directory, std::vector&lt; std::string &gt; &amp;filenames)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00561">FileSystem.cpp:561</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_af79673c77b8ab2db46803c8014ce0911"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#af79673c77b8ab2db46803c8014ce0911">cloudViewer::utility::filesystem::GetFileNameWithoutDirectory</a></div><div class="ttdeci">std::string GetFileNameWithoutDirectory(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00301">FileSystem.cpp:301</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_html_aaf391405163dbcb0ead2dbd66bd3cb1e"><div class="ttname"><a href="namespacecloudViewer_1_1visualization.html#aaf391405163dbcb0ead2dbd66bd3cb1e">cloudViewer::visualization::MakeSlider</a></div><div class="ttdeci">std::shared_ptr&lt; gui::Slider &gt; MakeSlider(const gui::Slider::Type type, const double min, const double max, const double value)</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsView_8cpp_source.html#l00030">GuiSettingsView.cpp:30</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_html_ae813fd856ebe970364ba9d2e2917c820"><div class="ttname"><a href="namespacecloudViewer_1_1visualization.html#ae813fd856ebe970364ba9d2e2917c820">cloudViewer::visualization::CUSTOM_LIGHTING</a></div><div class="ttdeci">static const char * CUSTOM_LIGHTING</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsView_8cpp_source.html#l00028">GuiSettingsView.cpp:28</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LightingProfile_html_a020722c75ebf339a6b6154f70c752bbe"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LightingProfile.html#a020722c75ebf339a6b6154f70c752bbe">cloudViewer::visualization::GuiSettingsModel::LightingProfile::ibl_intensity</a></div><div class="ttdeci">double ibl_intensity</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsModel_8h_source.html#l00029">GuiSettingsModel.h:29</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LightingProfile_html_a7d8a5416b634c6063f41c235a179ea1c"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LightingProfile.html#a7d8a5416b634c6063f41c235a179ea1c">cloudViewer::visualization::GuiSettingsModel::LightingProfile::sun_dir</a></div><div class="ttdeci">Eigen::Vector3f sun_dir</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsModel_8h_source.html#l00031">GuiSettingsModel.h:31</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LightingProfile_html_a87ed3383249d79533a1a2b9c663a5023"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LightingProfile.html#a87ed3383249d79533a1a2b9c663a5023">cloudViewer::visualization::GuiSettingsModel::LightingProfile::sun_intensity</a></div><div class="ttdeci">double sun_intensity</div><div class="ttdef"><b>Definition:</b> <a href="GuiSettingsModel_8h_source.html#l00030">GuiSettingsModel.h:30</a></div></div>
@@ -645,7 +654,7 @@ $(document).ready(function(){initNavTree('GuiSettingsView_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="GuiSettingsView_8cpp.html">GuiSettingsView.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

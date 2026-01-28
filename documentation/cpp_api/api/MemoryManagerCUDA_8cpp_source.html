@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -104,7 +113,7 @@ $(document).ready(function(){initNavTree('MemoryManagerCUDA_8cpp_source.html',''
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>core {</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keywordtype">void</span>* MemoryManagerCUDA::Malloc(<span class="keywordtype">size_t</span> byte_size, <span class="keyword">const</span> Device&amp; device) {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keywordtype">void</span>* <a class="code" href="namespacecloudViewer_1_1core.html#a28926e22b249d7c7f634f8d235b7c9cf">MemoryManagerCUDA::Malloc</a>(<span class="keywordtype">size_t</span> byte_size, <span class="keyword">const</span> Device&amp; device) {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    CUDAScopedDevice scoped_device(device);</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    <span class="keywordtype">void</span>* ptr;</div>
@@ -128,7 +137,7 @@ $(document).ready(function(){initNavTree('MemoryManagerCUDA_8cpp_source.html',''
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordflow">return</span> ptr;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;}</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">void</span> MemoryManagerCUDA::Free(<span class="keywordtype">void</span>* ptr, <span class="keyword">const</span> Device&amp; device) {</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1core.html#a19bb9e4e18c48601b3881656b1531220">MemoryManagerCUDA::Free</a>(<span class="keywordtype">void</span>* ptr, <span class="keyword">const</span> Device&amp; device) {</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    CUDAScopedDevice scoped_device(device);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordflow">if</span> (device.IsCUDA()) {</div>
@@ -222,19 +231,21 @@ $(document).ready(function(){initNavTree('MemoryManagerCUDA_8cpp_source.html',''
 <div class="ttc" id="aCUDAUtils_8h_html"><div class="ttname"><a href="CUDAUtils_8h.html">CUDAUtils.h</a></div><div class="ttdoc">Common CUDA utilities.</div></div>
 <div class="ttc" id="aCUDAUtils_8h_html_a92be5b237fefbcefb6e22c4452bc1b62"><div class="ttname"><a href="CUDAUtils_8h.html#a92be5b237fefbcefb6e22c4452bc1b62">CLOUDVIEWER_CUDA_CHECK</a></div><div class="ttdeci">#define CLOUDVIEWER_CUDA_CHECK(err)</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8h_source.html#l00047">CUDAUtils.h:47</a></div></div>
 <div class="ttc" id="aMemoryManager_8h_html"><div class="ttname"><a href="MemoryManager_8h.html">MemoryManager.h</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManager_html_a9c8f319bf0a10ae672c2dc5ce74d7209"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManager.html#a9c8f319bf0a10ae672c2dc5ce74d7209">cloudViewer::core::MemoryManager::Malloc</a></div><div class="ttdeci">static void * Malloc(size_t byte_size, const Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManager_8cpp_source.html#l00023">MemoryManager.cpp:23</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManager_html_aa7aacb564d0abab8b04cedcaa901a30d"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManager.html#aa7aacb564d0abab8b04cedcaa901a30d">cloudViewer::core::MemoryManager::Free</a></div><div class="ttdeci">static void Free(void *ptr, const Device &amp;device)</div><div class="ttdoc">Frees previously allocated memory at address ptr on device device.</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManager_8cpp_source.html#l00029">MemoryManager.cpp:29</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManager_html_a9c8f319bf0a10ae672c2dc5ce74d7209"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManager.html#a9c8f319bf0a10ae672c2dc5ce74d7209">cloudViewer::core::MemoryManager::Malloc</a></div><div class="ttdeci">static void * Malloc(size_t byte_size, const Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00023">MemoryManager.cpp:23</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManager_html_aa7aacb564d0abab8b04cedcaa901a30d"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManager.html#aa7aacb564d0abab8b04cedcaa901a30d">cloudViewer::core::MemoryManager::Free</a></div><div class="ttdeci">static void Free(void *ptr, const Device &amp;device)</div><div class="ttdoc">Frees previously allocated memory at address ptr on device device.</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00029">MemoryManager.cpp:29</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a96e29e020a8bb88e9945eb16fb8b4f99"><div class="ttname"><a href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">Runtime::GetInstance</a></div><div class="ttdeci">ccGuiPythonInstance * GetInstance() noexcept</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00072">Runtime.cpp:72</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1cuda_html_aa1dbf0f2bd02c74b044aae2e15b8a2c1"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1cuda.html#aa1dbf0f2bd02c74b044aae2e15b8a2c1">cloudViewer::core::cuda::SupportsMemoryPools</a></div><div class="ttdeci">bool SupportsMemoryPools(const Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8cpp_source.html#l00112">CUDAUtils.cpp:112</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_html_a19bb9e4e18c48601b3881656b1531220"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a19bb9e4e18c48601b3881656b1531220">cloudViewer::core::Free</a></div><div class="ttdeci">void Free(benchmark::State &amp;state, int size, const Device &amp;device, const MemoryManagerBackend &amp;backend)</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2core_2MemoryManager_8cpp_source.html#l00075">MemoryManager.cpp:75</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_html_a28926e22b249d7c7f634f8d235b7c9cf"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a28926e22b249d7c7f634f8d235b7c9cf">cloudViewer::core::Malloc</a></div><div class="ttdeci">void Malloc(benchmark::State &amp;state, int size, const Device &amp;device, const MemoryManagerBackend &amp;backend)</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2core_2MemoryManager_8cpp_source.html#l00047">MemoryManager.cpp:47</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="MemoryManagerCUDA_8cpp.html">MemoryManagerCUDA.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

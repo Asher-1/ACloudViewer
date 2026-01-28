@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -100,8 +109,8 @@ $(document).ready(function(){initNavTree('ccMeasurementRecorder_8h_source.html',
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// CC</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecv2DLabel_8h.html">ecv2DLabel.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvHObject_8h.html">ecvHObject.h</a>&quot;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;ecvMainAppInterface.h&quot;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;ecvPickingListener.h&quot;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvPickingListener_8h.html">ecvPickingListener.h</a>&quot;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvPlane_8h.html">ecvPlane.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&quot;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
@@ -110,12 +119,12 @@ $(document).ready(function(){initNavTree('ccMeasurementRecorder_8h_source.html',
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="classccMeasurementRecorder.html">   21</a></span>&#160;<span class="keyword">class </span><a class="code" href="classccMeasurementRecorder.html">ccMeasurementRecorder</a> {</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classccMeasurementRecorder.html#a644b1502b7c2420267c521aa0b91f173">   23</a></span>&#160;    <a class="code" href="classccMeasurementRecorder.html#a644b1502b7c2420267c521aa0b91f173">ccMeasurementRecorder</a>(<a class="code" href="classccPointCloud.html">ccPointCloud</a> *rootCloud, ecvMainAppInterface *app)</div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classccMeasurementRecorder.html#a644b1502b7c2420267c521aa0b91f173">   23</a></span>&#160;    <a class="code" href="classccMeasurementRecorder.html#a644b1502b7c2420267c521aa0b91f173">ccMeasurementRecorder</a>(<a class="code" href="classccPointCloud.html">ccPointCloud</a> *rootCloud, <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *app)</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        : m_rootCloud(rootCloud), m_app(app) {}</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#a7a147bc220ee99eb0ae18f3ac1526bb3">loadDataFromSelectedCloud</a>();</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#ac585ed49e89a7637a7e8c469a9f3051c">addFittingPoint</a>(<span class="keyword">const</span> ccPickingListener::PickedItem &amp;item);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#ac585ed49e89a7637a7e8c469a9f3051c">addFittingPoint</a>(<span class="keyword">const</span> <a class="code" href="structccPickingListener_1_1PickedItem.html">ccPickingListener::PickedItem</a> &amp;item);</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#aafb99fe591db1ac97c2c1474cf8ae191">deleteFittingPoint</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> index);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#aea1aa48d3cfaa4bb2a18f70c6e001f71">renameFittingPoint</a>(<span class="keyword">const</span> QString &amp;newName,</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> fittingPointIndex);</div>
@@ -123,7 +132,7 @@ $(document).ready(function(){initNavTree('ccMeasurementRecorder_8h_source.html',
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="classccMeasurementRecorder.html#a058316d310b1aa0bff7caea4438848d2">getActualFittingPointIndex</a>() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="classccMeasurementRecorder.html#a3fc01adadc225c84d9c3e499469c31a9">getFittingPointAmount</a>() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#af42517bcc9c7c612583578c486dccbb7">addMeasurementPoint</a>(<span class="keyword">const</span> ccPickingListener::PickedItem &amp;item,</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#af42517bcc9c7c612583578c486dccbb7">addMeasurementPoint</a>(<span class="keyword">const</span> <a class="code" href="structccPickingListener_1_1PickedItem.html">ccPickingListener::PickedItem</a> &amp;item,</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                             <span class="keywordtype">float</span> distance);</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keyword">const</span> std::vector&lt;ccMPlanePoint&gt; &amp;<a class="code" href="classccMeasurementRecorder.html#acd9b116ef51307a42519714f0750e849">getMeasurementPoints</a>() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classccMeasurementRecorder.html#a33a8300481f8a6c225d48cb54a3f0a44">renameMeasurement</a>(<span class="keyword">const</span> QString &amp;newName,</div>
@@ -135,7 +144,7 @@ $(document).ready(function(){initNavTree('ccMeasurementRecorder_8h_source.html',
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMeasurementRecorder.html#a038e1453edc0c5625a2cda1881fd6f23">deletePlane</a>();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    ecvMainAppInterface *m_app = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *m_app = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a> *m_rootCloud = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <a class="code" href="classccPlane.html">ccPlane</a> *m_plane = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
@@ -172,17 +181,21 @@ $(document).ready(function(){initNavTree('ccMeasurementRecorder_8h_source.html',
 <div class="ttc" id="aclassccMeasurementRecorder_html_af42517bcc9c7c612583578c486dccbb7"><div class="ttname"><a href="classccMeasurementRecorder.html#af42517bcc9c7c612583578c486dccbb7">ccMeasurementRecorder::addMeasurementPoint</a></div><div class="ttdeci">void addMeasurementPoint(const ccPickingListener::PickedItem &amp;item, float distance)</div><div class="ttdef"><b>Definition:</b> <a href="ccMeasurementRecorder_8cpp_source.html#l00056">ccMeasurementRecorder.cpp:56</a></div></div>
 <div class="ttc" id="aclassccPlane_html"><div class="ttname"><a href="classccPlane.html">ccPlane</a></div><div class="ttdoc">Plane (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00017">ecvPlane.h:18</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aecv2DLabel_8h_html"><div class="ttname"><a href="ecv2DLabel_8h.html">ecv2DLabel.h</a></div></div>
 <div class="ttc" id="aecvHObject_8h_html"><div class="ttname"><a href="ecvHObject_8h.html">ecvHObject.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
+<div class="ttc" id="aecvPickingListener_8h_html"><div class="ttname"><a href="ecvPickingListener_8h.html">ecvPickingListener.h</a></div></div>
 <div class="ttc" id="aecvPlane_8h_html"><div class="ttname"><a href="ecvPlane_8h.html">ecvPlane.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
+<div class="ttc" id="astructccPickingListener_1_1PickedItem_html"><div class="ttname"><a href="structccPickingListener_1_1PickedItem.html">ccPickingListener::PickedItem</a></div><div class="ttdoc">Picked item.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingListener_8h_source.html#l00026">ecvPickingListener.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_ce629cbf5f85d13a133a531751423446.html">qMPlane</a></li><li class="navelem"><a class="el" href="dir_da5442ed587cf661d9135e485e58e5ce.html">src</a></li><li class="navelem"><a class="el" href="ccMeasurementRecorder_8h.html">ccMeasurementRecorder.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

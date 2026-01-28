@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -134,14 +143,14 @@ $(document).ready(function(){initNavTree('classifier_8h_source.html',''); initRe
 <div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="structClassifier_1_1FileHeader.html#a90de673bd2f983eb21bb94dad4831a50">   55</a></span>&#160;        <span class="keywordtype">unsigned</span> <a class="code" href="structClassifier_1_1FileHeader.html#a90de673bd2f983eb21bb94dad4831a50">descID</a>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    };</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classClassifier.html#a232a1c0c195fc118a36af26221ed9fea">Load</a>(QString filename,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classClassifier.html#a232a1c0c195fc118a36af26221ed9fea">Load</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                     std::vector&lt;Classifier&gt;&amp; classifiers,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                     std::vector&lt;float&gt;&amp; <a class="code" href="classClassifier.html#aa1cde6a80d1f3f7161cac5d20cb6b8f8">scales</a>,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                     QString&amp; <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>,</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                     <a class="code" href="structClassifier_1_1FileHeader.html">FileHeader</a>* header = 0,</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                     <span class="keywordtype">bool</span> headerOnly = <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classClassifier.html#a4734a40ae6c3703ae1d64298c7154c41">save</a>(QString filename, QString&amp; <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classClassifier.html#a4734a40ae6c3703ae1d64298c7154c41">save</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, QString&amp; <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">public</span>:  <span class="comment">// members</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classClassifier.html#a6303e80279563a9e820d575e42522ea4">   70</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classClassifier.html#a6303e80279563a9e820d575e42522ea4">class1</a>, <a class="code" href="classClassifier.html#adb863da3f31af3ea48eb4d1ff654fca1">class2</a>;</div>
@@ -157,6 +166,7 @@ $(document).ready(function(){initNavTree('classifier_8h_source.html',''); initRe
 <div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="classClassifier.html#aa1cde6a80d1f3f7161cac5d20cb6b8f8">   83</a></span>&#160;    std::vector&lt;float&gt; <a class="code" href="classClassifier.html#aa1cde6a80d1f3f7161cac5d20cb6b8f8">scales</a>;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;};</div>
 <div class="ttc" id="aCVGeom_8h_html"><div class="ttname"><a href="CVGeom_8h.html">CVGeom.h</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="accPointDescriptor_8h_html"><div class="ttname"><a href="ccPointDescriptor_8h.html">ccPointDescriptor.h</a></div></div>
 <div class="ttc" id="aclassClassifier_html"><div class="ttname"><a href="classClassifier.html">Classifier</a></div><div class="ttdoc">Classifier.</div><div class="ttdef"><b>Definition:</b> <a href="classifier_8h_source.html#l00023">classifier.h:23</a></div></div>
 <div class="ttc" id="aclassClassifier_html_a123e5edb42c95373553ad5e730cdcf3a"><div class="ttname"><a href="classClassifier.html#a123e5edb42c95373553ad5e730cdcf3a">Classifier::absMaxXY</a></div><div class="ttdeci">float absMaxXY</div><div class="ttdef"><b>Definition:</b> <a href="classifier_8h_source.html#l00073">classifier.h:73</a></div></div>
@@ -193,7 +203,7 @@ $(document).ready(function(){initNavTree('classifier_8h_source.html',''); initRe
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_039c29ee5c0bf40195ae620976ff5812.html">qCanupo</a></li><li class="navelem"><a class="el" href="dir_7d54bddc563c3ca5f78c49b09d346ce1.html">include</a></li><li class="navelem"><a class="el" href="classifier_8h.html">classifier.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

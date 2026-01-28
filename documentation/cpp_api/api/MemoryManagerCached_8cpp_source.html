@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -95,7 +104,7 @@ $(document).ready(function(){initNavTree('MemoryManagerCached_8cpp_source.html',
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
@@ -416,7 +425,7 @@ $(document).ready(function(){initNavTree('MemoryManagerCached_8cpp_source.html',
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        <span class="comment">// Cacher instance.</span></div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        <span class="comment">// Since destruction of static instances happens in reverse order,</span></div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;        <span class="comment">// this guarantees that the Logger can be used at any point in time.</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">utility::Logger::GetInstance</a>();</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">utility::Logger::GetInstance</a>();</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;<span class="preprocessor">#ifdef BUILD_CUDA_MODULE</span></div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        <span class="comment">// Ensure CUDAState is initialized before Cacher.</span></div>
@@ -609,12 +618,12 @@ $(document).ready(function(){initNavTree('MemoryManagerCached_8cpp_source.html',
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManagerCached_html_a8ec40b6db31909d677f5624f177fdb80"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManagerCached.html#a8ec40b6db31909d677f5624f177fdb80">cloudViewer::core::MemoryManagerCached::device_mm_</a></div><div class="ttdeci">std::shared_ptr&lt; MemoryManagerDevice &gt; device_mm_</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManager_8h_source.html#l00136">MemoryManager.h:136</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManagerCached_html_a941f3de9dd2b9689ff353ad782640fec"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManagerCached.html#a941f3de9dd2b9689ff353ad782640fec">cloudViewer::core::MemoryManagerCached::Malloc</a></div><div class="ttdeci">void * Malloc(size_t byte_size, const Device &amp;device) override</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerCached_8cpp_source.html#l00484">MemoryManagerCached.cpp:484</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1MemoryManagerCached_html_af3c69fdf969b2eb8901025ab22441b83"><div class="ttname"><a href="classcloudViewer_1_1core_1_1MemoryManagerCached.html#af3c69fdf969b2eb8901025ab22441b83">cloudViewer::core::MemoryManagerCached::Free</a></div><div class="ttdeci">void Free(void *ptr, const Device &amp;device) override</div><div class="ttdoc">Frees previously allocated memory at address ptr on device device.</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerCached_8cpp_source.html#l00492">MemoryManagerCached.cpp:492</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_acc81e40a92aeb86a688d12f9a2c9be6e"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">cloudViewer::utility::Logger::GetInstance</a></div><div class="ttdeci">static Logger &amp; GetInstance()</div><div class="ttdoc">Get Logger global singleton instance.</div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_af5fadbb1e86d87dd473087e30069ac8a"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">cloudViewer::utility::Logger::GetInstance</a></div><div class="ttdeci">static Logger &amp; GetInstance()</div><div class="ttdoc">Get Logger global singleton instance.</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00025">Logging.cpp:25</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a96e29e020a8bb88e9945eb16fb8b4f99"><div class="ttname"><a href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">Runtime::GetInstance</a></div><div class="ttdeci">ccGuiPythonInstance * GetInstance() noexcept</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00072">Runtime.cpp:72</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1PointerOrder_html"><div class="ttname"><a href="structcloudViewer_1_1core_1_1PointerOrder.html">cloudViewer::core::PointerOrder</a></div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerCached_8cpp_source.html#l00043">MemoryManagerCached.cpp:43</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1PointerOrder_html_a918512147a0f5395c766dfa1f15183f8"><div class="ttname"><a href="structcloudViewer_1_1core_1_1PointerOrder.html#a918512147a0f5395c766dfa1f15183f8">cloudViewer::core::PointerOrder::operator()</a></div><div class="ttdeci">bool operator()(const std::shared_ptr&lt; Block &gt; &amp;lhs, const std::shared_ptr&lt; Block &gt; &amp;rhs) const</div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerCached_8cpp_source.html#l00044">MemoryManagerCached.cpp:44</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1RealBlock_html"><div class="ttname"><a href="structcloudViewer_1_1core_1_1RealBlock.html">cloudViewer::core::RealBlock</a></div><div class="ttdef"><b>Definition:</b> <a href="MemoryManagerCached_8cpp_source.html#l00067">MemoryManagerCached.cpp:67</a></div></div>
@@ -636,7 +645,7 @@ $(document).ready(function(){initNavTree('MemoryManagerCached_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="MemoryManagerCached_8cpp.html">MemoryManagerCached.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

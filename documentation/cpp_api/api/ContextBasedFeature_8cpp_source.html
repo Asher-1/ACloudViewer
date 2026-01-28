@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -242,7 +251,7 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;            }</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <span class="comment">// compute the octree</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;Computing octree of class %1 (%2 points)&quot;</span>)</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;Computing octree of class %1 (%2 points)&quot;</span>)</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                                 .arg(<a class="code" href="structmasc_1_1ContextBasedFeature.html#ad184b5b931c07fcc0aa79a8475651941">ctxClassLabel</a>)</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                                 .arg(classCount));</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            <a class="code" href="classccOctree.html#af435f6e496610de74232af94a213fc29">ccOctree::Shared</a> classOctree = classCloud.<a class="code" href="classccGenericPointCloud.html#a19b41a8c3c4c87c821ca447a1fad5484">computeOctree</a>(progressCb);</div>
@@ -257,14 +266,14 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> <a class="code" href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a> =</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                    classOctree-&gt;findBestLevelForAGivenPopulationPerCell(</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                            <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(3, <a class="code" href="structmasc_1_1ContextBasedFeature.html#ac79be922e3bc59630988cde7c06dae1b">kNN</a>)));</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[Initial octree level] level = %1&quot;</span>)</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[Initial octree level] level = %1&quot;</span>)</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;                                 .arg(<a class="code" href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>));</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160; </div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            <span class="keywordflow">if</span> (progressCb) {</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                progressCb-&gt;<a class="code" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">setMethodTitle</a>(qPrintable(<span class="stringliteral">&quot;Compute &quot;</span> + typeStr));</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                progressCb-&gt;<a class="code" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">setInfo</a>(qPrintable(logMessage));</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            }</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(logMessage);</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(logMessage);</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a> <a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>(progressCb, pointCount);</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;            QMutex mutex;</div>
@@ -319,7 +328,7 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                                --<a class="code" href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>;</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                                density /= 2.0;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                            }</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[Adaptative octree level] Mean &quot;</span></div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[Adaptative octree level] Mean &quot;</span></div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                                             <span class="stringliteral">&quot;neighborhood size: %1 --&gt; new &quot;</span></div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                                             <span class="stringliteral">&quot;level = %2&quot;</span>)</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                                             .arg(meanNeighborhoodSize / tenth)</div>
@@ -333,7 +342,7 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160; </div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    <span class="keywordflow">if</span> (progressCb) {</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                        mutex.lock();</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        cancelled = !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>();</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        cancelled = !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>();</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                        mutex.unlock();</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                        <span class="keywordflow">if</span> (cancelled) {</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                            <span class="comment">// process cancelled by the user</span></div>
@@ -358,7 +367,7 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        {</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;            <span class="comment">// specific case: not enough points of this class in the whole</span></div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;            <span class="comment">// cloud! sf-&gt;fill(NAN_VALUE); //already the case</span></div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                    QString(<span class="stringliteral">&quot;Cloud %1 has less than %2 points of class %3&quot;</span>)</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                            .arg(<a class="code" href="structmasc_1_1Feature.html#aa1d34dde3b55ef940e34c6cff820b14a">cloud1Label</a>)</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                            .arg(classCount)</div>
@@ -454,8 +463,8 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;}</div>
 <div class="ttc" id="aCVConst_8h_html_aaa9d7ace0c01a72fa505949da3727f7d"><div class="ttname"><a href="CVConst_8h.html#aaa9d7ace0c01a72fa505949da3727f7d">NAN_VALUE</a></div><div class="ttdeci">constexpr ScalarType NAN_VALUE</div><div class="ttdoc">NaN as a ScalarType value.</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00076">CVConst.h:76</a></div></div>
 <div class="ttc" id="aContextBasedFeature_8h_html"><div class="ttname"><a href="ContextBasedFeature_8h.html">ContextBasedFeature.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassSFCollector_html"><div class="ttname"><a href="classSFCollector.html">SFCollector</a></div><div class="ttdoc">SF collector.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldCollector_8h_source.html#l00042">ScalarFieldCollector.h:42</a></div></div>
 <div class="ttc" id="aclassSFCollector_html_a264a80dddd8fd451b5d59a92da40b4a5a539239e19f78c45f6ca1d456d85e6f8e"><div class="ttname"><a href="classSFCollector.html#a264a80dddd8fd451b5d59a92da40b4a5a539239e19f78c45f6ca1d456d85e6f8e">SFCollector::CAN_REMOVE</a></div><div class="ttdeci">@ CAN_REMOVE</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldCollector_8h_source.html#l00044">ScalarFieldCollector.h:44</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_a64cc8e49fc845aff7a2a0592c5610447"><div class="ttname"><a href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">Tuple3Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
@@ -477,7 +486,7 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html_a1c67882a37c7d2caef21f34544b6f582"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">cloudViewer::GenericProgressCallback::setInfo</a></div><div class="ttdeci">virtual void setInfo(const char *infoStr)=0</div><div class="ttdoc">Notifies some information about the ongoing process.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html_a469bb7b24628181241c020c0c9041a91"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle</a></div><div class="ttdeci">virtual void setMethodTitle(const char *methodTitle)=0</div><div class="ttdoc">Notifies the algorithm title.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00078">GenericProgressCallback.h:78</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_acb12b90f38ce4214da186cb2d5d0b764"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_a6e75fa9a0a99931ed3ed2835e142d2d5"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div><div class="ttdef"><b>Definition:</b> <a href="NormalizedProgress_8cpp_source.html#l00099">NormalizedProgress.cpp:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a1c41893330b17710a7f6e4c7c4df9187"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a1c41893330b17710a7f6e4c7c4df9187">cloudViewer::PointCloudTpl::getScalarFieldIndexByName</a></div><div class="ttdeci">int getScalarFieldIndexByName(const char *name) const</div><div class="ttdoc">Returns the index of a scalar field represented by its name.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00375">PointCloudTpl.h:375</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a3f89b23235ca5904f0a795e5dd192007"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a3f89b23235ca5904f0a795e5dd192007">cloudViewer::PointCloudTpl::setCurrentOutScalarField</a></div><div class="ttdeci">void setCurrentOutScalarField(int index)</div><div class="ttdoc">Sets the OUTPUT scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00421">PointCloudTpl.h:421</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
@@ -531,7 +540,7 @@ $(document).ready(function(){initNavTree('ContextBasedFeature_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="ContextBasedFeature_8cpp.html">ContextBasedFeature.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

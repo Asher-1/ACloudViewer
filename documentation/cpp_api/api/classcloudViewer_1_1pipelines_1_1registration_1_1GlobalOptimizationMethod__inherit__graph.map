@@ -1,5 +1,6 @@
 <map id="cloudViewer::pipelines::registration::GlobalOptimizationMethod" name="cloudViewer::pipelines::registration::GlobalOptimizationMethod">
-<area shape="rect" id="node1" title="Base class for global optimization method." alt="" coords="5,45,244,101"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationGaussNewton.html" title="Global optimization with Gauss&#45;Newton algorithm." alt="" coords="292,5,531,61"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationLevenbergMarquardt.html" title="Global optimization with Levenberg&#45;Marquardt algorithm." alt="" coords="292,85,531,141"/>
+<area shape="rect" id="node1" title="Base class for global optimization method." alt="" coords="5,85,244,141"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationGaussNewton.html" title="Global optimization with Gauss&#45;Newton algorithm." alt="" coords="327,5,565,61"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationLevenbergMarquardt.html" title="Global optimization with Levenberg&#45;Marquardt algorithm." alt="" coords="327,85,565,141"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PyGlobalOptimizationMethod.html" title=" " alt="" coords="292,165,600,221"/>
 </map>

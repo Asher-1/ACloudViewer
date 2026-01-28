@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -115,7 +124,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="comment">// load points</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; obj-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>(); i++) {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        <span class="keywordtype">int</span> pId = obj-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a7cb77c5efad6ba874f0732fe1fe26682">getPointGlobalIndex</a>(i);  <span class="comment">// get global point ID</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(pId);                     <span class="comment">// add point to this polyline</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(pId);                     <span class="comment">// add point to this polyline</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    }</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="comment">// copy name</span></div>
@@ -133,11 +142,11 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;}</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">// overidden from ccHObject</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classccPointPair.html#a27e85f122c941e38a5584c6f0d3d486e">   46</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccPointPair.html#a27e85f122c941e38a5584c6f0d3d486e">ccPointPair::drawMeOnly</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) {</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="ecvDrawContext_8h.html#a5e2f3b56b4b18b1fb1c28fbe68c3687a">MACRO_Foreground</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>))  <span class="comment">// 2D foreground only</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classccPointPair.html#a27e85f122c941e38a5584c6f0d3d486e">   46</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccPointPair.html#a27e85f122c941e38a5584c6f0d3d486e">ccPointPair::drawMeOnly</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) {</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="ecvDrawContext_8h.html#a5e2f3b56b4b18b1fb1c28fbe68c3687a">MACRO_Foreground</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>))  <span class="comment">// 2D foreground only</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span>;                      <span class="comment">// do nothing</span></div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="ecvDrawContext_8h.html#a2891cd690e613d66a54b7bdf9af338f7">MACRO_Draw3D</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>)) {</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="ecvDrawContext_8h.html#a2891cd690e613d66a54b7bdf9af338f7">MACRO_Draw3D</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>)) {</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() == 0)  <span class="comment">// no points -&gt; bail!</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
@@ -148,7 +157,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        }</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="comment">// push name for picking</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordtype">bool</span> entityPickingMode = <a class="code" href="ecvDrawContext_8h.html#a89ec3353ac31756b22c817c725eb6b64">MACRO_EntityPicking</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordtype">bool</span> entityPickingMode = <a class="code" href="ecvDrawContext_8h.html#a89ec3353ac31756b22c817c725eb6b64">MACRO_EntityPicking</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="comment">// check sphere exists</span></div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="ccPointPair_8cpp.html#aa2ffcc3e39c11b94b535c7aef80d1116">c_unitPointMarker</a>) {</div>
@@ -182,7 +191,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="comment">// not sure what this does, but it looks like fun</span></div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a> markerContext =</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>;  <span class="comment">// build-up point maker own &#39;context&#39;</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>;  <span class="comment">// build-up point maker own &#39;context&#39;</span></div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        markerContext.<a class="code" href="structccGLDrawContext.html#a2e1ea8f989df63da4545fadee7bd945f">drawingFlags</a> &amp;=</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                (~<a class="code" href="ecvDrawContext_8h.html#aa9344eadeddfc620f4e896bfda0ce009ae6bde493926a42602c6d77c44c6a855c">CC_ENTITY_PICKING</a>);  <span class="comment">// we must remove the &#39;push name flag&#39;</span></div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                                       <span class="comment">// so that the sphere doesn&#39;t push its</span></div>
@@ -208,7 +217,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            <span class="comment">// ccGL::Translate(glFunc, P-&gt;x, P-&gt;y, P-&gt;z);</span></div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;            markerContext.<a class="code" href="structccGLDrawContext.html#ac92df80563104dcd2ff98d6308e60561">transformInfo</a>.<a class="code" href="structTransformInfo.html#a2eed7b6a623ac52503e536e888c8d23b">setTranslationStart</a>(</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                    <a class="code" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>(P-&gt;<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, P-&gt;<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, P-&gt;<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>));</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            <span class="keywordtype">float</span> scale = <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.labelMarkerSize * <a class="code" href="classccPointPair.html#a697ed337dcc51950637f8fc7ddc2ed82">m_relMarkerScale</a> * 0.2 *</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            <span class="keywordtype">float</span> scale = <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.labelMarkerSize * <a class="code" href="classccPointPair.html#a697ed337dcc51950637f8fc7ddc2ed82">m_relMarkerScale</a> * 0.2 *</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                          fmin(pSize, 4);</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;            <span class="keywordflow">if</span> (viewportParams.<a class="code" href="classecvViewportParameters.html#a0debaae86a531aac13700b6068716e56">perspectiveView</a> &amp;&amp; viewportParams.<a class="code" href="classecvViewportParameters.html#a68b7b7e28fc45cd722115c844c3fbb9e">zFar</a> &gt; 0) {</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                <span class="comment">// in perspective view, the actual scale depends on the distance</span></div>
@@ -244,7 +253,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160; </div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> disp = end - start;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            <span class="keywordtype">float</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = disp.<a class="code" href="classVector3Tpl.html#a60dc9f590381d86199df3eb509c9b1b3">norm</a>();</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <span class="keywordtype">float</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> = <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.labelMarkerSize * <a class="code" href="classccPointPair.html#a697ed337dcc51950637f8fc7ddc2ed82">m_relMarkerScale</a> * 0.05 *</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <span class="keywordtype">float</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> = <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.labelMarkerSize * <a class="code" href="classccPointPair.html#a697ed337dcc51950637f8fc7ddc2ed82">m_relMarkerScale</a> * 0.05 *</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;                          std::fmin(pSize, 5);</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> dir = disp / <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160; </div>
@@ -301,7 +310,6 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="ttc" id="aCVConst_8h_html_a42350ac42d88ac01bd50195c36f27789"><div class="ttname"><a href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a></div><div class="ttdeci">constexpr PointCoordinateType PC_ONE</div><div class="ttdoc">'1' as a PointCoordinateType value</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00067">CVConst.h:67</a></div></div>
 <div class="ttc" id="aCVGeom_8h_html_aba743094ac3c5f78d2814b141438015c"><div class="ttname"><a href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a></div><div class="ttdeci">Vector3Tpl&lt; PointCoordinateType &gt; CCVector3</div><div class="ttdoc">Default 3D Vector.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00798">CVGeom.h:798</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="accPointPair_8cpp_html_a254001a691ffed85f090106fc4c87e02"><div class="ttname"><a href="ccPointPair_8cpp.html#a254001a691ffed85f090106fc4c87e02">c_headMarker</a></div><div class="ttdeci">static QSharedPointer&lt; ccCone &gt; c_headMarker(nullptr)</div></div>
 <div class="ttc" id="accPointPair_8cpp_html_aa2ffcc3e39c11b94b535c7aef80d1116"><div class="ttname"><a href="ccPointPair_8cpp.html#aa2ffcc3e39c11b94b535c7aef80d1116">c_unitPointMarker</a></div><div class="ttdeci">static QSharedPointer&lt; ccSphere &gt; c_unitPointMarker(nullptr)</div></div>
 <div class="ttc" id="accPointPair_8cpp_html_adbdcd76f65c50cc5fedb6a929bd0125b"><div class="ttname"><a href="ccPointPair_8cpp.html#adbdcd76f65c50cc5fedb6a929bd0125b">c_bodyMarker</a></div><div class="ttdeci">static QSharedPointer&lt; ccCylinder &gt; c_bodyMarker(nullptr)</div></div>
@@ -331,7 +339,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="ttc" id="aclassccPointPair_html_a840a77c0d4a74d67e9d6d9cf296f3ad4"><div class="ttname"><a href="classccPointPair.html#a840a77c0d4a74d67e9d6d9cf296f3ad4">ccPointPair::isPointPair</a></div><div class="ttdeci">static bool isPointPair(ccHObject *object)</div><div class="ttdef"><b>Definition:</b> <a href="ccPointPair_8cpp_source.html#l00191">ccPointPair.cpp:191</a></div></div>
 <div class="ttc" id="aclassccPolyline_html"><div class="ttname"><a href="classccPolyline.html">ccPolyline</a></div><div class="ttdoc">Colored polyline.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00023">ecvPolyline.h:24</a></div></div>
 <div class="ttc" id="aclassccSphere_html"><div class="ttname"><a href="classccSphere.html">ccSphere</a></div><div class="ttdoc">Sphere (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvSphere_8h_source.html#l00016">ecvSphere.h:16</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a7cb77c5efad6ba874f0732fe1fe26682"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a7cb77c5efad6ba874f0732fe1fe26682">cloudViewer::ReferenceCloud::getPointGlobalIndex</a></div><div class="ttdeci">virtual unsigned getPointGlobalIndex(unsigned localIndex) const</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00103">ReferenceCloud.h:103</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ae1bc84432099435f6e9fd788aee2c2f6"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">cloudViewer::ReferenceCloud::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdoc">Returns the ith point.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00079">ReferenceCloud.h:79</a></div></div>
@@ -347,6 +355,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div class="ttc" id="aecvDrawContext_8h_html_a5e2f3b56b4b18b1fb1c28fbe68c3687a"><div class="ttname"><a href="ecvDrawContext_8h.html#a5e2f3b56b4b18b1fb1c28fbe68c3687a">MACRO_Foreground</a></div><div class="ttdeci">#define MACRO_Foreground(context)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00359">ecvDrawContext.h:359</a></div></div>
 <div class="ttc" id="aecvDrawContext_8h_html_a89ec3353ac31756b22c817c725eb6b64"><div class="ttname"><a href="ecvDrawContext_8h.html#a89ec3353ac31756b22c817c725eb6b64">MACRO_EntityPicking</a></div><div class="ttdeci">#define MACRO_EntityPicking(context)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00352">ecvDrawContext.h:352</a></div></div>
 <div class="ttc" id="aecvDrawContext_8h_html_aa9344eadeddfc620f4e896bfda0ce009ae6bde493926a42602c6d77c44c6a855c"><div class="ttname"><a href="ecvDrawContext_8h.html#aa9344eadeddfc620f4e896bfda0ce009ae6bde493926a42602c6d77c44c6a855c">CC_ENTITY_PICKING</a></div><div class="ttdeci">@ CC_ENTITY_PICKING</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00337">ecvDrawContext.h:337</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f"><div class="ttname"><a href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green</a></div><div class="ttdeci">constexpr Rgb green(0, MAX, 0)</div></div>
 <div class="ttc" id="astructTransformInfo_html_a01c6f7149aad21df8dc6cb273a510d20"><div class="ttname"><a href="structTransformInfo.html#a01c6f7149aad21df8dc6cb273a510d20">TransformInfo::setScale</a></div><div class="ttdeci">void setScale(const CCVector3 &amp;scale)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00305">ecvDrawContext.h:305</a></div></div>
 <div class="ttc" id="astructTransformInfo_html_a091d8e113f9a086ab1307396f73eeff0"><div class="ttname"><a href="structTransformInfo.html#a091d8e113f9a086ab1307396f73eeff0">TransformInfo::setTranslationEnd</a></div><div class="ttdeci">void setTranslationEnd(const CCVector3 &amp;trans)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00313">ecvDrawContext.h:313</a></div></div>
@@ -364,7 +373,7 @@ $(document).ready(function(){initNavTree('ccPointPair_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccPointPair_8cpp.html">ccPointPair.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

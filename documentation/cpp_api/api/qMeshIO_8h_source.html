@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -99,11 +108,11 @@ $(document).ready(function(){initNavTree('qMeshIO_8h_source.html',''); initResiz
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">// Copyright © 2019 Andy Maloney &lt;asmaloney@gmail.com&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// SPDX-License-Identifier: BSD-3-Clause</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;ecvIOPluginInterface.h&quot;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvIOPluginInterface_8h.html">ecvIOPluginInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno"><a class="line" href="classqMeshIO.html">   14</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqMeshIO.html">qMeshIO</a> final : <span class="keyword">public</span> QObject, <span class="keyword">public</span> ccIOPluginInterface {</div>
+<div class="line"><a name="l00014"></a><span class="lineno"><a class="line" href="classqMeshIO.html">   14</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqMeshIO.html">qMeshIO</a> final : <span class="keyword">public</span> QObject, <span class="keyword">public</span> <a class="code" href="classccIOPluginInterface.html">ccIOPluginInterface</a> {</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    Q_OBJECT</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    Q_INTERFACES(ccPluginInterface ccIOPluginInterface)</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    Q_INTERFACES(<a class="code" href="classccPluginInterface.html">ccPluginInterface</a> <a class="code" href="classccIOPluginInterface.html">ccIOPluginInterface</a>)</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    Q_PLUGIN_METADATA(IID <span class="stringliteral">&quot;ecvcorp.cloudviewer.plugin.qMeshIO&quot;</span> FILE</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;                          <span class="stringliteral">&quot;../info.json&quot;</span>)</div>
@@ -112,18 +121,23 @@ $(document).ready(function(){initNavTree('qMeshIO_8h_source.html',''); initResiz
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classqMeshIO.html">qMeshIO</a>(QObject *parent = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordtype">void</span> registerCommands(ccCommandLineInterface *inCmdLine) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordtype">void</span> registerCommands(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *inCmdLine) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    FilterList getFilters() <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <a class="code" href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">FilterList</a> getFilters() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;};</div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html"><div class="ttname"><a href="classccIOPluginInterface.html">ccIOPluginInterface</a></div><div class="ttdoc">I/O filter plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00020">ecvIOPluginInterface.h:20</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html_a66bef21cd54a0c6c13a1279a0ff1a827"><div class="ttname"><a href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a></div><div class="ttdeci">QVector&lt; FileIOFilter::Shared &gt; FilterList</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00022">ecvIOPluginInterface.h:22</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
 <div class="ttc" id="aclassqMeshIO_html"><div class="ttname"><a href="classqMeshIO.html">qMeshIO</a></div><div class="ttdef"><b>Definition:</b> <a href="qMeshIO_8h_source.html#l00014">qMeshIO.h:14</a></div></div>
+<div class="ttc" id="aecvIOPluginInterface_8h_html"><div class="ttname"><a href="ecvIOPluginInterface_8h.html">ecvIOPluginInterface.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_93729575d6fedf5bf48258f8bebc2d7a.html">qMeshIO</a></li><li class="navelem"><a class="el" href="dir_edb84306bbe446ef4e56836cc6552e7b.html">include</a></li><li class="navelem"><a class="el" href="qMeshIO_8h.html">qMeshIO.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

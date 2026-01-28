@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -123,13 +132,13 @@ $(document).ready(function(){initNavTree('qTreeIso_8h_source.html',''); initResi
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="comment">// A Matlab version shared via:</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="comment">// https://github.com/truebelief/artemis_treeiso</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#include &quot;ecvStdPluginInterface.h&quot;</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">class </span><a class="code" href="classccTreeIsoDlg.html">ccTreeIsoDlg</a>;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classqTreeIso.html">   41</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqTreeIso.html">qTreeIso</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> ccStdPluginInterface {</div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classqTreeIso.html">   41</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqTreeIso.html">qTreeIso</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a> {</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    Q_OBJECT</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    Q_INTERFACES(<a class="code" href="classccPluginInterface.html">ccPluginInterface</a> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>)</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    Q_PLUGIN_METADATA(IID <span class="stringliteral">&quot;ecvcorp.cloudviewer.plugin.qTreeISO&quot;</span> FILE</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                          <span class="stringliteral">&quot;../info.json&quot;</span>)</div>
@@ -141,9 +150,9 @@ $(document).ready(function(){initNavTree('qTreeIso_8h_source.html',''); initResi
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="comment">// inherited from ccStdPluginInterface</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordtype">void</span> onNewSelection(<span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    QList&lt;QAction*&gt; getActions() <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordtype">void</span> registerCommands(ccCommandLineInterface* cmd) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordtype">void</span> registerCommands(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>* cmd) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">struct </span>Parameters {</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">struct </span><a class="code" href="structParameters.html#a1e3c72bebe6cc8a15ada7346f7e16e2a">Parameters</a> {</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordtype">float</span> reg_strength1 = 1.0f;  <span class="comment">// lambda1</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordtype">int</span> min_nn1 = 5;             <span class="comment">// K1:key parameter</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keywordtype">float</span> decimate_res1 = 0.05f;</div>
@@ -168,7 +177,10 @@ $(document).ready(function(){initNavTree('qTreeIso_8h_source.html',''); initResi
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">protected</span>:  <span class="comment">// members</span></div>
 <div class="line"><a name="l00085"></a><span class="lineno"><a class="line" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">   85</a></span>&#160;<span class="comment"></span>    QAction* <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;};</div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
 <div class="ttc" id="aclassccTreeIsoDlg_html"><div class="ttname"><a href="classccTreeIsoDlg.html">ccTreeIsoDlg</a></div><div class="ttdoc">Dialog for qTreeIso plugin.</div><div class="ttdef"><b>Definition:</b> <a href="ccTreeIsoDlg_8h_source.html#l00018">ccTreeIsoDlg.h:18</a></div></div>
 <div class="ttc" id="aclassqTreeIso_html"><div class="ttname"><a href="classqTreeIso.html">qTreeIso</a></div><div class="ttdoc">TreeIso plugin.</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8h_source.html#l00041">qTreeIso.h:41</a></div></div>
 <div class="ttc" id="aclassqTreeIso_html_a0bec5325188e4995d6c987a66f061e03"><div class="ttname"><a href="classqTreeIso.html#a0bec5325188e4995d6c987a66f061e03">qTreeIso::final_segs</a></div><div class="ttdeci">void final_segs(const Parameters &amp;parameters, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8cpp_source.html#l00163">qTreeIso.cpp:163</a></div></div>
@@ -176,13 +188,15 @@ $(document).ready(function(){initNavTree('qTreeIso_8h_source.html',''); initResi
 <div class="ttc" id="aclassqTreeIso_html_ab83ef4843b3b316ebb419eaa6c48a821"><div class="ttname"><a href="classqTreeIso.html#ab83ef4843b3b316ebb419eaa6c48a821">qTreeIso::init_segs</a></div><div class="ttdeci">void init_segs(const Parameters &amp;parameters, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8cpp_source.html#l00112">qTreeIso.cpp:112</a></div></div>
 <div class="ttc" id="aclassqTreeIso_html_aec20a5b10de2dfb2a60c52491a7e214e"><div class="ttname"><a href="classqTreeIso.html#aec20a5b10de2dfb2a60c52491a7e214e">qTreeIso::intermediate_segs</a></div><div class="ttdeci">void intermediate_segs(const Parameters &amp;parameters, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8cpp_source.html#l00136">qTreeIso.cpp:136</a></div></div>
 <div class="ttc" id="aclassqTreeIso_html_af1924be12328d40c5bbb237a7d0221ee"><div class="ttname"><a href="classqTreeIso.html#af1924be12328d40c5bbb237a7d0221ee">qTreeIso::doAction</a></div><div class="ttdeci">void doAction()</div><div class="ttdoc">Slot called when associated ation is triggered.</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8cpp_source.html#l00070">qTreeIso.cpp:70</a></div></div>
+<div class="ttc" id="aecvStdPluginInterface_8h_html"><div class="ttname"><a href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></div></div>
+<div class="ttc" id="astructParameters_html_a1e3c72bebe6cc8a15ada7346f7e16e2a"><div class="ttname"><a href="structParameters.html#a1e3c72bebe6cc8a15ada7346f7e16e2a">Parameters::Parameters</a></div><div class="ttdeci">Parameters()=default</div><div class="ttdoc">Default initializer.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4b928928a8ba753e3642cd3e99306298.html">qTreeIso</a></li><li class="navelem"><a class="el" href="dir_efca379785dd656b4950eb7870b79a24.html">include</a></li><li class="navelem"><a class="el" href="qTreeIso_8h.html">qTreeIso.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

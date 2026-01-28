@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -384,7 +393,7 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keywordflow">if</span> (m_pythonProcess-&gt;state() != QProcess::ProcessState::Starting &amp;&amp;</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        m_pythonProcess-&gt;state() != QProcess::ProcessState::Running)</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    {</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to start python process&quot;</span>);</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to start python process&quot;</span>);</div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    }</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    loop.exec();</div>
@@ -448,7 +457,7 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    <span class="keywordflow">if</span> (!errorOutput.isEmpty())</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    {</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(errorOutput);</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(errorOutput);</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    }</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    m_pythonProcess-&gt;setProcessChannelMode(QProcess::MergedChannels);</div>
@@ -486,8 +495,8 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="keywordflow">if</span> (m_pythonProcess-&gt;exitCode() != 0)</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    {</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Failed to run install commands&quot;</span>, m_pythonProcess-&gt;error());</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(m_pythonProcess-&gt;errorString());</div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Failed to run install commands&quot;</span>, m_pythonProcess-&gt;error());</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(m_pythonProcess-&gt;errorString());</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    }</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    refreshInstalledPackagesList();</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;}</div>
@@ -516,8 +525,8 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160; </div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;        <span class="keywordflow">if</span> (m_pythonProcess-&gt;exitCode() != 0)</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        {</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Failed to run uninstall commands&quot;</span>, m_pythonProcess-&gt;error());</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(m_pythonProcess-&gt;errorString());</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Failed to run uninstall commands&quot;</span>, m_pythonProcess-&gt;error());</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(m_pythonProcess-&gt;errorString());</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;        }</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    }</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    refreshInstalledPackagesList();</div>
@@ -604,8 +613,8 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="ttc" id="aUtilities_8h_html"><div class="ttname"><a href="Utilities_8h.html">Utilities.h</a></div></div>
 <div class="ttc" id="aUtilities_8h_html_a2775111d94dd73d46cff438e05ebf94d"><div class="ttname"><a href="Utilities_8h.html#a2775111d94dd73d46cff438e05ebf94d">plgWarning</a></div><div class="ttdeci">PluginLogger&lt; CVLog::LOG_WARNING &gt; plgWarning</div><div class="ttdef"><b>Definition:</b> <a href="Utilities_8h_source.html#l00102">Utilities.h:102</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassCommandOutputDialog_html"><div class="ttname"><a href="classCommandOutputDialog.html">CommandOutputDialog</a></div><div class="ttdef"><b>Definition:</b> <a href="PackageManager_8cpp_source.html#l00176">PackageManager.cpp:177</a></div></div>
 <div class="ttc" id="aclassCommandOutputDialog_html_a02e8a3e5edc8c19f9572f7c4ac48ca60"><div class="ttname"><a href="classCommandOutputDialog.html#a02e8a3e5edc8c19f9572f7c4ac48ca60">CommandOutputDialog::appendPlainText</a></div><div class="ttdeci">void appendPlainText(const QString &amp;text) const</div><div class="ttdef"><b>Definition:</b> <a href="PackageManager_8cpp_source.html#l00192">PackageManager.cpp:192</a></div></div>
 <div class="ttc" id="aclassCommandOutputDialog_html_a2498ffb04ecca840469a80a679b72c4e"><div class="ttname"><a href="classCommandOutputDialog.html#a2498ffb04ecca840469a80a679b72c4e">CommandOutputDialog::clear</a></div><div class="ttdeci">void clear() const</div><div class="ttdef"><b>Definition:</b> <a href="PackageManager_8cpp_source.html#l00197">PackageManager.cpp:197</a></div></div>
@@ -636,7 +645,7 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="PackageManager_8cpp.html">PackageManager.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

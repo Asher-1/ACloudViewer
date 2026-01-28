@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -100,7 +109,7 @@ $(document).ready(function(){initNavTree('PythonPlugin_8h_source.html',''); init
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PythonConfig_8h.html">PythonConfig.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PythonInterpreter_8h.html">PythonInterpreter.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PythonPluginManager_8h.html">PythonPluginManager.h</a>&quot;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;ecvStdPluginInterface.h&quot;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;iostream&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
@@ -114,10 +123,10 @@ $(document).ready(function(){initNavTree('PythonPlugin_8h_source.html',''); init
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">class </span><a class="code" href="classPythonActionLauncher.html">PythonActionLauncher</a>;</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">class </span><a class="code" href="classPythonRuntimeSettings.html">PythonRuntimeSettings</a>;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classPythonPlugin.html">   28</a></span>&#160;<span class="keyword">class </span><a class="code" href="classPythonPlugin.html">PythonPlugin</a> final : <span class="keyword">public</span> QObject, <span class="keyword">public</span> ccStdPluginInterface</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classPythonPlugin.html">   28</a></span>&#160;<span class="keyword">class </span><a class="code" href="classPythonPlugin.html">PythonPlugin</a> final : <span class="keyword">public</span> QObject, <span class="keyword">public</span> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;{</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    Q_OBJECT</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    Q_INTERFACES(<a class="code" href="classccPluginInterface.html">ccPluginInterface</a> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>)</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    Q_PLUGIN_METADATA(IID <span class="stringliteral">&quot;ecvcorp.cloudviewer.plugin.PythonRuntime&quot;</span> FILE <span class="stringliteral">&quot;../info.json&quot;</span>)</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
@@ -126,9 +135,9 @@ $(document).ready(function(){initNavTree('PythonPlugin_8h_source.html',''); init
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    QList&lt;QAction *&gt; <a class="code" href="classPythonPlugin.html#a0f765fe5d76a622f6f4ff97446ec2192">getActions</a>() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classPythonPlugin.html#a9d82981074c7fe495079931e71b35720">registerCommands</a>(ccCommandLineInterface *cmd) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classPythonPlugin.html#a9d82981074c7fe495079931e71b35720">registerCommands</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *cmd) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">setMainAppInterface</a>(ecvMainAppInterface *app) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">setMainAppInterface</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *app) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classPythonPlugin.html#a293750f536d68654214480f05d69258d">stop</a>() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
@@ -151,8 +160,8 @@ $(document).ready(function(){initNavTree('PythonPlugin_8h_source.html',''); init
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="comment">// Script list function</span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordtype">void</span> addScriptAction();</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">void</span> addScript(QString path);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordtype">void</span> executeScript(QString path);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">void</span> addScript(QString <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordtype">void</span> executeScript(QString <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">void</span> removeScript(QString <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, QAction *self);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">void</span> populatePluginSubMenu();</div>
@@ -204,9 +213,9 @@ $(document).ready(function(){initNavTree('PythonPlugin_8h_source.html',''); init
 <div class="ttc" id="aclassPythonInterpreter_html"><div class="ttname"><a href="classPythonInterpreter.html">PythonInterpreter</a></div><div class="ttdef"><b>Definition:</b> <a href="PythonInterpreter_8h_source.html#l00032">PythonInterpreter.h:33</a></div></div>
 <div class="ttc" id="aclassPythonPluginManager_html"><div class="ttname"><a href="classPythonPluginManager.html">PythonPluginManager</a></div><div class="ttdef"><b>Definition:</b> <a href="PythonPluginManager_8h_source.html#l00016">PythonPluginManager.h:17</a></div></div>
 <div class="ttc" id="aclassPythonPlugin_html"><div class="ttname"><a href="classPythonPlugin.html">PythonPlugin</a></div><div class="ttdoc">&quot;Entry point&quot; of the plugin</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8h_source.html#l00028">PythonPlugin.h:29</a></div></div>
-<div class="ttc" id="aclassPythonPlugin_html_a07c1c0c59c4f9e14e2cd3ab3fa70979a"><div class="ttname"><a href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">PythonPlugin::setMainAppInterface</a></div><div class="ttdeci">void setMainAppInterface(ecvMainAppInterface *app) override</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00509">PythonPlugin.cpp:509</a></div></div>
-<div class="ttc" id="aclassPythonPlugin_html_a0f765fe5d76a622f6f4ff97446ec2192"><div class="ttname"><a href="classPythonPlugin.html#a0f765fe5d76a622f6f4ff97446ec2192">PythonPlugin::getActions</a></div><div class="ttdeci">QList&lt; QAction * &gt; getActions() override</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00136">PythonPlugin.cpp:136</a></div></div>
-<div class="ttc" id="aclassPythonPlugin_html_a293750f536d68654214480f05d69258d"><div class="ttname"><a href="classPythonPlugin.html#a293750f536d68654214480f05d69258d">PythonPlugin::stop</a></div><div class="ttdeci">void stop() override</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00128">PythonPlugin.cpp:128</a></div></div>
+<div class="ttc" id="aclassPythonPlugin_html_a07c1c0c59c4f9e14e2cd3ab3fa70979a"><div class="ttname"><a href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">PythonPlugin::setMainAppInterface</a></div><div class="ttdeci">void setMainAppInterface(ecvMainAppInterface *app) override</div><div class="ttdoc">Sets application entry point.</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00509">PythonPlugin.cpp:509</a></div></div>
+<div class="ttc" id="aclassPythonPlugin_html_a0f765fe5d76a622f6f4ff97446ec2192"><div class="ttname"><a href="classPythonPlugin.html#a0f765fe5d76a622f6f4ff97446ec2192">PythonPlugin::getActions</a></div><div class="ttdeci">QList&lt; QAction * &gt; getActions() override</div><div class="ttdoc">Get a list of actions for this plugin.</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00136">PythonPlugin.cpp:136</a></div></div>
+<div class="ttc" id="aclassPythonPlugin_html_a293750f536d68654214480f05d69258d"><div class="ttname"><a href="classPythonPlugin.html#a293750f536d68654214480f05d69258d">PythonPlugin::stop</a></div><div class="ttdeci">void stop() override</div><div class="ttdoc">Stops the plugin.</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00128">PythonPlugin.cpp:128</a></div></div>
 <div class="ttc" id="aclassPythonPlugin_html_a43c4f49fcc94d69a2585223c8b87cd9d"><div class="ttname"><a href="classPythonPlugin.html#a43c4f49fcc94d69a2585223c8b87cd9d">PythonPlugin::PythonPlugin</a></div><div class="ttdeci">PythonPlugin(QObject *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00036">PythonPlugin.cpp:36</a></div></div>
 <div class="ttc" id="aclassPythonPlugin_html_a7a8e44514479e89d350488c188dd97bd"><div class="ttname"><a href="classPythonPlugin.html#a7a8e44514479e89d350488c188dd97bd">PythonPlugin::operator=</a></div><div class="ttdeci">PythonPlugin &amp; operator=(const PythonPlugin &amp;)=delete</div></div>
 <div class="ttc" id="aclassPythonPlugin_html_a9d82981074c7fe495079931e71b35720"><div class="ttname"><a href="classPythonPlugin.html#a9d82981074c7fe495079931e71b35720">PythonPlugin::registerCommands</a></div><div class="ttdeci">void registerCommands(ccCommandLineInterface *cmd) override</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00500">PythonPlugin.cpp:500</a></div></div>
@@ -216,13 +225,19 @@ $(document).ready(function(){initNavTree('PythonPlugin_8h_source.html',''); init
 <div class="ttc" id="aclassPythonPlugin_html_ae63fa513ed772032b92846f5faee5e05"><div class="ttname"><a href="classPythonPlugin.html#ae63fa513ed772032b92846f5faee5e05">PythonPlugin::operator=</a></div><div class="ttdeci">PythonPlugin &amp; operator=(PythonPlugin &amp;&amp;)=delete</div></div>
 <div class="ttc" id="aclassPythonRepl_html"><div class="ttname"><a href="classPythonRepl.html">PythonRepl</a></div><div class="ttdoc">Homemade REPL (Read Print Eval Loop)</div><div class="ttdef"><b>Definition:</b> <a href="PythonRepl_8h_source.html#l00058">PythonRepl.h:59</a></div></div>
 <div class="ttc" id="aclassPythonRuntimeSettings_html"><div class="ttname"><a href="classPythonRuntimeSettings.html">PythonRuntimeSettings</a></div><div class="ttdef"><b>Definition:</b> <a href="PythonRuntimeSettings_8h_source.html#l00016">PythonRuntimeSettings.h:17</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aecvStdPluginInterface_8h_html"><div class="ttname"><a href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="PythonPlugin_8h.html">PythonPlugin.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

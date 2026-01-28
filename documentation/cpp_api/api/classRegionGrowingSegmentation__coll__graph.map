@@ -1,9 +1,11 @@
 <map id="RegionGrowingSegmentation" name="RegionGrowingSegmentation">
-<area shape="rect" id="node1" title="Region Growing Segmentation." alt="" coords="165,184,377,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="110,95,231,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classRegionGrowingSegmentationDlg.html" title=" " alt="" coords="256,95,491,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="320,5,395,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="419,5,675,32"/>
+<area shape="rect" id="node1" title="Region Growing Segmentation." alt="" coords="771,157,983,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="479,107,601,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="96,5,171,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="52,56,215,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="66,107,201,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="53,157,213,184"/>
+<area shape="rect" id="node7" href="$classRegionGrowingSegmentationDlg.html" title=" " alt="" coords="423,208,657,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="96,208,171,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,261,285"/>
 </map>

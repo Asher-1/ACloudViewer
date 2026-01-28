@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -649,7 +658,7 @@ Public Attributes</h2></td></tr>
 
 <p>Computes the raster size for a given bounding-box. </p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecv2_85DimEditor_8cpp_source.html#l00094">cc2Point5DimEditor::getGridSize()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, and <a class="el" href="ecvCommandRaster_8cpp_source.html#l00459">CommandVolume25D::process()</a>.</p>
 
 </div>
 </div>
@@ -735,7 +744,7 @@ Public Attributes</h2></td></tr>
 
 <p>Converts the grid to a cloud with scalar field(s) </p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00356">ccVolumeCalcTool::ConvertGridToCloud()</a>, <a class="el" href="ecv2_85DimEditor_8cpp_source.html#l00174">cc2Point5DimEditor::convertGridToCloud()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, and <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>.</p>
 
 </div>
 </div>
@@ -767,7 +776,7 @@ Public Attributes</h2></td></tr>
 
 <p>Fills the empty cell (for all strategies but 'INTERPOLATE_DELAUNAY') </p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, and <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>.</p>
 
 </div>
 </div>
@@ -824,7 +833,7 @@ Public Attributes</h2></td></tr>
 <p>Fills the grid with a point cloud. </p>
 <p>Since version 2.8, we now use the "PixelIsArea" convention by default (as GDAL) This means that the height is computed at the center of the grid cell. </p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -854,7 +863,7 @@ Public Attributes</h2></td></tr>
 
 <p>Returns the default name of a given field. </p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00044">ccRasterizeTool::ccRasterizeTool()</a>, and <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
 
 </div>
 </div>
@@ -897,6 +906,8 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Initializes / resets the grid. </p>
+
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -954,7 +965,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00165">165</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00558">ccRasterizeTool::convertGridToCloud()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00817">ccVolumeCalcTool::exportGridAsCloud()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00804">ccRasterizeTool::generateCloud()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01408">ccRasterizeTool::generateHillshade()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00933">ccRasterizeTool::generateRaster()</a>, and <a class="el" href="ecv2_85DimEditor_8cpp_source.html#l00122">cc2Point5DimEditor::update2DDisplayZoom()</a>.</p>
 
 </div>
 </div>
@@ -1007,7 +1018,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00163">163</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, and <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
 
 </div>
 </div>
@@ -1070,7 +1081,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00206">206</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01408">ccRasterizeTool::generateHillshade()</a>, <a class="el" href="ecv2_85DimEditor_8cpp_source.html#l00122">cc2Point5DimEditor::update2DDisplayZoom()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -1090,7 +1101,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00222">222</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00933">ccRasterizeTool::generateRaster()</a>.</p>
 
 </div>
 </div>
@@ -1110,7 +1121,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00204">204</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01408">ccRasterizeTool::generateHillshade()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00933">ccRasterizeTool::generateRaster()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02099">ccRasterizeTool::getFillEmptyCellsStrategyExt()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, <a class="el" href="ecv2_85DimEditor_8cpp_source.html#l00122">cc2Point5DimEditor::update2DDisplayZoom()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -1130,7 +1141,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00213">213</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00558">ccRasterizeTool::convertGridToCloud()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02099">ccRasterizeTool::getFillEmptyCellsStrategyExt()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -1150,7 +1161,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00215">215</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02099">ccRasterizeTool::getFillEmptyCellsStrategyExt()</a>.</p>
 
 </div>
 </div>
@@ -1190,7 +1201,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00211">211</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00558">ccRasterizeTool::convertGridToCloud()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02099">ccRasterizeTool::getFillEmptyCellsStrategyExt()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -1210,7 +1221,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00217">217</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, and <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
 
 </div>
 </div>
@@ -1230,6 +1241,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00193">193</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01408">ccRasterizeTool::generateHillshade()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
+
 </div>
 </div>
 <a id="a6569ec788c5c39e26039f5d1018361b5"></a>
@@ -1247,6 +1260,8 @@ Public Attributes</h2></td></tr>
 <p>Associated scalar fields. </p>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00199">199</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00933">ccRasterizeTool::generateRaster()</a>.</p>
 
 </div>
 </div>
@@ -1286,7 +1301,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00219">219</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02099">ccRasterizeTool::getFillEmptyCellsStrategyExt()</a>.</p>
 
 </div>
 </div>
@@ -1306,7 +1321,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvRasterGrid_8h_source.html#l00202">202</a> of file <a class="el" href="ecvRasterGrid_8h_source.html">ecvRasterGrid.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvVolumeCalcTool_8cpp_source.html#l00499">ccVolumeCalcTool::ComputeVolume()</a>, <a class="el" href="ccRasterGrid_8cpp_source.html#l00021">define_ccRasterGrid()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01038">ccRasterizeTool::ExportGeoTiff()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02275">ccRasterizeTool::generateASCIIMatrix()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01680">ccRasterizeTool::generateContours()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l01408">ccRasterizeTool::generateHillshade()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02144">ccRasterizeTool::generateImage()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00933">ccRasterizeTool::generateRaster()</a>, <a class="el" href="ecvRasterizeTool_8cpp_source.html#l02099">ccRasterizeTool::getFillEmptyCellsStrategyExt()</a>, <a class="el" href="ecvCommandRaster_8cpp_source.html#l00091">CommandRasterize::process()</a>, <a class="el" href="ecv2_85DimEditor_8cpp_source.html#l00122">cc2Point5DimEditor::update2DDisplayZoom()</a>, and <a class="el" href="ecvRasterizeTool_8cpp_source.html#l00696">ccRasterizeTool::updateGrid()</a>.</p>
 
 </div>
 </div>
@@ -1319,7 +1334,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:34 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

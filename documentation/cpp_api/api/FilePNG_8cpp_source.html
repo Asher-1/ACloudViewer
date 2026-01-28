@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -95,7 +104,7 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;png.h&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Dtype_8h.html">cloudViewer/core/Dtype.h</a>&quot;</span></div>
@@ -126,11 +135,11 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    }</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;}</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a1a72b0a5b3ad1d7c4b3d508b6ae0a003">   39</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a1a72b0a5b3ad1d7c4b3d508b6ae0a003">ReadImageFromPNG</a>(<span class="keyword">const</span> std::string &amp;filename, <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">geometry::Image</a> &amp;<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>) {</div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a1a72b0a5b3ad1d7c4b3d508b6ae0a003">   39</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a1a72b0a5b3ad1d7c4b3d508b6ae0a003">ReadImageFromPNG</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">geometry::Image</a> &amp;<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>) {</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    png_image pngimage;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    memset(&amp;pngimage, 0, <span class="keyword">sizeof</span>(pngimage));</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    pngimage.version = PNG_IMAGE_VERSION;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordflow">if</span> (png_image_begin_read_from_file(&amp;pngimage, filename.c_str()) == 0) {</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordflow">if</span> (png_image_begin_read_from_file(&amp;pngimage, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str()) == 0) {</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Read PNG failed: unable to parse header.&quot;</span>);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.Clear();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -154,7 +163,7 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordflow">if</span> (png_image_finish_read(&amp;pngimage, <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>, <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.GetDataPtr(), 0, <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) ==</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        0) {</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Read PNG failed: unable to read file: {}&quot;</span>,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                            filename);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                            <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;PNG error: {}&quot;</span>, pngimage.message);</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.Clear();</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -162,7 +171,7 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a4dea1aa8f01e15974f47f30bf01db356">   75</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4dea1aa8f01e15974f47f30bf01db356">WriteImageToPNG</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a4dea1aa8f01e15974f47f30bf01db356">   75</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4dea1aa8f01e15974f47f30bf01db356">WriteImageToPNG</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">geometry::Image</a> &amp;<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>,</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                     <span class="keywordtype">int</span> quality) {</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.IsEmpty()) {</div>
@@ -188,10 +197,10 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    memset(&amp;pngimage, 0, <span class="keyword">sizeof</span>(pngimage));</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    pngimage.version = PNG_IMAGE_VERSION;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#afcc0151d5b2542fb0bfd59cc30e9da9b">SetPNGImageFromImage</a>(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, quality, pngimage);</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordflow">if</span> (png_image_write_to_file(&amp;pngimage, filename.c_str(), 0,</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordflow">if</span> (png_image_write_to_file(&amp;pngimage, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), 0,</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                                <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.GetDataPtr(), 0, <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) == 0) {</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Write PNG failed: unable to write file: {}&quot;</span>,</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                            filename);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                            <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    }</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -244,13 +253,14 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;}  <span class="comment">// namespace t</span></div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aDtype_8h_html"><div class="ttname"><a href="Dtype_8h.html">Dtype.h</a></div></div>
 <div class="ttc" id="aFilamentRenderer_8cpp_html_a60b0c69b08810766e366c4b90031cd0d"><div class="ttname"><a href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a></div><div class="ttdeci">std::shared_ptr&lt; core::Tensor &gt; image</div><div class="ttdef"><b>Definition:</b> <a href="FilamentRenderer_8cpp_source.html#l00184">FilamentRenderer.cpp:184</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1Image_html"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">cloudViewer::t::geometry::Image</a></div><div class="ttdoc">The Image class stores image with customizable rows, cols, channels, dtype and device.</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2t_2geometry_2Image_8h_source.html#l00029">Image.h:29</a></div></div>
 <div class="ttc" id="acloudViewer_2t_2io_2ImageIO_8h_html"><div class="ttname"><a href="cloudViewer_2t_2io_2ImageIO_8h.html">ImageIO.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a4e1d953f2457acb806f3714c4696f4cd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a4e1d953f2457acb806f3714c4696f4cd">cloudViewer::core::Bool</a></div><div class="ttdeci">const Dtype Bool</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00052">Dtype.cpp:52</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a67a7a5bd403bf14004573511c1e75165"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a67a7a5bd403bf14004573511c1e75165">cloudViewer::core::UInt8</a></div><div class="ttdeci">const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00048">Dtype.cpp:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ada08d037ef6e333e2a2ad1d636219433"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ada08d037ef6e333e2a2ad1d636219433">cloudViewer::core::UInt16</a></div><div class="ttdeci">const Dtype UInt16</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00049">Dtype.cpp:49</a></div></div>
@@ -259,14 +269,14 @@ $(document).ready(function(){initNavTree('FilePNG_8cpp_source.html',''); initRes
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a277ccf2b804e6ce151171efccec02659"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a277ccf2b804e6ce151171efccec02659">cloudViewer::t::io::kCloudViewerImageIODefaultQuality</a></div><div class="ttdeci">constexpr int kCloudViewerImageIODefaultQuality</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2t_2io_2ImageIO_8h_source.html#l00033">ImageIO.h:33</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a4dea1aa8f01e15974f47f30bf01db356"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a4dea1aa8f01e15974f47f30bf01db356">cloudViewer::t::io::WriteImageToPNG</a></div><div class="ttdeci">bool WriteImageToPNG(const std::string &amp;filename, const geometry::Image &amp;image, int quality)</div><div class="ttdef"><b>Definition:</b> <a href="FilePNG_8cpp_source.html#l00075">FilePNG.cpp:75</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_afcc0151d5b2542fb0bfd59cc30e9da9b"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#afcc0151d5b2542fb0bfd59cc30e9da9b">cloudViewer::t::io::SetPNGImageFromImage</a></div><div class="ttdeci">static void SetPNGImageFromImage(const geometry::Image &amp;image, int quality, png_image &amp;pngimage)</div><div class="ttdef"><b>Definition:</b> <a href="FilePNG_8cpp_source.html#l00018">FilePNG.cpp:18</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_b02e663b84a5466686fe36f6d8e707d1.html">file_format</a></li><li class="navelem"><a class="el" href="FilePNG_8cpp.html">FilePNG.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

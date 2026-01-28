@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,9 +110,9 @@ $(document).ready(function(){initNavTree('qMPlane_8h_source.html',''); initResiz
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// ACloudViewer</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;ecvPickingListener.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPickingListener_8h.html">ecvPickingListener.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;ecvStdPluginInterface.h&gt;</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">// qMPlane</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ccMPlaneDlgController_8h.html">src/ccMPlaneDlgController.h</a>&quot;</span></div>
@@ -113,9 +122,9 @@ $(document).ready(function(){initNavTree('qMPlane_8h_source.html',''); initResiz
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;vld.h&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classqMPlane.html">   26</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqMPlane.html">qMPlane</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> ccStdPluginInterface {</div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classqMPlane.html">   26</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqMPlane.html">qMPlane</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a> {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    Q_OBJECT</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    Q_INTERFACES(<a class="code" href="classccPluginInterface.html">ccPluginInterface</a> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>)</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    Q_PLUGIN_METADATA(IID <span class="stringliteral">&quot;ecvcorp.cloudviewer.plugin.MPlane&quot;</span> FILE <span class="stringliteral">&quot;info.json&quot;</span>)</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keyword">public</span>:</div>
@@ -136,21 +145,25 @@ $(document).ready(function(){initNavTree('qMPlane_8h_source.html',''); initResiz
 <div class="ttc" id="aPythonPlugin_8cpp_html_aa2ad9c27624efec8c3fce893e35bbc81"><div class="ttname"><a href="PythonPlugin_8cpp.html#aa2ad9c27624efec8c3fce893e35bbc81">slots</a></div><div class="ttdeci">#define slots</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00025">PythonPlugin.cpp:25</a></div></div>
 <div class="ttc" id="accMPlaneDlgController_8h_html"><div class="ttname"><a href="ccMPlaneDlgController_8h.html">ccMPlaneDlgController.h</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
 <div class="ttc" id="aclassqMPlane_html"><div class="ttname"><a href="classqMPlane.html">qMPlane</a></div><div class="ttdef"><b>Definition:</b> <a href="qMPlane_8h_source.html#l00026">qMPlane.h:26</a></div></div>
 <div class="ttc" id="aclassqMPlane_html_a2d6e5987a168a0e40a1acd95c128f40f"><div class="ttname"><a href="classqMPlane.html#a2d6e5987a168a0e40a1acd95c128f40f">qMPlane::onNewSelection</a></div><div class="ttdeci">void onNewSelection(const ccHObject::Container &amp;selectedEntities) override</div><div class="ttdef"><b>Definition:</b> <a href="qMPlane_8cpp_source.html#l00037">qMPlane.cpp:37</a></div></div>
 <div class="ttc" id="aclassqMPlane_html_a2f39933b0a5eb4b2569a230015932096"><div class="ttname"><a href="classqMPlane.html#a2f39933b0a5eb4b2569a230015932096">qMPlane::~qMPlane</a></div><div class="ttdeci">~qMPlane() override=default</div></div>
 <div class="ttc" id="aclassqMPlane_html_a92d50eb11103889b6191571decf310fa"><div class="ttname"><a href="classqMPlane.html#a92d50eb11103889b6191571decf310fa">qMPlane::doAction</a></div><div class="ttdeci">void doAction()</div><div class="ttdef"><b>Definition:</b> <a href="qMPlane_8cpp_source.html#l00053">qMPlane.cpp:53</a></div></div>
 <div class="ttc" id="aclassqMPlane_html_ab537dec74ca153b0ebd84d145ddaef3b"><div class="ttname"><a href="classqMPlane.html#ab537dec74ca153b0ebd84d145ddaef3b">qMPlane::qMPlane</a></div><div class="ttdeci">qMPlane(QObject *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qMPlane_8cpp_source.html#l00021">qMPlane.cpp:21</a></div></div>
-<div class="ttc" id="aclassqMPlane_html_acd1c8a8765e9c83e400107a241d1012f"><div class="ttname"><a href="classqMPlane.html#acd1c8a8765e9c83e400107a241d1012f">qMPlane::getActions</a></div><div class="ttdeci">QList&lt; QAction * &gt; getActions() override</div><div class="ttdef"><b>Definition:</b> <a href="qMPlane_8cpp_source.html#l00026">qMPlane.cpp:26</a></div></div>
+<div class="ttc" id="aclassqMPlane_html_acd1c8a8765e9c83e400107a241d1012f"><div class="ttname"><a href="classqMPlane.html#acd1c8a8765e9c83e400107a241d1012f">qMPlane::getActions</a></div><div class="ttdeci">QList&lt; QAction * &gt; getActions() override</div><div class="ttdoc">Get a list of actions for this plugin.</div><div class="ttdef"><b>Definition:</b> <a href="qMPlane_8cpp_source.html#l00026">qMPlane.cpp:26</a></div></div>
+<div class="ttc" id="aecvPickingListener_8h_html"><div class="ttname"><a href="ecvPickingListener_8h.html">ecvPickingListener.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
+<div class="ttc" id="aecvStdPluginInterface_8h_html"><div class="ttname"><a href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_ce629cbf5f85d13a133a531751423446.html">qMPlane</a></li><li class="navelem"><a class="el" href="qMPlane_8h.html">qMPlane.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

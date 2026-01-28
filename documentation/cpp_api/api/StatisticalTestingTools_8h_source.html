@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -112,7 +121,7 @@ $(document).ready(function(){initNavTree('StatisticalTestingTools_8h_source.html
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StatisticalTestingTools.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a> <a class="code" href="classcloudViewer_1_1StatisticalTestingTools.html">StatisticalTestingTools</a> : <span class="keyword">public</span> <a class="code" href="classcloudViewer_1_1CVToolbox.html">CVToolbox</a> {</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StatisticalTestingTools.html#ab20aad6d0ee5ff5bc08e462403caa0a6">   50</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1StatisticalTestingTools.html#ab20aad6d0ee5ff5bc08e462403caa0a6">computeAdaptativeChi2Dist</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html">GenericDistribution</a>* distrib,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> computeAdaptativeChi2Dist(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html">GenericDistribution</a>* distrib,</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                            <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a>* cloud,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                            <span class="keywordtype">unsigned</span> numberOfClasses,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                                            <span class="keywordtype">unsigned</span>&amp; finalNumberOfClasses,</div>
@@ -123,13 +132,13 @@ $(document).ready(function(){initNavTree('StatisticalTestingTools_8h_source.html
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                            <span class="keywordtype">double</span>* npis = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StatisticalTestingTools.html#abe346ceb1d922d01c79ecc4245668939">   66</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1StatisticalTestingTools.html#abe346ceb1d922d01c79ecc4245668939">computeChi2Fractile</a>(<span class="keywordtype">double</span> p, <span class="keywordtype">int</span> d);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> computeChi2Fractile(<span class="keywordtype">double</span> p, <span class="keywordtype">int</span> d);</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StatisticalTestingTools.html#a49a02069d652c9abaa5ace3317e0326a">   74</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1StatisticalTestingTools.html#a49a02069d652c9abaa5ace3317e0326a">computeChi2Probability</a>(<span class="keywordtype">double</span> chi2result, <span class="keywordtype">int</span> d);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> computeChi2Probability(<span class="keywordtype">double</span> chi2result, <span class="keywordtype">int</span> d);</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StatisticalTestingTools.html#ac1c198f98ff527e9be7b8c3e42e9e72d">  102</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1StatisticalTestingTools.html#ac1c198f98ff527e9be7b8c3e42e9e72d">testCloudWithStatisticalModel</a>(</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> testCloudWithStatisticalModel(</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html">GenericDistribution</a>* distrib,</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* theCloud,</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <span class="keywordtype">unsigned</span> numberOfNeighbours,</div>
@@ -139,7 +148,7 @@ $(document).ready(function(){initNavTree('StatisticalTestingTools_8h_source.html
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
-<div class="line"><a name="l00123"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StatisticalTestingTools.html#a443e1fb09e815cb6de70cbef7c1c48f5">  123</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1StatisticalTestingTools.html#a443e1fb09e815cb6de70cbef7c1c48f5">computeLocalChi2DistAtLevel</a>(</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> computeLocalChi2DistAtLevel(</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;            <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a>&amp; cell,</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            <span class="keywordtype">void</span>** additionalParameters,</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a>* <a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a> = <span class="keyword">nullptr</span>);</div>
@@ -157,12 +166,7 @@ $(document).ready(function(){initNavTree('StatisticalTestingTools_8h_source.html
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00020">GenericProgressCallback.h:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00078">GenericProgressCallback.h:78</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1StatisticalTestingTools_html"><div class="ttname"><a href="classcloudViewer_1_1StatisticalTestingTools.html">cloudViewer::StatisticalTestingTools</a></div><div class="ttdef"><b>Definition:</b> <a href="StatisticalTestingTools_8h_source.html#l00024">StatisticalTestingTools.h:24</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1StatisticalTestingTools_html_a443e1fb09e815cb6de70cbef7c1c48f5"><div class="ttname"><a href="classcloudViewer_1_1StatisticalTestingTools.html#a443e1fb09e815cb6de70cbef7c1c48f5">cloudViewer::StatisticalTestingTools::computeLocalChi2DistAtLevel</a></div><div class="ttdeci">static bool computeLocalChi2DistAtLevel(const DgmOctree::octreeCell &amp;cell, void **additionalParameters, NormalizedProgress *nProgress=nullptr)</div><div class="ttdoc">Computes (locally) the Chi2 distance inside an octree cell.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1StatisticalTestingTools_html_a49a02069d652c9abaa5ace3317e0326a"><div class="ttname"><a href="classcloudViewer_1_1StatisticalTestingTools.html#a49a02069d652c9abaa5ace3317e0326a">cloudViewer::StatisticalTestingTools::computeChi2Probability</a></div><div class="ttdeci">static double computeChi2Probability(double chi2result, int d)</div><div class="ttdoc">Computes the Chi2 confidence probability.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1StatisticalTestingTools_html_ab20aad6d0ee5ff5bc08e462403caa0a6"><div class="ttname"><a href="classcloudViewer_1_1StatisticalTestingTools.html#ab20aad6d0ee5ff5bc08e462403caa0a6">cloudViewer::StatisticalTestingTools::computeAdaptativeChi2Dist</a></div><div class="ttdeci">static double computeAdaptativeChi2Dist(const GenericDistribution *distrib, const GenericCloud *cloud, unsigned numberOfClasses, unsigned &amp;finalNumberOfClasses, bool noClassCompression=false, ScalarType *histoMin=nullptr, ScalarType *histoMax=nullptr, unsigned *histoValues=nullptr, double *npis=nullptr)</div><div class="ttdoc">Computes the Chi2 distance on a sample of scalar values.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1StatisticalTestingTools_html_abe346ceb1d922d01c79ecc4245668939"><div class="ttname"><a href="classcloudViewer_1_1StatisticalTestingTools.html#abe346ceb1d922d01c79ecc4245668939">cloudViewer::StatisticalTestingTools::computeChi2Fractile</a></div><div class="ttdeci">static double computeChi2Fractile(double p, int d)</div><div class="ttdoc">Computes the Chi2 fractile.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1StatisticalTestingTools_html_ac1c198f98ff527e9be7b8c3e42e9e72d"><div class="ttname"><a href="classcloudViewer_1_1StatisticalTestingTools.html#ac1c198f98ff527e9be7b8c3e42e9e72d">cloudViewer::StatisticalTestingTools::testCloudWithStatisticalModel</a></div><div class="ttdeci">static double testCloudWithStatisticalModel(const GenericDistribution *distrib, GenericIndexedCloudPersist *theCloud, unsigned numberOfNeighbours, double pTrust, GenericProgressCallback *progressCb=nullptr, DgmOctree *inputOctree=nullptr)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a2c676e196711456506771bb1be8f424a"><div class="ttname"><a href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a></div><div class="ttdeci">cloudViewer::NormalizedProgress * nProgress</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00042">qCanupoTools.cpp:42</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1DgmOctree_1_1octreeCell_html"><div class="ttname"><a href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">cloudViewer::DgmOctree::octreeCell</a></div><div class="ttdoc">Octree cell descriptor.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00354">DgmOctree.h:354</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -171,7 +175,7 @@ $(document).ready(function(){initNavTree('StatisticalTestingTools_8h_source.html
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="StatisticalTestingTools_8h.html">StatisticalTestingTools.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

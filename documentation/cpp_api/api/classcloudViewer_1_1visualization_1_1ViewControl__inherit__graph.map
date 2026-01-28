@@ -1,5 +1,6 @@
 <map id="cloudViewer::visualization::ViewControl" name="cloudViewer::visualization::ViewControl">
-<area shape="rect" id="node1" title="View controller for visualizer." alt="" coords="5,39,199,80"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html" title=" " alt="" coords="247,5,503,47"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1ViewControlWithEditing.html" title=" " alt="" coords="278,71,471,112"/>
+<area shape="rect" id="node1" title="View controller for visualizer." alt="" coords="5,71,199,112"/>
+<area shape="rect" id="node2" href="$classPyViewControl.html" title=" " alt="" coords="269,5,480,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html" title=" " alt="" coords="247,71,503,112"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1ViewControlWithEditing.html" title=" " alt="" coords="278,136,471,177"/>
 </map>

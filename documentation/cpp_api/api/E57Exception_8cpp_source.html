@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -120,9 +129,9 @@ $(document).ready(function(){initNavTree('E57Exception_8cpp_source.html',''); in
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacee57.html">e57</a></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;{</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;   E57Exception::E57Exception( <a class="code" href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4">ErrorCode</a> ecode, <span class="keyword">const</span> std::string &amp;<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="keyword">const</span> std::string &amp;srcFileName,</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;   E57Exception::E57Exception( <a class="code" href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4">ErrorCode</a> ecode, <span class="keyword">const</span> std::string &amp;<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="keyword">const</span> std::string &amp;srcFileName,</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                               <span class="keywordtype">int</span> srcLineNumber, <span class="keyword">const</span> <span class="keywordtype">char</span> *srcFunctionName ) :</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;      errorCode_( ecode ), context_( <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> ), sourceFunctionName_( srcFunctionName ),</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;      errorCode_( ecode ), context_( <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> ), sourceFunctionName_( srcFunctionName ),</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;      sourceLineNumber_( srcLineNumber )</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;   {</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;      sourceFileName_ = srcFileName.substr( srcFileName.find_last_of( <span class="stringliteral">&quot;/\\&quot;</span> ) + 1 );</div>
@@ -154,7 +163,7 @@ $(document).ready(function(){initNavTree('E57Exception_8cpp_source.html',''); in
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;      <span class="keywordflow">return</span> errorCode_;</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;   }</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00183"></a><span class="lineno"><a class="line" href="classe57_1_1E57Exception.html#a108a982ef25d57db3bad403b4c365b35">  183</a></span>&#160;   std::string <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">E57Exception::context</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno"><a class="line" href="classe57_1_1E57Exception.html#a108a982ef25d57db3bad403b4c365b35">  183</a></span>&#160;   std::string <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">E57Exception::context</a>()<span class="keyword"> const</span></div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="keyword">   </span>{</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;      <span class="keywordflow">return</span> context_;</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;   }</div>
@@ -352,7 +361,7 @@ $(document).ready(function(){initNavTree('E57Exception_8cpp_source.html',''); in
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;}</div>
 <div class="ttc" id="aE57Exception_8h_html"><div class="ttname"><a href="E57Exception_8h.html">E57Exception.h</a></div></div>
 <div class="ttc" id="aE57Version_8h_html"><div class="ttname"><a href="E57Version_8h.html">E57Version.h</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
 <div class="ttc" id="anamespacee57_1_1Utilities_html_a984756f1a60a13f62d8e0aa6864837be"><div class="ttname"><a href="namespacee57_1_1Utilities.html#a984756f1a60a13f62d8e0aa6864837be">e57::Utilities::errorCodeToString</a></div><div class="ttdeci">E57_DLL std::string errorCodeToString(ErrorCode ecode)</div><div class="ttdoc">Get short string description of an E57 ErrorCode.</div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8cpp_source.html#l00291">E57Exception.cpp:291</a></div></div>
 <div class="ttc" id="anamespacee57_1_1Utilities_html_ad245b22a8181887a574c0aac9190dc8b"><div class="ttname"><a href="namespacee57_1_1Utilities.html#ad245b22a8181887a574c0aac9190dc8b">e57::Utilities::getVersions</a></div><div class="ttdeci">E57_DLL void getVersions(int &amp;astmMajor, int &amp;astmMinor, std::string &amp;libraryId)</div><div class="ttdoc">Get the version of ASTM E57 standard that the API implementation supports, and library id string.</div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8cpp_source.html#l00269">E57Exception.cpp:269</a></div></div>
@@ -418,7 +427,7 @@ $(document).ready(function(){initNavTree('E57Exception_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d5815e19ad8e9536ffb8de8e09ded2ce.html">src</a></li><li class="navelem"><a class="el" href="E57Exception_8cpp.html">E57Exception.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

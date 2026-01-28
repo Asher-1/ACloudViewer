@@ -1,3 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classcloudViewer_1_1ml_1_1contrib_1_1SampledData.html" title=" " alt="" coords="5,5,185,47"/>
+<area shape="rect" id="node1" href="$classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="16,5,171,47"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1SaitoSquaredDistanceTransform.html" title=" " alt="" coords="247,5,443,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1Grid3D.html" title=" " alt="" coords="16,71,171,112"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1ChamferDistanceTransform.html" title="Class to compute a Chamfer distance field on a 3D grid." alt="" coords="234,71,457,112"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1MathTools.html" title="Empty class &#45; for classification purpose only." alt="" coords="5,139,181,166"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1ConjugateGradient.html" title="A class to perform a conjugate gradient optimization." alt="" coords="229,136,461,177"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1ErrorFunction.html" title="A class to compute the Error function (erf)" alt="" coords="247,202,443,229"/>
 </map>

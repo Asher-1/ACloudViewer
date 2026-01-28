@@ -1,9 +1,11 @@
 <map id="NormalEstimation" name="NormalEstimation">
-<area shape="rect" id="node1" title=" " alt="" coords="194,184,334,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="117,95,238,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classNormalEstimationDialog.html" title=" " alt="" coords="262,95,445,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="307,5,381,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="406,5,610,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="667,157,807,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="401,107,523,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="70,5,145,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="26,56,189,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="40,107,175,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="27,157,187,184"/>
+<area shape="rect" id="node7" href="$classNormalEstimationDialog.html" title=" " alt="" coords="371,208,553,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="70,208,145,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,209,285"/>
 </map>

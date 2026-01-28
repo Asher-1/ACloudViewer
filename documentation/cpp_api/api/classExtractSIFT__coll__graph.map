@@ -1,10 +1,12 @@
 <map id="ExtractSIFT" name="ExtractSIFT">
-<area shape="rect" id="node1" title="SIFT keypoints extraction." alt="" coords="281,184,375,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="123,95,245,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classSIFTExtractDlg.html" title=" " alt="" coords="269,95,387,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="291,5,365,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="389,5,528,32"/>
-<area shape="rect" id="node8" title=" " alt="" coords="411,95,469,121"/>
+<area shape="rect" id="node1" title="SIFT keypoints extraction." alt="" coords="669,208,764,235"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="329,107,451,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="49,5,124,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="5,56,168,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="19,107,154,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="7,157,167,184"/>
+<area shape="rect" id="node7" href="$classSIFTExtractDlg.html" title=" " alt="" coords="331,208,449,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="49,208,124,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="17,259,156,285"/>
+<area shape="rect" id="node10" title=" " alt="" coords="361,259,419,285"/>
 </map>

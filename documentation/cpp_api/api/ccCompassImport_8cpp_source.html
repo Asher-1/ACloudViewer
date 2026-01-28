@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -107,7 +116,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CVMath_8h.html">CVMath.h</a>&quot;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ccLineation_8h.html">ccLineation.h</a>&quot;</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;ecvMainAppInterface.h&quot;</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvPlane_8h.html">ecvPlane.h</a>&quot;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
@@ -182,29 +191,29 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="comment">// convert a point cloud containing field points (x,y,z) and dip+dip-direction</span></div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="comment">// scalar fields to planes for visualisation.</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="namespaceccCompassImport.html#a36c9a882cc2417ca96a5fc34f8592d57">   95</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassImport.html#a36c9a882cc2417ca96a5fc34f8592d57">importFoliations</a>(ecvMainAppInterface* app) {</div>
+<div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="namespaceccCompassImport.html#a36c9a882cc2417ca96a5fc34f8592d57">   95</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassImport.html#a36c9a882cc2417ca96a5fc34f8592d57">importFoliations</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app) {</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="comment">// get selected point cloud</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    std::vector&lt;ccHObject*&gt; sel = app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    std::vector&lt;ccHObject*&gt; sel = app-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordflow">if</span> (sel.empty()) {</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                <span class="stringliteral">&quot;Please select a point cloud containing your field data (this &quot;</span></div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                <span class="stringliteral">&quot;can be loaded from a text file)&quot;</span>,</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    }</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">if</span> (!sel[0]-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                <span class="stringliteral">&quot;Please select a point cloud containing your field data (this &quot;</span></div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                <span class="stringliteral">&quot;can be loaded from a text file)&quot;</span>,</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    }</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="comment">// get point cloud object</span></div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cld = <span class="keyword">static_cast&lt;</span><a class="code" href="classccPointCloud.html">ccPointCloud</a>*<span class="keyword">&gt;</span>(sel[0]);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    ImportDialog foliationDialog(cld, app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    ImportDialog foliationDialog(cld, app-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    foliationDialog.setLabels(</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;            {QObject::tr(<span class="stringliteral">&quot;Dip Field:&quot;</span>, <span class="stringliteral">&quot;ccCompassImport&quot;</span>),</div>
@@ -223,9 +232,9 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a> = foliationDialog.planeSize();</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordflow">if</span> (dipSF == dipDirSF) {</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                <span class="stringliteral">&quot;Error: Dip and Dip-Direction scalar fields must be different!&quot;</span>,</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    }</div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160; </div>
@@ -242,7 +251,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                        .arg(<span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(dipdir), 3, 10, QChar(<span class="charliteral">&#39;0&#39;</span>)));</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        plane-&gt;<a class="code" href="classccDrawableObject.html#a9307c1167687a5632946af60758c7fd1">showNameIn3D</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        cld-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(plane);</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        app-&gt;addToDB(plane, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(plane, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> N = plane-&gt;<a class="code" href="classccPlane.html#a43f5e2e60bd2cd3584b90c7b10a568c7">getNormal</a>();</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> C = plane-&gt;<a class="code" href="classccPlane.html#a437b6ad24c21a766489b94ba59368059">getCenter</a>();</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
@@ -296,29 +305,29 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160; </div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="comment">// convert a point cloud containing field points (x,y,z) and trend + plunge</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="comment">// scalar fields to lineation vectors for visualisation.</span></div>
-<div class="line"><a name="l00209"></a><span class="lineno"><a class="line" href="namespaceccCompassImport.html#a3d86232dc797228442e251f9da9c4cd4">  209</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassImport.html#a3d86232dc797228442e251f9da9c4cd4">importLineations</a>(ecvMainAppInterface* app) {</div>
+<div class="line"><a name="l00209"></a><span class="lineno"><a class="line" href="namespaceccCompassImport.html#a3d86232dc797228442e251f9da9c4cd4">  209</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceccCompassImport.html#a3d86232dc797228442e251f9da9c4cd4">importLineations</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app) {</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    <span class="comment">// get selected point cloud</span></div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    std::vector&lt;ccHObject*&gt; sel = app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    std::vector&lt;ccHObject*&gt; sel = app-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="keywordflow">if</span> (sel.empty()) {</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                <span class="stringliteral">&quot;Please select a point cloud containing your field data (this &quot;</span></div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                <span class="stringliteral">&quot;can be loaded from a text file)&quot;</span>,</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    }</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160; </div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    <span class="keywordflow">if</span> (!sel[0]-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                <span class="stringliteral">&quot;Please select a point cloud containing your field data (this &quot;</span></div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                <span class="stringliteral">&quot;can be loaded from a text file)&quot;</span>,</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    }</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    <span class="comment">// get point cloud object</span></div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cld = <span class="keyword">static_cast&lt;</span><a class="code" href="classccPointCloud.html">ccPointCloud</a>*<span class="keyword">&gt;</span>(sel[0]);</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160; </div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    ImportDialog lineationDialog(cld, app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    ImportDialog lineationDialog(cld, app-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    lineationDialog.setLabels(</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;            {QObject::tr(<span class="stringliteral">&quot;Trend Field:&quot;</span>, <span class="stringliteral">&quot;ccCompassImport&quot;</span>),</div>
@@ -337,9 +346,9 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a> = lineationDialog.planeSize();</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keywordflow">if</span> (dipSF == dipDirSF) {</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                <span class="stringliteral">&quot;Error: Trend and plunge scalar fields must be different!&quot;</span>,</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    }</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160; </div>
@@ -370,14 +379,14 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        <span class="comment">// create lineation graphic</span></div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        <a class="code" href="classccLineation.html">ccLineation</a>* lineation = <span class="keyword">new</span> <a class="code" href="classccLineation.html">ccLineation</a>(<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>);</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        lineation-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>);</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        lineation-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(0);</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        lineation-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(1);</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        lineation-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0);</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        lineation-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(1);</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        lineation-&gt;<a class="code" href="classccLineation.html#a184dc8af829603c7ad4447aa3e8120f3">updateMetadata</a>();</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        lineation-&gt;<a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(QStringLiteral(<span class="stringliteral">&quot;%1-&gt;%2&quot;</span>)</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                                   .arg(qRound(plunge))</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                                   .arg(qRound(trend)));</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        cld-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(lineation);</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        app-&gt;addToDB(lineation, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(lineation, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    }</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;}</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
@@ -418,9 +427,16 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a9c5e29843bbec75b923746515acb7ff0"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a9c5e29843bbec75b923746515acb7ff0">cloudViewer::PointCloudTpl::getScalarFieldName</a></div><div class="ttdeci">const char * getScalarFieldName(int index) const</div><div class="ttdoc">Returns the name of a specific scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00365">PointCloudTpl.h:365</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ae034bad005881269d7a571c144185d6d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">cloudViewer::PointCloudTpl::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00143">PointCloudTpl.h:143</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPlane_8h_html"><div class="ttname"><a href="ecvPlane_8h.html">ecvPlane.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
@@ -434,7 +450,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccCompassImport_8cpp.html">ccCompassImport.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

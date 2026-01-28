@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,7 +110,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvFileUtils_8h.html">ecvFileUtils.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;ecvMainAppInterface.h&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;QComboBox&gt;</span></div>
@@ -154,7 +163,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classqM3C2Dialog.html#a8ce14f427698b83fcfcd77c3ae2bd0cb">   65</a></span>&#160;<a class="code" href="classqM3C2Dialog.html#a8ce14f427698b83fcfcd77c3ae2bd0cb">qM3C2Dialog::qM3C2Dialog</a>(<a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud1,</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                         <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud2,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                         ecvMainAppInterface* app)</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                         <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app)</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    : QDialog(app ? app-&gt;getMainWindow() : 0),</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;      <a class="code" href="namespaceUi.html">Ui</a>::M3C2Dialog(),</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;      m_app(app),</div>
@@ -201,8 +210,8 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>) {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="comment">// add list of clouds to the combo-boxes</span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> clouds;</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;dbRootObject()) {</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;dbRootObject()-&gt;filterChildren(clouds, <span class="keyword">true</span>,</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()) {</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">filterChildren</a>(clouds, <span class="keyword">true</span>,</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                                                  <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>);</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        }</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
@@ -372,7 +381,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <span class="keywordflow">if</span> (cpUseOtherCloudRadioButton-&gt;isChecked()) {</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        <span class="comment">// return the cloud currently selected in the combox box</span></div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        <a class="code" href="classccPointCloud.html">ccPointCloud</a>* otherCloud =</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                <a class="code" href="qM3C2Dialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cpOtherCloudComboBox, <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;dbRootObject());</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                <a class="code" href="qM3C2Dialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cpOtherCloudComboBox, <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>());</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        <span class="keywordflow">if</span> (otherCloud &amp;&amp; otherCloud-&gt;<a class="code" href="classccPointCloud.html#a66251919b8d07ab180d024bd2e2734be">hasNormals</a>()) {</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;            normalSourceComboBox-&gt;addItem(</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                    <span class="stringliteral">&quot;Use core points normals&quot;</span>,</div>
@@ -395,7 +404,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classqM3C2Dialog.html#a505082c1f3dcc70055c28334607ce005">m_cloud1</a>;</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (cpUseOtherCloudRadioButton-&gt;isChecked()) {</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;        <span class="comment">// return the cloud currently selected in the combox box</span></div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="qM3C2Dialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cpOtherCloudComboBox, <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;dbRootObject());</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="qM3C2Dialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cpOtherCloudComboBox, <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>());</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    }</div>
@@ -404,7 +413,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00314"></a><span class="lineno"><a class="line" href="classqM3C2Dialog.html#a61e6f9078f2ed729712cccf3bd0ccb28">  314</a></span>&#160;<a class="code" href="classccPointCloud.html">ccPointCloud</a>* <a class="code" href="classqM3C2Dialog.html#a61e6f9078f2ed729712cccf3bd0ccb28">qM3C2Dialog::getNormalsOrientationCloud</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    <span class="keywordflow">if</span> (normOriUseCloudRadioButton-&gt;isChecked()) {</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="comment">// return the cloud currently selected in the combox box</span></div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="qM3C2Dialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(normOriCloudComboBox, <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;dbRootObject());</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="qM3C2Dialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(normOriCloudComboBox, <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>());</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    }</div>
@@ -416,8 +425,8 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        <span class="comment">// m_cloud1-&gt;prepareDisplayForRefresh();</span></div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    }</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>) {</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;refreshAll();</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;updateUI();</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    }</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;}</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160; </div>
@@ -427,8 +436,8 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <span class="comment">// m_cloud2-&gt;prepareDisplayForRefresh();</span></div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    }</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>) {</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;refreshAll();</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;updateUI();</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <a class="code" href="classqM3C2Dialog.html#a125eaf6db9784079008f725dce3a437b">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    }</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;}</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160; </div>
@@ -609,7 +618,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;                }</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;            }</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;            <span class="keywordflow">if</span> (!found) {</div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;                        <span class="stringliteral">&quot;Can&#39;t restore the previous normal computation method &quot;</span></div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;                        <span class="stringliteral">&quot;(cloud #1 or core points has no normals)&quot;</span>);</div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;            }</div>
@@ -726,27 +735,27 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160; </div>
 <div class="line"><a name="l00637"></a><span class="lineno"><a class="line" href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">  637</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">qM3C2Dialog::loadParamsFromFile</a>() {</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    <span class="comment">// select file to open</span></div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    QString filename;</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>;</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;    {</div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;        QSettings settings(<span class="stringliteral">&quot;qM3C2&quot;</span>);</div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;        QString currentPath =</div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;                settings.value(<span class="stringliteral">&quot;currentPath&quot;</span>, <a class="code" href="namespaceecvFileUtils.html#ae4aab4936c27dcc80eef207462b82c32">ecvFileUtils::defaultDocPath</a>())</div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;                        .toString();</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160; </div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        filename = QFileDialog::getOpenFileName(<span class="keyword">this</span>, <span class="stringliteral">&quot;Load M3C2 parameters&quot;</span>,</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = QFileDialog::getOpenFileName(<span class="keyword">this</span>, <span class="stringliteral">&quot;Load M3C2 parameters&quot;</span>,</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;                                                currentPath, <span class="stringliteral">&quot;*.txt&quot;</span>);</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="keywordflow">if</span> (filename.isEmpty()) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.isEmpty()) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160; </div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        <span class="comment">// we update current file path</span></div>
-<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        currentPath = QFileInfo(filename).absolutePath();</div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        currentPath = QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).absolutePath();</div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        settings.setValue(<span class="stringliteral">&quot;currentPath&quot;</span>, currentPath);</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;    }</div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160; </div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;    <a class="code" href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">loadParamsFromFile</a>(filename);</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;    <a class="code" href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">loadParamsFromFile</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;}</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160; </div>
-<div class="line"><a name="l00658"></a><span class="lineno"><a class="line" href="classqM3C2Dialog.html#aaaa944a18dc65a2441ee44989dbf745d">  658</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">qM3C2Dialog::loadParamsFromFile</a>(QString filename) {</div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;    QSettings fileSettings(filename, QSettings::IniFormat);</div>
+<div class="line"><a name="l00658"></a><span class="lineno"><a class="line" href="classqM3C2Dialog.html#aaaa944a18dc65a2441ee44989dbf745d">  658</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classqM3C2Dialog.html#a3f27c1764740f74a711f118c450ee389">qM3C2Dialog::loadParamsFromFile</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;    QSettings fileSettings(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, QSettings::IniFormat);</div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;    <span class="comment">// check validity</span></div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    <span class="keywordflow">if</span> (!fileSettings.contains(<span class="stringliteral">&quot;M3C2VER&quot;</span>)) {</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        QMessageBox::critical(<span class="keyword">this</span>, <span class="stringliteral">&quot;Invalid file&quot;</span>,</div>
@@ -762,26 +771,26 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160; </div>
 <div class="line"><a name="l00673"></a><span class="lineno"><a class="line" href="classqM3C2Dialog.html#a1546112d61ab4dfd7ce2e55c87d9a16d">  673</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqM3C2Dialog.html#a1546112d61ab4dfd7ce2e55c87d9a16d">qM3C2Dialog::saveParamsToFile</a>() {</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;    <span class="comment">// select file to save</span></div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;    QString filename;</div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;    QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>;</div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;    {</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        QSettings settings(<span class="stringliteral">&quot;qM3C2&quot;</span>);</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        QString currentPath =</div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;                settings.value(<span class="stringliteral">&quot;currentPath&quot;</span>, <a class="code" href="namespaceecvFileUtils.html#ae4aab4936c27dcc80eef207462b82c32">ecvFileUtils::defaultDocPath</a>())</div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;                        .toString();</div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160; </div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        filename = QFileDialog::getSaveFileName(</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = QFileDialog::getSaveFileName(</div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;                <span class="keyword">this</span>, <span class="stringliteral">&quot;Save M3C2 parameters&quot;</span>,</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;                currentPath + QString(<span class="stringliteral">&quot;/m3c2_params.txt&quot;</span>), <span class="stringliteral">&quot;*.txt&quot;</span>);</div>
-<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        <span class="keywordflow">if</span> (filename.isEmpty()) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.isEmpty()) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160; </div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;        <span class="comment">// we update current file path</span></div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;        currentPath = QFileInfo(filename).absolutePath();</div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;        currentPath = QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).absolutePath();</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;        settings.setValue(<span class="stringliteral">&quot;currentPath&quot;</span>, currentPath);</div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;    }</div>
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160; </div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;    <span class="comment">// save file</span></div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;    {</div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;        QSettings fileSettings(filename, QSettings::IniFormat);</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;        QSettings fileSettings(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, QSettings::IniFormat);</div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;        <span class="comment">// set version tag (mandatory for a valid parameters file!)</span></div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;        fileSettings.setValue(<span class="stringliteral">&quot;M3C2VER&quot;</span>, QVariant::fromValue&lt;int&gt;(1));</div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;        <a class="code" href="classqM3C2Dialog.html#af8b0aa12ec2a162df1870a0531198357">saveParamsTo</a>(fileSettings);</div>
@@ -814,13 +823,15 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;        cpSubsamplingDoubleSpinBox-&gt;setValue(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.projScale / 2);</div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;    }</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;}</div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_a0dbd8385f42800e73bc30c79a09fcce6"><div class="ttname"><a href="classccDrawableObject.html#a0dbd8385f42800e73bc30c79a09fcce6">ccDrawableObject::isVisible</a></div><div class="ttdeci">virtual bool isVisible() const</div><div class="ttdoc">Returns whether entity is visible or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00038">ecvDrawableObject.h:38</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_a3d00d1fb3ceea8ef31e7f6953db9d9b4"><div class="ttname"><a href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">ccDrawableObject::setVisible</a></div><div class="ttdeci">virtual void setVisible(bool state)</div><div class="ttdoc">Sets entity visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00040">ecvDrawableObject.h:40</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccHObject_html_a275b9f9c8d4605c01060edaa6821ddff"><div class="ttname"><a href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">ccHObject::find</a></div><div class="ttdeci">ccHObject * find(unsigned uniqueID)</div><div class="ttdoc">Finds an entity in this object hierarchy.</div></div>
+<div class="ttc" id="aclassccHObject_html_ad233ad9f6c85ff1617dc5a2f51b6671b"><div class="ttname"><a href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">ccHObject::filterChildren</a></div><div class="ttdeci">unsigned filterChildren(Container &amp;filteredChildren, bool recursive=false, CV_CLASS_ENUM filter=CV_TYPES::OBJECT, bool strict=false) const</div><div class="ttdoc">Collects the children corresponding to a certain pattern.</div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccObject_html_a51a9dd33f5ee0c27f1d09dbc9c3136e4"><div class="ttname"><a href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">ccObject::getName</a></div><div class="ttdeci">virtual QString getName() const</div><div class="ttdoc">Returns object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00072">ecvObject.h:72</a></div></div>
 <div class="ttc" id="aclassccObject_html_a5a48a5bd04d1125df52b76dce8ac9c71"><div class="ttname"><a href="classccObject.html#a5a48a5bd04d1125df52b76dce8ac9c71">ccObject::getUniqueID</a></div><div class="ttdeci">virtual unsigned getUniqueID() const</div><div class="ttdoc">Returns object unique ID.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00086">ecvObject.h:86</a></div></div>
@@ -831,6 +842,10 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a4356f599ba19b0e7d538dbe175188937"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a4356f599ba19b0e7d538dbe175188937">cloudViewer::PointCloudTpl::getNumberOfScalarFields</a></div><div class="ttdeci">unsigned getNumberOfScalarFields() const</div><div class="ttdoc">Returns the number of associated (and active) scalar fields.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00345">PointCloudTpl.h:345</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a9c5e29843bbec75b923746515acb7ff0"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a9c5e29843bbec75b923746515acb7ff0">cloudViewer::PointCloudTpl::getScalarFieldName</a></div><div class="ttdeci">const char * getScalarFieldName(int index) const</div><div class="ttdoc">Returns the name of a specific scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00365">PointCloudTpl.h:365</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a4f659aa5dd4563ab557c7f154bc3fcae"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a4f659aa5dd4563ab557c7f154bc3fcae">cloudViewer::ScalarField::setValue</a></div><div class="ttdeci">void setValue(std::size_t index, ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00096">ScalarField.h:96</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a04bbf3c01e3d49efbfd74c2e5fa76ccb"><div class="ttname"><a href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">ecvMainAppInterface::updateUI</a></div><div class="ttdeci">virtual void updateUI()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a7b991e44c1e2638f7c2b49afae63d6cb"><div class="ttname"><a href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">ecvMainAppInterface::refreshAll</a></div><div class="ttdeci">virtual void refreshAll(bool only2D=false, bool forceRedraw=true)=0</div><div class="ttdoc">Redraws all GL windows that have the 'refresh' flag on.</div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html_a0993f7b26301f4814fc72ea05e6a9ba7"><div class="ttname"><a href="classqM3C2Dialog.html#a0993f7b26301f4814fc72ea05e6a9ba7">qM3C2Dialog::guessParams</a></div><div class="ttdeci">void guessParams(bool fastMode)</div><div class="ttdoc">Guess parameters from the cloud #1.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8cpp_source.html#l00701">qM3C2Dialog.cpp:701</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html_a0e5b2f14d3947429c590b62dd4743e27"><div class="ttname"><a href="classqM3C2Dialog.html#a0e5b2f14d3947429c590b62dd4743e27">qM3C2Dialog::getNormalsComputationMode</a></div><div class="ttdeci">qM3C2Normals::ComputationMode getNormalsComputationMode() const</div><div class="ttdoc">Returns selected normals computation mode.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8cpp_source.html#l00345">qM3C2Dialog.cpp:345</a></div></div>
 <div class="ttc" id="aclassqM3C2Dialog_html_a122bcc365ad35ebe1e8d6cd3cf3844c5"><div class="ttname"><a href="classqM3C2Dialog.html#a122bcc365ad35ebe1e8d6cd3cf3844c5">qM3C2Dialog::onUpdateNormalComboBoxChanged</a></div><div class="ttdeci">void onUpdateNormalComboBoxChanged(int)</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Dialog_8cpp_source.html#l00238">qM3C2Dialog.cpp:238</a></div></div>
@@ -873,6 +888,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div class="ttc" id="aclassqM3C2Tools_html_a590c2bbe24925e1b18ad7a949a5c14cd"><div class="ttname"><a href="classqM3C2Tools.html#a590c2bbe24925e1b18ad7a949a5c14cd">qM3C2Tools::GuessBestParams</a></div><div class="ttdeci">static bool GuessBestParams(ccPointCloud *cloud1, ccPointCloud *cloud2, unsigned minPoints4Stats, GuessedParams &amp;params, bool fastMode, ecvMainAppInterface *app=nullptr, unsigned probingCount=1000)</div><div class="ttdoc">Tries to guess some M3C2 parameters by randomly 'probing' the cloud.</div><div class="ttdef"><b>Definition:</b> <a href="qM3C2Tools_8cpp_source.html#l00529">qM3C2Tools.cpp:529</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvFileUtils_8h_html"><div class="ttname"><a href="ecvFileUtils_8h.html">ecvFileUtils.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
 <div class="ttc" id="anamespaceQtCompatRegExpOption_html_aef3543c60166ecb59e406c1fc2c29950"><div class="ttname"><a href="namespaceQtCompatRegExpOption.html#aef3543c60166ecb59e406c1fc2c29950">QtCompatRegExpOption::CaseInsensitive</a></div><div class="ttdeci">constexpr QRegularExpression::PatternOption CaseInsensitive</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00174">QtCompat.h:174</a></div></div>
@@ -892,7 +908,7 @@ $(document).ready(function(){initNavTree('qM3C2Dialog_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_496720c7e7870a9ab5c24efb39eb21c7.html">qM3C2</a></li><li class="navelem"><a class="el" href="dir_7b9527848eb4b4d952169a46807f709b.html">src</a></li><li class="navelem"><a class="el" href="qM3C2Dialog_8cpp.html">qM3C2Dialog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

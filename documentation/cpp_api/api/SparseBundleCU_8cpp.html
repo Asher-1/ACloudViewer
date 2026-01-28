@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -211,11 +220,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">  <span class="keywordflow">if</span> (option) {                                             \</div>
-<div class="line">    option = NAME.InitTexture(num, 1, channels);            \</div>
+<div class="line">    option = <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.InitTexture(num, 1, channels);            \</div>
 <div class="line">    CHECK_ALLOCATION(NAME);                                 \</div>
 <div class="line">  } <span class="keywordflow">else</span> {                                                  \</div>
 <div class="line">    NAME.InitTexture(0, 0, 0);                              \</div>
 <div class="line">  }</div>
+<div class="ttc" id="anamespaceccEntityAction_html_a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e"><div class="ttname"><a href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">ccEntityAction::TOGGLE_PROPERTY::NAME</a></div><div class="ttdeci">@ NAME</div></div>
 </div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="SparseBundleCU_8cpp_source.html#l00399">399</a> of file <a class="el" href="SparseBundleCU_8cpp_source.html">SparseBundleCU.cpp</a>.</p>
 
@@ -253,7 +263,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">  {                                                 \</div>
-<div class="line">    success &amp;= NAME.InitTexture(num, 1, channels);  \</div>
+<div class="line">    success &amp;= <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.InitTexture(num, 1, channels);  \</div>
 <div class="line">    ASSERT_ALLOCATION(NAME);                        \</div>
 <div class="line">  }</div>
 </div><!-- fragment -->
@@ -278,12 +288,12 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">  <span class="keywordflow">if</span> (!success) {                                                  \</div>
 <div class="line">    std::cerr &lt;&lt; <span class="stringliteral">&quot;WARNING: failed to allocate &quot;</span>                    \</div>
-<div class="line">              &lt;&lt; (__verbose_allocation ? #NAME <span class="stringliteral">&quot;; size = &quot;</span> : <span class="stringliteral">&quot;&quot;</span>)   \</div>
+<div class="line">              &lt;&lt; (__verbose_allocation ? #<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a> <span class="stringliteral">&quot;; size = &quot;</span> : <span class="stringliteral">&quot;&quot;</span>)   \</div>
 <div class="line">              &lt;&lt; (total_sz / 1024 / 1024) &lt;&lt; <span class="stringliteral">&quot;MB + &quot;</span>               \</div>
-<div class="line">              &lt;&lt; (NAME.GetRequiredSize() / 1024 / 1024) &lt;&lt; <span class="stringliteral">&quot;MB\n&quot;</span>; \</div>
+<div class="line">              &lt;&lt; (<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetRequiredSize() / 1024 / 1024) &lt;&lt; <span class="stringliteral">&quot;MB\n&quot;</span>; \</div>
 <div class="line">    return <span class="keyword">false</span>;                                                  \</div>
 <div class="line">  } <span class="keywordflow">else</span> {                                                         \</div>
-<div class="line">    total_sz += NAME.GetDataSize();                                \</div>
+<div class="line">    total_sz += <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize();                                \</div>
 <div class="line">    REPORT_ALLOCATION(NAME);                                       \</div>
 <div class="line">  }</div>
 </div><!-- fragment -->
@@ -306,12 +316,12 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  <span class="keywordflow">if</span> (NAME.GetDataSize() == 0 &amp;&amp; NAME.GetRequiredSize() &gt; 0) {     \</div>
+<b>Value:</b><div class="fragment"><div class="line">  <span class="keywordflow">if</span> (<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize() == 0 &amp;&amp; <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetRequiredSize() &gt; 0) {     \</div>
 <div class="line">    ClearPreviousError();                                          \</div>
-<div class="line">    std::cerr &lt;&lt; <span class="stringliteral">&quot;WARNING: unable to allocate &quot;</span> #NAME <span class="stringliteral">&quot;: &quot;</span>         \</div>
-<div class="line">              &lt;&lt; (NAME.GetRequiredSize() / 1024 / 1024) &lt;&lt; <span class="stringliteral">&quot;MB\n&quot;</span>; \</div>
+<div class="line">    std::cerr &lt;&lt; <span class="stringliteral">&quot;WARNING: unable to allocate &quot;</span> #<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a> <span class="stringliteral">&quot;: &quot;</span>         \</div>
+<div class="line">              &lt;&lt; (<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetRequiredSize() / 1024 / 1024) &lt;&lt; <span class="stringliteral">&quot;MB\n&quot;</span>; \</div>
 <div class="line">  } <span class="keywordflow">else</span> {                                                         \</div>
-<div class="line">    total_sz += NAME.GetDataSize();                                \</div>
+<div class="line">    total_sz += <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize();                                \</div>
 <div class="line">    REPORT_ALLOCATION(NAME);                                       \</div>
 <div class="line">  }</div>
 </div><!-- fragment -->
@@ -563,11 +573,11 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  <span class="keywordflow">if</span> (__verbose_allocation &amp;&amp; NAME.GetDataSize() &gt; 1024)          \</div>
-<div class="line">    std::cout &lt;&lt; (NAME.GetDataSize() &gt; 1024 * 1024                \</div>
-<div class="line">                      ? NAME.GetDataSize() / 1024 / 1024          \</div>
-<div class="line">                      : NAME.GetDataSize() / 1024)                \</div>
-<div class="line">              &lt;&lt; (NAME.GetDataSize() &gt; 1024 * 1024 ? <span class="stringliteral">&quot;MB&quot;</span> : <span class="stringliteral">&quot;KB&quot;</span>) \</div>
+<b>Value:</b><div class="fragment"><div class="line">  <span class="keywordflow">if</span> (__verbose_allocation &amp;&amp; <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize() &gt; 1024)          \</div>
+<div class="line">    std::cout &lt;&lt; (<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize() &gt; 1024 * 1024                \</div>
+<div class="line">                      ? <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize() / 1024 / 1024          \</div>
+<div class="line">                      : <a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize() / 1024)                \</div>
+<div class="line">              &lt;&lt; (<a class="code" href="namespaceccEntityAction.html#a8b72ffbe0bfa6b04af5547efa207f356aad32e604e17467fc435538334fbddf3e">NAME</a>.GetDataSize() &gt; 1024 * 1024 ? <span class="stringliteral">&quot;MB&quot;</span> : <span class="stringliteral">&quot;KB&quot;</span>) \</div>
 <div class="line">              &lt;&lt; <span class="stringliteral">&quot;\t allocated for &quot;</span> #NAME <span class="stringliteral">&quot;\n&quot;</span>;</div>
 </div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="SparseBundleCU_8cpp_source.html#l00363">363</a> of file <a class="el" href="SparseBundleCU_8cpp_source.html">SparseBundleCU.cpp</a>.</p>
@@ -580,7 +590,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_b86998798e9c0e256917804417c9a69c.html">PBA</a></li><li class="navelem"><a class="el" href="SparseBundleCU_8cpp.html">SparseBundleCU.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:32 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:10 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

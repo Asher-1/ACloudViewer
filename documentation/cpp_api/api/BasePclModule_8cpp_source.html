@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -106,7 +115,7 @@ $(document).ready(function(){initNavTree('BasePclModule_8cpp_source.html',''); i
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">// app</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;qtconcurrentrun.h&gt;</span></div>
@@ -125,7 +134,7 @@ $(document).ready(function(){initNavTree('BasePclModule_8cpp_source.html',''); i
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="classBasePclModule.html#aa0a5208072dd87dc9d3bf4a9898c9898">   37</a></span>&#160;<a class="code" href="classBasePclModule.html#aa0a5208072dd87dc9d3bf4a9898c9898">BasePclModule::BasePclModule</a>(<a class="code" href="structPclModuleDescription.html">PclModuleDescription</a> desc,</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                             ccPluginInterface* parent_plugin)</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                             <a class="code" href="classccPluginInterface.html">ccPluginInterface</a>* parent_plugin)</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    : m_action(nullptr), m_desc(desc), m_show_progress(true) {</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="classBasePclModule.html#a0565253b74b9b659beed3e039a78f7dd">initAction</a>();</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classBasePclModule.html#a0779b1b6b2b69d0630b949fba0c64b4b">m_parent_plugin</a> = parent_plugin;</div>
@@ -212,10 +221,10 @@ $(document).ready(function(){initNavTree('BasePclModule_8cpp_source.html',''); i
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                <span class="comment">// we temporarily detach entity, as it may undergo</span></div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                <span class="comment">//&quot;severe&quot; modifications (octree deletion, etc.) --&gt; see</span></div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                <span class="comment">// ccHObject::applyRigidTransformation</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                ecvMainAppInterface::ccHObjectContext objContext =</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                        <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;removeObjectTemporarilyFromDBTree(cloud);</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                <a class="code" href="structecvMainAppInterface_1_1ccHObjectContext.html">ecvMainAppInterface::ccHObjectContext</a> objContext =</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                        <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ad540741410f99006f9aa9241fd8be4d4">removeObjectTemporarilyFromDBTree</a>(cloud);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                cloud-&gt;<a class="code" href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">applyGLTransformation_recursive</a>();</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;putObjectBackIntoDBTree(cloud, objContext);</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9b58c1443265f0ab72ef2144bf9eb123">putObjectBackIntoDBTree</a>(cloud, objContext);</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                cloud-&gt;<a class="code" href="classccHObject.html#a8c328da68923d50bfdcfa030f6b07fbe">setRedrawFlagRecursive</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;                <a class="code" href="classecvDisplayTools.html#ab2cb3ae336d6b510600493c4c3fc1877">ecvDisplayTools::RemoveBB</a>(cloud-&gt;<a class="code" href="classccHObject.html#a79171401c0be2a1ebe1a7190591fc0f4">getViewId</a>());</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;            }</div>
@@ -374,9 +383,9 @@ $(document).ready(function(){initNavTree('BasePclModule_8cpp_source.html',''); i
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160; </div>
 <div class="line"><a name="l00285"></a><span class="lineno"><a class="line" href="classBasePclModule.html#a9aa523552dad9ceb313faa1e0d688972">  285</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classBasePclModule.html#a9aa523552dad9ceb313faa1e0d688972">BasePclModule::getAllEntitiesOfType</a>(<a class="code" href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>,</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                                         <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; entities) {</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> || !<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;dbRootObject()) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> || !<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160; </div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;dbRootObject()-&gt;filterChildren(entities, <span class="keyword">true</span>, <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">filterChildren</a>(entities, <span class="keyword">true</span>, <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>);</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;}</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160; </div>
 <div class="line"><a name="l00292"></a><span class="lineno"><a class="line" href="classBasePclModule.html#a6c8236b82ab6047f789e6856f18a4f3d">  292</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classBasePclModule.html#a6c8236b82ab6047f789e6856f18a4f3d">BasePclModule::getAllEntitiesThatHaveMetaData</a>(</div>
@@ -512,9 +521,11 @@ $(document).ready(function(){initNavTree('BasePclModule_8cpp_source.html',''); i
 <div class="ttc" id="aclassccHObject_html_a79171401c0be2a1ebe1a7190591fc0f4"><div class="ttname"><a href="classccHObject.html#a79171401c0be2a1ebe1a7190591fc0f4">ccHObject::getViewId</a></div><div class="ttdeci">QString getViewId() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00225">ecvHObject.h:225</a></div></div>
 <div class="ttc" id="aclassccHObject_html_a7b0f94f7822c8e6a544b06cce3d03fb1"><div class="ttname"><a href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">ccHObject::applyGLTransformation_recursive</a></div><div class="ttdeci">void applyGLTransformation_recursive(const ccGLMatrix *trans=nullptr)</div><div class="ttdoc">Applies the active OpenGL transformation to the entity (recursive)</div></div>
 <div class="ttc" id="aclassccHObject_html_a8c328da68923d50bfdcfa030f6b07fbe"><div class="ttname"><a href="classccHObject.html#a8c328da68923d50bfdcfa030f6b07fbe">ccHObject::setRedrawFlagRecursive</a></div><div class="ttdeci">void setRedrawFlagRecursive(bool redraw=false)</div></div>
+<div class="ttc" id="aclassccHObject_html_ad233ad9f6c85ff1617dc5a2f51b6671b"><div class="ttname"><a href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">ccHObject::filterChildren</a></div><div class="ttdeci">unsigned filterChildren(Container &amp;filteredChildren, bool recursive=false, CV_CLASS_ENUM filter=CV_TYPES::OBJECT, bool strict=false) const</div><div class="ttdoc">Collects the children corresponding to a certain pattern.</div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccObject_html_a7b4d06906277afee84282d5a217ee125"><div class="ttname"><a href="classccObject.html#a7b4d06906277afee84282d5a217ee125">ccObject::isA</a></div><div class="ttdeci">bool isA(CV_CLASS_ENUM type) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00131">ecvObject.h:131</a></div></div>
 <div class="ttc" id="aclassccObject_html_a952f835a47b98923402ea17a4a6300e0"><div class="ttname"><a href="classccObject.html#a952f835a47b98923402ea17a4a6300e0">ccObject::hasMetaData</a></div><div class="ttdeci">bool hasMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns whether a meta-data element with the given key exists or not.</div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html_abb5f5a0949e02d2cebc0a4c1f3c2de5a"><div class="ttname"><a href="classccPointCloud.html#abb5f5a0949e02d2cebc0a4c1f3c2de5a">ccPointCloud::hasColors</a></div><div class="ttdeci">bool hasColors() const override</div><div class="ttdoc">Returns whether colors are enabled or not.</div></div>
 <div class="ttc" id="aclassccPointCloud_html_ae3eee425df467b5117d605c633e9662b"><div class="ttname"><a href="classccPointCloud.html#ae3eee425df467b5117d605c633e9662b">ccPointCloud::hasScalarFields</a></div><div class="ttdeci">bool hasScalarFields() const override</div><div class="ttdoc">Returns whether one or more scalar fields are instantiated.</div></div>
@@ -524,24 +535,29 @@ $(document).ready(function(){initNavTree('BasePclModule_8cpp_source.html',''); i
 <div class="ttc" id="aclassecvDisplayTools_html_aa29d1469d3fd7b184ff420fba0cac6b2"><div class="ttname"><a href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive</a></div><div class="ttdeci">static void SetRedrawRecursive(bool redraw=false)</div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_ab2cb3ae336d6b510600493c4c3fc1877"><div class="ttname"><a href="classecvDisplayTools.html#ab2cb3ae336d6b510600493c4c3fc1877">ecvDisplayTools::RemoveBB</a></div><div class="ttdeci">static void RemoveBB(CC_DRAW_CONTEXT context)</div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_afa498d2f484a7a5b752d9541574d2fc4"><div class="ttname"><a href="classecvDisplayTools.html#afa498d2f484a7a5b752d9541574d2fc4">ecvDisplayTools::RedrawDisplay</a></div><div class="ttdeci">static void RedrawDisplay(bool only2D=false, bool forceRedraw=true)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9b58c1443265f0ab72ef2144bf9eb123"><div class="ttname"><a href="classecvMainAppInterface.html#a9b58c1443265f0ab72ef2144bf9eb123">ecvMainAppInterface::putObjectBackIntoDBTree</a></div><div class="ttdeci">virtual void putObjectBackIntoDBTree(ccHObject *obj, const ccHObjectContext &amp;context)=0</div><div class="ttdoc">Adds back object to DB tree.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ad540741410f99006f9aa9241fd8be4d4"><div class="ttname"><a href="classecvMainAppInterface.html#ad540741410f99006f9aa9241fd8be4d4">ecvMainAppInterface::removeObjectTemporarilyFromDBTree</a></div><div class="ttdeci">virtual ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject *obj)=0</div><div class="ttdoc">Removes object temporarily from DB tree.</div></div>
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
 <div class="ttc" id="aecvHObjectCaster_8h_html"><div class="ttname"><a href="ecvHObjectCaster_8h.html">ecvHObjectCaster.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a0ebdf737fbe4be3770f717335acd9e52"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a0ebdf737fbe4be3770f717335acd9e52">CV_TYPES::HIERARCHY_OBJECT</a></div><div class="ttdeci">@ HIERARCHY_OBJECT</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00103">CVTypes.h:103</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a841b56bbb03f75b2952a783a34eff584"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">cloudViewer::utility::Sleep</a></div><div class="ttdeci">void Sleep(int milliseconds)</div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a841b56bbb03f75b2952a783a34eff584"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">cloudViewer::utility::Sleep</a></div><div class="ttdeci">void Sleep(int milliseconds)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00278">Helper.cpp:278</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html_a08b5d73c0c18ceb171ddb6697d10d408"><div class="ttname"><a href="structPclModuleDescription.html#a08b5d73c0c18ceb171ddb6697d10d408">PclModuleDescription::m_entry_name</a></div><div class="ttdeci">QString m_entry_name</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00029">BasePclModule.h:29</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html_a32929f4ca70b8ec9df56af4c7119e6de"><div class="ttname"><a href="structPclModuleDescription.html#a32929f4ca70b8ec9df56af4c7119e6de">PclModuleDescription::m_module_name</a></div><div class="ttdeci">QString m_module_name</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00028">BasePclModule.h:28</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html_a5f72294b4b1b3fb1816740806629361c"><div class="ttname"><a href="structPclModuleDescription.html#a5f72294b4b1b3fb1816740806629361c">PclModuleDescription::m_status_tip</a></div><div class="ttdeci">QString m_status_tip</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00030">BasePclModule.h:30</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html_a624fce1e6b89ee796fa4799cc9510679"><div class="ttname"><a href="structPclModuleDescription.html#a624fce1e6b89ee796fa4799cc9510679">PclModuleDescription::m_icon</a></div><div class="ttdeci">QIcon m_icon</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00031">BasePclModule.h:31</a></div></div>
+<div class="ttc" id="astructecvMainAppInterface_1_1ccHObjectContext_html"><div class="ttname"><a href="structecvMainAppInterface_1_1ccHObjectContext.html">ecvMainAppInterface::ccHObjectContext</a></div><div class="ttdoc">Backup &quot;context&quot; for an object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00080">ecvMainAppInterface.h:80</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="BasePclModule_8cpp.html">BasePclModule.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -188,13 +197,13 @@ $(document).ready(function(){initNavTree('PythonRuntimeSettings_8cpp_source.html
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <a class="code" href="classPathVariableInputDialog.html">PathVariableInputDialog</a> dlg(<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        dlg.exec();</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        QString path = dlg.selectedPath();</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        QString <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = dlg.selectedPath();</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">if</span> (!path.isEmpty())</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.isEmpty())</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        {</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            <span class="keywordtype">int</span> rowCount = m_model-&gt;rowCount();</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            m_model-&gt;insertRows(rowCount, 1);</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            m_model-&gt;setData(m_model-&gt;index(rowCount), path);</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            m_model-&gt;setData(m_model-&gt;index(rowCount), <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        }</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    }</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
@@ -382,6 +391,7 @@ $(document).ready(function(){initNavTree('PythonRuntimeSettings_8cpp_source.html
 <div class="ttc" id="aclassPythonRuntimeSettings_html_a95d847b09c1e519eb9b5ba232a712cb4"><div class="ttname"><a href="classPythonRuntimeSettings.html#a95d847b09c1e519eb9b5ba232a712cb4">PythonRuntimeSettings::PythonRuntimeSettings</a></div><div class="ttdeci">PythonRuntimeSettings(QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="PythonRuntimeSettings_8cpp_source.html#l00133">PythonRuntimeSettings.cpp:133</a></div></div>
 <div class="ttc" id="aclassPythonRuntimeSettings_html_ad6abfb2e62871d7f312a3d95396389b4"><div class="ttname"><a href="classPythonRuntimeSettings.html#ad6abfb2e62871d7f312a3d95396389b4">PythonRuntimeSettings::pluginsPaths</a></div><div class="ttdeci">QStringList pluginsPaths() const</div><div class="ttdef"><b>Definition:</b> <a href="PythonRuntimeSettings_8cpp_source.html#l00244">PythonRuntimeSettings.cpp:244</a></div></div>
 <div class="ttc" id="aclassPythonRuntimeSettings_html_ae7741dab2d2dc158a0581abb6b22f777"><div class="ttname"><a href="classPythonRuntimeSettings.html#ae7741dab2d2dc158a0581abb6b22f777">PythonRuntimeSettings::pythonEnvConfig</a></div><div class="ttdeci">PythonConfig pythonEnvConfig() const</div><div class="ttdef"><b>Definition:</b> <a href="PythonRuntimeSettings_8cpp_source.html#l00249">PythonRuntimeSettings.cpp:249</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacee57_html_ac51cd6698affda7bd6180e4ff19e2c99"><div class="ttname"><a href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">e57::toString</a></div><div class="ttdeci">std::string toString(T x)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00080">Common.h:80</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -389,7 +399,7 @@ $(document).ready(function(){initNavTree('PythonRuntimeSettings_8cpp_source.html
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="PythonRuntimeSettings_8cpp.html">PythonRuntimeSettings.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

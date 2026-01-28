@@ -1,5 +1,11 @@
 var structWindow =
 [
+    [ "Window", "structWindow.html#ab27fe44e0834066236f79f244b02f67e", null ],
+    [ "~Window", "structWindow.html#a245d821e6016fa1f6970ccbbedd635f6", null ],
+    [ "checkForUpdates", "structWindow.html#a0362f95ff67728ae549dec360111b112", null ],
+    [ "displayAppcast", "structWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd", null ],
+    [ "resetFields", "structWindow.html#a5a4dc2616083b0f720468c1faf99e28a", null ],
+    [ "updateChangelog", "structWindow.html#a6a03330cfdc5a6df74a5ec018080452a", null ],
     [ "bExprArgs", "structWindow.html#adad9db2c3c9f0e043c1b7822cf4491f3", null ],
     [ "bImplicitFrame", "structWindow.html#a01f0df6d16125e513c5912d41a1e73a9", null ],
     [ "csrApp", "structWindow.html#a1e7ffe69435eb489b3417e00d6ce6631", null ],

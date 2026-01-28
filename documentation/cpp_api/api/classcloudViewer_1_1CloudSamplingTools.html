@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -121,7 +130,7 @@ Collaboration diagram for cloudViewer::CloudSamplingTools:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html">SFModulationParams</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parameters for the scalar-field based modulation of a parameter.  <a href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structParameters.html" title="Algorithm parameters.">Parameters</a> for the scalar-field based modulation of a parameter.  <a href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -137,46 +146,46 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ad3fa6ca8f7d2d8d044923a93ce5526fa"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1PointCloud.html">PointCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#ad3fa6ca8f7d2d8d044923a93ce5526fa">resampleCloudWithOctreeAtLevel</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned char <a class="el" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a6101ee86a969ebf37c230407548aae49">RESAMPLING_CELL_METHOD</a> resamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:ad3fa6ca8f7d2d8d044923a93ce5526fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#ad3fa6ca8f7d2d8d044923a93ce5526fa">More...</a><br /></td></tr>
-<tr class="separator:ad3fa6ca8f7d2d8d044923a93ce5526fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acda147fc4edfe8de8e106f1fe4db2df5"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#acda147fc4edfe8de8e106f1fe4db2df5">resampleCloudWithOctree</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, int newNumberOfPoints, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a6101ee86a969ebf37c230407548aae49">RESAMPLING_CELL_METHOD</a> resamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:acda147fc4edfe8de8e106f1fe4db2df5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#acda147fc4edfe8de8e106f1fe4db2df5">More...</a><br /></td></tr>
-<tr class="separator:acda147fc4edfe8de8e106f1fe4db2df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc1e7bf2b4334e79d501e1cad97568a3"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#afc1e7bf2b4334e79d501e1cad97568a3">subsampleCloudWithOctreeAtLevel</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned char <a class="el" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aacf53b5a7f1d3d275bb6dbdc0fe59850">SUBSAMPLING_CELL_METHOD</a> subsamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:afc1e7bf2b4334e79d501e1cad97568a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subsamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#afc1e7bf2b4334e79d501e1cad97568a3">More...</a><br /></td></tr>
-<tr class="separator:afc1e7bf2b4334e79d501e1cad97568a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30002a8453b9665321540e4597ea869d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a30002a8453b9665321540e4597ea869d">subsampleCloudWithOctree</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, int newNumberOfPoints, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aacf53b5a7f1d3d275bb6dbdc0fe59850">SUBSAMPLING_CELL_METHOD</a> subsamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:a30002a8453b9665321540e4597ea869d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subsamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#a30002a8453b9665321540e4597ea869d">More...</a><br /></td></tr>
-<tr class="separator:a30002a8453b9665321540e4597ea869d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acd06e5ead6b2f563531a134d55b4b732"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#acd06e5ead6b2f563531a134d55b4b732">subsampleCloudRandomly</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned newNumberOfPoints, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="memdesc:acd06e5ead6b2f563531a134d55b4b732"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subsamples a point cloud (process based on random selections)  <a href="classcloudViewer_1_1CloudSamplingTools.html#acd06e5ead6b2f563531a134d55b4b732">More...</a><br /></td></tr>
-<tr class="separator:acd06e5ead6b2f563531a134d55b4b732"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae96c4e880d59d841b96c9159efd69d33"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#ae96c4e880d59d841b96c9159efd69d33">UniformDownSample</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned every_k_points)</td></tr>
-<tr class="separator:ae96c4e880d59d841b96c9159efd69d33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a591467ceb89e66a5e47b3704be90ebdd"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a591467ceb89e66a5e47b3704be90ebdd">resampleCloudSpatially</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minDistance, const <a class="el" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html">SFModulationParams</a> &amp;modParams, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *<a class="el" href="qM3C2Tools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="memdesc:a591467ceb89e66a5e47b3704be90ebdd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resamples a point cloud (process based on inter point distance)  <a href="classcloudViewer_1_1CloudSamplingTools.html#a591467ceb89e66a5e47b3704be90ebdd">More...</a><br /></td></tr>
-<tr class="separator:a591467ceb89e66a5e47b3704be90ebdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa21d44ea2c695625639091e0298e0b07"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aa21d44ea2c695625639091e0298e0b07">sorFilter</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, int knn=6, double nSigma=1.0, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *<a class="el" href="qM3C2Tools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="memdesc:aa21d44ea2c695625639091e0298e0b07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Statistical Outliers Removal (SOR) filter.  <a href="classcloudViewer_1_1CloudSamplingTools.html#aa21d44ea2c695625639091e0298e0b07">More...</a><br /></td></tr>
-<tr class="separator:aa21d44ea2c695625639091e0298e0b07"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44ec142be61ab27069101d0e46736036"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a44ec142be61ab27069101d0e46736036">noiseFilter</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> kernelRadius, double nSigma, bool removeIsolatedPoints=false, bool useKnn=false, int knn=6, bool useAbsoluteError=true, double absoluteError=0.0, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *<a class="el" href="qM3C2Tools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="memdesc:a44ec142be61ab27069101d0e46736036"><td class="mdescLeft">&#160;</td><td class="mdescRight">Noise filter based on the distance to the approximate local surface.  <a href="classcloudViewer_1_1CloudSamplingTools.html#a44ec142be61ab27069101d0e46736036">More...</a><br /></td></tr>
-<tr class="separator:a44ec142be61ab27069101d0e46736036"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37e33d31eec1a7b839994bb5c828d093"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1PointCloud.html">PointCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a37e33d31eec1a7b839994bb5c828d093">resampleCloudWithOctreeAtLevel</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned char <a class="el" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a6101ee86a969ebf37c230407548aae49">RESAMPLING_CELL_METHOD</a> resamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:a37e33d31eec1a7b839994bb5c828d093"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#a37e33d31eec1a7b839994bb5c828d093">More...</a><br /></td></tr>
+<tr class="separator:a37e33d31eec1a7b839994bb5c828d093"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b521d1ab6aa08c3d900664d2229277f"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a2b521d1ab6aa08c3d900664d2229277f">resampleCloudWithOctree</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, int newNumberOfPoints, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a6101ee86a969ebf37c230407548aae49">RESAMPLING_CELL_METHOD</a> resamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:a2b521d1ab6aa08c3d900664d2229277f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#a2b521d1ab6aa08c3d900664d2229277f">More...</a><br /></td></tr>
+<tr class="separator:a2b521d1ab6aa08c3d900664d2229277f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfa59592a40547d1d854b1e322056422"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#acfa59592a40547d1d854b1e322056422">subsampleCloudWithOctreeAtLevel</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned char <a class="el" href="qM3C2Tools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aacf53b5a7f1d3d275bb6dbdc0fe59850">SUBSAMPLING_CELL_METHOD</a> subsamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:acfa59592a40547d1d854b1e322056422"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subsamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#acfa59592a40547d1d854b1e322056422">More...</a><br /></td></tr>
+<tr class="separator:acfa59592a40547d1d854b1e322056422"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b118bcf643500a57080471116fb4a2e"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a9b118bcf643500a57080471116fb4a2e">subsampleCloudWithOctree</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, int newNumberOfPoints, <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aacf53b5a7f1d3d275bb6dbdc0fe59850">SUBSAMPLING_CELL_METHOD</a> subsamplingMethod, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:a9b118bcf643500a57080471116fb4a2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subsamples a point cloud (process based on the octree)  <a href="classcloudViewer_1_1CloudSamplingTools.html#a9b118bcf643500a57080471116fb4a2e">More...</a><br /></td></tr>
+<tr class="separator:a9b118bcf643500a57080471116fb4a2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6001f5fc3933ea5cabc764156478456"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aa6001f5fc3933ea5cabc764156478456">subsampleCloudRandomly</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned newNumberOfPoints, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memdesc:aa6001f5fc3933ea5cabc764156478456"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subsamples a point cloud (process based on random selections)  <a href="classcloudViewer_1_1CloudSamplingTools.html#aa6001f5fc3933ea5cabc764156478456">More...</a><br /></td></tr>
+<tr class="separator:aa6001f5fc3933ea5cabc764156478456"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a62908dd1ff2586b3646c78aa24ae6f75"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a62908dd1ff2586b3646c78aa24ae6f75">UniformDownSample</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, unsigned every_k_points)</td></tr>
+<tr class="separator:a62908dd1ff2586b3646c78aa24ae6f75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affa13b6550b751549294682aeb774aab"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#affa13b6550b751549294682aeb774aab">resampleCloudSpatially</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minDistance, const <a class="el" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html">SFModulationParams</a> &amp;modParams, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *<a class="el" href="qM3C2Tools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memdesc:affa13b6550b751549294682aeb774aab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resamples a point cloud (process based on inter point distance)  <a href="classcloudViewer_1_1CloudSamplingTools.html#affa13b6550b751549294682aeb774aab">More...</a><br /></td></tr>
+<tr class="separator:affa13b6550b751549294682aeb774aab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9d5800bfd56cca5f990711e7941ffa0"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#ae9d5800bfd56cca5f990711e7941ffa0">sorFilter</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, int knn=6, double nSigma=1.0, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *<a class="el" href="qM3C2Tools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memdesc:ae9d5800bfd56cca5f990711e7941ffa0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Statistical Outliers Removal (SOR) filter.  <a href="classcloudViewer_1_1CloudSamplingTools.html#ae9d5800bfd56cca5f990711e7941ffa0">More...</a><br /></td></tr>
+<tr class="separator:ae9d5800bfd56cca5f990711e7941ffa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa246132ff7f8c3c9c7bab30dcbabe8f3"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#aa246132ff7f8c3c9c7bab30dcbabe8f3">noiseFilter</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> kernelRadius, double nSigma, bool removeIsolatedPoints=false, bool useKnn=false, int knn=6, bool useAbsoluteError=true, double absoluteError=0.0, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *<a class="el" href="qM3C2Tools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memdesc:aa246132ff7f8c3c9c7bab30dcbabe8f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Noise filter based on the distance to the approximate local surface.  <a href="classcloudViewer_1_1CloudSamplingTools.html#aa246132ff7f8c3c9c7bab30dcbabe8f3">More...</a><br /></td></tr>
+<tr class="separator:aa246132ff7f8c3c9c7bab30dcbabe8f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-methods"></a>
 Static Protected Member Functions</h2></td></tr>
-<tr class="memitem:a3cbf82ec411d3287236391e771236515"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a3cbf82ec411d3287236391e771236515">resampleCellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="separator:a3cbf82ec411d3287236391e771236515"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a803c25bc6d2705e927294fd3454f34ff"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a803c25bc6d2705e927294fd3454f34ff">subsampleCellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="memdesc:a803c25bc6d2705e927294fd3454f34ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">"Cellular" function to select a unique point inside an octree cell  <a href="classcloudViewer_1_1CloudSamplingTools.html#a803c25bc6d2705e927294fd3454f34ff">More...</a><br /></td></tr>
-<tr class="separator:a803c25bc6d2705e927294fd3454f34ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afdfaee373f215d649753c79a6a32cbed"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#afdfaee373f215d649753c79a6a32cbed">applyNoiseFilterAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="memdesc:afdfaee373f215d649753c79a6a32cbed"><td class="mdescLeft">&#160;</td><td class="mdescRight">"Cellular" function to apply the noise filter inside an octree cell  <a href="classcloudViewer_1_1CloudSamplingTools.html#afdfaee373f215d649753c79a6a32cbed">More...</a><br /></td></tr>
-<tr class="separator:afdfaee373f215d649753c79a6a32cbed"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae36503868e541a650a5079b853fbce83"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#ae36503868e541a650a5079b853fbce83">applySORFilterAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="memdesc:ae36503868e541a650a5079b853fbce83"><td class="mdescLeft">&#160;</td><td class="mdescRight">"Cellular" function to apply the SOR filter inside an octree cell  <a href="classcloudViewer_1_1CloudSamplingTools.html#ae36503868e541a650a5079b853fbce83">More...</a><br /></td></tr>
-<tr class="separator:ae36503868e541a650a5079b853fbce83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae158f1a5775a095fa34a93c2faa9c9d1"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#ae158f1a5775a095fa34a93c2faa9c9d1">resampleCellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="separator:ae158f1a5775a095fa34a93c2faa9c9d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e8f42c79d30f5374124a19fcb5d416a"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a1e8f42c79d30f5374124a19fcb5d416a">subsampleCellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="memdesc:a1e8f42c79d30f5374124a19fcb5d416a"><td class="mdescLeft">&#160;</td><td class="mdescRight">"Cellular" function to select a unique point inside an octree cell  <a href="classcloudViewer_1_1CloudSamplingTools.html#a1e8f42c79d30f5374124a19fcb5d416a">More...</a><br /></td></tr>
+<tr class="separator:a1e8f42c79d30f5374124a19fcb5d416a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53a4a5373011e690d462a3b0d223fbe0"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a53a4a5373011e690d462a3b0d223fbe0">applyNoiseFilterAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="memdesc:a53a4a5373011e690d462a3b0d223fbe0"><td class="mdescLeft">&#160;</td><td class="mdescRight">"Cellular" function to apply the noise filter inside an octree cell  <a href="classcloudViewer_1_1CloudSamplingTools.html#a53a4a5373011e690d462a3b0d223fbe0">More...</a><br /></td></tr>
+<tr class="separator:a53a4a5373011e690d462a3b0d223fbe0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc8843f86f26cd367af9ad806dbebac5"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#adc8843f86f26cd367af9ad806dbebac5">applySORFilterAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="memdesc:adc8843f86f26cd367af9ad806dbebac5"><td class="mdescLeft">&#160;</td><td class="mdescRight">"Cellular" function to apply the SOR filter inside an octree cell  <a href="classcloudViewer_1_1CloudSamplingTools.html#adc8843f86f26cd367af9ad806dbebac5">More...</a><br /></td></tr>
+<tr class="separator:adc8843f86f26cd367af9ad806dbebac5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Several point cloud resampling algorithms (octree-based, random, etc.) </p>
@@ -194,7 +203,7 @@ Static Protected Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p><a class="el" href="classOctree.html">Octree</a> cell resampling methods (see <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#acda147fc4edfe8de8e106f1fe4db2df5" title="Resamples a point cloud (process based on the octree)">CloudSamplingTools::resampleCloudWithOctree</a>) </p>
+<p><a class="el" href="classOctree.html">Octree</a> cell resampling methods (see <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a2b521d1ab6aa08c3d900664d2229277f" title="Resamples a point cloud (process based on the octree)">CloudSamplingTools::resampleCloudWithOctree</a>) </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a6101ee86a969ebf37c230407548aae49a66d57ac68bff82a76e0edb58f098ef6d"></a>CELL_CENTER&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a6101ee86a969ebf37c230407548aae49a6825a6ce886295a4f46f74a89833f4ac"></a>CELL_GRAVITY_CENTER&#160;</td><td class="fielddoc"></td></tr>
@@ -215,7 +224,7 @@ Static Protected Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p><a class="el" href="classOctree.html">Octree</a> cell simplifying methods (see <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a30002a8453b9665321540e4597ea869d" title="Subsamples a point cloud (process based on the octree)">CloudSamplingTools::subsampleCloudWithOctree</a>) </p>
+<p><a class="el" href="classOctree.html">Octree</a> cell simplifying methods (see <a class="el" href="classcloudViewer_1_1CloudSamplingTools.html#a9b118bcf643500a57080471116fb4a2e" title="Subsamples a point cloud (process based on the octree)">CloudSamplingTools::subsampleCloudWithOctree</a>) </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aacf53b5a7f1d3d275bb6dbdc0fe59850a18a6d29d5decc74a10c0aa3e52d7cdb1"></a>RANDOM_POINT&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aacf53b5a7f1d3d275bb6dbdc0fe59850a951eb229685b968a36c87335668c13b2"></a>NEAREST_POINT_TO_CELL_CENTER&#160;</td><td class="fielddoc"></td></tr>
@@ -226,8 +235,8 @@ Static Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="afdfaee373f215d649753c79a6a32cbed"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afdfaee373f215d649753c79a6a32cbed">&#9670;&nbsp;</a></span>applyNoiseFilterAtLevel()</h2>
+<a id="a53a4a5373011e690d462a3b0d223fbe0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a53a4a5373011e690d462a3b0d223fbe0">&#9670;&nbsp;</a></span>applyNoiseFilterAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -236,7 +245,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::CloudSamplingTools::applyNoiseFilterAtLevel </td>
+          <td class="memname">bool CloudSamplingTools::applyNoiseFilterAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -276,10 +285,16 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00710">710</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l01267">abs()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="DgmOctree_8h_source.html#l00189">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellCenter</a>, <a class="el" href="DgmOctree_8h_source.html#l00184">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellPos</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l02858">cloudViewer::DistanceComputationTools::computePoint2PlaneDistance()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l01655">cloudViewer::DgmOctree::findNearestNeighborsStartingFromCell()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02479">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="DgmOctree_8h_source.html#l00494">cloudViewer::DgmOctree::getCellSize()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00069">cloudViewer::Neighbourhood::getLSPlane()</a>, <a class="el" href="DgmOctreeReferenceCloud_8h_source.html#l00054">cloudViewer::DgmOctreeReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00177">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::minNumberOfNeighbors</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="DgmOctree_8h_source.html#l00215">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::pointsInNeighbourhood</a>, <a class="el" href="DgmOctree_8h_source.html#l00270">cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct::prepare()</a>, <a class="el" href="DgmOctree_8h_source.html#l00167">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::queryPoint</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="qAutoSeg_8cpp_source.html#l00086">stddev()</a>, <a class="el" href="SmallVector_8h_source.html#l01370">std::swap()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00563">noiseFilter()</a>.</p>
+
 </div>
 </div>
-<a id="ae36503868e541a650a5079b853fbce83"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae36503868e541a650a5079b853fbce83">&#9670;&nbsp;</a></span>applySORFilterAtLevel()</h2>
+<a id="adc8843f86f26cd367af9ad806dbebac5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc8843f86f26cd367af9ad806dbebac5">&#9670;&nbsp;</a></span>applySORFilterAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -288,7 +303,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::CloudSamplingTools::applySORFilterAtLevel </td>
+          <td class="memname">bool CloudSamplingTools::applySORFilterAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -328,10 +343,16 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00835">835</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l01655">cloudViewer::DgmOctree::findNearestNeighborsStartingFromCell()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00464">sorFilter()</a>.</p>
+
 </div>
 </div>
-<a id="a44ec142be61ab27069101d0e46736036"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44ec142be61ab27069101d0e46736036">&#9670;&nbsp;</a></span>noiseFilter()</h2>
+<a id="aa246132ff7f8c3c9c7bab30dcbabe8f3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa246132ff7f8c3c9c7bab30dcbabe8f3">&#9670;&nbsp;</a></span>noiseFilter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -340,7 +361,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::noiseFilter </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::noiseFilter </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -430,12 +451,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>a reference cloud corresponding to the filtered cloud </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00563">563</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00710">applyNoiseFilterAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02664">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02737">cloudViewer::DgmOctree::findBestLevelForAGivenPopulationPerCell()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00038">octreeLevel</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
 
 </div>
 </div>
-<a id="a3cbf82ec411d3287236391e771236515"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3cbf82ec411d3287236391e771236515">&#9670;&nbsp;</a></span>resampleCellAtLevel()</h2>
+<a id="ae158f1a5775a095fa34a93c2faa9c9d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae158f1a5775a095fa34a93c2faa9c9d1">&#9670;&nbsp;</a></span>resampleCellAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -444,7 +469,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::CloudSamplingTools::resampleCellAtLevel </td>
+          <td class="memname">bool CloudSamplingTools::resampleCellAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -486,10 +511,16 @@ Static Protected Member Functions</h2></td></tr>
 </li>
 </ul>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00638">638</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="PointCloudTpl_8h_source.html#l00246">cloudViewer::PointCloudTpl&lt; T &gt;::addPoint()</a>, <a class="el" href="CloudSamplingTools_8h_source.html#l00029">CELL_GRAVITY_CENTER</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00058">cloudViewer::Neighbourhood::getGravityCenter()</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00114">cloudViewer::NormalizedProgress::steps()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00054">resampleCloudWithOctreeAtLevel()</a>.</p>
+
 </div>
 </div>
-<a id="a591467ceb89e66a5e47b3704be90ebdd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a591467ceb89e66a5e47b3704be90ebdd">&#9670;&nbsp;</a></span>resampleCloudSpatially()</h2>
+<a id="affa13b6550b751549294682aeb774aab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affa13b6550b751549294682aeb774aab">&#9670;&nbsp;</a></span>resampleCloudSpatially()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -498,7 +529,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::resampleCloudSpatially </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::resampleCloudSpatially </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -553,12 +584,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>a reference cloud corresponding to the resampling 'selection' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="qM3C2Process_8cpp_source.html#l00428">qM3C2Process::Compute()</a>, <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, <a class="el" href="qCanupo_8cpp_source.html#l00093">qCanupoPlugin::doClassifyAction()</a>, <a class="el" href="qAutoSeg_8cpp_source.html#l01052">getMortarMaps()</a>, and <a class="el" href="CorePoints_8cpp_source.html#l00021">masc::CorePoints::prepare()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00256">256</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CloudSamplingTools_8h_source.html#l00146">cloudViewer::CloudSamplingTools::SFModulationParams::a</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="DgmOctree_8h_source.html#l01191">cloudViewer::DgmOctree::associatedCloud()</a>, <a class="el" href="CloudSamplingTools_8h_source.html#l00148">cloudViewer::CloudSamplingTools::SFModulationParams::b</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00174">cloudViewer::ReferenceCloud::capacity()</a>, <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00419">cloudViewer::ScalarFieldTools::computeScalarFieldExtremas()</a>, <a class="el" href="lsd_8c_source.html#l00207">dist()</a>, <a class="el" href="CloudSamplingTools_8h_source.html#l00144">cloudViewer::CloudSamplingTools::SFModulationParams::enabled</a>, <a class="el" href="lsd_8c_source.html#l00159">error()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02664">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction()</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l01846">cloudViewer::DgmOctree::getPointsInSphericalNeighbourhood()</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00038">octreeLevel</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">cloudViewer::GenericProgressCallback::setInfo()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">cloudViewer::GenericProgressCallback::start()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a180a3040de667058a3656505b059d66a">cloudViewer::GenericProgressCallback::stop()</a>, <a class="el" href="GenericProgressCallback_8h_source.html#l00070">cloudViewer::GenericProgressCallback::textCanBeEdited()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#aa5fd646271a5367bf5761e1262e92466">cloudViewer::GenericProgressCallback::update()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="qM3C2Process_8cpp_source.html#l00428">qM3C2Process::Compute()</a>, <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, <a class="el" href="qCanupo_8cpp_source.html#l00093">qCanupoPlugin::doClassifyAction()</a>, <a class="el" href="qAutoSeg_8cpp_source.html#l01052">getMortarMaps()</a>, <a class="el" href="ecvSubsamplingDlg_8cpp_source.html#l00056">ccSubsamplingDlg::getSampledCloud()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00152">ccAlignDlg::getSampledData()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00101">ccAlignDlg::getSampledModel()</a>, <a class="el" href="CorePoints_8cpp_source.html#l00021">masc::CorePoints::prepare()</a>, and <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l00969">CommandSubsample::process()</a>.</p>
 
 </div>
 </div>
-<a id="acda147fc4edfe8de8e106f1fe4db2df5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acda147fc4edfe8de8e106f1fe4db2df5">&#9670;&nbsp;</a></span>resampleCloudWithOctree()</h2>
+<a id="a2b521d1ab6aa08c3d900664d2229277f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2b521d1ab6aa08c3d900664d2229277f">&#9670;&nbsp;</a></span>resampleCloudWithOctree()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -567,7 +602,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a>* cloudViewer::CloudSamplingTools::resampleCloudWithOctree </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> * CloudSamplingTools::resampleCloudWithOctree </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -622,12 +657,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the resampled cloud (new cloud) </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00027">27</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02766">cloudViewer::DgmOctree::findBestLevelForAGivenCellNumber()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, and <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00054">resampleCloudWithOctreeAtLevel()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
 
 </div>
 </div>
-<a id="ad3fa6ca8f7d2d8d044923a93ce5526fa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad3fa6ca8f7d2d8d044923a93ce5526fa">&#9670;&nbsp;</a></span>resampleCloudWithOctreeAtLevel()</h2>
+<a id="a37e33d31eec1a7b839994bb5c828d093"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37e33d31eec1a7b839994bb5c828d093">&#9670;&nbsp;</a></span>resampleCloudWithOctreeAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -636,7 +675,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1PointCloud.html">PointCloud</a>* cloudViewer::CloudSamplingTools::resampleCloudWithOctreeAtLevel </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1PointCloud.html">PointCloud</a> * CloudSamplingTools::resampleCloudWithOctreeAtLevel </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -691,12 +730,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the resampled cloud (new cloud) </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00054">54</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="DgmOctree_8h_source.html#l01038">cloudViewer::DgmOctree::getCellNumber()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00038">octreeLevel</a>, <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00638">resampleCellAtLevel()</a>, and <a class="el" href="PointCloudTpl_8h_source.html#l00213">cloudViewer::PointCloudTpl&lt; T &gt;::reserve()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, and <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00027">resampleCloudWithOctree()</a>.</p>
 
 </div>
 </div>
-<a id="aa21d44ea2c695625639091e0298e0b07"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa21d44ea2c695625639091e0298e0b07">&#9670;&nbsp;</a></span>sorFilter()</h2>
+<a id="ae9d5800bfd56cca5f990711e7941ffa0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9d5800bfd56cca5f990711e7941ffa0">&#9670;&nbsp;</a></span>sorFilter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -705,7 +748,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::sorFilter </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::sorFilter </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -760,12 +803,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>a reference cloud corresponding to the filtered cloud </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00464">464</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l01267">abs()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00835">applySORFilterAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02737">cloudViewer::DgmOctree::findBestLevelForAGivenPopulationPerCell()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00038">octreeLevel</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, and <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l02931">CommandSORFilter::process()</a>.</p>
 
 </div>
 </div>
-<a id="a803c25bc6d2705e927294fd3454f34ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a803c25bc6d2705e927294fd3454f34ff">&#9670;&nbsp;</a></span>subsampleCellAtLevel()</h2>
+<a id="a1e8f42c79d30f5374124a19fcb5d416a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e8f42c79d30f5374124a19fcb5d416a">&#9670;&nbsp;</a></span>subsampleCellAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -774,7 +821,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::CloudSamplingTools::subsampleCellAtLevel </td>
+          <td class="memname">bool CloudSamplingTools::subsampleCellAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -818,10 +865,16 @@ Static Protected Member Functions</h2></td></tr>
 </li>
 </ul>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00665">665</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="CloudSamplingTools_8h_source.html#l00033">RANDOM_POINT</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00114">cloudViewer::NormalizedProgress::steps()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00126">subsampleCloudWithOctreeAtLevel()</a>.</p>
+
 </div>
 </div>
-<a id="acd06e5ead6b2f563531a134d55b4b732"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acd06e5ead6b2f563531a134d55b4b732">&#9670;&nbsp;</a></span>subsampleCloudRandomly()</h2>
+<a id="aa6001f5fc3933ea5cabc764156478456"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6001f5fc3933ea5cabc764156478456">&#9670;&nbsp;</a></span>subsampleCloudRandomly()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -830,7 +883,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::subsampleCloudRandomly </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::subsampleCloudRandomly </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -871,12 +924,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>a reference cloud corresponding to the subsampling 'selection' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, <a class="el" href="qCanupo_8cpp_source.html#l00254">qCanupoPlugin::doTrainAction()</a>, and <a class="el" href="CorePoints_8cpp_source.html#l00021">masc::CorePoints::prepare()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00202">202</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="lsd_8c_source.html#l00207">dist()</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">cloudViewer::GenericProgressCallback::setInfo()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">cloudViewer::GenericProgressCallback::start()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00185">cloudViewer::ReferenceCloud::swap()</a>, <a class="el" href="GenericProgressCallback_8h_source.html#l00070">cloudViewer::GenericProgressCallback::textCanBeEdited()</a>, and <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#aa5fd646271a5367bf5761e1262e92466">cloudViewer::GenericProgressCallback::update()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, <a class="el" href="qCanupo_8cpp_source.html#l00254">qCanupoPlugin::doTrainAction()</a>, <a class="el" href="ecvSubsamplingDlg_8cpp_source.html#l00056">ccSubsamplingDlg::getSampledCloud()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00152">ccAlignDlg::getSampledData()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00101">ccAlignDlg::getSampledModel()</a>, <a class="el" href="CorePoints_8cpp_source.html#l00021">masc::CorePoints::prepare()</a>, <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l00969">CommandSubsample::process()</a>, and <a class="el" href="core_2src_2RegistrationTools_8cpp_source.html#l00145">cloudViewer::ICPRegistrationTools::Register()</a>.</p>
 
 </div>
 </div>
-<a id="a30002a8453b9665321540e4597ea869d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30002a8453b9665321540e4597ea869d">&#9670;&nbsp;</a></span>subsampleCloudWithOctree()</h2>
+<a id="a9b118bcf643500a57080471116fb4a2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b118bcf643500a57080471116fb4a2e">&#9670;&nbsp;</a></span>subsampleCloudWithOctree()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -885,7 +942,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::subsampleCloudWithOctree </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::subsampleCloudWithOctree </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -940,12 +997,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>a reference cloud corresponding to the subsampling 'selection' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00099">99</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02766">cloudViewer::DgmOctree::findBestLevelForAGivenCellNumber()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, and <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00126">subsampleCloudWithOctreeAtLevel()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
 
 </div>
 </div>
-<a id="afc1e7bf2b4334e79d501e1cad97568a3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc1e7bf2b4334e79d501e1cad97568a3">&#9670;&nbsp;</a></span>subsampleCloudWithOctreeAtLevel()</h2>
+<a id="acfa59592a40547d1d854b1e322056422"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acfa59592a40547d1d854b1e322056422">&#9670;&nbsp;</a></span>subsampleCloudWithOctreeAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -954,7 +1015,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::subsampleCloudWithOctreeAtLevel </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::subsampleCloudWithOctreeAtLevel </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -1009,12 +1070,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>a reference cloud corresponding to the subsampling 'selection' </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00126">126</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="DgmOctree_8h_source.html#l01038">cloudViewer::DgmOctree::getCellNumber()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00038">octreeLevel</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, and <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00665">subsampleCellAtLevel()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2CloudSamplingTools_8cpp_source.html#l00021">define_CloudSamplingTools()</a>, <a class="el" href="ecvSubsamplingDlg_8cpp_source.html#l00056">ccSubsamplingDlg::getSampledCloud()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00152">ccAlignDlg::getSampledData()</a>, <a class="el" href="ecvAlignDlg_8cpp_source.html#l00101">ccAlignDlg::getSampledModel()</a>, <a class="el" href="ecvCommandLineCommands_8cpp_source.html#l00969">CommandSubsample::process()</a>, and <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00099">subsampleCloudWithOctree()</a>.</p>
 
 </div>
 </div>
-<a id="ae96c4e880d59d841b96c9159efd69d33"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae96c4e880d59d841b96c9159efd69d33">&#9670;&nbsp;</a></span>UniformDownSample()</h2>
+<a id="a62908dd1ff2586b3646c78aa24ae6f75"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a62908dd1ff2586b3646c78aa24ae6f75">&#9670;&nbsp;</a></span>UniformDownSample()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1023,7 +1088,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* cloudViewer::CloudSamplingTools::UniformDownSample </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> * CloudSamplingTools::UniformDownSample </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -1047,10 +1112,15 @@ Static Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00171">171</a> of file <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, and <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>.</p>
+
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/include/<a class="el" href="CloudSamplingTools_8h_source.html">CloudSamplingTools.h</a></li>
+<li>/root/ACloudViewer/core/src/<a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html">CloudSamplingTools.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1058,7 +1128,7 @@ Static Protected Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1CloudSamplingTools.html">CloudSamplingTools</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

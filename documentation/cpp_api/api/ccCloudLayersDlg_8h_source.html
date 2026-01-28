@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -121,16 +130,16 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8h_source.html',''); 
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ccCloudLayersHelper_8h.html">ccCloudLayersHelper.h</a>&quot;</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="comment">// CC</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;ecvOverlayDialog.h&gt;</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvOverlayDialog_8h.html">ecvOverlayDialog.h</a>&gt;</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">class </span><a class="code" href="classccPointCloud.html">ccPointCloud</a>;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">class </span><a class="code" href="classccMouseCircle.html">ccMouseCircle</a>;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classccCloudLayersDlg.html">   39</a></span>&#160;<span class="keyword">class </span><a class="code" href="classccCloudLayersDlg.html">ccCloudLayersDlg</a> : <span class="keyword">public</span> ccOverlayDialog, <span class="keyword">public</span> Ui::ccCloudLayersDlg {</div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classccCloudLayersDlg.html">   39</a></span>&#160;<span class="keyword">class </span><a class="code" href="classccCloudLayersDlg.html">ccCloudLayersDlg</a> : <span class="keyword">public</span> <a class="code" href="classccOverlayDialog.html">ccOverlayDialog</a>, <span class="keyword">public</span> Ui::ccCloudLayersDlg {</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    Q_OBJECT</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classccCloudLayersDlg.html#ad8660d87f7f148bc84eb55682b4a008a">ccCloudLayersDlg</a>(ecvMainAppInterface* app,</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classccCloudLayersDlg.html#ad8660d87f7f148bc84eb55682b4a008a">ccCloudLayersDlg</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app,</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                              QWidget* parent = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classccCloudLayersDlg.html#aaf3793c41dab27953a2f883a1a6c5308">~ccCloudLayersDlg</a>();</div>
@@ -179,7 +188,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8h_source.html',''); 
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordtype">void</span> mouseMoved(<span class="keywordtype">int</span> x, <span class="keywordtype">int</span> y, Qt::MouseButtons buttons);</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    ecvMainAppInterface* m_app;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* m_app;</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <a class="code" href="classccAsprsModel.html">ccAsprsModel</a> m_asprsModel;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <a class="code" href="classccCloudLayersHelper.html">ccCloudLayersHelper</a>* m_helper;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <a class="code" href="classccMouseCircle.html">ccMouseCircle</a>* m_mouseCircle;</div>
@@ -190,14 +199,17 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8h_source.html',''); 
 <div class="ttc" id="accCloudLayersHelper_8h_html"><div class="ttname"><a href="ccCloudLayersHelper_8h.html">ccCloudLayersHelper.h</a></div></div>
 <div class="ttc" id="aclassccAsprsModel_html"><div class="ttname"><a href="classccAsprsModel.html">ccAsprsModel</a></div><div class="ttdef"><b>Definition:</b> <a href="ccAsprsModel_8h_source.html#l00031">ccAsprsModel.h:31</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html"><div class="ttname"><a href="classccCloudLayersDlg.html">ccCloudLayersDlg</a></div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8h_source.html#l00039">ccCloudLayersDlg.h:39</a></div></div>
-<div class="ttc" id="aclassccCloudLayersDlg_html_a2377dd8dad62dd0fa49ab0c509c1bb7a"><div class="ttname"><a href="classccCloudLayersDlg.html#a2377dd8dad62dd0fa49ab0c509c1bb7a">ccCloudLayersDlg::stop</a></div><div class="ttdeci">void stop(bool accepted) override</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00119">ccCloudLayersDlg.cpp:119</a></div></div>
+<div class="ttc" id="aclassccCloudLayersDlg_html_a2377dd8dad62dd0fa49ab0c509c1bb7a"><div class="ttname"><a href="classccCloudLayersDlg.html#a2377dd8dad62dd0fa49ab0c509c1bb7a">ccCloudLayersDlg::stop</a></div><div class="ttdeci">void stop(bool accepted) override</div><div class="ttdoc">Stops process/dialog.</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00119">ccCloudLayersDlg.cpp:119</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html_a5e8a2199064e54fb5a079c69dcd600dc"><div class="ttname"><a href="classccCloudLayersDlg.html#a5e8a2199064e54fb5a079c69dcd600dc">ccCloudLayersDlg::setPointCloud</a></div><div class="ttdeci">void setPointCloud(ccPointCloud *cloud)</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00135">ccCloudLayersDlg.cpp:135</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html_aa7102066240e476534e748c8fa6ff00a"><div class="ttname"><a href="classccCloudLayersDlg.html#aa7102066240e476534e748c8fa6ff00a">ccCloudLayersDlg::start</a></div><div class="ttdeci">bool start() override</div><div class="ttdoc">inherited from ccOverlayDialog</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00101">ccCloudLayersDlg.cpp:101</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html_aaf3793c41dab27953a2f883a1a6c5308"><div class="ttname"><a href="classccCloudLayersDlg.html#aaf3793c41dab27953a2f883a1a6c5308">ccCloudLayersDlg::~ccCloudLayersDlg</a></div><div class="ttdeci">virtual ~ccCloudLayersDlg()</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00079">ccCloudLayersDlg.cpp:79</a></div></div>
 <div class="ttc" id="aclassccCloudLayersDlg_html_ad8660d87f7f148bc84eb55682b4a008a"><div class="ttname"><a href="classccCloudLayersDlg.html#ad8660d87f7f148bc84eb55682b4a008a">ccCloudLayersDlg::ccCloudLayersDlg</a></div><div class="ttdeci">ccCloudLayersDlg(ecvMainAppInterface *app, QWidget *parent=nullptr)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersDlg_8cpp_source.html#l00024">ccCloudLayersDlg.cpp:24</a></div></div>
 <div class="ttc" id="aclassccCloudLayersHelper_html"><div class="ttname"><a href="classccCloudLayersHelper.html">ccCloudLayersHelper</a></div><div class="ttdef"><b>Definition:</b> <a href="ccCloudLayersHelper_8h_source.html#l00046">ccCloudLayersHelper.h:46</a></div></div>
 <div class="ttc" id="aclassccMouseCircle_html"><div class="ttname"><a href="classccMouseCircle.html">ccMouseCircle</a></div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_2include_2ccMouseCircle_8h_source.html#l00024">ccMouseCircle.h:24</a></div></div>
+<div class="ttc" id="aclassccOverlayDialog_html"><div class="ttname"><a href="classccOverlayDialog.html">ccOverlayDialog</a></div><div class="ttdoc">Generic overlay dialog interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvOverlayDialog_8h_source.html#l00017">ecvOverlayDialog.h:17</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aecvOverlayDialog_8h_html"><div class="ttname"><a href="ecvOverlayDialog_8h.html">ecvOverlayDialog.h</a></div></div>
 <div class="ttc" id="astructccAsprsModel_1_1AsprsItem_html"><div class="ttname"><a href="structccAsprsModel_1_1AsprsItem.html">ccAsprsModel::AsprsItem</a></div><div class="ttdef"><b>Definition:</b> <a href="ccAsprsModel_8h_source.html#l00059">ccAsprsModel.h:59</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -205,7 +217,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersDlg_8h_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_0ddd015bacd93a2b1d2bac93db97fdae.html">qCloudLayers</a></li><li class="navelem"><a class="el" href="dir_1722d22e6dce0bc59d3c8c7777271c30.html">include</a></li><li class="navelem"><a class="el" href="ccCloudLayersDlg_8h.html">ccCloudLayersDlg.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -99,7 +108,7 @@ $(document).ready(function(){initNavTree('ccTool_8h_source.html',''); initResiza
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvHObject_8h.html">ecvHObject.h</a>&gt;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">/*</span></div>
@@ -109,7 +118,7 @@ $(document).ready(function(){initNavTree('ccTool_8h_source.html',''); initResiza
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classccTool.html#ae3cab1396fa65e5dc65b5d06779b3a14">   20</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classccTool.html#ae3cab1396fa65e5dc65b5d06779b3a14">~ccTool</a>() {}</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classccTool.html#acc4786f4c5d6ac139f4f3b2b589ebc9a">   22</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccTool.html#acc4786f4c5d6ac139f4f3b2b589ebc9a">initializeTool</a>(ecvMainAppInterface* app) {</div>
+<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classccTool.html#acc4786f4c5d6ac139f4f3b2b589ebc9a">   22</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccTool.html#acc4786f4c5d6ac139f4f3b2b589ebc9a">initializeTool</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app) {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a> = app;  <span class="comment">// store copy of app</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        <a class="code" href="classccTool.html#a85db7412bd44ac34ca15a04ebdf709db">m_window</a> = <a class="code" href="classecvDisplayTools.html#aa11dd0a72142ac423426333746ddc1df">ecvDisplayTools::GetCurrentScreen</a>();</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    }</div>
@@ -154,7 +163,7 @@ $(document).ready(function(){initNavTree('ccTool_8h_source.html',''); initResiza
 <div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classccTool.html#af8f4db8a8796fe33ed799d6e95b5fde3">   64</a></span>&#160;    <a class="code" href="classccTool.html#af8f4db8a8796fe33ed799d6e95b5fde3">ccTool</a>() : <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>(nullptr), <a class="code" href="classccTool.html#a85db7412bd44ac34ca15a04ebdf709db">m_window</a>(nullptr) {}</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="comment">// link to the main plugin interface</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">   67</a></span>&#160;    ecvMainAppInterface* <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">   67</a></span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="comment">// link to the active openGLWindow</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classccTool.html#a85db7412bd44ac34ca15a04ebdf709db">   70</a></span>&#160;    QWidget* <a class="code" href="classccTool.html#a85db7412bd44ac34ca15a04ebdf709db">m_window</a>;</div>
@@ -179,8 +188,10 @@ $(document).ready(function(){initNavTree('ccTool_8h_source.html',''); initResiza
 <div class="ttc" id="aclassccTool_html_ae3cab1396fa65e5dc65b5d06779b3a14"><div class="ttname"><a href="classccTool.html#ae3cab1396fa65e5dc65b5d06779b3a14">ccTool::~ccTool</a></div><div class="ttdeci">virtual ~ccTool()</div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00020">ccTool.h:20</a></div></div>
 <div class="ttc" id="aclassccTool_html_af8f4db8a8796fe33ed799d6e95b5fde3"><div class="ttname"><a href="classccTool.html#af8f4db8a8796fe33ed799d6e95b5fde3">ccTool::ccTool</a></div><div class="ttdeci">ccTool()</div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00064">ccTool.h:64</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_aa11dd0a72142ac423426333746ddc1df"><div class="ttname"><a href="classecvDisplayTools.html#aa11dd0a72142ac423426333746ddc1df">ecvDisplayTools::GetCurrentScreen</a></div><div class="ttdeci">static QWidget * GetCurrentScreen()</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l00666">ecvDisplayTools.h:666</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
 <div class="ttc" id="aecvHObject_8h_html"><div class="ttname"><a href="ecvHObject_8h.html">ecvHObject.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -188,7 +199,7 @@ $(document).ready(function(){initNavTree('ccTool_8h_source.html',''); initResiza
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_3006d6fb62785e4ee7ca87a06a93d786.html">include</a></li><li class="navelem"><a class="el" href="ccTool_8h.html">ccTool.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

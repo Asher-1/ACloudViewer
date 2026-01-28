@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('ccGeoObject_8h_source.html',''); initR
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvHObject_8h.html">ecvHObject.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ccFitPlane_8h.html">ccFitPlane.h</a>&quot;</span></div>
@@ -115,8 +124,8 @@ $(document).ready(function(){initNavTree('ccGeoObject_8h_source.html',''); initR
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classccGeoObject.html">   26</a></span>&#160;<span class="keyword">class </span><a class="code" href="classccGeoObject.html">ccGeoObject</a> : <span class="keyword">public</span> <a class="code" href="classccHObject.html">ccHObject</a> {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="classccGeoObject.html#abf0a48a2c361e57b6cae9f6aa035e97e">ccGeoObject</a>(QString <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, ecvMainAppInterface* app, <span class="keywordtype">bool</span> singleSurface);</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classccGeoObject.html#abf0a48a2c361e57b6cae9f6aa035e97e">ccGeoObject</a>(<a class="code" href="classccHObject.html">ccHObject</a>* obj, ecvMainAppInterface* app);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="classccGeoObject.html#abf0a48a2c361e57b6cae9f6aa035e97e">ccGeoObject</a>(QString <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app, <span class="keywordtype">bool</span> singleSurface);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classccGeoObject.html#abf0a48a2c361e57b6cae9f6aa035e97e">ccGeoObject</a>(<a class="code" href="classccHObject.html">ccHObject</a>* obj, <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="comment">// returns the pointCloud associated with this ccGeoObject&#39;s interior (or</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="comment">// null if the interior is undefined)</span></div>
@@ -135,7 +144,7 @@ $(document).ready(function(){initNavTree('ccGeoObject_8h_source.html',''); initR
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="comment">// adds a topological relationship between this GeoObject and another</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <a class="code" href="classccTopologyRelation.html">ccTopologyRelation</a>* <a class="code" href="classccGeoObject.html#a7cc5af2d8b3bb7d548715e42a660bdb5">addRelationTo</a>(<a class="code" href="classccGeoObject.html">ccGeoObject</a>* obj2,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                      <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>,</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                      ecvMainAppInterface* app);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                      <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app);</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="comment">// returns the GID of this geo-object</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classccGeoObject.html#aefe64f426b2d811fae9c2761511bf0ea">   51</a></span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="classccGeoObject.html#aefe64f426b2d811fae9c2761511bf0ea">getGID</a>() { <span class="keywordflow">return</span> _gID; };</div>
@@ -147,7 +156,7 @@ $(document).ready(function(){initNavTree('ccGeoObject_8h_source.html',''); initR
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="comment">// link back to the main plugin interface</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classccGeoObject.html#aed297cb2a8d0b34e23faf6de846fdafc">   60</a></span>&#160;    ecvMainAppInterface* <a class="code" href="classccGeoObject.html#aed297cb2a8d0b34e23faf6de846fdafc">m_app</a>;</div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classccGeoObject.html#aed297cb2a8d0b34e23faf6de846fdafc">   60</a></span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* <a class="code" href="classccGeoObject.html#aed297cb2a8d0b34e23faf6de846fdafc">m_app</a>;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="comment">// the dataset this object &quot;belongs&quot; too. Assigned when an &quot;interior&quot; gets</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="comment">// defined.</span></div>
@@ -251,7 +260,9 @@ $(document).ready(function(){initNavTree('ccGeoObject_8h_source.html',''); initR
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccTopologyRelation_html"><div class="ttname"><a href="classccTopologyRelation.html">ccTopologyRelation</a></div><div class="ttdef"><b>Definition:</b> <a href="ccTopologyRelation_8h_source.html#l00020">ccTopologyRelation.h:20</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aecvHObject_8h_html"><div class="ttname"><a href="ecvHObject_8h.html">ecvHObject.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -259,7 +270,7 @@ $(document).ready(function(){initNavTree('ccGeoObject_8h_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_3006d6fb62785e4ee7ca87a06a93d786.html">include</a></li><li class="navelem"><a class="el" href="ccGeoObject_8h.html">ccGeoObject.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

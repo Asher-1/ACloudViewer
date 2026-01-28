@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -100,7 +109,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersHelper_8cpp_source.html',
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;../include/ccMouseCircle.h&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// CC</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvScalarField_8h.html">ecvScalarField.h</a>&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
@@ -110,7 +119,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersHelper_8cpp_source.html',
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">// System</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;thread&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
-<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classccCloudLayersHelper.html#a70a053b8b55b78ba7dd9562083eecc0c">   23</a></span>&#160;<a class="code" href="classccCloudLayersHelper.html#a70a053b8b55b78ba7dd9562083eecc0c">ccCloudLayersHelper::ccCloudLayersHelper</a>(ecvMainAppInterface* app,</div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classccCloudLayersHelper.html#a70a053b8b55b78ba7dd9562083eecc0c">   23</a></span>&#160;<a class="code" href="classccCloudLayersHelper.html#a70a053b8b55b78ba7dd9562083eecc0c">ccCloudLayersHelper::ccCloudLayersHelper</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app,</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                                         <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud)</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    : m_app(app),</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;      m_cloud(cloud),</div>
@@ -131,12 +140,12 @@ $(document).ready(function(){initNavTree('ccCloudLayersHelper_8cpp_source.html',
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;            <span class="comment">// store the original colors</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            m_formerCloudColors = m_cloud-&gt;<a class="code" href="classccPointCloud.html#a1ef9f3dc099b0b648ec4a443ba8180bc">rgbColors</a>()-&gt;<a class="code" href="classColorsTableType.html#a9eb96694c0d3d23e8f13c9f5c6a28539">clone</a>();</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;            <span class="keywordflow">if</span> (!m_formerCloudColors) {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory to backup previous colors&quot;</span>);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory to backup previous colors&quot;</span>);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;            }</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;            <span class="comment">// check memory for rgb colors</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;            <span class="keywordflow">if</span> (!m_cloud-&gt;<a class="code" href="classccPointCloud.html#a686417cb2d0577eb6a0c0ee885fe9480">resizeTheRGBTable</a>()) {</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory to show colors&quot;</span>);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory to show colors&quot;</span>);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            }</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        }</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
@@ -426,7 +435,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersHelper_8cpp_source.html',
 <div class="ttc" id="aCVGeom_8h_html_a54e18e357600aa77e27eb72d23778e6c"><div class="ttname"><a href="CVGeom_8h.html#a54e18e357600aa77e27eb72d23778e6c">CCVector2</a></div><div class="ttdeci">Vector2Tpl&lt; PointCoordinateType &gt; CCVector2</div><div class="ttdoc">Default 2D Vector.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00780">CVGeom.h:780</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassColorsTableType_html_a9eb96694c0d3d23e8f13c9f5c6a28539"><div class="ttname"><a href="classColorsTableType.html#a9eb96694c0d3d23e8f13c9f5c6a28539">ColorsTableType::clone</a></div><div class="ttdeci">ColorsTableType * clone() override</div><div class="ttdoc">Duplicates array (overloaded from ccArray::clone)</div><div class="ttdef"><b>Definition:</b> <a href="ecvAdvancedTypes_8h_source.html#l00095">ecvAdvancedTypes.h:95</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_a64cc8e49fc845aff7a2a0592c5610447"><div class="ttname"><a href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">Tuple3Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_ac8d05ce413d7659429e2e7243b8a8257"><div class="ttname"><a href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">Tuple3Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
@@ -477,8 +486,10 @@ $(document).ready(function(){initNavTree('ccCloudLayersHelper_8cpp_source.html',
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a4f659aa5dd4563ab557c7f154bc3fcae"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a4f659aa5dd4563ab557c7f154bc3fcae">cloudViewer::ScalarField::setValue</a></div><div class="ttdeci">void setValue(std::size_t index, ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00096">ScalarField.h:96</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbaTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbaTpl.html">ecvColor::RgbaTpl</a></div><div class="ttdoc">RGBA color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00145">ecvColorTypes.h:145</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="aecvGLMatrixTpl_8h_html_aed018a2c40b8940250c971a3218f2b84"><div class="ttname"><a href="ecvGLMatrixTpl_8h.html#aed018a2c40b8940250c971a3218f2b84">OPENGL_MATRIX_SIZE</a></div><div class="ttdeci">static const unsigned OPENGL_MATRIX_SIZE</div><div class="ttdoc">Model view matrix size (OpenGL)</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrixTpl_8h_source.html#l00024">ecvGLMatrixTpl.h:24</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvScalarField_8h_html"><div class="ttname"><a href="ecvScalarField_8h.html">ecvScalarField.h</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html"><div class="ttname"><a href="namespaceecvColor.html">ecvColor</a></div><div class="ttdoc">Colors namespace.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00032">ecvColorTypes.h:32</a></div></div>
@@ -506,7 +517,7 @@ $(document).ready(function(){initNavTree('ccCloudLayersHelper_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_0ddd015bacd93a2b1d2bac93db97fdae.html">qCloudLayers</a></li><li class="navelem"><a class="el" href="dir_9fc569ce28825700fc5877d0412b9c64.html">src</a></li><li class="navelem"><a class="el" href="ccCloudLayersHelper_8cpp.html">ccCloudLayersHelper.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -128,7 +137,7 @@ $(document).ready(function(){initNavTree('MessageProcessor_8h_source.html',''); 
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1MessageProcessor.html#ab793b54e093f4ecd11db9597c8d7e391">OnGeometryFunc</a> on_geometry_;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">void</span> SetGeometry(std::shared_ptr&lt;ccHObject&gt; geom,</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                     <span class="keyword">const</span> std::string&amp; path,</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                     <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                     <span class="keywordtype">int</span> time,</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                     <span class="keyword">const</span> std::string&amp; layer);</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;};</div>
@@ -143,8 +152,9 @@ $(document).ready(function(){initNavTree('MessageProcessor_8h_source.html',''); 
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1MessageProcessor_html_ab793b54e093f4ecd11db9597c8d7e391"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1MessageProcessor.html#ab793b54e093f4ecd11db9597c8d7e391">cloudViewer::visualization::MessageProcessor::OnGeometryFunc</a></div><div class="ttdeci">std::function&lt; void(std::shared_ptr&lt; ccHObject &gt;, const std::string &amp;, int, const std::string &amp;)&gt; OnGeometryFunc</div><div class="ttdef"><b>Definition:</b> <a href="MessageProcessor_8h_source.html#l00025">MessageProcessor.h:29</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1MessageProcessor_html_ad6cd5930cbfb531cc4e5729b2c9c428a"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1MessageProcessor.html#ad6cd5930cbfb531cc4e5729b2c9c428a">cloudViewer::visualization::MessageProcessor::MessageProcessor</a></div><div class="ttdeci">MessageProcessor(gui::Window *window, OnGeometryFunc on_geometry)</div><div class="ttdef"><b>Definition:</b> <a href="MessageProcessor_8h_source.html#l00030">MessageProcessor.h:30</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1MessageProcessor_html_ad9b42e8ab3031563143988ad67c3c73c"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1MessageProcessor.html#ad9b42e8ab3031563143988ad67c3c73c">cloudViewer::visualization::MessageProcessor::ProcessMessage</a></div><div class="ttdeci">std::shared_ptr&lt; zmq::message_t &gt; ProcessMessage(const io::rpc::messages::Request &amp;req, const io::rpc::messages::SetMeshData &amp;msg, const msgpack::object_handle &amp;obj) override</div><div class="ttdef"><b>Definition:</b> <a href="MessageProcessor_8cpp_source.html#l00027">MessageProcessor.cpp:27</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Window_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Window.html">cloudViewer::visualization::gui::Window</a></div><div class="ttdef"><b>Definition:</b> <a href="Window_8h_source.html#l00030">Window.h:30</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Window_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Window.html">cloudViewer::visualization::gui::Window</a></div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8h_source.html#l00030">Window.h:30</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructWindow_html"><div class="ttname"><a href="structWindow.html">Window</a></div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l19155">sqlite3.c:19155</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1Request_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Request.html">cloudViewer::io::rpc::messages::Request</a></div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00508">Messages.h:508</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1SetMeshData_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1SetMeshData.html">cloudViewer::io::rpc::messages::SetMeshData</a></div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00391">Messages.h:391</a></div></div>
@@ -154,7 +164,7 @@ $(document).ready(function(){initNavTree('MessageProcessor_8h_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="MessageProcessor_8h.html">MessageProcessor.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

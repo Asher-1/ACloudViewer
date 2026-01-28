@@ -1,9 +1,11 @@
 <map id="ProjectionFilter" name="ProjectionFilter">
-<area shape="rect" id="node1" title="Projection Filter." alt="" coords="200,184,320,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="122,95,243,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classProjectionFilterDlg.html" title=" " alt="" coords="267,95,410,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="297,5,372,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="397,5,561,32"/>
+<area shape="rect" id="node1" title="Projection Filter." alt="" coords="587,157,707,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="341,107,463,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="50,5,125,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="6,56,169,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="20,107,155,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="7,157,167,184"/>
+<area shape="rect" id="node7" href="$classProjectionFilterDlg.html" title=" " alt="" coords="331,208,473,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="50,208,125,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,169,285"/>
 </map>

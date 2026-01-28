@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -123,12 +132,12 @@ $(document).ready(function(){initNavTree('PDMSFilter_8cpp_source.html',''); init
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                    QStringList{<span class="stringliteral">&quot;PDMS primitives (*.pdms *.pdmsmac *.mac)&quot;</span>},</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                    QStringList(), <a class="code" href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">Import</a>}) {}</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classPDMSFilter.html#a4361e54ddc080786f80c8af167c01916">   36</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classPDMSFilter.html#a4361e54ddc080786f80c8af167c01916">PDMSFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classPDMSFilter.html#a4361e54ddc080786f80c8af167c01916">   36</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classPDMSFilter.html#a4361e54ddc080786f80c8af167c01916">PDMSFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                                   <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                                   <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <a class="code" href="classPdmsParser.html">PdmsParser</a> parser;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="classPdmsFileSession.html">PdmsFileSession</a> session(</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;            qPrintable(filename));  <span class="comment">// DGM: warning, toStdString doesn&#39;t</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;            qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>));  <span class="comment">// DGM: warning, toStdString doesn&#39;t</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                                    <span class="comment">// preserve &quot;local&quot; characters</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    parser.<a class="code" href="classPdmsParser.html#a2d79bac2d4370b44bb442fb54ae3f031">linkWithSession</a>(&amp;session);</div>
@@ -286,7 +295,7 @@ $(document).ready(function(){initNavTree('PDMSFilter_8cpp_source.html',''); init
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                    primitive-&gt;<a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                    currentPair.second-&gt;addChild(primitive);</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PDMSFilter] Primitive &#39;%1&#39; not &quot;</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PDMSFilter] Primitive &#39;%1&#39; not &quot;</span></div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                                           <span class="stringliteral">&quot;supported yet!&quot;</span>)</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                                           .arg(unsupportedPrimitiveStr));</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                }</div>
@@ -301,6 +310,7 @@ $(document).ready(function(){initNavTree('PDMSFilter_8cpp_source.html',''); init
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a></div><div class="ttdeci">@ CC_FERR_MALFORMED_FILE</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00032">FileIOFilter.h:32</a></div></div>
@@ -309,7 +319,7 @@ $(document).ready(function(){initNavTree('PDMSFilter_8cpp_source.html',''); init
 <div class="ttc" id="aPDMSFilter_8cpp_html_a51d38951c7b5f9120af7ecea9b7d2190"><div class="ttname"><a href="PDMSFilter_8cpp.html#a51d38951c7b5f9120af7ecea9b7d2190">PdmsAndCCPair</a></div><div class="ttdeci">std::pair&lt; PdmsTools::PdmsObjects::GenericItem *, ccHObject * &gt; PdmsAndCCPair</div><div class="ttdef"><b>Definition:</b> <a href="PDMSFilter_8cpp_source.html#l00026">PDMSFilter.cpp:27</a></div></div>
 <div class="ttc" id="aPDMSFilter_8h_html"><div class="ttname"><a href="PDMSFilter_8h.html">PDMSFilter.h</a></div></div>
 <div class="ttc" id="aPdmsParser_8h_html"><div class="ttname"><a href="PdmsParser_8h.html">PdmsParser.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a056c88c7d5d4c012ca3daf0c515675c9"><div class="ttname"><a href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">FileIOFilter::DEFAULT_PRIORITY</a></div><div class="ttdeci">static constexpr float DEFAULT_PRIORITY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00313">FileIOFilter.h:313</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">FileIOFilter::Import</a></div><div class="ttdeci">@ Import</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00302">FileIOFilter.h:302</a></div></div>
@@ -386,7 +396,7 @@ $(document).ready(function(){initNavTree('PDMSFilter_8cpp_source.html',''); init
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aad8da811adee58a7a252fbe5a241d5c6d"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aad8da811adee58a7a252fbe5a241d5c6d">PdmsTools::PDMS_SNOUT</a></div><div class="ttdeci">@ PDMS_SNOUT</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00075">PdmsTools.h:75</a></div></div>
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aae461bd0e723ce6026ecb06998b826917"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aae461bd0e723ce6026ecb06998b826917">PdmsTools::PDMS_NBOX</a></div><div class="ttdeci">@ PDMS_NBOX</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00077">PdmsTools.h:77</a></div></div>
 <div class="ttc" id="anamespacePdmsTools_html_af5d48ab9b88612c804f4919519e3b83aae66b2389178871a72a2d09bb3208b6e2"><div class="ttname"><a href="namespacePdmsTools.html#af5d48ab9b88612c804f4919519e3b83aae66b2389178871a72a2d09bb3208b6e2">PdmsTools::PDMS_NEXTRU</a></div><div class="ttdeci">@ PDMS_NEXTRU</div><div class="ttdef"><b>Definition:</b> <a href="PdmsTools_8h_source.html#l00079">PdmsTools.h:79</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a></div><div class="ttdoc">Generic loading parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00051">FileIOFilter.h:51</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -394,7 +404,7 @@ $(document).ready(function(){initNavTree('PDMSFilter_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_ecc24ebe7d89572f9933707fe88b528d.html">qCoreIO</a></li><li class="navelem"><a class="el" href="dir_2a139ce821a92c61dda917a8bd29b4ab.html">src</a></li><li class="navelem"><a class="el" href="dir_934b9f4fd228aae511ffbf78cc10a18d.html">PDMS</a></li><li class="navelem"><a class="el" href="PDMSFilter_8cpp.html">PDMSFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

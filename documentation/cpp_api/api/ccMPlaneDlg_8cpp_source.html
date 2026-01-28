@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -107,7 +116,7 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// https://stackoverflow.com/questions/8766633/how-to-determine-the-correct-size-of-a-qtablewidget</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classccMPlaneDlg.html#a514ceed7a22636a9a5e1a25838d2bb5a">   19</a></span>&#160;<a class="code" href="classccMPlaneDlg.html#a514ceed7a22636a9a5e1a25838d2bb5a">ccMPlaneDlg::ccMPlaneDlg</a>(QWidget *parent <span class="comment">/*=0*/</span>)</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    : ccOverlayDialog(parent), <a class="code" href="namespaceUi.html">Ui</a>::MPlaneDialog() {</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    : <a class="code" href="classccOverlayDialog.html">ccOverlayDialog</a>(parent), <a class="code" href="namespaceUi.html">Ui</a>::MPlaneDialog() {</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    setupUi(<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    QPalette p;</div>
@@ -444,6 +453,7 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="ttc" id="aclassccMPlaneDlg_html_aea31e4b3d44c17fdd23029d4d72b66be"><div class="ttname"><a href="classccMPlaneDlg.html#aea31e4b3d44c17fdd23029d4d72b66be">ccMPlaneDlg::clearMeasurementPoints</a></div><div class="ttdeci">void clearMeasurementPoints()</div><div class="ttdef"><b>Definition:</b> <a href="ccMPlaneDlg_8cpp_source.html#l00276">ccMPlaneDlg.cpp:276</a></div></div>
 <div class="ttc" id="aclassccMPlaneDlg_html_af35ff08901f9d037021dfc30f6918d47"><div class="ttname"><a href="classccMPlaneDlg.html#af35ff08901f9d037021dfc30f6918d47">ccMPlaneDlg::signalCloseButtonPressed</a></div><div class="ttdeci">void signalCloseButtonPressed()</div></div>
 <div class="ttc" id="aclassccMPlaneDlg_html_afc24a8d3ff7fda9d45abe84b6d35e139"><div class="ttname"><a href="classccMPlaneDlg.html#afc24a8d3ff7fda9d45abe84b6d35e139">ccMPlaneDlg::signalMeasurementModeChanged</a></div><div class="ttdeci">void signalMeasurementModeChanged()</div></div>
+<div class="ttc" id="aclassccOverlayDialog_html"><div class="ttname"><a href="classccOverlayDialog.html">ccOverlayDialog</a></div><div class="ttdoc">Generic overlay dialog interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvOverlayDialog_8h_source.html#l00017">ecvOverlayDialog.h:17</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ad61cfbd5fab94dee7b1b685d960355fa"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ad61cfbd5fab94dee7b1b685d960355fa">cloudViewer::core::Minimum</a></div><div class="ttdeci">Tensor Minimum(const Tensor &amp;input, const Tensor &amp;other)</div><div class="ttdoc">Computes the element-wise minimum of input and other. The tensors must have same data type and device...</div><div class="ttdef"><b>Definition:</b> <a href="TensorFunction_8cpp_source.html#l00136">TensorFunction.cpp:136</a></div></div>
 <div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
@@ -455,7 +465,7 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_ce629cbf5f85d13a133a531751423446.html">qMPlane</a></li><li class="navelem"><a class="el" href="dir_da5442ed587cf661d9135e485e58e5ce.html">src</a></li><li class="navelem"><a class="el" href="ccMPlaneDlg_8cpp.html">ccMPlaneDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -129,9 +138,9 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;}</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classSalomeHydroFilter.html#accd009954bfe4a419013e1472522bf3f">   41</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSalomeHydroFilter.html#accd009954bfe4a419013e1472522bf3f">SalomeHydroFilter::saveToFile</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity,</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                                            <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                                            <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                                            <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a>&amp; parameters) {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordflow">if</span> (!entity || filename.isEmpty()) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordflow">if</span> (!entity || <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.isEmpty()) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="comment">// get all polylines</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    std::vector&lt;ccPolyline*&gt; candidates;</div>
@@ -152,7 +161,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">if</span> (candidates.empty()) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a9586023a650d007b2a5aae70b4a9a047">CC_FERR_NO_SAVE</a>;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="comment">// open ASCII file for writing</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">if</span> (!file.open(QIODevice::WriteOnly | QIODevice::Text))</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04">CC_FERR_WRITING</a>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
@@ -167,7 +176,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="keywordtype">unsigned</span> vertCount = poly ? poly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() : 0;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">if</span> (vertCount &lt; 2) {</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;            <span class="comment">// invalid size</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Salome Hydro] Polyline &#39;%1&#39; does not have &quot;</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Salome Hydro] Polyline &#39;%1&#39; does not have &quot;</span></div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                                   <span class="stringliteral">&quot;enough vertices&quot;</span>)</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                                   .arg(poly ? poly-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>()</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                                             : QStringLiteral(<span class="stringliteral">&quot;unnamed&quot;</span>)));</div>
@@ -196,11 +205,11 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;}</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
-<div class="line"><a name="l00109"></a><span class="lineno"><a class="line" href="classSalomeHydroFilter.html#a9288676d4b647eb66e3910ee35f337e8">  109</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSalomeHydroFilter.html#a9288676d4b647eb66e3910ee35f337e8">SalomeHydroFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00109"></a><span class="lineno"><a class="line" href="classSalomeHydroFilter.html#a9288676d4b647eb66e3910ee35f337e8">  109</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSalomeHydroFilter.html#a9288676d4b647eb66e3910ee35f337e8">SalomeHydroFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                                          <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                                          <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="comment">// we open the file (ASCII mode)</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::ReadOnly)) {</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee">CC_FERR_READING</a>;</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    }</div>
@@ -221,7 +230,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                <span class="keywordflow">if</span> (currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() &lt; 2) {</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                    <span class="keyword">delete</span> currentVertices;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                    currentVertices = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                            <span class="stringliteral">&quot;[Salome Hydro] An invalid polyline (single &quot;</span></div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;                            <span class="stringliteral">&quot;vertex) will be ignored&quot;</span>);</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                } <span class="keywordflow">else</span> {</div>
@@ -234,12 +243,12 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                    newPoly-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(currentVertices);</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                    newPoly-&gt;<a class="code" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">set2DMode</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160; </div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                    <span class="keywordflow">if</span> (!newPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">reserve</a>(currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                    <span class="keywordflow">if</span> (!newPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                        <span class="keyword">delete</span> newPoly;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                        <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795af172f08a64e603831d5b6456d400a2e5">CC_FERR_NOT_ENOUGH_MEMORY</a>;</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;                        <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                    }</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                    newPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(0, currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>());</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                    newPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0, currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>());</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                    currentVertices-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                    container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(newPoly);</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                    currentVertices = <span class="keyword">nullptr</span>;</div>
@@ -272,7 +281,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                        <span class="keywordflow">if</span> (preserveCoordinateShift) {</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                            currentVertices-&gt;<a class="code" href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">setGlobalShift</a>(Pshift);</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                        }</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                                <span class="stringliteral">&quot;[Salome Hydro] Polylines will be recentered! &quot;</span></div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                                <span class="stringliteral">&quot;Translation: (%.2f ; %.2f ; %.2f)&quot;</span>,</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                                Pshift.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, Pshift.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, Pshift.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
@@ -292,7 +301,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                }</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">addPoint</a>(<a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3::fromArray</a>((P + Pshift).u));</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                        <span class="stringliteral">&quot;[Salome Hydro] Malformed file: 3 values per line &quot;</span></div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                        <span class="stringliteral">&quot;expected&quot;</span>);</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
@@ -308,6 +317,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04">CC_FERR_WRITING</a></div><div class="ttdeci">@ CC_FERR_WRITING</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00025">FileIOFilter.h:25</a></div></div>
@@ -321,7 +331,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="ttc" id="aQtCompat_8h_html_a0da543c610d95a9c0726e068ea744090"><div class="ttname"><a href="QtCompat_8h.html#a0da543c610d95a9c0726e068ea744090">qtCompatSplitRegex</a></div><div class="ttdeci">QStringList qtCompatSplitRegex(const QString &amp;str, const QString &amp;pattern, Qt::SplitBehavior behavior=Qt::KeepEmptyParts)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00308">QtCompat.h:308</a></div></div>
 <div class="ttc" id="aSalomeHydroFilter_8h_html"><div class="ttname"><a href="SalomeHydroFilter_8h.html">SalomeHydroFilter.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a056c88c7d5d4c012ca3daf0c515675c9"><div class="ttname"><a href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">FileIOFilter::DEFAULT_PRIORITY</a></div><div class="ttdeci">static constexpr float DEFAULT_PRIORITY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00313">FileIOFilter.h:313</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a">FileIOFilter::Export</a></div><div class="ttdeci">@ Export</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00303">FileIOFilter.h:303</a></div></div>
@@ -354,9 +364,9 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ace959b35a8944a33a452771331ca336d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ace959b35a8944a33a452771331ca336d">cloudViewer::PointCloudTpl::capacity</a></div><div class="ttdeci">unsigned capacity() const</div><div class="ttdoc">Returns cloud capacity (i.e. reserved size)</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00540">PointCloudTpl.h:540</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ad4f53966b1708e3b6d147446c4ae4f57"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">cloudViewer::ReferenceCloud::reserve</a></div><div class="ttdeci">virtual bool reserve(unsigned n)</div><div class="ttdoc">Reserves some memory for hosting the point references.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ad962545dc4babcf0442883041950e1ee"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">cloudViewer::ReferenceCloud::reserve</a></div><div class="ttdeci">virtual bool reserve(unsigned n)</div><div class="ttdoc">Reserves some memory for hosting the point references.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">ReferenceCloud.cpp:51</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ae1bc84432099435f6e9fd788aee2c2f6"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">cloudViewer::ReferenceCloud::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdoc">Returns the ith point.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00079">ReferenceCloud.h:79</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvPolyline_8h_html"><div class="ttname"><a href="ecvPolyline_8h.html">ecvPolyline.h</a></div></div>
@@ -372,7 +382,7 @@ $(document).ready(function(){initNavTree('SalomeHydroFilter_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_148eb1bec32389d620143c4e90e6b93c.html">qAdditionalIO</a></li><li class="navelem"><a class="el" href="dir_b14736cabb2734d269d4858bfda65e89.html">src</a></li><li class="navelem"><a class="el" href="SalomeHydroFilter_8cpp.html">SalomeHydroFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

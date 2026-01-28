@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -128,7 +137,7 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;qTreeIso::qTreeIso(QObject* parent)</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      ccStdPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qTreeIso/info.json&quot;</span>),</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qTreeIso/info.json&quot;</span>),</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      m_action(nullptr) {}</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">void</span> qTreeIso::onNewSelection(<span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities) {</div>
@@ -146,9 +155,9 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;QList&lt;QAction*&gt; qTreeIso::getActions() {</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>) {</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a> = <span class="keyword">new</span> QAction(getName(), <span class="keyword">this</span>);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>-&gt;setToolTip(getDescription());</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>-&gt;setIcon(getIcon());</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a> = <span class="keyword">new</span> QAction(<a class="code" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a>(), <span class="keyword">this</span>);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>-&gt;setToolTip(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>());</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>-&gt;setIcon(<a class="code" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a>());</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="comment">// connect appropriate signal</span></div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        connect(<a class="code" href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">m_action</a>, &amp;QAction::triggered, <span class="keyword">this</span>, &amp;<a class="code" href="classqTreeIso.html#af1924be12328d40c5bbb237a7d0221ee">qTreeIso::doAction</a>);</div>
@@ -159,7 +168,7 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classqTreeIso.html#af1924be12328d40c5bbb237a7d0221ee">   70</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqTreeIso.html#af1924be12328d40c5bbb237a7d0221ee">qTreeIso::doAction</a>() {</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    Parameters parameters;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <a class="code" href="classccTreeIsoDlg.html">ccTreeIsoDlg</a> treeisoDlg(m_app ? m_app-&gt;getMainWindow() : <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <a class="code" href="classccTreeIsoDlg.html">ccTreeIsoDlg</a> treeisoDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a> ? <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>() : <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    connect(treeisoDlg.pushButtonInitSeg, &amp;QPushButton::clicked, [&amp;] {</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        parameters.min_nn1 = treeisoDlg.spinBoxK1-&gt;value();</div>
@@ -189,8 +198,8 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    treeisoDlg.pushButtonInitSeg-&gt;setEnabled(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordflow">if</span> (treeisoDlg.exec()) {</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="keywordflow">if</span> (m_app) {</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            m_app-&gt;refreshAll();</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>) {</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <span class="comment">// m_app should have already been initialized by CC when plugin is</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            <span class="comment">// loaded!</span></div>
@@ -210,17 +219,17 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    progressDlg-&gt;show();</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160; </div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classTreeIso.html#a03f47a8d5feb81132caf9bd26eb387e8">TreeIso::Init_seg</a>(parameters.min_nn1, parameters.reg_strength1,</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                           parameters.decimate_res1, m_app, progressDlg)) {</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                           parameters.decimate_res1, <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>, progressDlg)) {</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>,</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    }</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    progressDlg-&gt;close();</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    QApplication::processEvents();</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    m_app-&gt;updateUI();</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    m_app-&gt;refreshAll();</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;}</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
 <div class="line"><a name="l00136"></a><span class="lineno"><a class="line" href="classqTreeIso.html#aec20a5b10de2dfb2a60c52491a7e214e">  136</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqTreeIso.html#aec20a5b10de2dfb2a60c52491a7e214e">qTreeIso::intermediate_segs</a>(<span class="keyword">const</span> Parameters&amp; parameters,</div>
@@ -235,19 +244,19 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classTreeIso.html#ae19288772752be0b320ecc21242f6ff7">TreeIso::Intermediate_seg</a>(parameters.min_nn2, parameters.reg_strength2,</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                                   parameters.decimate_res2, parameters.max_gap,</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                                   m_app, progressDlg)) {</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                                   <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>, progressDlg)) {</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        progressDlg-&gt;hide();</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        QApplication::processEvents();</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        m_app-&gt;updateUI();</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        m_app-&gt;refreshAll();</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    }</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    progressDlg-&gt;hide();</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    QApplication::processEvents();</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    m_app-&gt;updateUI();</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    m_app-&gt;refreshAll();</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;}</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160; </div>
 <div class="line"><a name="l00163"></a><span class="lineno"><a class="line" href="classqTreeIso.html#a0bec5325188e4995d6c987a66f061e03">  163</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqTreeIso.html#a0bec5325188e4995d6c987a66f061e03">qTreeIso::final_segs</a>(<span class="keyword">const</span> Parameters&amp; parameters,</div>
@@ -262,37 +271,49 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160; </div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classTreeIso.html#a7223c878d5d20d10a3408d1ee916cfb7">TreeIso::Final_seg</a>(parameters.min_nn2,</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                            parameters.rel_height_length_ratio,</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                            parameters.vertical_weight, m_app, progressDlg)) {</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                            parameters.vertical_weight, <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>, progressDlg)) {</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        progressDlg-&gt;hide();</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        QApplication::processEvents();</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        m_app-&gt;updateUI();</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        m_app-&gt;refreshAll();</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    }</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    progressDlg-&gt;close();</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    QApplication::processEvents();</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    m_app-&gt;updateUI();</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    m_app-&gt;refreshAll();</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">updateUI</a>();</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">refreshAll</a>();</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;}</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="keywordtype">void</span> qTreeIso::registerCommands(ccCommandLineInterface* cmd) {</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="keywordtype">void</span> qTreeIso::registerCommands(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>* cmd) {</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordflow">if</span> (!cmd) {</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    }</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    cmd-&gt;registerCommand(</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            ccCommandLineInterface::Command::Shared(<span class="keyword">new</span> <a class="code" href="structCommandTreeIso.html">CommandTreeIso</a>));</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    cmd-&gt;<a class="code" href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">registerCommand</a>(</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            <a class="code" href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a>(<span class="keyword">new</span> <a class="code" href="structCommandTreeIso.html">CommandTreeIso</a>));</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;}</div>
 <div class="ttc" id="aTreeIso_8h_html"><div class="ttname"><a href="TreeIso_8h.html">TreeIso.h</a></div></div>
 <div class="ttc" id="accTreeIsoDlg_8h_html"><div class="ttname"><a href="ccTreeIsoDlg_8h.html">ccTreeIsoDlg.h</a></div></div>
 <div class="ttc" id="aclassTreeIso_html_a03f47a8d5feb81132caf9bd26eb387e8"><div class="ttname"><a href="classTreeIso.html#a03f47a8d5feb81132caf9bd26eb387e8">TreeIso::Init_seg</a></div><div class="ttdeci">static bool Init_seg(const unsigned min_nn1, const float regStrength1, const float PR_DECIMATE_RES1, ecvMainAppInterface *app, QProgressDialog *progressDlg)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l00835">TreeIso.cpp:835</a></div></div>
 <div class="ttc" id="aclassTreeIso_html_a7223c878d5d20d10a3408d1ee916cfb7"><div class="ttname"><a href="classTreeIso.html#a7223c878d5d20d10a3408d1ee916cfb7">TreeIso::Final_seg</a></div><div class="ttdeci">static bool Final_seg(const unsigned PR_MIN_NN3, const float PR_REL_HEIGHT_LENGTH_RATIO, const float PR_VERTICAL_WEIGHT, ecvMainAppInterface *app, QProgressDialog *progressDlg)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l00911">TreeIso.cpp:911</a></div></div>
 <div class="ttc" id="aclassTreeIso_html_ae19288772752be0b320ecc21242f6ff7"><div class="ttname"><a href="classTreeIso.html#ae19288772752be0b320ecc21242f6ff7">TreeIso::Intermediate_seg</a></div><div class="ttdeci">static bool Intermediate_seg(const unsigned PR_MIN_NN2, const float PR_REG_STRENGTH2, const float PR_DECIMATE_RES2, const float PR_MAX_GAP, ecvMainAppInterface *app, QProgressDialog *progressDlg)</div><div class="ttdef"><b>Definition:</b> <a href="TreeIso_8cpp_source.html#l00871">TreeIso.cpp:871</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab4644e6978732163718383530cd5cd6b"><div class="ttname"><a href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">ccCommandLineInterface::registerCommand</a></div><div class="ttdeci">virtual bool registerCommand(Command::Shared command)=0</div><div class="ttdoc">Registers a new command.</div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_a8a1a1767db7a925da80ee8a356ce423b"><div class="ttname"><a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">ccDefaultPluginInterface::getName</a></div><div class="ttdeci">virtual QString getName() const override</div><div class="ttdoc">Returns (short) name (for menu entry, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00100">ecvDefaultPluginInterface.cpp:100</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_aae6336c05f8e7de1be072565b8d6256c"><div class="ttname"><a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">ccDefaultPluginInterface::getDescription</a></div><div class="ttdeci">virtual QString getDescription() const override</div><div class="ttdoc">Returns long name/description (for tooltip, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00104">ecvDefaultPluginInterface.cpp:104</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_ac9d5f749c5b30b78dab3cc78812e8d8e"><div class="ttname"><a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">ccDefaultPluginInterface::getIcon</a></div><div class="ttdeci">virtual QIcon getIcon() const override</div><div class="ttdoc">Returns icon.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00108">ecvDefaultPluginInterface.cpp:108</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_af46bcfd10da04c21300a7f1a59b29d86"><div class="ttname"><a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">ccStdPluginInterface::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Main application interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00085">ecvStdPluginInterface.h:85</a></div></div>
 <div class="ttc" id="aclassccTreeIsoDlg_html"><div class="ttname"><a href="classccTreeIsoDlg.html">ccTreeIsoDlg</a></div><div class="ttdoc">Dialog for qTreeIso plugin.</div><div class="ttdef"><b>Definition:</b> <a href="ccTreeIsoDlg_8h_source.html#l00018">ccTreeIsoDlg.h:18</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a04bbf3c01e3d49efbfd74c2e5fa76ccb"><div class="ttname"><a href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">ecvMainAppInterface::updateUI</a></div><div class="ttdeci">virtual void updateUI()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a7b991e44c1e2638f7c2b49afae63d6cb"><div class="ttname"><a href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">ecvMainAppInterface::refreshAll</a></div><div class="ttdeci">virtual void refreshAll(bool only2D=false, bool forceRedraw=true)=0</div><div class="ttdoc">Redraws all GL windows that have the 'refresh' flag on.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="aclassqTreeIso_html_a0bec5325188e4995d6c987a66f061e03"><div class="ttname"><a href="classqTreeIso.html#a0bec5325188e4995d6c987a66f061e03">qTreeIso::final_segs</a></div><div class="ttdeci">void final_segs(const Parameters &amp;parameters, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8cpp_source.html#l00163">qTreeIso.cpp:163</a></div></div>
 <div class="ttc" id="aclassqTreeIso_html_a8e6df39302757e15c0a18cf581a45e20"><div class="ttname"><a href="classqTreeIso.html#a8e6df39302757e15c0a18cf581a45e20">qTreeIso::m_action</a></div><div class="ttdeci">QAction * m_action</div><div class="ttdoc">Associated action.</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8h_source.html#l00085">qTreeIso.h:85</a></div></div>
 <div class="ttc" id="aclassqTreeIso_html_ab83ef4843b3b316ebb419eaa6c48a821"><div class="ttname"><a href="classqTreeIso.html#ab83ef4843b3b316ebb419eaa6c48a821">qTreeIso::init_segs</a></div><div class="ttdeci">void init_segs(const Parameters &amp;parameters, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIso_8cpp_source.html#l00112">qTreeIso.cpp:112</a></div></div>
@@ -307,13 +328,14 @@ $(document).ready(function(){initNavTree('qTreeIso_8cpp_source.html',''); initRe
 <div class="ttc" id="aqTreeIsoCommands_8h_html"><div class="ttname"><a href="qTreeIsoCommands_8h.html">qTreeIsoCommands.h</a></div></div>
 <div class="ttc" id="aqTreeIso_8h_html"><div class="ttname"><a href="qTreeIso_8h.html">qTreeIso.h</a></div></div>
 <div class="ttc" id="astructCommandTreeIso_html"><div class="ttname"><a href="structCommandTreeIso.html">CommandTreeIso</a></div><div class="ttdoc">qTreeIso command line processor</div><div class="ttdef"><b>Definition:</b> <a href="qTreeIsoCommands_8h_source.html#l00059">qTreeIsoCommands.h:59</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html_a40d4dd296bcd3331b8e0ea78479fd55e"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a></div><div class="ttdeci">QSharedPointer&lt; Command &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00132">ecvCommandLineInterface.h:132</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4b928928a8ba753e3642cd3e99306298.html">qTreeIso</a></li><li class="navelem"><a class="el" href="dir_5812e1d64c3eab9730bae5fbd6e5d65b.html">src</a></li><li class="navelem"><a class="el" href="qTreeIso_8cpp.html">qTreeIso.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

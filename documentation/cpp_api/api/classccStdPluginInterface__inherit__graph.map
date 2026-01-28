@@ -1,0 +1,28 @@
+<map id="ccStdPluginInterface" name="ccStdPluginInterface">
+<area shape="rect" id="node1" title="Standard ECV plugin interface." alt="" coords="419,563,573,589"/>
+<area shape="rect" id="node4" href="$classColorimetricSegmenter.html" title=" " alt="" coords="621,5,795,32"/>
+<area shape="rect" id="node5" href="$classG3PointPlugin.html" title=" " alt="" coords="651,56,765,83"/>
+<area shape="rect" id="node6" href="$classJsonRPCPlugin.html" title="Example qCC plugin." alt="" coords="651,107,765,133"/>
+<area shape="rect" id="node7" href="$classPythonPlugin.html" title="&quot;Entry point&quot; of the plugin" alt="" coords="655,157,761,184"/>
+<area shape="rect" id="node8" href="$classccAutoSeg.html" title=" " alt="" coords="663,208,753,235"/>
+<area shape="rect" id="node9" href="$classccCompass.html" title=" " alt="" coords="660,259,756,285"/>
+<area shape="rect" id="node10" href="$classccManualSeg.html" title=" " alt="" coords="654,309,762,336"/>
+<area shape="rect" id="node11" href="$classq3DMASCPlugin.html" title="3DMASC plugin" alt="" coords="645,360,771,387"/>
+<area shape="rect" id="node12" href="$classqAnimation.html" title=" " alt="" coords="659,411,757,437"/>
+<area shape="rect" id="node13" href="$classqCSF.html" title="A point&#45;clouds filtering algorithm utilize cloth simulation process." alt="" coords="681,461,735,488"/>
+<area shape="rect" id="node14" href="$classqCanupoPlugin.html" title="CANUPO plugin." alt="" coords="649,512,767,539"/>
+<area shape="rect" id="node15" href="$classqCloudLayers.html" title=" " alt="" coords="653,563,763,589"/>
+<area shape="rect" id="node16" href="$classqCork.html" title="Mes Boolean Operations (CSG) plugin." alt="" coords="678,613,738,640"/>
+<area shape="rect" id="node17" href="$classqFacets.html" title="Facet detection plugin (BRGM)" alt="" coords="673,664,743,691"/>
+<area shape="rect" id="node18" href="$classqHoughNormals.html" title=" " alt="" coords="645,715,771,741"/>
+<area shape="rect" id="node19" href="$classqM3C2Plugin.html" title="M3C2 plugin." alt="" coords="655,765,761,792"/>
+<area shape="rect" id="node20" href="$classqMPlane.html" title=" " alt="" coords="669,816,747,843"/>
+<area shape="rect" id="node21" href="$classqPCV.html" title=" " alt="" coords="680,867,736,893"/>
+<area shape="rect" id="node22" href="$classqPoissonRecon.html" title="Wrapper to the &quot;Poisson Surface Reconstruction (Version 9)&quot; algorithm." alt="" coords="648,917,768,944"/>
+<area shape="rect" id="node23" href="$classqRansacSD.html" title=" " alt="" coords="661,968,755,995"/>
+<area shape="rect" id="node24" href="$classqSRA.html" title="Surface of Revolution Analysis plugin." alt="" coords="680,1019,736,1045"/>
+<area shape="rect" id="node25" href="$classqTreeIso.html" title="TreeIso plugin." alt="" coords="670,1069,746,1096"/>
+<area shape="rect" id="node26" href="$classqVoxFall.html" title=" " alt="" coords="670,1120,746,1147"/>
+<area shape="rect" id="node2" href="$classccDefaultPluginInterface.html" title=" " alt="" coords="188,563,371,589"/>
+<area shape="rect" id="node3" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="5,563,140,589"/>
+</map>

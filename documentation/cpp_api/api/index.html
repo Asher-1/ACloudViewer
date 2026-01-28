@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -5,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: A Modern Library for 3D Data Processing</title>
+<title>ACloudViewer: LSD code documentation</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -85,329 +94,46 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
 
 <div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">A Modern Library for 3D Data Processing </div>  </div>
+<div class="title">LSD code documentation </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p> 
-<div class="header-container">
-    <div class="logo-section">
-        <img src="ACloudViewer_logo_horizontal.png" alt="ACloudViewer Logo" style="max-width: 400px; margin: 20px 0;">
-    </div>
-    <div class="links-section">
-        <a href="https://asher-1.github.io/ACloudViewer/">Homepage</a> | 
-        <a href="https://asher-1.github.io/ACloudViewer/documentation/">Docs</a> | 
-        <a href="https://asher-1.github.io/ACloudViewer/documentation/getting_started/quickstart.html">Quick Start</a> | 
-        <a href="https://asher-1.github.io/ACloudViewer/documentation/python_api/cloudViewer.core.html">Python</a> | 
-        <a href="index.html">C++</a> | 
-        <a href="https://asher-1.github.io/ACloudViewer/documentation/tutorial/index.html">Tutorial</a> | 
-        <a href="../../index.html">Back to Overview</a> | 
-        <a href="https://github.com/Asher-1/ACloudViewer">GitHub</a>
-    </div>
-</div>
-</p>
-<h1><a class="anchor" id="intro_sec"></a>
-Introduction</h1>
-<p>ACloudViewer is an open-source library that supports rapid development of software that deals with 3D data. The ACloudViewer frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization.</p>
-<h1><a class="anchor" id="features_sec"></a>
-Core Features</h1>
-<p>ACloudViewer includes the following core features:</p>
-<ul>
-<li><b>3D data structures</b>: Point clouds, meshes, octrees, and more</li>
-<li><b>3D data processing algorithms</b>: Filtering, segmentation, registration, surface reconstruction</li>
-<li><b>Scene reconstruction</b>: Multi-view stereo, structure from motion</li>
-<li><b>3D visualization</b>: Interactive 3D viewer with Qt-based GUI</li>
-<li><b>Point cloud I/O</b>: Support for PCD, PLY, LAS, E57, and many other formats</li>
-<li><b>Mesh I/O</b>: Support for OBJ, STL, OFF, and more</li>
-<li><b>Plugin system</b>: Extensible architecture for custom algorithms</li>
-<li><b>Integration with PCL</b>: Seamless interoperability with Point Cloud Library</li>
-<li><b>Cross-platform</b>: Available on Linux, macOS, and Windows</li>
-<li><b>Available in C++ and Python</b>: Full API for both languages</li>
-</ul>
-<h1><a class="anchor" id="architecture_sec"></a>
-Architecture</h1>
-<p>ACloudViewer is organized into several key modules that work together to provide a complete 3D data processing pipeline:</p>
-<p> 
-<div style="text-align: center; margin: 30px 0;">
-    <img src="AbstractionLayers.png" alt="ACloudViewer Architecture Layers" style="max-width: 800px; width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <p style="font-style: italic; color: #666; margin-top: 10px; font-size: 14px;">
-        <b>Figure 1:</b> ACloudViewer architecture showing the different layers and how they fit together to enable full end-to-end pipelines.
-    </p>
-</div>
-
-<div style="margin: 20px 0; padding: 15px; background: #f0f8ff; border-left: 4px solid #2196F3; border-radius: 4px;">
-    <p style="margin: 0; color: #333;">
-        <b>💡 Architecture Highlights:</b><br>
-        • <b>Layered Design:</b> Clear separation between application, plugins, core processing, and foundation layers<br>
-        • <b>Extensibility:</b> Plugin system allows adding new file formats and algorithms without modifying core<br>
-        • <b>Integration:</b> Seamless interoperability with PCL, VTK, Qt, and other industry-standard libraries<br>
-        • <b>Dual API:</b> Full functionality available in both C++ and Python
-    </p>
-</div>
-</p>
-<h2><a class="anchor" id="detailed_architecture"></a>
-Detailed Architecture</h2>
-<p> 
-<div class="architecture-diagram">
-<pre style="font-family: 'Courier New', Consolas, Monaco, 'Lucida Console', monospace; 
-    background: #f5f5f5; 
-    padding: 20px; 
-    border-radius: 8px; 
-    border: 1px solid #ddd;
-    font-size: 13px;
-    line-height: 1.4;
-    letter-spacing: 0;
-    white-space: pre;
-    overflow-x: auto;
-    tab-size: 4;
-    -moz-tab-size: 4;
-    -webkit-font-smoothing: subpixel-antialiased;
-    -moz-osx-font-smoothing: auto;
-    text-rendering: optimizeLegibility;">
-┌───────────────────────────────────────────────────────────────────────────────┐
-│                         <b>ACloudViewer Application</b>                       │
-│                   (ACloudViewer, CloudViewer, Python Bindings)                │
-└─────────────────────────────────┬─────────────────────────────────────────────┘
-                                  │
-               ┌──────────────────┴──────────────────┐
-               │                                     │
-┌──────────────▼────────────────┐   ┌───────────────▼────────────────┐
-│       <b>Plugin System</b>    │   │    <b>Visualization Layer</b>  │
-│   (IO + Standard Plugins)     │   │    (Vtk-based 3D Viewer)       │
-│                               │   │                                │
-│ • qLASIO, qE57IO, qDracoIO    │   │ • Interactive 3D rendering     │
-│ • qCSF, qM3C2, qPoissonRecon  │   │ • Scene graph management       │
-│ • qPCL, qCanupo, qTreeIso     │   │ • User interactions            │
-└──────────────┬────────────────┘   └───────────────┬────────────────┘
-               │                                     │
-               └──────────────────┬──────────────────┘
-                                  │
-┌─────────────────────────────────▼───────────────────────────────────────────┐
-│                        <b>Core Processing Layer</b>                         │
-│                                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ cloudViewer  │  │   CV_db     │  │   CV_io     │  │  PCLEngine   │     │
-│  │              │  │              │  │              │  │              │     │
-│  │ • ccPoint    │  │ • Database   │  │ • File I/O   │  │ • PCL        │     │
-│  │   Cloud      │  │   Management │  │   (PCD,PLY,  │  │   Integration│     │
-│  │ • ccMesh     │  │ • Entity     │  │    LAS,E57)  │  │ • Filtering  │     │
-│  │ • ccHObject  │  │   Hierarchy  │  │ • Format     │  │ • Registr.   │     │
-│  │ • ccOctree   │  │ • Scene Mgmt │  │   Converters │  │ • Segment.   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
-│                                                                             │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │                      <b>Reconstruction Module</b>                      │ │
-│  │   • Surface Reconstruction  • Mesh Generation  • Poisson Recon         │ │
-│  └────────────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                  │
-┌─────────────────────────────────▼───────────────────────────────────────────┐
-│                          <b>Foundation Layer</b>                            │
-│                                                                             │
-│  • Eigen (Linear Algebra)     • Qt (GUI & Widgets)                          │
-│  • PCL (Point Cloud Library)  • Boost (Utilities)                           │
-│  • VTK (Visualization)         • OpenMP (Parallelization)                   │
-│  • CGAL (Geometric Algorithms)                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-<b>Data Flow:</b>
-  Input Files → CV_io → Core Structures → Processing (Plugins/PCL) → 
-  Visualization/Output → Export (CV_io)
-
-<b>Extension Points:</b>
-  • Plugin System: Add custom I/O formats and processing algorithms
-  • Python API: Script automation and batch processing
-  • PCL Integration: Leverage PCL's extensive algorithm library
-</pre>
-</div>
-</p>
-<p>Here's a brief overview of the different components and how they fit together to enable full end-to-end pipelines:</p>
-<h2><a class="anchor" id="core_modules"></a>
-Core Modules</h2>
-<ul>
-<li><b><a class="el" href="namespacecloudViewer.html" title="Generic file read and write utility for python interface.">cloudViewer</a></b>: Core point cloud and mesh data structures<ul>
-<li><a class="el" href="classccPointCloud.html" title="A 3D cloud and its associated features (color, normals, scalar fields, etc.)">ccPointCloud</a> - Main point cloud class</li>
-<li><a class="el" href="classccMesh.html" title="Triangular mesh.">ccMesh</a> - <a class="el" href="classTriangle.html">Triangle</a> mesh representation</li>
-<li><a class="el" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object.">ccHObject</a> - Hierarchical object model</li>
-<li><a class="el" href="classccGenericPointCloud.html" title="A 3D cloud interface with associated features (color, normals, octree, etc.)">ccGenericPointCloud</a> - Abstract point cloud interface</li>
+<div class="textblock"><p>This is an implementation of the Line Segment Detector described in the paper:</p>
+<p>"LSD: A Fast Line Segment Detector with a False Detection Control" by Rafael Grompone von Gioi, Jeremie Jakubowicz, Jean-Michel Morel, and Gregory Randall, IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 32, no. 4, pp. 722-732, April, 2010.</p>
+<p>and in more details in the CMLA Technical Report:</p>
+<p>"LSD: A Line Segment Detector, Technical Report", by Rafael Grompone von Gioi, Jeremie Jakubowicz, Jean-Michel Morel, Gregory Randall, CMLA, ENS Cachan, 2010.</p>
+<p>The version implemented here includes some further improvements described in the following publication, of which this code is part:</p>
+<p>"LSD: a Line Segment Detector" by Rafael Grompone von Gioi, Jeremie Jakubowicz, Jean-Michel Morel, and Gregory Randall, Image Processing On Line, 2012. DOI:10.5201/ipol.2012.gjmr-lsd <a href="http://dx.doi.org/10.5201/ipol.2012.gjmr-lsd">http://dx.doi.org/10.5201/ipol.2012.gjmr-lsd</a></p>
+<p>The module's main function is <a class="el" href="lsd_8c.html#a845e3a3a1f1b7312da5deb18035b15d3">lsd()</a>.</p>
+<p>The source code is contained in two files: <a class="el" href="lsd_8h.html">lsd.h</a> and <a class="el" href="lsd_8c.html">lsd.c</a>.</p>
+<p>HISTORY:</p><ul>
+<li>version 1.6 - nov 2011:<ul>
+<li>changes in the interface,</li>
+<li>max_grad parameter removed,</li>
+<li>the factor 11 was added to the number of test to consider the different precision values tested,</li>
+<li>a minor bug corrected in the gradient sorting code,</li>
+<li>the algorithm now also returns p and log_nfa for each detection,</li>
+<li>a minor bug was corrected in the image scaling,</li>
+<li>the angle comparison in "isaligned" changed from &lt; to &lt;=,</li>
+<li>"eps" variable renamed "log_eps",</li>
+<li>"lsd_scale_region" interface was added,</li>
+<li>minor changes to comments.</li>
 </ul>
 </li>
-<li><b>CV_db</b>: Database and entity management for complex 3D scenes</li>
-<li><b>CV_io</b>: I/O operations for various file formats (PCD, PLY, LAS, E57, OBJ, STL, etc.)</li>
-<li><b>PCLEngine</b>: Integration with Point Cloud Library (PCL)<ul>
-<li>Filtering algorithms</li>
-<li>Registration (ICP, NDT)</li>
-<li>Segmentation</li>
-<li>Surface reconstruction</li>
+<li>version 1.5 - dec 2010: Changes in 'refine', -W option added, and more comments added.</li>
+<li>version 1.4 - jul 2010: lsd_scale interface added and doxygen doc.</li>
+<li>version 1.3 - feb 2010: Multiple bug correction and improved code.</li>
+<li>version 1.2 - dec 2009: First full Ansi C Language version.</li>
+<li>version 1.1 - sep 2009: Systematic subsampling to scale 0.8 and correction to partially handle "angle problem".</li>
+<li>version 1.0 - jan 2009: First complete Megawave2 and Ansi C Language version.</li>
 </ul>
-</li>
-<li><b>Reconstruction</b>: 3D reconstruction algorithms<ul>
-<li>Surface reconstruction</li>
-<li>Mesh generation</li>
-<li>Poisson reconstruction</li>
-</ul>
-</li>
-</ul>
-<h2><a class="anchor" id="plugin_system"></a>
-Plugin System</h2>
-<ul>
-<li><b>CVPluginAPI</b>: Plugin interface definitions<ul>
-<li>ccStdPluginInterface - Standard plugin interface</li>
-<li>ccIOPluginInterface - I/O plugin interface</li>
-<li>ccPclPluginInterface - PCL plugin interface</li>
-</ul>
-</li>
-<li><b>Plugins</b>: Standard plugin implementations for various algorithms</li>
-</ul>
-<h2><a class="anchor" id="app_layer"></a>
-Application Layer</h2>
-<ul>
-<li><b>CVViewer</b>: Standalone 3D viewer application</li>
-<li><b>ACloudViewer</b>: Main ACloudViewer application with full GUI</li>
-</ul>
-<h1><a class="anchor" id="quickstart_cpp_sec"></a>
-C++ Quick Start</h1>
-<h2><a class="anchor" id="basic_usage"></a>
-Basic Usage</h2>
-<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;ccPointCloud.h&gt;</span></div>
-<div class="line"><span class="preprocessor">#include &lt;<a class="code" href="FileIOFilter_8h.html">FileIOFilter.h</a>&gt;</span></div>
-<div class="line"> </div>
-<div class="line"><span class="keywordtype">int</span> <a class="code" href="flann__mpi__client_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97">main</a>() {</div>
-<div class="line">    <span class="comment">// Load a point cloud</span></div>
-<div class="line">    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud = <a class="code" href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a>(</div>
-<div class="line">        <span class="stringliteral">&quot;cloud.pcd&quot;</span>, </div>
-<div class="line">        CC_SHIFT_MODE::AUTO,</div>
-<div class="line">        <span class="keyword">nullptr</span></div>
-<div class="line">    );</div>
-<div class="line">    </div>
-<div class="line">    <span class="keywordflow">if</span> (cloud) {</div>
-<div class="line">        std::cout &lt;&lt; <span class="stringliteral">&quot;Loaded &quot;</span> &lt;&lt; cloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() &lt;&lt; <span class="stringliteral">&quot; points&quot;</span> &lt;&lt; <a class="code" href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">std::endl</a>;</div>
-<div class="line">        </div>
-<div class="line">        <span class="comment">// Process the point cloud</span></div>
-<div class="line">        <span class="comment">// ... your code here ...</span></div>
-<div class="line">        </div>
-<div class="line">        <span class="keyword">delete</span> cloud;</div>
-<div class="line">    }</div>
-<div class="line">    </div>
-<div class="line">    <span class="keywordflow">return</span> 0;</div>
-<div class="line">}</div>
-<div class="ttc" id="aFileIOFilter_8h_html"><div class="ttname"><a href="FileIOFilter_8h.html">FileIOFilter.h</a></div></div>
-<div class="ttc" id="aclassFileIOFilter_html_ad18f37613e75433a397a653ce4bfd539"><div class="ttname"><a href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a></div><div class="ttdeci">static ccHObject * LoadFromFile(const QString &amp;filename, LoadParameters &amp;parameters, Shared filter, CC_FILE_ERROR &amp;result)</div><div class="ttdoc">Loads one or more entities from a file with a known filter.</div></div>
-<div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
-<div class="ttc" id="aflann__mpi__client_8cpp_html_a0ddf1224851353fc92bfbff6f499fa97"><div class="ttname"><a href="flann__mpi__client_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97">main</a></div><div class="ttdeci">int main(int argc, char *argv[])</div><div class="ttdef"><b>Definition:</b> <a href="flann__mpi__client_8cpp_source.html#l00053">flann_mpi_client.cpp:53</a></div></div>
-<div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
-</div><!-- fragment --><h2><a class="anchor" id="cmake_integration"></a>
-CMake Integration</h2>
-<div class="fragment"><div class="line">cmake_minimum_required(VERSION 3.15)</div>
-<div class="line">project(MyCppApp)</div>
-<div class="line"> </div>
-<div class="line">find_package(ACloudViewer REQUIRED)</div>
-<div class="line"> </div>
-<div class="line">add_executable(my_app main.cpp)</div>
-<div class="line">target_link_libraries(my_app PRIVATE </div>
-<div class="line">    ACloudViewer::Core </div>
-<div class="line">    ACloudViewer::IO</div>
-<div class="line">)</div>
-</div><!-- fragment --><h1><a class="anchor" id="python_sec"></a>
-Python Quick Start</h1>
-<p>Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+ (64-bit) with Python 3.8-3.11.</p>
-<div class="fragment"><div class="line"># Install</div>
-<div class="line">pip install cloudViewer</div>
-<div class="line"> </div>
-<div class="line"># Verify installation</div>
-<div class="line">python -c &quot;import cloudViewer; print(cloudViewer.__version__)&quot;</div>
-<div class="line"> </div>
-<div class="line"># Python API example</div>
-<div class="line">python -c &quot;import cloudViewer as cv3d; \</div>
-<div class="line">    cloud = cv3d.io.read_point_cloud(&#39;cloud.pcd&#39;); \</div>
-<div class="line">    print(f&#39;Loaded {len(cloud.points)} points&#39;)&quot;</div>
-</div><!-- fragment --><h1><a class="anchor" id="compile_sec"></a>
-Compiling from Source</h1>
-<p>To compile ACloudViewer from source, please refer to the <a href="../../getting_started/build_from_source.html">compilation guide</a>.</p>
-<p>For detailed build instructions:</p><ul>
-<li><a href="../../getting_started/build_from_source.html">Building from Source</a></li>
-<li><a href="../../getting_started/build_from_source.html">Platform-Specific Build Guides</a></li>
-</ul>
-<h1><a class="anchor" id="visualization_sec"></a>
-Visualization Examples</h1>
-<p>ACloudViewer provides powerful 3D visualization capabilities for interactive data exploration:</p>
-<p> 
-<div style="margin: 30px 0;">
-    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-        <div style="flex: 1; min-width: 300px; max-width: 400px;">
-            <img src="MainUI.png" alt="ACloudViewer Main Interface" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
-            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>Main Application Interface</b></p>
-        </div>
-        <div style="flex: 1; min-width: 300px; max-width: 400px;">
-            <img src="ICP-registration.png" alt="Point Cloud Registration" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
-            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>ICP Registration Example</b></p>
-        </div>
-    </div>
-    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;">
-        <div style="flex: 1; min-width: 300px; max-width: 400px;">
-            <img src="Reconstruction.png" alt="3D Reconstruction" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
-            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>3D Surface Reconstruction</b></p>
-        </div>
-        <div style="flex: 1; min-width: 300px; max-width: 400px;">
-            <img src="SemanticAnnotation.png" alt="Semantic Annotation" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;">
-            <p style="text-align: center; font-size: 13px; color: #666; margin-top: 8px;"><b>Semantic Annotation</b></p>
-        </div>
-    </div>
-</div>
-</p>
-<h1><a class="anchor" id="resources_sec"></a>
-Resources</h1>
-<h2><a class="anchor" id="examples_sec"></a>
-Examples</h2>
-<ul>
-<li><b>C++ examples</b>: Located in <a href="https://github.com/Asher-1/ACloudViewer/tree/main/examples/Cpp"><code>examples/Cpp/</code></a> directory</li>
-<li><b>Python examples</b>: Located in <a href="https://github.com/Asher-1/ACloudViewer/tree/main/examples/Python"><code>examples/Python/</code></a> directory</li>
-<li><b>Jupyter tutorials</b>: Available in the <a href="../../tutorial/index.html">tutorial section</a></li>
-</ul>
-<h2><a class="anchor" id="api_docs_sec"></a>
-API Documentation</h2>
-<ul>
-<li><b>C++ API</b>: Browse the complete API reference using the navigation above<ul>
-<li><a class="el" href="namespacecloudViewer.html" title="Generic file read and write utility for python interface.">cloudViewer</a> - Core <a class="el" href="structModule.html">Module</a></li>
-<li>CV_db - Database <a class="el" href="structModule.html">Module</a></li>
-<li>CV_io - I/O <a class="el" href="structModule.html">Module</a></li>
-<li>Classes, Namespaces, Files tabs for detailed navigation</li>
-</ul>
-</li>
-<li><b>Python API</b>: See the <a href="../../python_api/cloudViewer.core.html">Python API documentation</a></li>
-</ul>
-<h1><a class="anchor" id="communication_sec"></a>
-Communication Channels</h1>
-<ul>
-<li><b>GitHub Repository</b>: <a href="https://github.com/Asher-1/ACloudViewer">https://github.com/Asher-1/ACloudViewer</a></li>
-<li><b>Issues</b>: <a href="https://github.com/Asher-1/ACloudViewer/issues">https://github.com/Asher-1/ACloudViewer/issues</a></li>
-<li><b>Releases</b>: <a href="https://github.com/Asher-1/ACloudViewer/releases">https://github.com/Asher-1/ACloudViewer/releases</a></li>
-</ul>
-<h1><a class="anchor" id="citation_sec"></a>
-Citation</h1>
-<p>Please cite our work if you use ACloudViewer:</p>
-<div class="fragment"><div class="line">@software{acloudviewer2024,</div>
-<div class="line">  title = {ACloudViewer: A Modern Library for 3D Data Processing},</div>
-<div class="line">  author = {ACloudViewer Development Team},</div>
-<div class="line">  year = {2024},</div>
-<div class="line">  url = {https://github.com/Asher-1/ACloudViewer}</div>
-<div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="license_sec"></a>
-License</h1>
-<p>ACloudViewer is released under the MIT License. See LICENSE file for details.</p>
-<hr  />
-<p> 
-<div class="footer-note">
-<p><em>Generated by Doxygen. For the most up-to-date documentation, visit <a href="https://asher-1.github.io/ACloudViewer/documentation/">https://asher-1.github.io/ACloudViewer/documentation/</a></em></p>
-</div>
- </p>
+<dl class="section author"><dt>Author</dt><dd>rafael grompone von gioi <a href="#" onclick="location.href='mai'+'lto:'+'gro'+'mp'+'one'+'@g'+'mai'+'l.'+'com'; return false;">gromp<span style="display: none;">.nosp@m.</span>one@<span style="display: none;">.nosp@m.</span>gmail<span style="display: none;">.nosp@m.</span>.com</a> </dd></dl>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:38 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:18 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

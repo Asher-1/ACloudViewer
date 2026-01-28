@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -521,7 +530,7 @@ $(document).ready(function(){initNavTree('Odometry_8cpp_source.html',''); initRe
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    <span class="keywordtype">bool</span> is_success;</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    Eigen::Matrix4d extrinsic;</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    std::tie(is_success, extrinsic) =</div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;            <a class="code" href="namespacecloudViewer_1_1utility.html#a080176f2062a7b10a5b4106e9fe3cfdc">utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a>(JTJ, JTr);</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;            <a class="code" href="namespacecloudViewer_1_1utility.html#aa82a4da70b423081bf72fb9bc41eba6b">utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a>(JTJ, JTr);</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;    <span class="keywordflow">if</span> (!is_success) {</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;[ComputeOdometry] no solution!&quot;</span>);</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        <span class="keywordflow">return</span> std::make_tuple(<span class="keyword">false</span>, Eigen::Matrix4d::Identity());</div>
@@ -688,17 +697,17 @@ $(document).ready(function(){initNavTree('Odometry_8cpp_source.html',''); initRe
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1odometry_html_adb3bd8118177054f51c586c7d255e159"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1odometry.html#adb3bd8118177054f51c586c7d255e159">cloudViewer::pipelines::odometry::IsColorImageRGB</a></div><div class="ttdeci">static bool IsColorImageRGB(const geometry::Image &amp;image)</div><div class="ttdef"><b>Definition:</b> <a href="Odometry_8cpp_source.html#l00321">Odometry.cpp:321</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1odometry_html_adfcdacd20eed32fa2a658ba57b6ae257"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1odometry.html#adfcdacd20eed32fa2a658ba57b6ae257">cloudViewer::pipelines::odometry::ComputeCorrespondence</a></div><div class="ttdeci">static CorrespondenceSetPixelWise ComputeCorrespondence(const Eigen::Matrix3d intrinsic_matrix, const Eigen::Matrix4d &amp;extrinsic, const geometry::Image &amp;depth_s, const geometry::Image &amp;depth_t, const OdometryOption &amp;option)</div><div class="ttdef"><b>Definition:</b> <a href="Odometry_8cpp_source.html#l00100">Odometry.cpp:100</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1odometry_html_aeb50e6a05cbe44a4c9e41af318e67629"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1odometry.html#aeb50e6a05cbe44a4c9e41af318e67629">cloudViewer::pipelines::odometry::CountCorrespondence</a></div><div class="ttdeci">static int CountCorrespondence(const geometry::Image &amp;correspondence_map)</div><div class="ttdef"><b>Definition:</b> <a href="Odometry_8cpp_source.html#l00086">Odometry.cpp:86</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a080176f2062a7b10a5b4106e9fe3cfdc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a080176f2062a7b10a5b4106e9fe3cfdc">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a></div><div class="ttdeci">std::tuple&lt; bool, Eigen::Matrix4d &gt; SolveJacobianSystemAndObtainExtrinsicMatrix(const Eigen::Matrix6d &amp;JTJ, const Eigen::Vector6d &amp;JTr)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa82a4da70b423081bf72fb9bc41eba6b"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa82a4da70b423081bf72fb9bc41eba6b">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a></div><div class="ttdeci">std::tuple&lt; bool, Eigen::Matrix4d &gt; SolveJacobianSystemAndObtainExtrinsicMatrix(const Eigen::Matrix6d &amp;JTJ, const Eigen::Vector6d &amp;JTr)</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00105">Eigen.cpp:105</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a6b4ea2e2b0f41835c2a18d0a21c55608"><div class="ttname"><a href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">knncpp::Vector4i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 4, 1 &gt; Vector4i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00031">knncpp.h:31</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_ece37b4ec2a7cd99fcf8e2fc56471ed8.html">odometry</a></li><li class="navelem"><a class="el" href="Odometry_8cpp.html">Odometry.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

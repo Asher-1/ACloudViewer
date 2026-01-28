@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RenderOptionWithEditing_8h.html">visualization/visualizer/RenderOptionWithEditing.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
@@ -111,11 +120,11 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">RenderOption::ConvertToJsonValue</a>(value)) {</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    }</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a57c3236a0849febf30b263d868e1072a">EigenVector3dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ae45b588706ef39ff0bfdf790aba960c3">selection_polygon_boundary_color_</a>,</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a6341a7c6d464d396fae9c85ebc236a71">EigenVector3dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ae45b588706ef39ff0bfdf790aba960c3">selection_polygon_boundary_color_</a>,</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                                  value[<span class="stringliteral">&quot;selection_polygon_boundary_color&quot;</span>])) {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    }</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a57c3236a0849febf30b263d868e1072a">EigenVector3dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#af0585288861f157efcde637bf015abe3">selection_polygon_mask_color_</a>,</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a6341a7c6d464d396fae9c85ebc236a71">EigenVector3dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#af0585288861f157efcde637bf015abe3">selection_polygon_mask_color_</a>,</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                                  value[<span class="stringliteral">&quot;selection_polygon_mask_color&quot;</span>])) {</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    }</div>
@@ -128,12 +137,12 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">RenderOption::ConvertFromJsonValue</a>(value)) {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    }</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a5b49b6ee595073fa903eda2f919dbf3c">EigenVector3dFromJsonArray</a>(</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a2a0a978ad5a8a8536ebe8c4efae7f9ec">EigenVector3dFromJsonArray</a>(</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ae45b588706ef39ff0bfdf790aba960c3">selection_polygon_boundary_color_</a>,</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                value[<span class="stringliteral">&quot;selection_polygon_boundary_color&quot;</span>])) {</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    }</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a5b49b6ee595073fa903eda2f919dbf3c">EigenVector3dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#af0585288861f157efcde637bf015abe3">selection_polygon_mask_color_</a>,</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a2a0a978ad5a8a8536ebe8c4efae7f9ec">EigenVector3dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#af0585288861f157efcde637bf015abe3">selection_polygon_mask_color_</a>,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                    value[<span class="stringliteral">&quot;selection_polygon_mask_color&quot;</span>])) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    }</div>
@@ -149,8 +158,8 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;}  <span class="comment">// namespace visualization</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aRenderOptionWithEditing_8h_html"><div class="ttname"><a href="RenderOptionWithEditing_8h.html">RenderOptionWithEditing.h</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a57c3236a0849febf30b263d868e1072a"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a57c3236a0849febf30b263d868e1072a">cloudViewer::utility::IJsonConvertible::EigenVector3dToJsonArray</a></div><div class="ttdeci">static bool EigenVector3dToJsonArray(const Eigen::Vector3d &amp;vec, Json::Value &amp;value)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a5b49b6ee595073fa903eda2f919dbf3c"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a5b49b6ee595073fa903eda2f919dbf3c">cloudViewer::utility::IJsonConvertible::EigenVector3dFromJsonArray</a></div><div class="ttdeci">static bool EigenVector3dFromJsonArray(Eigen::Vector3d &amp;vec, const Json::Value &amp;value)</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a2a0a978ad5a8a8536ebe8c4efae7f9ec"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a2a0a978ad5a8a8536ebe8c4efae7f9ec">cloudViewer::utility::IJsonConvertible::EigenVector3dFromJsonArray</a></div><div class="ttdeci">static bool EigenVector3dFromJsonArray(Eigen::Vector3d &amp;vec, const Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00043">IJsonConvertible.cpp:43</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a6341a7c6d464d396fae9c85ebc236a71"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a6341a7c6d464d396fae9c85ebc236a71">cloudViewer::utility::IJsonConvertible::EigenVector3dToJsonArray</a></div><div class="ttdeci">static bool EigenVector3dToJsonArray(const Eigen::Vector3d &amp;vec, Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00055">IJsonConvertible.cpp:55</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOptionWithEditing_html_a22ed4ef3a7407f9ed5e17e3aba124b96"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a22ed4ef3a7407f9ed5e17e3aba124b96">cloudViewer::visualization::RenderOptionWithEditing::PICKER_SPHERE_SIZE_MAX</a></div><div class="ttdeci">static const double PICKER_SPHERE_SIZE_MAX</div><div class="ttdef"><b>Definition:</b> <a href="RenderOptionWithEditing_8h_source.html#l00020">RenderOptionWithEditing.h:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOptionWithEditing_html_a5b9d1f72a0b838f2164a52a1301ce359"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a5b9d1f72a0b838f2164a52a1301ce359">cloudViewer::visualization::RenderOptionWithEditing::PICKER_SPHERE_SIZE_DEFAULT</a></div><div class="ttdeci">static const double PICKER_SPHERE_SIZE_DEFAULT</div><div class="ttdef"><b>Definition:</b> <a href="RenderOptionWithEditing_8h_source.html#l00021">RenderOptionWithEditing.h:21</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOptionWithEditing_html_a600e7ea7dff5ef9ab5b6bf7ec7b2f2fa"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a600e7ea7dff5ef9ab5b6bf7ec7b2f2fa">cloudViewer::visualization::RenderOptionWithEditing::ConvertToJsonValue</a></div><div class="ttdeci">bool ConvertToJsonValue(Json::Value &amp;value) const override</div><div class="ttdef"><b>Definition:</b> <a href="RenderOptionWithEditing_8cpp_source.html#l00020">RenderOptionWithEditing.cpp:20</a></div></div>
@@ -162,15 +171,15 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOptionWithEditing_html_af0585288861f157efcde637bf015abe3"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#af0585288861f157efcde637bf015abe3">cloudViewer::visualization::RenderOptionWithEditing::selection_polygon_mask_color_</a></div><div class="ttdeci">Eigen::Vector3d selection_polygon_mask_color_</div><div class="ttdef"><b>Definition:</b> <a href="RenderOptionWithEditing_8h_source.html#l00043">RenderOptionWithEditing.h:43</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOption_html_a027e3154cde4489fd8bf326bf11bdf45"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">cloudViewer::visualization::RenderOption::ConvertToJsonValue</a></div><div class="ttdeci">bool ConvertToJsonValue(Json::Value &amp;value) const override</div><div class="ttdef"><b>Definition:</b> <a href="RenderOption_8cpp_source.html#l00019">RenderOption.cpp:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOption_html_aa5e882dc844d14f7ff560cca9e26c04f"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">cloudViewer::visualization::RenderOption::ConvertFromJsonValue</a></div><div class="ttdeci">bool ConvertFromJsonValue(const Json::Value &amp;value) override</div><div class="ttdef"><b>Definition:</b> <a href="RenderOption_8cpp_source.html#l00098">RenderOption.cpp:98</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="RenderOptionWithEditing_8cpp.html">RenderOptionWithEditing.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

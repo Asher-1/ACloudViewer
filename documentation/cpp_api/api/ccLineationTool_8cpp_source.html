@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -113,7 +122,7 @@ $(document).ready(function(){initNavTree('ccLineationTool_8cpp_source.html','');
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;                                  <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; P) {</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="comment">// try retrieve active lineation (will fail if there isn&#39;t one)</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <a class="code" href="classccLineation.html">ccLineation</a>* l = <span class="keyword">dynamic_cast&lt;</span><a class="code" href="classccLineation.html">ccLineation</a>*<span class="keyword">&gt;</span>(</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;find(<a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a>));</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">find</a>(<a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a>));</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keywordflow">if</span> (!l)  <span class="comment">// make a new one</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    {</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        <span class="comment">// no active trace -&gt; make a new one</span></div>
@@ -128,11 +137,11 @@ $(document).ready(function(){initNavTree('ccLineationTool_8cpp_source.html','');
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <span class="comment">// add to DB Tree</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        insertPoint-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(l);</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;addToDB(l, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(l, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    }</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="comment">// add point</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">int</span> index = l-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(itemIdx);</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">int</span> index = l-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(itemIdx);</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="comment">// is this the end point?</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordflow">if</span> (l-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() == 2) {</div>
@@ -141,8 +150,8 @@ $(document).ready(function(){initNavTree('ccLineationTool_8cpp_source.html','');
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        l-&gt;<a class="code" href="classccDrawableObject.html#a9307c1167687a5632946af60758c7fd1">showNameIn3D</a>(<a class="code" href="classccCompass.html#ada8c093b4a1ac7b76af2a49c2b4eecb0">ccCompass::drawName</a>);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="comment">// report orientation to console for convenience</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dispToConsole(QString(<span class="stringliteral">&quot;[ccCompass] Lineation = &quot;</span> + l-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>()),</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                             ecvMainAppInterface::STD_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;[ccCompass] Lineation = &quot;</span> + l-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>()),</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="comment">// start new lineation</span></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a> = -1;</div>
@@ -159,9 +168,9 @@ $(document).ready(function(){initNavTree('ccLineationTool_8cpp_source.html','');
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a> != -1)  <span class="comment">// there is an active lineation</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    {</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <a class="code" href="classccPointPair.html">ccPointPair</a>* l = <span class="keyword">dynamic_cast&lt;</span><a class="code" href="classccPointPair.html">ccPointPair</a>*<span class="keyword">&gt;</span>(</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;find(<a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a>));</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">find</a>(<a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a>));</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordflow">if</span> (l &amp;&amp; l-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() &lt; 2) {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;            <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;removeFromDB(l);  <span class="comment">// remove incomplete lineation</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;            <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ad7d871277103e54c622360a8c5b86b1a">removeFromDB</a>(l);  <span class="comment">// remove incomplete lineation</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;            <a class="code" href="classccLineationTool.html#acde283e2409f229e0dcaa068403cd4b2">m_lineation_id</a> = -1;</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        }</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    }</div>
@@ -173,6 +182,7 @@ $(document).ready(function(){initNavTree('ccLineationTool_8cpp_source.html','');
 <div class="ttc" id="aclassccDrawableObject_html_a3d00d1fb3ceea8ef31e7f6953db9d9b4"><div class="ttname"><a href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">ccDrawableObject::setVisible</a></div><div class="ttdeci">virtual void setVisible(bool state)</div><div class="ttdoc">Sets entity visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00040">ecvDrawableObject.h:40</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_a9307c1167687a5632946af60758c7fd1"><div class="ttname"><a href="classccDrawableObject.html#a9307c1167687a5632946af60758c7fd1">ccDrawableObject::showNameIn3D</a></div><div class="ttdeci">virtual void showNameIn3D(bool state)</div><div class="ttdoc">Sets whether name should be displayed in 3D.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00125">ecvDrawableObject.h:125</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
+<div class="ttc" id="aclassccHObject_html_a275b9f9c8d4605c01060edaa6821ddff"><div class="ttname"><a href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">ccHObject::find</a></div><div class="ttdeci">ccHObject * find(unsigned uniqueID)</div><div class="ttdoc">Finds an entity in this object hierarchy.</div></div>
 <div class="ttc" id="aclassccHObject_html_a7ee62cff1282c3f7d99acdabfa709fc0"><div class="ttname"><a href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div></div>
 <div class="ttc" id="aclassccLineationTool_html_a33744f258d79e85481e460953068590e"><div class="ttname"><a href="classccLineationTool.html#a33744f258d79e85481e460953068590e">ccLineationTool::pointPicked</a></div><div class="ttdeci">void pointPicked(ccHObject *insertPoint, unsigned itemIdx, ccPointCloud *cloud, const CCVector3 &amp;P) override</div><div class="ttdef"><b>Definition:</b> <a href="ccLineationTool_8cpp_source.html#l00020">ccLineationTool.cpp:20</a></div></div>
 <div class="ttc" id="aclassccLineationTool_html_a4d086b88a87e3c9b1ca8a44e1d093bac"><div class="ttname"><a href="classccLineationTool.html#a4d086b88a87e3c9b1ca8a44e1d093bac">ccLineationTool::cancel</a></div><div class="ttdeci">void cancel() override</div><div class="ttdef"><b>Definition:</b> <a href="ccLineationTool_8cpp_source.html#l00068">ccLineationTool.cpp:68</a></div></div>
@@ -190,15 +200,20 @@ $(document).ready(function(){initNavTree('ccLineationTool_8cpp_source.html','');
 <div class="ttc" id="aclassccPointPair_html"><div class="ttname"><a href="classccPointPair.html">ccPointPair</a></div><div class="ttdef"><b>Definition:</b> <a href="ccPointPair_8h_source.html#l00023">ccPointPair.h:23</a></div></div>
 <div class="ttc" id="aclassccTool_html"><div class="ttname"><a href="classccTool.html">ccTool</a></div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00018">ccTool.h:18</a></div></div>
 <div class="ttc" id="aclassccTool_html_a53c6789c75db4fa02d4f2205ad7f99e8"><div class="ttname"><a href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">ccTool::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00067">ccTool.h:67</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ STD_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00117">ecvMainAppInterface.h:117</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ad7d871277103e54c622360a8c5b86b1a"><div class="ttname"><a href="classecvMainAppInterface.html#ad7d871277103e54c622360a8c5b86b1a">ecvMainAppInterface::removeFromDB</a></div><div class="ttdeci">virtual void removeFromDB(ccHObject *obj, bool autoDelete=true)=0</div><div class="ttdoc">Removes an entity from main db tree.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccLineationTool_8cpp.html">ccLineationTool.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

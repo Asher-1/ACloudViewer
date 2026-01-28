@@ -1,6 +1,9 @@
 <map id="JsonRPCPlugin" name="JsonRPCPlugin">
-<area shape="rect" id="node1" title="Example qCC plugin." alt="" coords="65,171,180,197"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$classJsonRPCServer.html" title=" " alt="" coords="64,81,181,108"/>
-<area shape="rect" id="node3" title=" " alt="" coords="205,81,360,108"/>
+<area shape="rect" id="node1" title="Example qCC plugin." alt="" coords="33,260,148,287"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,81,80,108"/>
+<area shape="rect" id="node7" href="$classJsonRPCServer.html" title=" " alt="" coords="32,171,149,197"/>
+<area shape="rect" id="node3" href="$classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="173,171,328,197"/>
+<area shape="rect" id="node4" href="$classccDefaultPluginInterface.html" title=" " alt="" coords="131,81,314,108"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="155,5,290,32"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="339,81,499,108"/>
 </map>

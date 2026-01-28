@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structe57_1_1Data3D.html" title="Stores the top&#45;level information for a single lidar scan." alt="" coords="5,5,108,32"/>
+<area shape="rect" id="node1" href="$structCP_1_1CutPursuit.html" title=" " alt="" coords="5,81,157,108"/>
+<area shape="rect" id="node2" href="$structCP_1_1CutPursuit__KL.html" title=" " alt="" coords="217,5,392,32"/>
+<area shape="rect" id="node3" href="$structCP_1_1CutPursuit__L2.html" title=" " alt="" coords="217,56,392,83"/>
+<area shape="rect" id="node4" href="$structCP_1_1CutPursuit__Linear.html" title=" " alt="" coords="205,107,404,133"/>
+<area shape="rect" id="node5" href="$structCP_1_1CutPursuit__SPG.html" title=" " alt="" coords="212,157,397,184"/>
 </map>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="qClassify3DMASCDialog_8h.html">qClassify3DMASCDialog.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// qCC_plugins</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// qCC_db</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
@@ -131,7 +140,7 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span><a class="code" href="classccPointCloud.html">ccPointCloud</a>*<span class="keyword">&gt;</span>(item);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;}</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classClassify3DMASCDialog.html#acdbe577c4408e6934e0733b1f3076123">   44</a></span>&#160;<a class="code" href="classClassify3DMASCDialog.html#acdbe577c4408e6934e0733b1f3076123">Classify3DMASCDialog::Classify3DMASCDialog</a>(ecvMainAppInterface* app,</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classClassify3DMASCDialog.html#acdbe577c4408e6934e0733b1f3076123">   44</a></span>&#160;<a class="code" href="classClassify3DMASCDialog.html#acdbe577c4408e6934e0733b1f3076123">Classify3DMASCDialog::Classify3DMASCDialog</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app,</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                                           <span class="keywordtype">bool</span> trainMode <span class="comment">/*=false*/</span>)</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    : QDialog(app ? app-&gt;getMainWindow() : 0),</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      <a class="code" href="namespaceUi.html">Ui</a>::<a class="code" href="classClassify3DMASCDialog.html">Classify3DMASCDialog</a>(),</div>
@@ -141,8 +150,8 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>) {</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="comment">// add list of clouds to the combo-boxes</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> clouds;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()) {</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()-&gt;filterChildren(clouds, <span class="keyword">true</span>,</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()) {</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">filterChildren</a>(clouds, <span class="keyword">true</span>,</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                                                  <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        }</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
@@ -180,10 +189,10 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        testCloudComboBox-&gt;setCurrentIndex(-1);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (cloudCount == 0 &amp;&amp; app) {</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;You need at least 1 loaded cloud to &quot;</span>) +</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;You need at least 1 loaded cloud to &quot;</span>) +</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                                       (trainMode ? <span class="stringliteral">&quot;train a classifier&quot;</span></div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                                  : <span class="stringliteral">&quot;classify it...&quot;</span>),</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                               ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    }</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
@@ -296,8 +305,8 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    <span class="comment">// build a map &#39;name : uniqueId&#39; of the available clouds in the database</span></div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="comment">// tree (duplicate names are not handled, simply keep the first occurrence)</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> clouds;</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()) {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()-&gt;filterChildren(clouds, <span class="keyword">true</span>,</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()) {</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">filterChildren</a>(clouds, <span class="keyword">true</span>,</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                                              <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    }</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; clouds.size(); ++i) {</div>
@@ -331,27 +340,27 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160; </div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    <span class="keywordflow">if</span> (cloud1ComboBox-&gt;isEnabled()) {</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        clouds.insert(cloud1Label-&gt;text(),</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud1ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()));</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud1ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()));</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    }</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <span class="keywordflow">if</span> (cloud2ComboBox-&gt;isEnabled()) {</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        clouds.insert(cloud2Label-&gt;text(),</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud2ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()));</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud2ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()));</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    }</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keywordflow">if</span> (cloud3ComboBox-&gt;isEnabled()) {</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        clouds.insert(cloud3Label-&gt;text(),</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud3ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()));</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud3ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()));</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    }</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    <span class="keywordflow">if</span> (cloud4ComboBox-&gt;isEnabled()) {</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        clouds.insert(cloud4Label-&gt;text(),</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud4ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()));</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                      <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(cloud4ComboBox, <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()));</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    }</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160; </div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    <span class="keywordflow">if</span> (testCloudComboBox-&gt;currentIndex() &gt;= 0) {</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        clouds.insert(<span class="stringliteral">&quot;TEST&quot;</span>, <a class="code" href="qClassify3DMASCDialog_8cpp.html#aa44aae4d09b30664d2261a5b2e6fea81">GetCloudFromCombo</a>(testCloudComboBox,</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                                                <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;dbRootObject()));</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                                                <a class="code" href="classClassify3DMASCDialog.html#acf9c6f8202de9b250d78cc6127f289fb">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()));</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    }</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;}</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
@@ -378,9 +387,15 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div class="ttc" id="aclassClassify3DMASCDialog_html_aeaeffeb1ef1152e53b7e9d99bb465f74"><div class="ttname"><a href="classClassify3DMASCDialog.html#aeaeffeb1ef1152e53b7e9d99bb465f74">Classify3DMASCDialog::readSettings</a></div><div class="ttdeci">void readSettings()</div><div class="ttdoc">read settings</div><div class="ttdef"><b>Definition:</b> <a href="qClassify3DMASCDialog_8cpp_source.html#l00115">qClassify3DMASCDialog.cpp:115</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccHObject_html_a275b9f9c8d4605c01060edaa6821ddff"><div class="ttname"><a href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">ccHObject::find</a></div><div class="ttdeci">ccHObject * find(unsigned uniqueID)</div><div class="ttdoc">Finds an entity in this object hierarchy.</div></div>
+<div class="ttc" id="aclassccHObject_html_ad233ad9f6c85ff1617dc5a2f51b6671b"><div class="ttname"><a href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">ccHObject::filterChildren</a></div><div class="ttdeci">unsigned filterChildren(Container &amp;filteredChildren, bool recursive=false, CV_CLASS_ENUM filter=CV_TYPES::OBJECT, bool strict=false) const</div><div class="ttdoc">Collects the children corresponding to a certain pattern.</div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccObject_html_a7b4d06906277afee84282d5a217ee125"><div class="ttname"><a href="classccObject.html#a7b4d06906277afee84282d5a217ee125">ccObject::isA</a></div><div class="ttdeci">bool isA(CV_CLASS_ENUM type) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00131">ecvObject.h:131</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
@@ -392,7 +407,7 @@ $(document).ready(function(){initNavTree('qClassify3DMASCDialog_8cpp_source.html
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="qClassify3DMASCDialog_8cpp.html">qClassify3DMASCDialog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

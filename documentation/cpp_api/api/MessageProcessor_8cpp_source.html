@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -105,7 +114,7 @@ $(document).ready(function(){initNavTree('MessageProcessor_8cpp_source.html','')
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="MessageUtils_8h.html">cloudViewer/io/rpc/MessageUtils.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Messages_8h.html">cloudViewer/io/rpc/Messages.h</a>&quot;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Application_8h.html">cloudViewer/visualization/gui/Application.h</a>&quot;</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Window_8h.html">cloudViewer/visualization/gui/Window.h</a>&quot;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8h.html">cloudViewer/visualization/gui/Window.h</a>&quot;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Material_8h.html">cloudViewer/visualization/rendering/Material.h</a>&quot;</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">using namespace </span><a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html">cloudViewer::io::rpc</a>;</div>
@@ -398,12 +407,12 @@ $(document).ready(function(){initNavTree('MessageProcessor_8cpp_source.html','')
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;}</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160; </div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="keywordtype">void</span> MessageProcessor::SetGeometry(std::shared_ptr&lt;ccHObject&gt; geom,</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                                   <span class="keyword">const</span> std::string&amp; path,</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                                   <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>,</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                                   <span class="keywordtype">int</span> time,</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                                   <span class="keyword">const</span> std::string&amp; layer) {</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <a class="code" href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">gui::Application::GetInstance</a>().PostToMainThread(</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            window_, [<span class="keyword">this</span>, geom, path, time, layer]() {</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                on_geometry_(geom, path, time, layer);</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            window_, [<span class="keyword">this</span>, geom, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>, time, layer]() {</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                on_geometry_(geom, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>, time, layer);</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            });</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;}</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
@@ -414,7 +423,6 @@ $(document).ready(function(){initNavTree('MessageProcessor_8cpp_source.html','')
 <div class="ttc" id="aMessageProcessor_8h_html"><div class="ttname"><a href="MessageProcessor_8h.html">MessageProcessor.h</a></div></div>
 <div class="ttc" id="aMessageUtils_8h_html"><div class="ttname"><a href="MessageUtils_8h.html">MessageUtils.h</a></div></div>
 <div class="ttc" id="aMessages_8h_html"><div class="ttname"><a href="Messages_8h.html">Messages.h</a></div></div>
-<div class="ttc" id="aWindow_8h_html"><div class="ttname"><a href="Window_8h.html">Window.h</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html_a7afd060d5392e69ceed8c9dd9775bca5"><div class="ttname"><a href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray</a></div><div class="ttdeci">static Vector3Tpl fromArray(const int a[3])</div><div class="ttdoc">Constructor from an int array.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00268">CVGeom.h:268</a></div></div>
 <div class="ttc" id="aclassccObject_html_a10a51898e3444e4219ac3c0d84922a7b"><div class="ttname"><a href="classccObject.html#a10a51898e3444e4219ac3c0d84922a7b">ccObject::setLocked</a></div><div class="ttdeci">virtual void setLocked(bool state)</div><div class="ttdoc">Sets the &quot;enabled&quot; property.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00117">ecvObject.h:117</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9f0e313a854dd2ff9803d7b6d074872c"><div class="ttname"><a href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">ccObject::setEnabled</a></div><div class="ttdeci">virtual void setEnabled(bool state)</div><div class="ttdoc">Sets the &quot;enabled&quot; property.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00102">ecvObject.h:102</a></div></div>
@@ -430,6 +438,7 @@ $(document).ready(function(){initNavTree('MessageProcessor_8cpp_source.html','')
 <div class="ttc" id="aecvColorTypes_8h_html_acdee13170502cf82fda04cd1407b3756"><div class="ttname"><a href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a></div><div class="ttdeci">unsigned char ColorCompType</div><div class="ttdoc">Default color components type (R,G and B)</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00029">ecvColorTypes.h:29</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="ageometry_2PointCloud_8h_html"><div class="ttname"><a href="geometry_2PointCloud_8h.html">PointCloud.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8h.html">Window.h</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a96e29e020a8bb88e9945eb16fb8b4f99"><div class="ttname"><a href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">Runtime::GetInstance</a></div><div class="ttdeci">ccGuiPythonInstance * GetInstance() noexcept</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00072">Runtime.cpp:72</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_a36f710b59c77a7fe89705600157b1be2"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#a36f710b59c77a7fe89705600157b1be2">cloudViewer::io::rpc::messages::TypeStr&lt; float &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; float &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00044">Messages.h:44</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_a5ac8c55e4a224f1a70cf95f54293cfc4"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#a5ac8c55e4a224f1a70cf95f54293cfc4">cloudViewer::io::rpc::messages::TypeStr&lt; double &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; double &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00048">Messages.h:48</a></div></div>
@@ -437,8 +446,9 @@ $(document).ready(function(){initNavTree('MessageProcessor_8cpp_source.html','')
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_ac4735a64dba522396ea4fb78057de641"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#ac4735a64dba522396ea4fb78057de641">cloudViewer::io::rpc::messages::TypeStr&lt; int64_t &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; int64_t &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00064">Messages.h:64</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_html"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc.html">cloudViewer::io::rpc</a></div><div class="ttdef"><b>Definition:</b> <a href="BufferConnection_8cpp_source.html#l00020">BufferConnection.cpp:20</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_html_a2b0401385aa28cbc37b8a02c18b0e4bc"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc.html#a2b0401385aa28cbc37b8a02c18b0e4bc">cloudViewer::io::rpc::CreateStatusOKMsg</a></div><div class="ttdeci">std::shared_ptr&lt; zmq::message_t &gt; CreateStatusOKMsg()</div><div class="ttdef"><b>Definition:</b> <a href="MessageUtils_8cpp_source.html#l00084">MessageUtils.cpp:84</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html">cloudViewer::utility</a></div><div class="ttdef"><b>Definition:</b> <a href="hashmap_2Dispatch_8h_source.html#l00092">Dispatch.h:92</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html">cloudViewer::utility</a></div><div class="ttdef"><b>Definition:</b> <a href="Console_8h_source.html#l00017">Console.h:17</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array_html_a13bb923a9ea81b05a4c1f694d240a8ac"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html#a13bb923a9ea81b05a4c1f694d240a8ac">cloudViewer::io::rpc::messages::Array::Ptr</a></div><div class="ttdeci">const T * Ptr() const</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00146">Messages.h:146</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array_html_a889183ce795e9f9cc4c5db1762a65754"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html#a889183ce795e9f9cc4c5db1762a65754">cloudViewer::io::rpc::messages::Array::CheckNonEmpty</a></div><div class="ttdeci">bool CheckNonEmpty(std::string &amp;errstr) const</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00212">Messages.h:212</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array_html_ab765ab483e14e460025e74ee0de575a0"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html#ab765ab483e14e460025e74ee0de575a0">cloudViewer::io::rpc::messages::Array::shape</a></div><div class="ttdeci">std::vector&lt; int64_t &gt; shape</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00142">Messages.h:142</a></div></div>
@@ -459,7 +469,7 @@ $(document).ready(function(){initNavTree('MessageProcessor_8cpp_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="MessageProcessor_8cpp.html">MessageProcessor.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

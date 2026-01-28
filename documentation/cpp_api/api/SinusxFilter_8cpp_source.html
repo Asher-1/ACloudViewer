@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -138,9 +147,9 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;}</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classSinusxFilter.html#af2a1b62ffff81e827e9a5ec5044a53ae">   50</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSinusxFilter.html#af2a1b62ffff81e827e9a5ec5044a53ae">SinusxFilter::saveToFile</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity,</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                       <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                       <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                       <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a>&amp; parameters) {</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">if</span> (!entity || filename.isEmpty()) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">if</span> (!entity || <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.isEmpty()) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="comment">// look for polylines only</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    std::vector&lt;ccPolyline*&gt; profiles;</div>
@@ -161,7 +170,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordflow">if</span> (profiles.empty()) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a9586023a650d007b2a5aae70b4a9a047">CC_FERR_NO_SAVE</a>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="comment">// open ASCII file for writing</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordflow">if</span> (!file.open(QIODevice::WriteOnly | QIODevice::Text))</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04">CC_FERR_WRITING</a>;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
@@ -181,7 +190,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keywordtype">unsigned</span> vertCount = poly ? poly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>() : 0;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (vertCount &lt; 2) {</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            <span class="comment">// invalid size</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Sinusx] Polyline &#39;%1&#39; does not have &quot;</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[Sinusx] Polyline &#39;%1&#39; does not have &quot;</span></div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                   <span class="stringliteral">&quot;enough vertices&quot;</span>)</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                                   .arg(poly ? poly-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>()</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                                             : QStringLiteral(<span class="stringliteral">&quot;unnamed&quot;</span>)));</div>
@@ -235,11 +244,11 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00145"></a><span class="lineno"><a class="line" href="SinusxFilter_8cpp.html#a007dea27057008224e9da69eaeca8606a2ed07df0651b75f5e37d0d3b35da4d6f">  145</a></span>&#160;};</div>
 <div class="line"><a name="l00146"></a><span class="lineno"><a class="line" href="SinusxFilter_8cpp.html#a1923b91a84719128fe917d0bf2fdc732">  146</a></span>&#160;<span class="keyword">const</span> QChar <a class="code" href="SinusxFilter_8cpp.html#a1923b91a84719128fe917d0bf2fdc732">SHORTCUT</a>[] = {<span class="charliteral">&#39;S&#39;</span>, <span class="charliteral">&#39;P&#39;</span>, <span class="charliteral">&#39;N&#39;</span>, <span class="charliteral">&#39;C&#39;</span>};</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
-<div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="classSinusxFilter.html#a8ae2d4d5e793f60a49f3144f01a314df">  148</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSinusxFilter.html#a8ae2d4d5e793f60a49f3144f01a314df">SinusxFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="classSinusxFilter.html#a8ae2d4d5e793f60a49f3144f01a314df">  148</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSinusxFilter.html#a8ae2d4d5e793f60a49f3144f01a314df">SinusxFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                                     <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;                                     <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="comment">// open file</span></div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::ReadOnly)) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee">CC_FERR_READING</a>;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    QTextStream stream(&amp;file);</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
@@ -265,7 +274,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <span class="keywordflow">if</span> (currentPoly) {</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                <span class="keywordflow">if</span> (currentVertices &amp;&amp; currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() != 0 &amp;&amp;</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                    currentVertices-&gt;<a class="code" href="classccPointCloud.html#abe8df9cd9f90ec74e219482500f710e8">resize</a>(currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>()) &amp;&amp;</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                    currentPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(0, currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                    currentPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0, currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                    container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(currentPoly);</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                    <span class="keyword">delete</span> currentPoly;</div>
@@ -277,7 +286,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            QStringList tokens = <a class="code" href="QtCompat_8h.html#a0da543c610d95a9c0726e068ea744090">qtCompatSplitRegex</a>(currentLine, <span class="stringliteral">&quot;\\s+&quot;</span>,</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                                                    <a class="code" href="namespaceQtCompat.html#a2d9f30935c99da4eabe7ee9b8ca503d1">QtCompat::SkipEmptyParts</a>);</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;            <span class="keywordflow">if</span> (tokens.size() &lt; 2 || tokens[1].length() &gt; 1) {</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Line %1 is corrupted&quot;</span>)</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Line %1 is corrupted&quot;</span>)</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                                       .arg(lineNumber));</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                <span class="keywordflow">continue</span>;</div>
@@ -294,7 +303,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                curveType = <a class="code" href="SinusxFilter_8cpp.html#a007dea27057008224e9da69eaeca8606a2ed07df0651b75f5e37d0d3b35da4d6f">CURVE_C</a>;</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160; </div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            <span class="keywordflow">if</span> (curveType == <a class="code" href="SinusxFilter_8cpp.html#a007dea27057008224e9da69eaeca8606aef2863a469df3ea6871d640e3669a2f2">INVALID</a>) {</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Unhandled curve type &#39;%1&#39; on &quot;</span></div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Unhandled curve type &#39;%1&#39; on &quot;</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                                       <span class="stringliteral">&quot;line &#39;%2&#39;!&quot;</span>)</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                                       .arg(curveTypeChar)</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                                       .arg(lineNumber));</div>
@@ -345,7 +354,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                            }</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                        }</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                        <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                                    QString(<span class="stringliteral">&quot;[SinusX] Line %1 is corrupted &quot;</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                                            <span class="stringliteral">&quot;(expected: &#39;CP connected_flag &quot;</span></div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                                            <span class="stringliteral">&quot;closed_flag&#39;)&quot;</span>)</div>
@@ -378,7 +387,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                                            QVariant(z));</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;                            }</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                            <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Line %1 is &quot;</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Line %1 is &quot;</span></div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                                                       <span class="stringliteral">&quot;corrupted (expected: &quot;</span></div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                                                       <span class="stringliteral">&quot;&#39;CP const_altitude&#39;)&quot;</span>)</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                                                       .arg(lineNumber));</div>
@@ -430,7 +439,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                                        QVariant(vertDir));</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                        }</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                        <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                                    QString(<span class="stringliteral">&quot;[SinusX] Line %1 is corrupted &quot;</span></div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                                            <span class="stringliteral">&quot;(expected: &#39;CP base_plane&#39;)&quot;</span>)</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;                                            .arg(lineNumber));</div>
@@ -485,7 +494,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;                                                currentVertices-&gt;<a class="code" href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">setGlobalShift</a>(</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;                                                        Pshift);</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                                        }</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;                                                <span class="stringliteral">&quot;[SinusX::loadFile] Polyline &quot;</span></div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;                                                <span class="stringliteral">&quot;has been recentered! &quot;</span></div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;                                                <span class="stringliteral">&quot;Translation: (%.2f ; %.2f ; &quot;</span></div>
@@ -501,7 +510,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;                    }</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;                }</div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;                <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Line %1 is corrupted &quot;</span></div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[SinusX] Line %1 is corrupted &quot;</span></div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;                                           <span class="stringliteral">&quot;(expected: &#39;X Y Z Key ...&#39;)&quot;</span>)</div>
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;                                           .arg(lineNumber));</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;                    <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
@@ -515,7 +524,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;    <span class="keywordflow">if</span> (currentPoly) {</div>
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;        <span class="keywordflow">if</span> (currentVertices &amp;&amp; currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() != 0 &amp;&amp;</div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;            currentVertices-&gt;<a class="code" href="classccPointCloud.html#abe8df9cd9f90ec74e219482500f710e8">resize</a>(currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>()) &amp;&amp;</div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;            currentPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(0, currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;            currentPoly-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0, currentVertices-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>())) {</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;            container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(currentPoly);</div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;        }</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    }</div>
@@ -524,6 +533,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
@@ -546,7 +556,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="ttc" id="aSinusxFilter_8cpp_html_abf3a45811c2c08a4cb47d34ebb9337a4"><div class="ttname"><a href="SinusxFilter_8cpp.html#abf3a45811c2c08a4cb47d34ebb9337a4">MakeSinusxName</a></div><div class="ttdeci">QString MakeSinusxName(QString name)</div><div class="ttdef"><b>Definition:</b> <a href="SinusxFilter_8cpp_source.html#l00043">SinusxFilter.cpp:43</a></div></div>
 <div class="ttc" id="aSinusxFilter_8h_html"><div class="ttname"><a href="SinusxFilter_8h.html">SinusxFilter.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a056c88c7d5d4c012ca3daf0c515675c9"><div class="ttname"><a href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">FileIOFilter::DEFAULT_PRIORITY</a></div><div class="ttdeci">static constexpr float DEFAULT_PRIORITY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00313">FileIOFilter.h:313</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a">FileIOFilter::Export</a></div><div class="ttdeci">@ Export</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00303">FileIOFilter.h:303</a></div></div>
@@ -589,7 +599,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ace959b35a8944a33a452771331ca336d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ace959b35a8944a33a452771331ca336d">cloudViewer::PointCloudTpl::capacity</a></div><div class="ttdeci">unsigned capacity() const</div><div class="ttdoc">Returns cloud capacity (i.e. reserved size)</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00540">PointCloudTpl.h:540</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html_a3b23bb6bff92f4f6a74540c1dbd44734"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#a3b23bb6bff92f4f6a74540c1dbd44734">cloudViewer::Polyline::setClosed</a></div><div class="ttdeci">void setClosed(bool state)</div><div class="ttdoc">Sets whether the polyline is closed or not.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00029">Polyline.h:29</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html_aef5efb4232143501ba0b7f1ccd213fc0"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#aef5efb4232143501ba0b7f1ccd213fc0">cloudViewer::Polyline::isClosed</a></div><div class="ttdeci">bool isClosed() const</div><div class="ttdoc">Returns whether the polyline is closed or not.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00026">Polyline.h:26</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ae1bc84432099435f6e9fd788aee2c2f6"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">cloudViewer::ReferenceCloud::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdoc">Returns the ith point.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00079">ReferenceCloud.h:79</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
@@ -606,7 +616,7 @@ $(document).ready(function(){initNavTree('SinusxFilter_8cpp_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_148eb1bec32389d620143c4e90e6b93c.html">qAdditionalIO</a></li><li class="navelem"><a class="el" href="dir_b14736cabb2734d269d4858bfda65e89.html">src</a></li><li class="navelem"><a class="el" href="SinusxFilter_8cpp.html">SinusxFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

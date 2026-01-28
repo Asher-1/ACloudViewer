@@ -1,9 +1,11 @@
 <map id="GreedyTriangulation" name="GreedyTriangulation">
-<area shape="rect" id="node1" title="Greedy Triangulation." alt="" coords="179,184,333,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="110,95,231,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classGreedyTriangulationDlg.html" title=" " alt="" coords="255,95,430,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="297,5,372,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="396,5,593,32"/>
+<area shape="rect" id="node1" title="Greedy Triangulation." alt="" coords="652,157,805,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="391,107,512,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="67,5,141,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="23,56,185,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="37,107,171,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="24,157,184,184"/>
+<area shape="rect" id="node7" href="$classGreedyTriangulationDlg.html" title=" " alt="" coords="364,208,539,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="67,208,141,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,203,285"/>
 </map>

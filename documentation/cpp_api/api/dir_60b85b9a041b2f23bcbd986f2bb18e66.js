@@ -46,7 +46,7 @@ var dir_60b85b9a041b2f23bcbd986f2bb18e66 =
     [ "Gpu.h", "Gpu_8h.html", "Gpu_8h" ],
     [ "Indexer.cpp", "Indexer_8cpp.html", null ],
     [ "Indexer.h", "Indexer_8h.html", "Indexer_8h" ],
-    [ "MemoryManager.cpp", "MemoryManager_8cpp.html", null ],
+    [ "MemoryManager.cpp", "cloudViewer_2core_2MemoryManager_8cpp.html", null ],
     [ "MemoryManager.h", "MemoryManager_8h.html", [
       [ "MemoryManager", "classcloudViewer_1_1core_1_1MemoryManager.html", "classcloudViewer_1_1core_1_1MemoryManager" ],
       [ "MemoryManagerDevice", "classcloudViewer_1_1core_1_1MemoryManagerDevice.html", "classcloudViewer_1_1core_1_1MemoryManagerDevice" ],

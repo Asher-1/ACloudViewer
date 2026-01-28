@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,11 +110,13 @@ Inheritance diagram for cloudViewer::geometry::OctreeLeafNode:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1geometry_1_1OctreeLeafNode__inherit__graph.png" border="0" usemap="#acloudViewer_1_1geometry_1_1OctreeLeafNode_inherit__map" alt="Inheritance graph"/></div>
 <map name="acloudViewer_1_1geometry_1_1OctreeLeafNode_inherit__map" id="acloudViewer_1_1geometry_1_1OctreeLeafNode_inherit__map">
-<area shape="rect" title="OctreeLeafNode base class." alt="" coords="20,184,193,225"/>
-<area shape="rect" href="classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html" title="OctreeColorLeafNode class is an OctreeLeafNode containing color." alt="" coords="20,273,193,315"/>
-<area shape="rect" href="classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node." alt="" coords="20,95,193,136"/>
-<area shape="rect" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="33,5,181,47"/>
-<area shape="rect" href="classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html" title="OctreePointColorLeafNode class is an OctreeColorLeafNode containing a list of indices corresponding t..." alt="" coords="5,363,208,404"/>
+<area shape="rect" title="OctreeLeafNode base class." alt="" coords="423,50,596,91"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1PyOctreeNode.html" title=" " alt="" coords="644,15,903,57"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html" title="OctreeColorLeafNode class is an OctreeLeafNode containing color." alt="" coords="687,82,860,123"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node." alt="" coords="201,50,375,91"/>
+<area shape="rect" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="5,50,153,91"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html" title=" " alt="" coords="951,5,1188,61"/>
+<area shape="rect" href="classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html" title="OctreePointColorLeafNode class is an OctreeColorLeafNode containing a list of indices corresponding t..." alt="" coords="968,86,1171,127"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -139,9 +150,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a73be49e77af84ccd2ca781a015002d8e inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9594e78eda07ecc0a3307652f02973ca inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a9594e78eda07ecc0a3307652f02973ca">ConvertFromJsonValue</a> (const Json::Value &amp;value)=0</td></tr>
 <tr class="separator:a9594e78eda07ecc0a3307652f02973ca inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1da06dcd8a7e9bc5d5b0b7b4424e8f33 inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a1da06dcd8a7e9bc5d5b0b7b4424e8f33">ToString</a> () const</td></tr>
-<tr class="memdesc:a1da06dcd8a7e9bc5d5b0b7b4424e8f33 inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to a styled string representation of JSON data for display.  <a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a1da06dcd8a7e9bc5d5b0b7b4424e8f33">More...</a><br /></td></tr>
-<tr class="separator:a1da06dcd8a7e9bc5d5b0b7b4424e8f33 inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6f9f9b4fb218fa59e1ed6d4990ee4dd inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa6f9f9b4fb218fa59e1ed6d4990ee4dd">ToString</a> () const</td></tr>
+<tr class="memdesc:aa6f9f9b4fb218fa59e1ed6d4990ee4dd inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to a styled string representation of JSON data for display.  <a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa6f9f9b4fb218fa59e1ed6d4990ee4dd">More...</a><br /></td></tr>
+<tr class="separator:aa6f9f9b4fb218fa59e1ed6d4990ee4dd inherit pub_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -150,34 +161,34 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:acc0e5333c49aaa952cf0d600a8584a38 inherit pub_static_methods_classcloudViewer_1_1geometry_1_1OctreeNode"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factory function to construct an <a class="el" href="classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node.">OctreeNode</a> by parsing the json value.  <a href="classcloudViewer_1_1geometry_1_1OctreeNode.html#acc0e5333c49aaa952cf0d600a8584a38">More...</a><br /></td></tr>
 <tr class="separator:acc0e5333c49aaa952cf0d600a8584a38 inherit pub_static_methods_classcloudViewer_1_1geometry_1_1OctreeNode"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible')"><img src="closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html">cloudViewer::utility::IJsonConvertible</a></td></tr>
-<tr class="memitem:a5b49b6ee595073fa903eda2f919dbf3c inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a5b49b6ee595073fa903eda2f919dbf3c">EigenVector3dFromJsonArray</a> (Eigen::Vector3d &amp;vec, const Json::Value &amp;value)</td></tr>
-<tr class="separator:a5b49b6ee595073fa903eda2f919dbf3c inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57c3236a0849febf30b263d868e1072a inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a57c3236a0849febf30b263d868e1072a">EigenVector3dToJsonArray</a> (const Eigen::Vector3d &amp;vec, Json::Value &amp;value)</td></tr>
-<tr class="separator:a57c3236a0849febf30b263d868e1072a inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa6980624de2142e01ee5ae07a001649 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#afa6980624de2142e01ee5ae07a001649">EigenVector4dFromJsonArray</a> (Eigen::Vector4d &amp;vec, const Json::Value &amp;value)</td></tr>
-<tr class="separator:afa6980624de2142e01ee5ae07a001649 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9bb7188763f4c171856ff6ffc89fc91 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae9bb7188763f4c171856ff6ffc89fc91">EigenVector4dToJsonArray</a> (const Eigen::Vector4d &amp;vec, Json::Value &amp;value)</td></tr>
-<tr class="separator:ae9bb7188763f4c171856ff6ffc89fc91 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a309c14af739f0b8243105a722a7d843f inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a309c14af739f0b8243105a722a7d843f">EigenMatrix3dFromJsonArray</a> (Eigen::Matrix3d &amp;mat, const Json::Value &amp;value)</td></tr>
-<tr class="separator:a309c14af739f0b8243105a722a7d843f inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acaf71a8fe5491d791f7f3b7fb470b686 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#acaf71a8fe5491d791f7f3b7fb470b686">EigenMatrix3dToJsonArray</a> (const Eigen::Matrix3d &amp;mat, Json::Value &amp;value)</td></tr>
-<tr class="separator:acaf71a8fe5491d791f7f3b7fb470b686 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a33423172b5bd7a272a2a730d8a918f87 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a33423172b5bd7a272a2a730d8a918f87">EigenMatrix4dFromJsonArray</a> (Eigen::Matrix4d &amp;mat, const Json::Value &amp;value)</td></tr>
-<tr class="separator:a33423172b5bd7a272a2a730d8a918f87 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9bbbf84419c648ea42ff4e40a713abd3 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a9bbbf84419c648ea42ff4e40a713abd3">EigenMatrix4dToJsonArray</a> (const Eigen::Matrix4d &amp;mat, Json::Value &amp;value)</td></tr>
-<tr class="separator:a9bbbf84419c648ea42ff4e40a713abd3 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0222107015d9bdcb30ccb8788ae9a140 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a0222107015d9bdcb30ccb8788ae9a140">EigenMatrix4dFromJsonArray</a> (<a class="el" href="namespaceEigen.html#a80fb78029f78d3425b02386737a108b6">Eigen::Matrix4d_u</a> &amp;mat, const Json::Value &amp;value)</td></tr>
-<tr class="separator:a0222107015d9bdcb30ccb8788ae9a140 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e19d723b9857b0160aee5dcbe58b857 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8e19d723b9857b0160aee5dcbe58b857">EigenMatrix4dToJsonArray</a> (const <a class="el" href="namespaceEigen.html#a80fb78029f78d3425b02386737a108b6">Eigen::Matrix4d_u</a> &amp;mat, Json::Value &amp;value)</td></tr>
-<tr class="separator:a8e19d723b9857b0160aee5dcbe58b857 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abab9dc755e33054e58f46fe671286cd2 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#abab9dc755e33054e58f46fe671286cd2">EigenMatrix6dFromJsonArray</a> (<a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> &amp;mat, const Json::Value &amp;value)</td></tr>
-<tr class="separator:abab9dc755e33054e58f46fe671286cd2 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af247813e4319a5eb32ff470a7de059b6 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af247813e4319a5eb32ff470a7de059b6">EigenMatrix6dToJsonArray</a> (const <a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> &amp;mat, Json::Value &amp;value)</td></tr>
-<tr class="separator:af247813e4319a5eb32ff470a7de059b6 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa814583752a7eb7b243d607a132ed05b inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa814583752a7eb7b243d607a132ed05b">EigenMatrix6dFromJsonArray</a> (<a class="el" href="namespaceEigen.html#a6c375b935a975a2d4f8047be883d2628">Eigen::Matrix6d_u</a> &amp;mat, const Json::Value &amp;value)</td></tr>
-<tr class="separator:aa814583752a7eb7b243d607a132ed05b inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c35c5296c4751bd24e235edfdc689eb inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8c35c5296c4751bd24e235edfdc689eb">EigenMatrix6dToJsonArray</a> (const <a class="el" href="namespaceEigen.html#a6c375b935a975a2d4f8047be883d2628">Eigen::Matrix6d_u</a> &amp;mat, Json::Value &amp;value)</td></tr>
-<tr class="separator:a8c35c5296c4751bd24e235edfdc689eb inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a0a978ad5a8a8536ebe8c4efae7f9ec inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a2a0a978ad5a8a8536ebe8c4efae7f9ec">EigenVector3dFromJsonArray</a> (Eigen::Vector3d &amp;vec, const Json::Value &amp;value)</td></tr>
+<tr class="separator:a2a0a978ad5a8a8536ebe8c4efae7f9ec inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6341a7c6d464d396fae9c85ebc236a71 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a6341a7c6d464d396fae9c85ebc236a71">EigenVector3dToJsonArray</a> (const Eigen::Vector3d &amp;vec, Json::Value &amp;value)</td></tr>
+<tr class="separator:a6341a7c6d464d396fae9c85ebc236a71 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e4eccdf2e1b9fa6462b07cc9aa176d3 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a9e4eccdf2e1b9fa6462b07cc9aa176d3">EigenVector4dFromJsonArray</a> (Eigen::Vector4d &amp;vec, const Json::Value &amp;value)</td></tr>
+<tr class="separator:a9e4eccdf2e1b9fa6462b07cc9aa176d3 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b176b15a94f0dd63e14b22c34341468 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8b176b15a94f0dd63e14b22c34341468">EigenVector4dToJsonArray</a> (const Eigen::Vector4d &amp;vec, Json::Value &amp;value)</td></tr>
+<tr class="separator:a8b176b15a94f0dd63e14b22c34341468 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fd2b2ef95a350dd366662b7ac0d59f8 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a1fd2b2ef95a350dd366662b7ac0d59f8">EigenMatrix3dFromJsonArray</a> (Eigen::Matrix3d &amp;mat, const Json::Value &amp;value)</td></tr>
+<tr class="separator:a1fd2b2ef95a350dd366662b7ac0d59f8 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a988f4d035bf6a6fb4967e3d0b772df68 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a988f4d035bf6a6fb4967e3d0b772df68">EigenMatrix3dToJsonArray</a> (const Eigen::Matrix3d &amp;mat, Json::Value &amp;value)</td></tr>
+<tr class="separator:a988f4d035bf6a6fb4967e3d0b772df68 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6fd69ef2426c5ec67dd890d7fbc724c inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">EigenMatrix4dFromJsonArray</a> (Eigen::Matrix4d &amp;mat, const Json::Value &amp;value)</td></tr>
+<tr class="separator:ae6fd69ef2426c5ec67dd890d7fbc724c inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1b19a42dc0ec6d4a5fc7e5d2a992819 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">EigenMatrix4dToJsonArray</a> (const Eigen::Matrix4d &amp;mat, Json::Value &amp;value)</td></tr>
+<tr class="separator:af1b19a42dc0ec6d4a5fc7e5d2a992819 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a639579d6eda8c3f827d6cc6cdf6f77d9 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a639579d6eda8c3f827d6cc6cdf6f77d9">EigenMatrix4dFromJsonArray</a> (<a class="el" href="namespaceEigen.html#a80fb78029f78d3425b02386737a108b6">Eigen::Matrix4d_u</a> &amp;mat, const Json::Value &amp;value)</td></tr>
+<tr class="separator:a639579d6eda8c3f827d6cc6cdf6f77d9 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae72494b0f6531f9777965bdafe6f2ea6 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae72494b0f6531f9777965bdafe6f2ea6">EigenMatrix4dToJsonArray</a> (const <a class="el" href="namespaceEigen.html#a80fb78029f78d3425b02386737a108b6">Eigen::Matrix4d_u</a> &amp;mat, Json::Value &amp;value)</td></tr>
+<tr class="separator:ae72494b0f6531f9777965bdafe6f2ea6 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8dc0cd83b5aa6b6b3508a455a84f4b91 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8dc0cd83b5aa6b6b3508a455a84f4b91">EigenMatrix6dFromJsonArray</a> (<a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> &amp;mat, const Json::Value &amp;value)</td></tr>
+<tr class="separator:a8dc0cd83b5aa6b6b3508a455a84f4b91 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2b7bb44502977638106be0ce421d721 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa2b7bb44502977638106be0ce421d721">EigenMatrix6dToJsonArray</a> (const <a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> &amp;mat, Json::Value &amp;value)</td></tr>
+<tr class="separator:aa2b7bb44502977638106be0ce421d721 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41427087354f2930879d070ce3f9d32e inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a41427087354f2930879d070ce3f9d32e">EigenMatrix6dFromJsonArray</a> (<a class="el" href="namespaceEigen.html#a6c375b935a975a2d4f8047be883d2628">Eigen::Matrix6d_u</a> &amp;mat, const Json::Value &amp;value)</td></tr>
+<tr class="separator:a41427087354f2930879d070ce3f9d32e inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5de56d35b37e1a40e40fbbfbad7dc46 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ad5de56d35b37e1a40e40fbbfbad7dc46">EigenMatrix6dToJsonArray</a> (const <a class="el" href="namespaceEigen.html#a6c375b935a975a2d4f8047be883d2628">Eigen::Matrix6d_u</a> &amp;mat, Json::Value &amp;value)</td></tr>
+<tr class="separator:ad5de56d35b37e1a40e40fbbfbad7dc46 inherit pub_static_methods_classcloudViewer_1_1utility_1_1IJsonConvertible"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classcloudViewer_1_1geometry_1_1OctreeLeafNode.html" title="OctreeLeafNode base class.">OctreeLeafNode</a> base class. </p>
@@ -209,7 +220,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Clone this <a class="el" href="classcloudViewer_1_1geometry_1_1OctreeLeafNode.html" title="OctreeLeafNode base class.">OctreeLeafNode</a>. </p>
 
-<p>Implemented in <a class="el" href="classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html#a507aa72f98f489d87880423a3216e937">cloudViewer::geometry::OctreePointColorLeafNode</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html#a382c384e2a2b1318815ce88d1d59ba68">cloudViewer::geometry::OctreeColorLeafNode</a>.</p>
+<p>Implemented in <a class="el" href="classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html#a73c400a3dd2bb7a9d01a5394aec1e239">cloudViewer::geometry::PyOctreeLeafNode&lt; OctreeLeafNodeBase &gt;</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html#a507aa72f98f489d87880423a3216e937">cloudViewer::geometry::OctreePointColorLeafNode</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html#a382c384e2a2b1318815ce88d1d59ba68">cloudViewer::geometry::OctreeColorLeafNode</a>.</p>
 
 </div>
 </div>
@@ -237,7 +248,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html#ab8e1bc854482bfe80759087b28c258a5">cloudViewer::geometry::OctreePointColorLeafNode</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html#a632345dc2120c559e930d1d11b867d39">cloudViewer::geometry::OctreeColorLeafNode</a>.</p>
+<p>Implemented in <a class="el" href="classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html#a991f775883421ba79c5503119a43ccd4">cloudViewer::geometry::PyOctreeLeafNode&lt; OctreeLeafNodeBase &gt;</a>, <a class="el" href="classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html#ab8e1bc854482bfe80759087b28c258a5">cloudViewer::geometry::OctreePointColorLeafNode</a>, and <a class="el" href="classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html#a632345dc2120c559e930d1d11b867d39">cloudViewer::geometry::OctreeColorLeafNode</a>.</p>
 
 </div>
 </div>
@@ -250,7 +261,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1geometry.html">geometry</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1geometry_1_1OctreeLeafNode.html">OctreeLeafNode</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

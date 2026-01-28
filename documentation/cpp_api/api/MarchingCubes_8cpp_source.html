@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -510,11 +519,11 @@ $(document).ready(function(){initNavTree('MarchingCubes_8cpp_source.html',''); i
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;<span class="preprocessor">#else </span><span class="comment">// !NEW_ORDERING</span></div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classMarchingSquares.html#a0b8f947fcfe9c59a98edb5b2d27e8ec1">MarchingSquares::IsAmbiguous</a>( <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> idx ){ <span class="keywordflow">return</span> (idx==6) || (idx==9); }</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// NEW_ORDERING</span></div>
-<div class="line"><a name="l00430"></a><span class="lineno"><a class="line" href="classMarchingSquares.html#aed950cf41558b87974385fbe144d9e99">  430</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="classMarchingSquares.html#aed950cf41558b87974385fbe144d9e99">MarchingSquares::AddEdges</a>(<span class="keyword">const</span> <span class="keywordtype">double</span> v[<a class="code" href="classSquare.html#aad230daf469196cdc371874bc3a643b9">Square::CORNERS</a>],<span class="keywordtype">double</span> iso,<a class="code" href="classEdge.html">Edge</a>* isoEdges)</div>
+<div class="line"><a name="l00430"></a><span class="lineno"><a class="line" href="classMarchingSquares.html#aed950cf41558b87974385fbe144d9e99">  430</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="classMarchingSquares.html#aed950cf41558b87974385fbe144d9e99">MarchingSquares::AddEdges</a>(<span class="keyword">const</span> <span class="keywordtype">double</span> v[<a class="code" href="classSquare.html#aad230daf469196cdc371874bc3a643b9">Square::CORNERS</a>],<span class="keywordtype">double</span> iso,<a class="code" href="structEdge.html">Edge</a>* isoEdges)</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;{</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> idx;</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    <span class="keywordtype">int</span> nEdges=0;</div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    <a class="code" href="classEdge.html">Edge</a> e;</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    <a class="code" href="structEdge.html">Edge</a> e;</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160; </div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;    idx=<a class="code" href="classMarchingSquares.html#a50a57079107c6ad8154efd8bb1460195">GetIndex</a>(v,iso);</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160; </div>
@@ -530,8 +539,8 @@ $(document).ready(function(){initNavTree('MarchingCubes_8cpp_source.html',''); i
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    <span class="comment">/* Create the triangle */</span></div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    <span class="keywordflow">for</span> (i=0;<a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>[idx][i]!=-1;i+=2) {</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <span class="keywordflow">for</span>(j=0;j&lt;2;j++){</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;            e.<a class="code" href="classEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">p</a>[0][j]=<a class="code" href="classMarchingSquares.html#a2925a31cec07f2f9127e8b10104f4c05">vertexList</a>[<a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>[idx][i+0]][j];</div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;            e.<a class="code" href="classEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">p</a>[1][j]=<a class="code" href="classMarchingSquares.html#a2925a31cec07f2f9127e8b10104f4c05">vertexList</a>[<a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>[idx][i+1]][j];</div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;            e.<a class="code" href="structEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">p</a>[0][j]=<a class="code" href="classMarchingSquares.html#a2925a31cec07f2f9127e8b10104f4c05">vertexList</a>[<a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>[idx][i+0]][j];</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;            e.<a class="code" href="structEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">p</a>[1][j]=<a class="code" href="classMarchingSquares.html#a2925a31cec07f2f9127e8b10104f4c05">vertexList</a>[<a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>[idx][i+1]][j];</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        }</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;        isoEdges[nEdges++]=e;</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    }</div>
@@ -1124,8 +1133,6 @@ $(document).ready(function(){initNavTree('MarchingCubes_8cpp_source.html',''); i
 <div class="ttc" id="aclassCube_html_ab7886e84a6ebb9ada06e995fc8615e12"><div class="ttname"><a href="classCube.html#ab7886e84a6ebb9ada06e995fc8615e12">Cube::EdgeCorners</a></div><div class="ttdeci">static void EdgeCorners(int idx, int &amp;c1, int &amp;c2)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00194">MarchingCubes.cpp:194</a></div></div>
 <div class="ttc" id="aclassCube_html_ab89b7926463fb06ca0a75d09aecea317"><div class="ttname"><a href="classCube.html#ab89b7926463fb06ca0a75d09aecea317">Cube::FaceIndex</a></div><div class="ttdeci">static int FaceIndex(int dir, int offSet)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00122">MarchingCubes.cpp:122</a></div></div>
 <div class="ttc" id="aclassCube_html_ae1f21a66596e1b9a2a099ad27b7dbe0b"><div class="ttname"><a href="classCube.html#ae1f21a66596e1b9a2a099ad27b7dbe0b">Cube::FactorCornerIndex</a></div><div class="ttdeci">static void FactorCornerIndex(int idx, int &amp;x, int &amp;y, int &amp;z)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00104">MarchingCubes.cpp:104</a></div></div>
-<div class="ttc" id="aclassEdge_html"><div class="ttname"><a href="classEdge.html">Edge</a></div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00192">Geometry.h:192</a></div></div>
-<div class="ttc" id="aclassEdge_html_af803e62eb12a1757acb08d4b0f0bcfd1"><div class="ttname"><a href="classEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">Edge::p</a></div><div class="ttdeci">double p[2][2]</div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00194">Geometry.h:194</a></div></div>
 <div class="ttc" id="aclassMarchingCubes_html_a034b3f0d98b66320f5b0630ef2df4bef"><div class="ttname"><a href="classMarchingCubes.html#a034b3f0d98b66320f5b0630ef2df4bef">MarchingCubes::IsAmbiguous</a></div><div class="ttdeci">static bool IsAmbiguous(const double v[Cube::CORNERS], double isoValue, int faceIndex)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00820">MarchingCubes.cpp:820</a></div></div>
 <div class="ttc" id="aclassMarchingCubes_html_a3be8b064b4335f322c7c636f7d91d416"><div class="ttname"><a href="classMarchingCubes.html#a3be8b064b4335f322c7c636f7d91d416">MarchingCubes::cornerMap</a></div><div class="ttdeci">static const int cornerMap[Cube::CORNERS]</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8h_source.html#l00123">MarchingCubes.h:123</a></div></div>
 <div class="ttc" id="aclassMarchingCubes_html_a3eb80050a669e11d477319a4eca17ae8"><div class="ttname"><a href="classMarchingCubes.html#a3eb80050a669e11d477319a4eca17ae8">MarchingCubes::triangles</a></div><div class="ttdeci">static const int triangles[1&lt;&lt; Cube::CORNERS][3 *MAX_TRIANGLES+1]</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8h_source.html#l00122">MarchingCubes.h:122</a></div></div>
@@ -1160,13 +1167,15 @@ $(document).ready(function(){initNavTree('MarchingCubes_8cpp_source.html',''); i
 <div class="ttc" id="aclassSquare_html_afe2fe9960cf422ef1422bb46e669ee59"><div class="ttname"><a href="classSquare.html#afe2fe9960cf422ef1422bb46e669ee59">Square::CornerIndex</a></div><div class="ttdeci">static int CornerIndex(int x, int y)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00039">MarchingCubes.cpp:39</a></div></div>
 <div class="ttc" id="aclassTriangle_html"><div class="ttname"><a href="classTriangle.html">Triangle</a></div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00203">Geometry.h:203</a></div></div>
 <div class="ttc" id="aclassTriangle_html_a9e323cf72eaa6936188087afde830743"><div class="ttname"><a href="classTriangle.html#a9e323cf72eaa6936188087afde830743">Triangle::p</a></div><div class="ttdeci">double p[3][3]</div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00205">Geometry.h:205</a></div></div>
+<div class="ttc" id="astructEdge_html"><div class="ttname"><a href="structEdge.html">Edge</a></div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2PointProjectionTools_8cpp_source.html#l00491">PointProjectionTools.cpp:491</a></div></div>
+<div class="ttc" id="astructEdge_html_af803e62eb12a1757acb08d4b0f0bcfd1"><div class="ttname"><a href="structEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">Edge::p</a></div><div class="ttdeci">double p[2][2]</div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00194">Geometry.h:194</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_550c509dcfd15517971c4d29b99072aa.html">PoissonRecon</a></li><li class="navelem"><a class="el" href="MarchingCubes_8cpp.html">MarchingCubes.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

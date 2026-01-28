@@ -1,5 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationMethod.html" title="Base class for global optimization method." alt="" coords="5,45,244,101"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationGaussNewton.html" title="Global optimization with Gauss&#45;Newton algorithm." alt="" coords="292,5,531,61"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationLevenbergMarquardt.html" title="Global optimization with Levenberg&#45;Marquardt algorithm." alt="" coords="292,85,531,141"/>
+<area shape="rect" id="node1" href="$classcloudViewer_1_1LocalModel.html" title="Local modelization (generic interface)" alt="" coords="5,56,189,83"/>
+<area shape="rect" id="node2" href="$classDelaunayLocalModel.html" title="Delaunay 2D1/2 &quot;local modelization&quot;." alt="" coords="237,5,396,32"/>
+<area shape="rect" id="node3" href="$classLSLocalModel.html" title="Least Squares Best Fitting Plane &quot;local modelization&quot;." alt="" coords="261,56,372,83"/>
+<area shape="rect" id="node4" href="$classQuadricLocalModel.html" title="Quadric &quot;local modelization&quot;." alt="" coords="243,107,390,133"/>
 </map>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -134,14 +143,14 @@ $(document).ready(function(){initNavTree('AzureKinectRecorder_8cpp_source.html',
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a7da50f97449bb4e2127ffd73c41de963">sensor_</a>.<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectSensor.html#a5122fd929df8cb4c3d7f2413b25c87fa">Connect</a>(<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a98369fe400a4cdd38b9b81f65d675b57">device_index_</a>);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;}</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a50eb10af41c8df57c23cf8971a5fb272">   47</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a50eb10af41c8df57c23cf8971a5fb272">AzureKinectRecorder::OpenRecord</a>(<span class="keyword">const</span> std::string&amp; filename) {</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a50eb10af41c8df57c23cf8971a5fb272">   47</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a50eb10af41c8df57c23cf8971a5fb272">AzureKinectRecorder::OpenRecord</a>(<span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#af36e678de3f1a07b5fb4152886fac04d">is_record_created_</a>) {</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordflow">if</span> (K4A_FAILED(<a class="code" href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a7ac2cbf3fd95df27aaae9f926262aedf">k4a_plugin::k4a_record_create</a>(</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                    filename.c_str(), <a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a7da50f97449bb4e2127ffd73c41de963">sensor_</a>.<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectSensor.html#a47b1b5e83827301d31f0f5664b6ef674">device_</a>,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                    <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), <a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a7da50f97449bb4e2127ffd73c41de963">sensor_</a>.<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectSensor.html#a47b1b5e83827301d31f0f5664b6ef674">device_</a>,</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                    <a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#a7da50f97449bb4e2127ffd73c41de963">sensor_</a>.<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectSensor.html#a389f0d6dacdaa5e2adba1f2f5c5d048a">sensor_config_</a>.<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectSensorConfig.html#a161962c7c59d55de0c2a88655ac3ab28">ConvertToNativeConfig</a>(),</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                    &amp;<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#aaaf04ad9e83ad2656037c8e7ea088871">recording_</a>))) {</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Unable to create recording file: {}&quot;</span>,</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                filename);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        }</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordflow">if</span> (K4A_FAILED(<a class="code" href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a403ab06b3ce81a22109e860a6f71dd38">k4a_plugin::k4a_record_write_header</a>(<a class="code" href="classcloudViewer_1_1io_1_1AzureKinectRecorder.html#aaaf04ad9e83ad2656037c8e7ea088871">recording_</a>))) {</div>
@@ -194,6 +203,7 @@ $(document).ready(function(){initNavTree('AzureKinectRecorder_8cpp_source.html',
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aAzureKinectRecorder_8h_html"><div class="ttname"><a href="AzureKinectRecorder_8h.html">AzureKinectRecorder.h</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aCV__db_2include_2RGBDImage_8h_html"><div class="ttname"><a href="CV__db_2include_2RGBDImage_8h.html">RGBDImage.h</a></div></div>
 <div class="ttc" id="aColorMap_8h_html"><div class="ttname"><a href="ColorMap_8h.html">ColorMap.h</a></div></div>
 <div class="ttc" id="aK4aPlugin_8h_html"><div class="ttname"><a href="K4aPlugin_8h.html">K4aPlugin.h</a></div></div>
@@ -228,14 +238,14 @@ $(document).ready(function(){initNavTree('AzureKinectRecorder_8cpp_source.html',
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_a7ac2cbf3fd95df27aaae9f926262aedf"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#a7ac2cbf3fd95df27aaae9f926262aedf">cloudViewer::io::k4a_plugin::k4a_record_create</a></div><div class="ttdeci">k4a_result_t k4a_record_create(const char *path, k4a_device_t device, const k4a_device_configuration_t device_config, k4a_record_t *recording_handle)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00194">K4aPlugin.cpp:194</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_acc5f92f2b97b6fe7f9b1c7e371fb73c5"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#acc5f92f2b97b6fe7f9b1c7e371fb73c5">cloudViewer::io::k4a_plugin::k4a_record_write_capture</a></div><div class="ttdeci">k4a_result_t k4a_record_write_capture(k4a_record_t recording_handle, k4a_capture_t capture_handle)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00224">K4aPlugin.cpp:224</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1k4a__plugin_html_ad8f811ca9c6f20debf0073339aa8189b"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1k4a__plugin.html#ad8f811ca9c6f20debf0073339aa8189b">cloudViewer::io::k4a_plugin::k4a_record_close</a></div><div class="ttdeci">void k4a_record_close(k4a_record_t recording_handle)</div><div class="ttdef"><b>Definition:</b> <a href="K4aPlugin_8cpp_source.html#l00244">K4aPlugin.cpp:244</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_1289b311b7a3197348dd9698cec970c0.html">io</a></li><li class="navelem"><a class="el" href="dir_3c97c8b7a20a453cfd77600b85f9c063.html">sensor</a></li><li class="navelem"><a class="el" href="dir_c57d2d893b81e7f337d28d4e35f13f1e.html">azure_kinect</a></li><li class="navelem"><a class="el" href="AzureKinectRecorder_8cpp.html">AzureKinectRecorder.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

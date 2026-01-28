@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -114,8 +123,8 @@ $(document).ready(function(){initNavTree('ccLog_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="stringliteral"></span> </div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="stringliteral">    Use one of the static method to log a message</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="stringliteral">)pbdoc&quot;);</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="stringliteral">    PyccLog.def_static(</span><span class="stringliteral">&quot;TheInstance&quot;</span>, &amp;<a class="code" href="classCVLog.html#adb59a14c5d71ef63182ae29133199b0b">CVLog::TheInstance</a>, py::return_value_policy::reference);</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    PyccLog.def_static(<span class="stringliteral">&quot;LogMessage&quot;</span>, &amp;<a class="code" href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">CVLog::LogMessage</a>, <span class="stringliteral">&quot;message&quot;</span>_a, <span class="stringliteral">&quot;level&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="stringliteral">    PyccLog.def_static(</span><span class="stringliteral">&quot;TheInstance&quot;</span>, &amp;<a class="code" href="classCVLog.html#ad8512ea566298aeb657288c105289d49">CVLog::TheInstance</a>, py::return_value_policy::reference);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    PyccLog.def_static(<span class="stringliteral">&quot;LogMessage&quot;</span>, &amp;<a class="code" href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">CVLog::LogMessage</a>, <span class="stringliteral">&quot;message&quot;</span>_a, <span class="stringliteral">&quot;level&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="stringliteral">    Logs a message with the given level.</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="stringliteral"></span> </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="stringliteral">    Parameters</span></div>
@@ -132,7 +141,7 @@ $(document).ready(function(){initNavTree('ccLog_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="stringliteral">    &gt;&gt;&gt; pycc.CVLog.LogMessage(&quot;Hello, world&quot;, pycc.CVLog.MessageLevelFlags.LOG_STANDARD)</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="stringliteral">)pbdoc&quot;);</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="stringliteral">    PyccLog.def_static(</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="stringliteral">        </span><span class="stringliteral">&quot;Print&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">bool</span> (*)(<span class="keyword">const </span>QString &amp;)<span class="keyword">&gt;</span>(&amp;<a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>), <span class="stringliteral">&quot;message&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="stringliteral">        </span><span class="stringliteral">&quot;Print&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">bool</span> (*)(<span class="keyword">const </span>QString &amp;)<span class="keyword">&gt;</span>(&amp;<a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>), <span class="stringliteral">&quot;message&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="stringliteral">    Logs a message with standard severity level.</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="stringliteral"></span> </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="stringliteral">    Parameters</span></div>
@@ -148,7 +157,7 @@ $(document).ready(function(){initNavTree('ccLog_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="stringliteral">    True</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="stringliteral">)pbdoc&quot;);</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="stringliteral">    PyccLog.def_static(</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="stringliteral">        </span><span class="stringliteral">&quot;Warning&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">bool</span> (*)(<span class="keyword">const </span>QString &amp;)<span class="keyword">&gt;</span>(&amp;<a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>), <span class="stringliteral">&quot;message&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="stringliteral">        </span><span class="stringliteral">&quot;Warning&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">bool</span> (*)(<span class="keyword">const </span>QString &amp;)<span class="keyword">&gt;</span>(&amp;<a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>), <span class="stringliteral">&quot;message&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="stringliteral">    Logs a warning message</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="stringliteral"></span> </div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="stringliteral">    Parameters</span></div>
@@ -164,7 +173,7 @@ $(document).ready(function(){initNavTree('ccLog_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="stringliteral">    False</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="stringliteral">)pbdoc&quot;);</span></div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="stringliteral">    PyccLog.def_static(</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="stringliteral">        </span><span class="stringliteral">&quot;Error&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">bool</span> (*)(<span class="keyword">const </span>QString &amp;)<span class="keyword">&gt;</span>(&amp;<a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>), <span class="stringliteral">&quot;message&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="stringliteral">        </span><span class="stringliteral">&quot;Error&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">bool</span> (*)(<span class="keyword">const </span>QString &amp;)<span class="keyword">&gt;</span>(&amp;<a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>), <span class="stringliteral">&quot;message&quot;</span>_a, R<span class="stringliteral">&quot;pbdoc(</span></div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="stringliteral">    Logs an error message</span></div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="stringliteral"></span> </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="stringliteral">    This will also display a dialog</span></div>
@@ -194,19 +203,19 @@ $(document).ready(function(){initNavTree('ccLog_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
 <div class="ttc" id="accLog_8cpp_html_a3b72dd92e56be48f56ecbefb8c6b77d1"><div class="ttname"><a href="ccLog_8cpp.html#a3b72dd92e56be48f56ecbefb8c6b77d1">define_ccLog</a></div><div class="ttdeci">void define_ccLog(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="ccLog_8cpp_source.html#l00020">ccLog.cpp:20</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_adb59a14c5d71ef63182ae29133199b0b"><div class="ttname"><a href="classCVLog.html#adb59a14c5d71ef63182ae29133199b0b">CVLog::TheInstance</a></div><div class="ttdeci">static CVLog * TheInstance()</div><div class="ttdoc">Returns the static and unique instance.</div></div>
-<div class="ttc" id="aclassCVLog_html_af2ed33e05ca3cab1aa8d9292b87765ca"><div class="ttname"><a href="classCVLog.html#af2ed33e05ca3cab1aa8d9292b87765ca">CVLog::LogMessage</a></div><div class="ttdeci">static void LogMessage(const QString &amp;message, int level)</div><div class="ttdoc">Static shortcut to CVLog::logMessage.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a98c01f821dbb91ecb6c735b600f78de7"><div class="ttname"><a href="classCVLog.html#a98c01f821dbb91ecb6c735b600f78de7">CVLog::LogMessage</a></div><div class="ttdeci">static void LogMessage(const QString &amp;message, int level)</div><div class="ttdoc">Static shortcut to CVLog::logMessage.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00064">CVLog.cpp:64</a></div></div>
+<div class="ttc" id="aclassCVLog_html_ad8512ea566298aeb657288c105289d49"><div class="ttname"><a href="classCVLog.html#ad8512ea566298aeb657288c105289d49">CVLog::TheInstance</a></div><div class="ttdeci">static CVLog * TheInstance()</div><div class="ttdoc">Returns the static and unique instance.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00053">CVLog.cpp:53</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="dir_dbcd8066c330fac67641cc3989022fe2.html">qcc_db</a></li><li class="navelem"><a class="el" href="ccLog_8cpp.html">ccLog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

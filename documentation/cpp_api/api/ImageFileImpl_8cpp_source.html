@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -802,24 +811,24 @@ $(document).ready(function(){initNavTree('ImageFileImpl_8cpp_source.html',''); i
 <div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160; </div>
 <div class="line"><a name="l00785"></a><span class="lineno"><a class="line" href="classe57_1_1ImageFileImpl.html#a71259d4c59d1c5b522a44c7f570daae4">  785</a></span>&#160;   <a class="code" href="namespacee57.html#aa52d9c7d60546840767b2484ed33f0de">ustring</a> <a class="code" href="classe57_1_1ImageFileImpl.html#a71259d4c59d1c5b522a44c7f570daae4">ImageFileImpl::pathNameUnparse</a>( <span class="keywordtype">bool</span> isRelative, <span class="keyword">const</span> std::vector&lt;ustring&gt; &amp;<a class="code" href="FileIOFactory_8cpp.html#a99e2d79d16d12cf405830edf05bebce0">fields</a> )</div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;   {</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;      <a class="code" href="namespacee57.html#aa52d9c7d60546840767b2484ed33f0de">ustring</a> path;</div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;      <a class="code" href="namespacee57.html#aa52d9c7d60546840767b2484ed33f0de">ustring</a> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>;</div>
 <div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160; </div>
 <div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;      <span class="keywordflow">if</span> ( !isRelative )</div>
 <div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;      {</div>
-<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;         path.push_back( <span class="charliteral">&#39;/&#39;</span> );</div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;         <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.push_back( <span class="charliteral">&#39;/&#39;</span> );</div>
 <div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;      }</div>
 <div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160; </div>
 <div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;      <span class="keywordflow">for</span> ( <span class="keywordtype">unsigned</span> i = 0; i &lt; <a class="code" href="FileIOFactory_8cpp.html#a99e2d79d16d12cf405830edf05bebce0">fields</a>.size(); ++i )</div>
 <div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;      {</div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;         path.append( <a class="code" href="FileIOFactory_8cpp.html#a99e2d79d16d12cf405830edf05bebce0">fields</a>.at( i ) );</div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;         <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.append( <a class="code" href="FileIOFactory_8cpp.html#a99e2d79d16d12cf405830edf05bebce0">fields</a>.at( i ) );</div>
 <div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160; </div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;         <span class="keywordflow">if</span> ( i &lt; <a class="code" href="FileIOFactory_8cpp.html#a99e2d79d16d12cf405830edf05bebce0">fields</a>.size() - 1 )</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;         {</div>
-<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;            path.push_back( <span class="charliteral">&#39;/&#39;</span> );</div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;            <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>.push_back( <span class="charliteral">&#39;/&#39;</span> );</div>
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;         }</div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;      }</div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160; </div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;      <span class="keywordflow">return</span> path;</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>;</div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;   }</div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; </div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;   <span class="keywordtype">void</span> ImageFileImpl::readFileHeader( <a class="code" href="classe57_1_1CheckedFile.html">CheckedFile</a> *file, <a class="code" href="structe57_1_1E57FileHeader.html">E57FileHeader</a> &amp;header )</div>
@@ -1009,6 +1018,7 @@ $(document).ready(function(){initNavTree('ImageFileImpl_8cpp_source.html',''); i
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacee57_html"><div class="ttname"><a href="namespacee57.html">e57</a></div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00036">E57Exception.h:37</a></div></div>
 <div class="ttc" id="anamespacee57_html_a0d3c28919dc305c1072ed688e8e07216"><div class="ttname"><a href="namespacee57.html#a0d3c28919dc305c1072ed688e8e07216">e57::E57_FORMAT_MAJOR</a></div><div class="ttdeci">constexpr uint32_t E57_FORMAT_MAJOR</div><div class="ttdoc">Version numbers of ASTM standard that this library supports.</div><div class="ttdef"><b>Definition:</b> <a href="E57Version_8h_source.html#l00010">E57Version.h:10</a></div></div>
 <div class="ttc" id="anamespacee57_html_a378ea3f2fe1cb6817b037d1fff975b5b"><div class="ttname"><a href="namespacee57.html#a378ea3f2fe1cb6817b037d1fff975b5b">e57::ReadChecksumPolicy</a></div><div class="ttdeci">int ReadChecksumPolicy</div><div class="ttdoc">Specifies the percentage of checksums which are verified when reading an ImageFile (0-100%).</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00095">E57Format.h:95</a></div></div>
@@ -1027,7 +1037,7 @@ $(document).ready(function(){initNavTree('ImageFileImpl_8cpp_source.html',''); i
 <div class="ttc" id="anamespacee57_html_ac51cd6698affda7bd6180e4ff19e2c99"><div class="ttname"><a href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">e57::toString</a></div><div class="ttdeci">std::string toString(T x)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00080">Common.h:80</a></div></div>
 <div class="ttc" id="anamespacee57_html_ae10972d72a9068d0a441f08af14d283e"><div class="ttname"><a href="namespacee57.html#ae10972d72a9068d0a441f08af14d283e">e57::StringList</a></div><div class="ttdeci">std::vector&lt; std::string &gt; StringList</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00193">Common.h:193</a></div></div>
 <div class="ttc" id="anamespacee57_html_af084d6ee79fc44eb0bf7777241211930"><div class="ttname"><a href="namespacee57.html#af084d6ee79fc44eb0bf7777241211930">e57::space</a></div><div class="ttdeci">std::string space(size_t n)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00073">Common.h:73</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="astructe57_1_1E57FileHeader_html"><div class="ttname"><a href="structe57_1_1E57FileHeader.html">e57::E57FileHeader</a></div><div class="ttdef"><b>Definition:</b> <a href="ImageFileImpl_8cpp_source.html#l00046">ImageFileImpl.cpp:47</a></div></div>
 <div class="ttc" id="astructe57_1_1E57FileHeader_html_a221c39380beaf582e6104348e6b62ee8"><div class="ttname"><a href="structe57_1_1E57FileHeader.html#a221c39380beaf582e6104348e6b62ee8">e57::E57FileHeader::xmlLogicalLength</a></div><div class="ttdeci">uint64_t xmlLogicalLength</div><div class="ttdef"><b>Definition:</b> <a href="ImageFileImpl_8cpp_source.html#l00053">ImageFileImpl.cpp:53</a></div></div>
 <div class="ttc" id="astructe57_1_1E57FileHeader_html_a48e503440f697da51ead78b3be088725"><div class="ttname"><a href="structe57_1_1E57FileHeader.html#a48e503440f697da51ead78b3be088725">e57::E57FileHeader::minorVersion</a></div><div class="ttdeci">uint32_t minorVersion</div><div class="ttdef"><b>Definition:</b> <a href="ImageFileImpl_8cpp_source.html#l00050">ImageFileImpl.cpp:50</a></div></div>
@@ -1047,7 +1057,7 @@ $(document).ready(function(){initNavTree('ImageFileImpl_8cpp_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d5815e19ad8e9536ffb8de8e09ded2ce.html">src</a></li><li class="navelem"><a class="el" href="ImageFileImpl_8cpp.html">ImageFileImpl.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

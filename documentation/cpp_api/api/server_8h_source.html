@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -189,7 +198,7 @@ $(document).ready(function(){initNavTree('server_8h_source.html',''); initResiza
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="classflann_1_1mpi_1_1Server.html#ab7bb9f521dcfae6fc9bb67f7ea6f16ee">  102</a></span>&#160;    <a class="code" href="classflann_1_1mpi_1_1Server.html#ab7bb9f521dcfae6fc9bb67f7ea6f16ee">Server</a>(<span class="keyword">const</span> std::string&amp; filename, <span class="keyword">const</span> std::string&amp; dataset, <span class="keywordtype">short</span> port, <span class="keyword">const</span> <a class="code" href="namespaceflann.html#ab8adcfdff6eeb58be315590b8497c503">IndexParams</a>&amp; <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) :</div>
+<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="classflann_1_1mpi_1_1Server.html#ab7bb9f521dcfae6fc9bb67f7ea6f16ee">  102</a></span>&#160;    <a class="code" href="classflann_1_1mpi_1_1Server.html#ab7bb9f521dcfae6fc9bb67f7ea6f16ee">Server</a>(<span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keyword">const</span> std::string&amp; dataset, <span class="keywordtype">short</span> port, <span class="keyword">const</span> <a class="code" href="namespaceflann.html#ab8adcfdff6eeb58be315590b8497c503">IndexParams</a>&amp; <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) :</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        port_(port)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    {</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        boost::mpi::communicator world;</div>
@@ -197,7 +206,7 @@ $(document).ready(function(){initNavTree('server_8h_source.html',''); initResiza
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;Reading dataset and building index...&quot;</span>;</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;            std::flush(std::cout);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        }</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        index_ = <span class="keyword">new</span> <a class="code" href="classflann_1_1mpi_1_1Index.html">FlannIndex</a>(filename, dataset, <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        index_ = <span class="keyword">new</span> <a class="code" href="classflann_1_1mpi_1_1Index.html">FlannIndex</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, dataset, <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>);</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        index_-&gt;<a class="code" href="classflann_1_1mpi_1_1Index.html#a24caf23a8a98e2df2f762fbc3377b1c8">buildIndex</a>();</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        world.barrier(); <span class="comment">// wait for data to be loaded and indexes to be created</span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <span class="keywordflow">if</span> (world.rank()==0) {</div>
@@ -241,6 +250,7 @@ $(document).ready(function(){initNavTree('server_8h_source.html',''); initResiza
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;} <span class="comment">// namespace flann</span></div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// MPI_SERVER_H_</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aclassflann_1_1Matrix_html"><div class="ttname"><a href="classflann_1_1Matrix.html">flann::Matrix&lt; int &gt;</a></div></div>
 <div class="ttc" id="aclassflann_1_1Matrix_html_ad9933c226065c487b45dbd90f6e22685"><div class="ttname"><a href="classflann_1_1Matrix.html#ad9933c226065c487b45dbd90f6e22685">flann::Matrix::ptr</a></div><div class="ttdeci">T * ptr() const</div><div class="ttdef"><b>Definition:</b> <a href="util_2matrix_8h_source.html#l00127">matrix.h:127</a></div></div>
@@ -270,7 +280,7 @@ $(document).ready(function(){initNavTree('server_8h_source.html',''); initResiza
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_186106f66c937cacb1ffede1d0bee71a.html">FLANN</a></li><li class="navelem"><a class="el" href="dir_08e1a2d114469b134ad3ab74b19bb962.html">mpi</a></li><li class="navelem"><a class="el" href="server_8h.html">server.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

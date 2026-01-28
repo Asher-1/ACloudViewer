@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,7 +110,7 @@ $(document).ready(function(){initNavTree('qCanupoDisclaimerDialog_8h_source.html
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;ui_trainDisclaimerDlg.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// ECV_PLUGINS</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;QMainWindow&gt;</span></div>
@@ -117,11 +126,11 @@ $(document).ready(function(){initNavTree('qCanupoDisclaimerDialog_8h_source.html
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">// whether disclaimer has already been displayed (and accepted) or not</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="qCanupoDisclaimerDialog_8h.html#af5dfe641f70752524c4007cbdff57a03">   30</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#af5dfe641f70752524c4007cbdff57a03">s_trainDisclaimerAccepted</a> = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="qCanupoDisclaimerDialog_8h.html#a8cd5f8ba1427f441eb97371af576dcdc">   32</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#a8cd5f8ba1427f441eb97371af576dcdc">ShowTrainDisclaimer</a>(ecvMainAppInterface* app) {</div>
+<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="qCanupoDisclaimerDialog_8h.html#a8cd5f8ba1427f441eb97371af576dcdc">   32</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#a8cd5f8ba1427f441eb97371af576dcdc">ShowTrainDisclaimer</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app) {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="qCanupoDisclaimerDialog_8h.html#af5dfe641f70752524c4007cbdff57a03">s_trainDisclaimerAccepted</a>) {</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        <span class="comment">// if the user &quot;cancels&quot; it, then he refuses the diclaimer!</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <a class="code" href="qCanupoDisclaimerDialog_8h.html#af5dfe641f70752524c4007cbdff57a03">s_trainDisclaimerAccepted</a> =</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                <a class="code" href="classTrainDisclaimerDialog.html">TrainDisclaimerDialog</a>(app ? app-&gt;getMainWindow() : 0).exec();</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                <a class="code" href="classTrainDisclaimerDialog.html">TrainDisclaimerDialog</a>(app ? app-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>() : 0).exec();</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    }</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#af5dfe641f70752524c4007cbdff57a03">s_trainDisclaimerAccepted</a>;</div>
@@ -139,11 +148,11 @@ $(document).ready(function(){initNavTree('qCanupoDisclaimerDialog_8h_source.html
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">// whether disclaimer has already been displayed (and accepted) or not</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="qCanupoDisclaimerDialog_8h.html#aa40dc3f7a29e1120f497b2738cd6383d">   54</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#aa40dc3f7a29e1120f497b2738cd6383d">s_classifyDisclaimerAccepted</a> = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="qCanupoDisclaimerDialog_8h.html#a5f437d970402ea3cab410cc40d7a93a9">   56</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#a5f437d970402ea3cab410cc40d7a93a9">ShowClassifyDisclaimer</a>(ecvMainAppInterface* app) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="qCanupoDisclaimerDialog_8h.html#a5f437d970402ea3cab410cc40d7a93a9">   56</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#a5f437d970402ea3cab410cc40d7a93a9">ShowClassifyDisclaimer</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app) {</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="qCanupoDisclaimerDialog_8h.html#aa40dc3f7a29e1120f497b2738cd6383d">s_classifyDisclaimerAccepted</a>) {</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="comment">// if the user &quot;cancels&quot; it, then he refuses the diclaimer!</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <a class="code" href="qCanupoDisclaimerDialog_8h.html#aa40dc3f7a29e1120f497b2738cd6383d">s_classifyDisclaimerAccepted</a> =</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                <a class="code" href="classClassifyDisclaimerDialog.html">ClassifyDisclaimerDialog</a>(app ? app-&gt;getMainWindow() : 0).exec();</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                <a class="code" href="classClassifyDisclaimerDialog.html">ClassifyDisclaimerDialog</a>(app ? app-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>() : 0).exec();</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    }</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="qCanupoDisclaimerDialog_8h.html#aa40dc3f7a29e1120f497b2738cd6383d">s_classifyDisclaimerAccepted</a>;</div>
@@ -152,6 +161,9 @@ $(document).ready(function(){initNavTree('qCanupoDisclaimerDialog_8h_source.html
 <div class="ttc" id="aclassClassifyDisclaimerDialog_html_a2a9c763cbebc7e53dfcbeb710c426e60"><div class="ttname"><a href="classClassifyDisclaimerDialog.html#a2a9c763cbebc7e53dfcbeb710c426e60">ClassifyDisclaimerDialog::ClassifyDisclaimerDialog</a></div><div class="ttdeci">ClassifyDisclaimerDialog(QWidget *parent=0)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoDisclaimerDialog_8h_source.html#l00047">qCanupoDisclaimerDialog.h:47</a></div></div>
 <div class="ttc" id="aclassTrainDisclaimerDialog_html"><div class="ttname"><a href="classTrainDisclaimerDialog.html">TrainDisclaimerDialog</a></div><div class="ttdoc">Dialog for displaying the 3DSMAC/UEB disclaimer.</div><div class="ttdef"><b>Definition:</b> <a href="q3DMASCDisclaimerDialog_8h_source.html#l00020">q3DMASCDisclaimerDialog.h:20</a></div></div>
 <div class="ttc" id="aclassTrainDisclaimerDialog_html_a1ea54b185eb0b3906d74fcdcf7282907"><div class="ttname"><a href="classTrainDisclaimerDialog.html#a1ea54b185eb0b3906d74fcdcf7282907">TrainDisclaimerDialog::TrainDisclaimerDialog</a></div><div class="ttdeci">TrainDisclaimerDialog(QWidget *parent=0)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoDisclaimerDialog_8h_source.html#l00023">qCanupoDisclaimerDialog.h:23</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
 <div class="ttc" id="aqCanupoDisclaimerDialog_8h_html_a5f437d970402ea3cab410cc40d7a93a9"><div class="ttname"><a href="qCanupoDisclaimerDialog_8h.html#a5f437d970402ea3cab410cc40d7a93a9">ShowClassifyDisclaimer</a></div><div class="ttdeci">static bool ShowClassifyDisclaimer(ecvMainAppInterface *app)</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoDisclaimerDialog_8h_source.html#l00056">qCanupoDisclaimerDialog.h:56</a></div></div>
 <div class="ttc" id="aqCanupoDisclaimerDialog_8h_html_a8cd5f8ba1427f441eb97371af576dcdc"><div class="ttname"><a href="qCanupoDisclaimerDialog_8h.html#a8cd5f8ba1427f441eb97371af576dcdc">ShowTrainDisclaimer</a></div><div class="ttdeci">static bool ShowTrainDisclaimer(ecvMainAppInterface *app)</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoDisclaimerDialog_8h_source.html#l00032">qCanupoDisclaimerDialog.h:32</a></div></div>
@@ -163,7 +175,7 @@ $(document).ready(function(){initNavTree('qCanupoDisclaimerDialog_8h_source.html
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_039c29ee5c0bf40195ae620976ff5812.html">qCanupo</a></li><li class="navelem"><a class="el" href="dir_7d54bddc563c3ca5f78c49b09d346ce1.html">include</a></li><li class="navelem"><a class="el" href="qCanupoDisclaimerDialog_8h.html">qCanupoDisclaimerDialog.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

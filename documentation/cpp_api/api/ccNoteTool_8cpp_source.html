@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -107,7 +116,7 @@ $(document).ready(function(){initNavTree('ccNoteTool_8cpp_source.html',''); init
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;                             <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud,</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;                             <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; P) {</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <span class="comment">// get note text</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    QString note = QInputDialog::getText(<a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;getMainWindow(), <span class="stringliteral">&quot;Note&quot;</span>,</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    QString note = QInputDialog::getText(<a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>(), <span class="stringliteral">&quot;Note&quot;</span>,</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;                                         <span class="stringliteral">&quot;Contents:&quot;</span>, QLineEdit::Normal,</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;                                         <span class="stringliteral">&quot;Write note here.&quot;</span>);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
@@ -118,25 +127,25 @@ $(document).ready(function(){initNavTree('ccNoteTool_8cpp_source.html',''); init
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="comment">// create a 1-point lineation object (highlights note-location)</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classccPointPair.html">ccPointPair</a>* l = <span class="keyword">new</span> <a class="code" href="classccNote.html">ccNote</a>(cloud);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    l-&gt;<a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(note);</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    l-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(itemIdx);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    l-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(itemIdx);</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="comment">// find insert point</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* notesFolder = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;getChildrenNumber(); i++) {</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;getChild(i)-&gt;getName() == <span class="stringliteral">&quot;notes&quot;</span>) {</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;            notesFolder = <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;getChild(i);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;getChildrenNumber(); i++) {</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(i)-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>() == <span class="stringliteral">&quot;notes&quot;</span>) {</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;            notesFolder = <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(i);</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;            <span class="comment">// also search first-level children of root node (when files are</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;            <span class="comment">// re-loaded this is where things will sit)</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> c = 0;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                 c &lt; <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;getChild(i)-&gt;getChildrenNumber();</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                 c &lt; <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;getChild(i)-&gt;getChildrenNumber();</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                 c++) {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                            -&gt;getChild(i)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                            -&gt;getChild(c)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                            -&gt;getName() == <span class="stringliteral">&quot;notes&quot;</span>) {</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                            -&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(i)</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                            -&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(c)</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                            -&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>() == <span class="stringliteral">&quot;notes&quot;</span>) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                    notesFolder =</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                            <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;getChild(i)-&gt;getChild(c);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                            <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(i)-&gt;<a class="code" href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">getChild</a>(c);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                }</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            }</div>
@@ -148,13 +157,13 @@ $(document).ready(function(){initNavTree('ccNoteTool_8cpp_source.html',''); init
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    }</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">if</span> (!notesFolder) {</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        notesFolder = <span class="keyword">new</span> <a class="code" href="classccHObject.html">ccHObject</a>(<span class="stringliteral">&quot;notes&quot;</span>);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;addChild(notesFolder);</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;addToDB(notesFolder, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(notesFolder);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(notesFolder, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    }</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="comment">// add to scene graph</span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    notesFolder-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(l);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;addToDB(l);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(l);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">// called when the tool is set to active (for initialization)</span></div>
@@ -170,25 +179,30 @@ $(document).ready(function(){initNavTree('ccNoteTool_8cpp_source.html',''); init
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccHObject_html_a7ee62cff1282c3f7d99acdabfa709fc0"><div class="ttname"><a href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div></div>
+<div class="ttc" id="aclassccHObject_html_af91997055e11ec9c8c5a6bfde115b629"><div class="ttname"><a href="classccHObject.html#af91997055e11ec9c8c5a6bfde115b629">ccHObject::getChild</a></div><div class="ttdeci">ccHObject * getChild(unsigned childPos) const</div><div class="ttdoc">Returns the ith child.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00325">ecvHObject.h:325</a></div></div>
 <div class="ttc" id="aclassccNoteTool_html_a100a0ec1fb2d92c6a94e3f4f8d9af361"><div class="ttname"><a href="classccNoteTool.html#a100a0ec1fb2d92c6a94e3f4f8d9af361">ccNoteTool::~ccNoteTool</a></div><div class="ttdeci">virtual ~ccNoteTool()</div><div class="ttdef"><b>Definition:</b> <a href="ccNoteTool_8cpp_source.html#l00012">ccNoteTool.cpp:12</a></div></div>
 <div class="ttc" id="aclassccNoteTool_html_a63a71be6d37ac3c196e9195dc7534515"><div class="ttname"><a href="classccNoteTool.html#a63a71be6d37ac3c196e9195dc7534515">ccNoteTool::toolActivated</a></div><div class="ttdeci">virtual void toolActivated() override</div><div class="ttdef"><b>Definition:</b> <a href="ccNoteTool_8cpp_source.html#l00071">ccNoteTool.cpp:71</a></div></div>
 <div class="ttc" id="aclassccNoteTool_html_a6bb0dc716eb2d9de0652f7fd47b41d50"><div class="ttname"><a href="classccNoteTool.html#a6bb0dc716eb2d9de0652f7fd47b41d50">ccNoteTool::toolDisactivated</a></div><div class="ttdeci">virtual void toolDisactivated() override</div><div class="ttdef"><b>Definition:</b> <a href="ccNoteTool_8cpp_source.html#l00076">ccNoteTool.cpp:76</a></div></div>
 <div class="ttc" id="aclassccNoteTool_html_aa47d27ce39ffefe255ff673b1e56a0a9"><div class="ttname"><a href="classccNoteTool.html#aa47d27ce39ffefe255ff673b1e56a0a9">ccNoteTool::pointPicked</a></div><div class="ttdeci">void pointPicked(ccHObject *insertPoint, unsigned itemIdx, ccPointCloud *cloud, const CCVector3 &amp;P) override</div><div class="ttdef"><b>Definition:</b> <a href="ccNoteTool_8cpp_source.html#l00015">ccNoteTool.cpp:15</a></div></div>
 <div class="ttc" id="aclassccNoteTool_html_afae7ddec1b89351fbae38010917df4ef"><div class="ttname"><a href="classccNoteTool.html#afae7ddec1b89351fbae38010917df4ef">ccNoteTool::ccNoteTool</a></div><div class="ttdeci">ccNoteTool()</div><div class="ttdef"><b>Definition:</b> <a href="ccNoteTool_8cpp_source.html#l00010">ccNoteTool.cpp:10</a></div></div>
 <div class="ttc" id="aclassccNote_html"><div class="ttname"><a href="classccNote.html">ccNote</a></div><div class="ttdef"><b>Definition:</b> <a href="ccNote_8h_source.html#l00017">ccNote.h:17</a></div></div>
+<div class="ttc" id="aclassccObject_html_a51a9dd33f5ee0c27f1d09dbc9c3136e4"><div class="ttname"><a href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">ccObject::getName</a></div><div class="ttdeci">virtual QString getName() const</div><div class="ttdoc">Returns object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00072">ecvObject.h:72</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPointPair_html"><div class="ttname"><a href="classccPointPair.html">ccPointPair</a></div><div class="ttdef"><b>Definition:</b> <a href="ccPointPair_8h_source.html#l00023">ccPointPair.h:23</a></div></div>
 <div class="ttc" id="aclassccTool_html"><div class="ttname"><a href="classccTool.html">ccTool</a></div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00018">ccTool.h:18</a></div></div>
 <div class="ttc" id="aclassccTool_html_a53c6789c75db4fa02d4f2205ad7f99e8"><div class="ttname"><a href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">ccTool::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00067">ccTool.h:67</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccNoteTool_8cpp.html">ccNoteTool.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -220,9 +229,9 @@ $(document).ready(function(){initNavTree('FilamentGeometryBuffersBuilder_8cpp_so
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    {</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        baseVertices-&gt;<a class="code" href="classccPointCloud.html#ad04a001c5ed1b1e3e2fb45dc9c491f7f">shrinkToFit</a>();</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        mesh-&gt;<a class="code" href="classccMesh.html#ae747fd2124787800f03ec3b3a5215094">shrinkToFit</a>();</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <a class="code" href="classNormsIndexesTableType.html">NormsIndexesTableType</a>* <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a> = mesh-&gt;<a class="code" href="classccMesh.html#a1457fde9ba6325d0f446f82d73b95b73">getTriNormsTable</a>();</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>) {</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;            <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>-&gt;shrink_to_fit();</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <a class="code" href="classNormsIndexesTableType.html">NormsIndexesTableType</a>* <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a> = mesh-&gt;<a class="code" href="classccMesh.html#a1457fde9ba6325d0f446f82d73b95b73">getTriNormsTable</a>();</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>) {</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;            <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>-&gt;shrink_to_fit();</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        }</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    }</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
@@ -320,7 +329,7 @@ $(document).ready(function(){initNavTree('FilamentGeometryBuffersBuilder_8cpp_so
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keyword">using</span> GT = <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434">CV_TYPES::GeometryType</a>;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordflow">switch</span> (geometry.<a class="code" href="classccHObject.html#afc2bf64b81f149ab17b5c38c1fffedba">getClassID</a>()) {</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">GT::MESH</a>:</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordflow">case</span> GT::MESH:</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;            <span class="keywordflow">return</span> std::make_unique&lt;TriangleMeshBuffersBuilder&gt;(</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                    <span class="keyword">static_cast&lt;</span><span class="keyword">const </span><a class="code" href="classccMesh.html">ccMesh</a>&amp;<span class="keyword">&gt;</span>(geometry));</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160; </div>
@@ -446,6 +455,7 @@ $(document).ready(function(){initNavTree('FilamentGeometryBuffersBuilder_8cpp_so
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1TemporaryMeshBuilder_html_a9eb3088e5fd785ebd611d53b3d6b8126"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1TemporaryMeshBuilder.html#a9eb3088e5fd785ebd611d53b3d6b8126">cloudViewer::visualization::rendering::TemporaryMeshBuilder::TemporaryMeshBuilder</a></div><div class="ttdeci">TemporaryMeshBuilder(std::shared_ptr&lt; ccMesh &gt; mesh)</div><div class="ttdef"><b>Definition:</b> <a href="FilamentGeometryBuffersBuilder_8cpp_source.html#l00221">FilamentGeometryBuffersBuilder.cpp:221</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1TriangleMeshBuffersBuilder_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1TriangleMeshBuffersBuilder.html">cloudViewer::visualization::rendering::TriangleMeshBuffersBuilder</a></div><div class="ttdef"><b>Definition:</b> <a href="FilamentGeometryBuffersBuilder_8h_source.html#l00110">FilamentGeometryBuffersBuilder.h:110</a></div></div>
 <div class="ttc" id="aclassecvOrientedBBox_html"><div class="ttname"><a href="classecvOrientedBBox.html">ecvOrientedBBox</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvOrientedBBox_8h_source.html#l00029">ecvOrientedBBox.h:30</a></div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="acloudViewer_2t_2geometry_2LineSet_8h_html"><div class="ttname"><a href="cloudViewer_2t_2geometry_2LineSet_8h.html">LineSet.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
@@ -453,9 +463,7 @@ $(document).ready(function(){initNavTree('FilamentGeometryBuffersBuilder_8cpp_so
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvOrientedBBox_8h_html"><div class="ttname"><a href="ecvOrientedBBox_8h.html">ecvOrientedBBox.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434">CV_TYPES::GeometryType</a></div><div class="ttdeci">GeometryType</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00101">CVTypes.h:101</a></div></div>
-<div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a></div><div class="ttdeci">@ MESH</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00105">CVTypes.h:105</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a88c17a878affd8a4aeecda9de3273cc7"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a88c17a878affd8a4aeecda9de3273cc7">CV_TYPES::VOXEL_GRID</a></div><div class="ttdeci">@ VOXEL_GRID</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00151">CVTypes.h:151</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a97e47a2d33c11c393908dd500c28b4d1"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a97e47a2d33c11c393908dd500c28b4d1">CV_TYPES::LINESET</a></div><div class="ttdeci">@ LINESET</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00152">CVTypes.h:152</a></div></div>
@@ -464,7 +472,7 @@ $(document).ready(function(){initNavTree('FilamentGeometryBuffersBuilder_8cpp_so
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434afdbedf4395eac9a7d5430f360a13ea99"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434afdbedf4395eac9a7d5430f360a13ea99">CV_TYPES::ORIENTED_BBOX</a></div><div class="ttdeci">@ ORIENTED_BBOX</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00155">CVTypes.h:155</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a3ad6422d3fb0907abb608368ee88a0c3"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a3ad6422d3fb0907abb608368ee88a0c3">cloudViewer::geometry::PointCloud</a></div><div class="ttdeci">::ccPointCloud PointCloud</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2PointCloud_8h_source.html#l00019">PointCloud.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a489adbc8a7e0672574853a19deb01076"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a489adbc8a7e0672574853a19deb01076">cloudViewer::geometry::TriangleMesh</a></div><div class="ttdeci">::ccMesh TriangleMesh</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2TriangleMesh_8h_source.html#l00019">TriangleMesh.h:19</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a0c8f90db0d53db509d716984b4ae1fda"><div class="ttname"><a href="namespaceknncpp.html#a0c8f90db0d53db509d716984b4ae1fda">knncpp::Vector3i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 3, 1 &gt; Vector3i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00030">knncpp.h:30</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a9e1eece753ad84dcb69c8ba901f38a4b"><div class="ttname"><a href="namespaceknncpp.html#a9e1eece753ad84dcb69c8ba901f38a4b">knncpp::Vector2i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 2, 1 &gt; Vector2i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00029">knncpp.h:29</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a586ebda6177a4d5f2c287cf4fcf3a20b"><div class="ttname"><a href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a></div><div class="ttdeci">cloudViewer::DgmOctree * octree</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00037">qCanupoTools.cpp:37</a></div></div>
@@ -476,7 +484,7 @@ $(document).ready(function(){initNavTree('FilamentGeometryBuffersBuilder_8cpp_so
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_b499a281afeca67f84e0ab4cbebb6d96.html">rendering</a></li><li class="navelem"><a class="el" href="dir_d7c0e608d18fcb568181e1612c5c2a19.html">filament</a></li><li class="navelem"><a class="el" href="FilamentGeometryBuffersBuilder_8cpp.html">FilamentGeometryBuffersBuilder.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

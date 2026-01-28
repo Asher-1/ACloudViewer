@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -114,7 +123,7 @@ $(document).ready(function(){initNavTree('ccTopologyTool_8cpp_source.html',''); 
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <a class="code" href="classccGeoObject.html">ccGeoObject</a>* o = <a class="code" href="classccGeoObject.html#a166189dd133937ea4f6dbc9f918b6562">ccGeoObject::getGeoObjectParent</a>(selectedEntities[0]);</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordflow">if</span> (o) {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        <span class="comment">// yes it is a GeoObject - have we got a first point?</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        <a class="code" href="classccHObject.html">ccHObject</a>* first = <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dbRootObject()-&gt;find(<a class="code" href="classccTopologyTool.html#a2fa06ae2de69a2038a5e336dc7927265">m_firstPick</a>);</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        <a class="code" href="classccHObject.html">ccHObject</a>* first = <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">dbRootObject</a>()-&gt;<a class="code" href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">find</a>(<a class="code" href="classccTopologyTool.html#a2fa06ae2de69a2038a5e336dc7927265">m_firstPick</a>);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <span class="keywordflow">if</span> (!first)  <span class="comment">// no... this is the first point (m_firstPick is invalid)</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        {</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;            <a class="code" href="classccTopologyTool.html#a2fa06ae2de69a2038a5e336dc7927265">m_firstPick</a> = o-&gt;<a class="code" href="classccObject.html#a5a48a5bd04d1125df52b76dce8ac9c71">getUniqueID</a>();</div>
@@ -136,8 +145,8 @@ $(document).ready(function(){initNavTree('ccTopologyTool_8cpp_source.html',''); 
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        }</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="comment">// no - throw error</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;dispToConsole(<span class="stringliteral">&quot;[ccCompass] Please select a GeoObject&quot;</span>,</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <a class="code" href="classccTool.html#a53c6789c75db4fa02d4f2205ad7f99e8">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;[ccCompass] Please select a GeoObject&quot;</span>,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    }</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;}</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
@@ -170,6 +179,7 @@ $(document).ready(function(){initNavTree('ccTopologyTool_8cpp_source.html',''); 
 <div class="ttc" id="aclassccGeoObject_html_a166189dd133937ea4f6dbc9f918b6562"><div class="ttname"><a href="classccGeoObject.html#a166189dd133937ea4f6dbc9f918b6562">ccGeoObject::getGeoObjectParent</a></div><div class="ttdeci">static ccGeoObject * getGeoObjectParent(ccHObject *object)</div><div class="ttdef"><b>Definition:</b> <a href="ccGeoObject_8cpp_source.html#l00382">ccGeoObject.cpp:382</a></div></div>
 <div class="ttc" id="aclassccGeoObject_html_a7cc5af2d8b3bb7d548715e42a660bdb5"><div class="ttname"><a href="classccGeoObject.html#a7cc5af2d8b3bb7d548715e42a660bdb5">ccGeoObject::addRelationTo</a></div><div class="ttdeci">ccTopologyRelation * addRelationTo(ccGeoObject *obj2, int type, ecvMainAppInterface *app)</div><div class="ttdef"><b>Definition:</b> <a href="ccGeoObject_8cpp_source.html#l00162">ccGeoObject.cpp:162</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
+<div class="ttc" id="aclassccHObject_html_a275b9f9c8d4605c01060edaa6821ddff"><div class="ttname"><a href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">ccHObject::find</a></div><div class="ttdeci">ccHObject * find(unsigned uniqueID)</div><div class="ttdoc">Finds an entity in this object hierarchy.</div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccObject_html_a5a48a5bd04d1125df52b76dce8ac9c71"><div class="ttname"><a href="classccObject.html#a5a48a5bd04d1125df52b76dce8ac9c71">ccObject::getUniqueID</a></div><div class="ttdeci">virtual unsigned getUniqueID() const</div><div class="ttdoc">Returns object unique ID.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00086">ecvObject.h:86</a></div></div>
 <div class="ttc" id="aclassccTool_html"><div class="ttname"><a href="classccTool.html">ccTool</a></div><div class="ttdef"><b>Definition:</b> <a href="ccTool_8h_source.html#l00018">ccTool.h:18</a></div></div>
@@ -186,13 +196,16 @@ $(document).ready(function(){initNavTree('ccTopologyTool_8cpp_source.html',''); 
 <div class="ttc" id="aclassccTopologyTool_html_acaf8f41b4edfaae166727cf1664cc214"><div class="ttname"><a href="classccTopologyTool.html#acaf8f41b4edfaae166727cf1664cc214">ccTopologyTool::toolDisactivated</a></div><div class="ttdeci">virtual void toolDisactivated() override</div><div class="ttdef"><b>Definition:</b> <a href="ccTopologyTool_8cpp_source.html#l00062">ccTopologyTool.cpp:62</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a634adac6cd40f618d48a390a8962e018a0cd1b7b8e2d78a513695bee03c8c5109"><div class="ttname"><a href="classecvDisplayTools.html#a634adac6cd40f618d48a390a8962e018a0cd1b7b8e2d78a513695bee03c8c5109">ecvDisplayTools::LOWER_LEFT_MESSAGE</a></div><div class="ttdeci">@ LOWER_LEFT_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l00176">ecvDisplayTools.h:176</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_ae0504f22784cbb792149969c018e1627"><div class="ttname"><a href="classecvDisplayTools.html#ae0504f22784cbb792149969c018e1627">ecvDisplayTools::DisplayNewMessage</a></div><div class="ttdeci">static void DisplayNewMessage(const QString &amp;message, MessagePosition pos, bool append=false, int displayMaxDelay_sec=2, MessageType type=CUSTOM_MESSAGE)</div><div class="ttdoc">Displays a status message in the bottom-left corner.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a0a3377f12cac27db6c5720c082dde4a8"><div class="ttname"><a href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject</a></div><div class="ttdeci">virtual ccHObject * dbRootObject()=0</div><div class="ttdoc">Returns DB root (as a ccHObject)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccTopologyTool_8cpp.html">ccTopologyTool.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

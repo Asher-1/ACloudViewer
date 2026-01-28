@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -137,7 +146,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;            <a class="code" href="classWaveformDescriptor.html">WaveformDescriptor</a> descriptor;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;            <span class="keywordflow">if</span> (!<a class="code" href="LasWaveformLoader_8cpp.html#afb1653a2d1f9f551adba54955853fcb9">ParseWavepacketDescriptorVlr</a>(vlr, descriptor))</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            {</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid Descriptor VLR&quot;</span>);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid Descriptor VLR&quot;</span>);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;            }</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            {</div>
@@ -154,22 +163,22 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    : isPointFormatExtended(laszipHeader.point_data_format &gt;= 6)</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;{</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <a class="code" href="structLasWaveformLoader.html#ae05f84dd4f6004eda9a9d1e05983db71">descriptors</a> = <a class="code" href="LasWaveformLoader_8cpp.html#a14faf835aba78c1886cb75e0297517e1">ParseWaveformDescriptorVlrs</a>(laszipHeader.vlrs, laszipHeader.number_of_variable_length_records);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[LAS] %d Waveform Packet Descriptor VLRs found&quot;</span>, <a class="code" href="structLasWaveformLoader.html#ae05f84dd4f6004eda9a9d1e05983db71">descriptors</a>.size());</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[LAS] %d Waveform Packet Descriptor VLRs found&quot;</span>, <a class="code" href="structLasWaveformLoader.html#ae05f84dd4f6004eda9a9d1e05983db71">descriptors</a>.size());</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    QFile fwfDataSource;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span> (laszipHeader.start_of_waveform_data_packet_record != 0)</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    {</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(<span class="stringliteral">&quot;[LAS] Waveform data is located within the las file&quot;</span>);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;[LAS] Waveform data is located within the las file&quot;</span>);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        fwfDataSource.setFileName(lasFilename);</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="keywordflow">if</span> (!fwfDataSource.open(QFile::ReadOnly))</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        {</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to re open the las file: %1&quot;</span>).arg(fwfDataSource.errorString()));</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to re open the las file: %1&quot;</span>).arg(fwfDataSource.errorString()));</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        }</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keywordflow">if</span> (!fwfDataSource.seek(laszipHeader.start_of_waveform_data_packet_record))</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        {</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to find the associated waveform data packets header&quot;</span>));</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to find the associated waveform data packets header&quot;</span>));</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        }</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
@@ -178,20 +187,20 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        stream &gt;&gt; evlrHeader;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">if</span> (stream.status() == QDataStream::Status::ReadPastEnd)</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to read the associated waveform data packets&quot;</span>));</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to read the associated waveform data packets&quot;</span>));</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        }</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (!evlrHeader.<a class="code" href="structLasDetails_1_1EvlrHeader.html#ab8ca61c094b84767eb3c4f0784327b99">isWaveFormDataPackets</a>())</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        {</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid waveform EVLR&quot;</span>);</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Invalid waveform EVLR&quot;</span>);</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        }</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <a class="code" href="structLasWaveformLoader.html#adc8a6a3f2a4b70676e07ae56cab4c44a">fwfDataCount</a>  = evlrHeader.<a class="code" href="structLasDetails_1_1EvlrHeader.html#a532303d785e5a2f834655a8d22d331fa">recordLength</a>;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <a class="code" href="structLasWaveformLoader.html#a7c83f140f2444277e2f5011380872c15">fwfDataOffset</a> = 0;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="structLasWaveformLoader.html#adc8a6a3f2a4b70676e07ae56cab4c44a">fwfDataCount</a> == 0)</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        {</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Invalid waveform data packet size (0). We&#39;ll load all the &quot;</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Invalid waveform data packet size (0). We&#39;ll load all the &quot;</span></div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                                   <span class="stringliteral">&quot;remaining part of the file!&quot;</span>));</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            <a class="code" href="structLasWaveformLoader.html#adc8a6a3f2a4b70676e07ae56cab4c44a">fwfDataCount</a> = fwfDataSource.size() - fwfDataSource.pos();</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        }</div>
@@ -203,7 +212,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        fwfDataSource.setFileName(wdpFilename);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">if</span> (!fwfDataSource.open(QFile::ReadOnly))</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        {</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to read the associated waveform data packets file &quot;</span></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Failed to read the associated waveform data packets file &quot;</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                                   <span class="stringliteral">&quot;(looking for &#39;%1&#39;): %2&quot;</span>)</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                               .arg(wdpFilename)</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                               .arg(fwfDataSource.errorString()));</div>
@@ -230,7 +239,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                fwfDataSource.seek(0);</div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;            }</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        }</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[LAS] Waveform Data Packets are in an external file located at %1&quot;</span>).arg(wdpFilename));</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;[LAS] Waveform Data Packets are in an external file located at %1&quot;</span>).arg(wdpFilename));</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    }</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keywordflow">if</span> (fwfDataSource.isOpen() &amp;&amp; <a class="code" href="structLasWaveformLoader.html#adc8a6a3f2a4b70676e07ae56cab4c44a">fwfDataCount</a> != 0)</div>
@@ -244,7 +253,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        }</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;)</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        {</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Not enough memory to import the waveform data&quot;</span>));</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[LAS] Not enough memory to import the waveform data&quot;</span>));</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            <span class="keyword">delete</span> container;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        }</div>
@@ -282,13 +291,13 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    }</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!<a class="code" href="structLasWaveformLoader.html#ae05f84dd4f6004eda9a9d1e05983db71">descriptors</a>.contains(descriptorIndex))</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    {</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] No valid descriptor vlr for index %d&quot;</span>, descriptorIndex);</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] No valid descriptor vlr for index %d&quot;</span>, descriptorIndex);</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    }</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160; </div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordflow">if</span> (byteOffset &lt; <a class="code" href="structLasWaveformLoader.html#a7c83f140f2444277e2f5011380872c15">fwfDataOffset</a>)</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    {</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Waveform byte offset is smaller that fwfDataOffset&quot;</span>);</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Waveform byte offset is smaller that fwfDataOffset&quot;</span>);</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        byteOffset = <a class="code" href="structLasWaveformLoader.html#a7c83f140f2444277e2f5011380872c15">fwfDataOffset</a>;</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    }</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160; </div>
@@ -296,7 +305,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160; </div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="keywordflow">if</span> (byteOffset + byteCount &gt; <a class="code" href="structLasWaveformLoader.html#adc8a6a3f2a4b70676e07ae56cab4c44a">fwfDataCount</a>)</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    {</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Waveform byte count for point %u is bigger than actual fwf data&quot;</span>,</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Waveform byte count for point %u is bigger than actual fwf data&quot;</span>,</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                       pointCloud.<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() - 1);</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        byteCount = (<a class="code" href="structLasWaveformLoader.html#adc8a6a3f2a4b70676e07ae56cab4c44a">fwfDataCount</a> - byteOffset);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    }</div>
@@ -323,8 +332,8 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="ttc" id="aLasWaveformLoader_8cpp_html_a14faf835aba78c1886cb75e0297517e1"><div class="ttname"><a href="LasWaveformLoader_8cpp.html#a14faf835aba78c1886cb75e0297517e1">ParseWaveformDescriptorVlrs</a></div><div class="ttdeci">static ccPointCloud::FWFDescriptorSet ParseWaveformDescriptorVlrs(const laszip_vlr_struct *vlrs, laszip_U32 numVlrs)</div><div class="ttdef"><b>Definition:</b> <a href="LasWaveformLoader_8cpp_source.html#l00037">LasWaveformLoader.cpp:37</a></div></div>
 <div class="ttc" id="aLasWaveformLoader_8cpp_html_afb1653a2d1f9f551adba54955853fcb9"><div class="ttname"><a href="LasWaveformLoader_8cpp.html#afb1653a2d1f9f551adba54955853fcb9">ParseWavepacketDescriptorVlr</a></div><div class="ttdeci">static bool ParseWavepacketDescriptorVlr(const laszip_vlr_struct &amp;vlr, WaveformDescriptor &amp;descriptor)</div><div class="ttdef"><b>Definition:</b> <a href="LasWaveformLoader_8cpp_source.html#l00014">LasWaveformLoader.cpp:14</a></div></div>
 <div class="ttc" id="aLasWaveformLoader_8h_html"><div class="ttname"><a href="LasWaveformLoader_8h.html">LasWaveformLoader.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassWaveformDescriptor_html"><div class="ttname"><a href="classWaveformDescriptor.html">WaveformDescriptor</a></div><div class="ttdoc">Waveform descriptor.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00023">ecvWaveform.h:23</a></div></div>
 <div class="ttc" id="aclassWaveformDescriptor_html_a2fd2a7facf1a3a24aeabd97ac9648ff0"><div class="ttname"><a href="classWaveformDescriptor.html#a2fd2a7facf1a3a24aeabd97ac9648ff0">WaveformDescriptor::samplingRate_ps</a></div><div class="ttdeci">uint32_t samplingRate_ps</div><div class="ttdoc">Sampling rate in pico seconds.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00044">ecvWaveform.h:44</a></div></div>
 <div class="ttc" id="aclassWaveformDescriptor_html_a36316ff16ba46429705172b710e50d25"><div class="ttname"><a href="classWaveformDescriptor.html#a36316ff16ba46429705172b710e50d25">WaveformDescriptor::bitsPerSample</a></div><div class="ttdeci">uint8_t bitsPerSample</div><div class="ttdoc">Number of bits per sample.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00049">ecvWaveform.h:49</a></div></div>
@@ -363,7 +372,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasWaveformLoader_8cpp.html">LasWaveformLoader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

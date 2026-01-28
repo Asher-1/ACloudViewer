@@ -7,7 +7,7 @@ var dir_2761bad389f0f80d0d31f1829b4fcb72 =
       [ "qAnimationDlg", "classqAnimationDlg.html", "classqAnimationDlg" ],
       [ "Step", "structqAnimationDlg_1_1Step.html", "structqAnimationDlg_1_1Step" ]
     ] ],
-    [ "ViewInterpolate.h", "ViewInterpolate_8h.html", [
+    [ "ViewInterpolate.h", "plugins_2core_2Standard_2qAnimation_2include_2ViewInterpolate_8h.html", [
       [ "ViewInterpolate", "classViewInterpolate.html", "classViewInterpolate" ]
     ] ]
 ];

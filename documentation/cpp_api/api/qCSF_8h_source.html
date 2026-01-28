@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,11 +106,11 @@ $(document).ready(function(){initNavTree('qCSF_8h_source.html',''); initResizabl
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;ecvStdPluginInterface.h&quot;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno"><a class="line" href="classqCSF.html">   13</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqCSF.html">qCSF</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> ccStdPluginInterface {</div>
+<div class="line"><a name="l00013"></a><span class="lineno"><a class="line" href="classqCSF.html">   13</a></span>&#160;<span class="keyword">class </span><a class="code" href="classqCSF.html">qCSF</a> : <span class="keyword">public</span> QObject, <span class="keyword">public</span> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a> {</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    Q_OBJECT</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    Q_INTERFACES(<a class="code" href="classccPluginInterface.html">ccPluginInterface</a> <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>)</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    Q_PLUGIN_METADATA(IID <span class="stringliteral">&quot;ecvcorp.cloudviewer.plugin.qCSF&quot;</span> FILE <span class="stringliteral">&quot;../info.json&quot;</span>)</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">public</span>:</div>
@@ -113,7 +122,7 @@ $(document).ready(function(){initNavTree('qCSF_8h_source.html',''); initResizabl
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classqCSF.html#a97c65e061232c9a6e96631d974f3d676">onNewSelection</a>(</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keyword">virtual</span> QList&lt;QAction*&gt; <a class="code" href="classqCSF.html#a69ba2801ac58ab04d4041b54cc79588a">getActions</a>() <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classqCSF.html#af47c20afc34ca06148bdbad1767f40c9">registerCommands</a>(ccCommandLineInterface* cmd) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classqCSF.html#af47c20afc34ca06148bdbad1767f40c9">registerCommands</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>* cmd) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">protected</span> <a class="code" href="PythonPlugin_8cpp.html#aa2ad9c27624efec8c3fce893e35bbc81">slots</a>:</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
@@ -123,22 +132,26 @@ $(document).ready(function(){initNavTree('qCSF_8h_source.html',''); initResizabl
 <div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="classqCSF.html#a68753a0623f84ea2572bba227bcb578d">   37</a></span>&#160;    QAction* <a class="code" href="classqCSF.html#a68753a0623f84ea2572bba227bcb578d">m_action</a>;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;};</div>
 <div class="ttc" id="aPythonPlugin_8cpp_html_aa2ad9c27624efec8c3fce893e35bbc81"><div class="ttname"><a href="PythonPlugin_8cpp.html#aa2ad9c27624efec8c3fce893e35bbc81">slots</a></div><div class="ttdeci">#define slots</div><div class="ttdef"><b>Definition:</b> <a href="PythonPlugin_8cpp_source.html#l00025">PythonPlugin.cpp:25</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html"><div class="ttname"><a href="classccPluginInterface.html">ccPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00033">ecvPluginInterface.h:33</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
 <div class="ttc" id="aclassqCSF_html"><div class="ttname"><a href="classqCSF.html">qCSF</a></div><div class="ttdoc">A point-clouds filtering algorithm utilize cloth simulation process.</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8h_source.html#l00013">qCSF.h:13</a></div></div>
 <div class="ttc" id="aclassqCSF_html_a5e940ea4dddcd688236ddc781a602140"><div class="ttname"><a href="classqCSF.html#a5e940ea4dddcd688236ddc781a602140">qCSF::doAction</a></div><div class="ttdeci">void doAction()</div><div class="ttdoc">Slot called when associated ation is triggered.</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00064">qCSF.cpp:64</a></div></div>
 <div class="ttc" id="aclassqCSF_html_a68753a0623f84ea2572bba227bcb578d"><div class="ttname"><a href="classqCSF.html#a68753a0623f84ea2572bba227bcb578d">qCSF::m_action</a></div><div class="ttdeci">QAction * m_action</div><div class="ttdoc">Associated action.</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8h_source.html#l00037">qCSF.h:37</a></div></div>
-<div class="ttc" id="aclassqCSF_html_a69ba2801ac58ab04d4041b54cc79588a"><div class="ttname"><a href="classqCSF.html#a69ba2801ac58ab04d4041b54cc79588a">qCSF::getActions</a></div><div class="ttdeci">virtual QList&lt; QAction * &gt; getActions() override</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00052">qCSF.cpp:52</a></div></div>
+<div class="ttc" id="aclassqCSF_html_a69ba2801ac58ab04d4041b54cc79588a"><div class="ttname"><a href="classqCSF.html#a69ba2801ac58ab04d4041b54cc79588a">qCSF::getActions</a></div><div class="ttdeci">virtual QList&lt; QAction * &gt; getActions() override</div><div class="ttdoc">Get a list of actions for this plugin.</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00052">qCSF.cpp:52</a></div></div>
 <div class="ttc" id="aclassqCSF_html_a97c65e061232c9a6e96631d974f3d676"><div class="ttname"><a href="classqCSF.html#a97c65e061232c9a6e96631d974f3d676">qCSF::onNewSelection</a></div><div class="ttdeci">virtual void onNewSelection(const ccHObject::Container &amp;selectedEntities) override</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00046">qCSF.cpp:46</a></div></div>
 <div class="ttc" id="aclassqCSF_html_ab16249da5d1b5348b136b1b2bda1a748"><div class="ttname"><a href="classqCSF.html#ab16249da5d1b5348b136b1b2bda1a748">qCSF::qCSF</a></div><div class="ttdeci">qCSF(QObject *parent=nullptr)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00041">qCSF.cpp:41</a></div></div>
 <div class="ttc" id="aclassqCSF_html_addbcd50d501710ade408767f063502d1"><div class="ttname"><a href="classqCSF.html#addbcd50d501710ade408767f063502d1">qCSF::~qCSF</a></div><div class="ttdeci">virtual ~qCSF()=default</div></div>
-<div class="ttc" id="aclassqCSF_html_af47c20afc34ca06148bdbad1767f40c9"><div class="ttname"><a href="classqCSF.html#af47c20afc34ca06148bdbad1767f40c9">qCSF::registerCommands</a></div><div class="ttdeci">virtual void registerCommands(ccCommandLineInterface *cmd) override</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00256">qCSF.cpp:256</a></div></div>
+<div class="ttc" id="aclassqCSF_html_af47c20afc34ca06148bdbad1767f40c9"><div class="ttname"><a href="classqCSF.html#af47c20afc34ca06148bdbad1767f40c9">qCSF::registerCommands</a></div><div class="ttdeci">virtual void registerCommands(ccCommandLineInterface *cmd) override</div><div class="ttdoc">Optional: registers commands (for the command line mode)</div><div class="ttdef"><b>Definition:</b> <a href="qCSF_8cpp_source.html#l00256">qCSF.cpp:256</a></div></div>
+<div class="ttc" id="aecvStdPluginInterface_8h_html"><div class="ttname"><a href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html">qCSF</a></li><li class="navelem"><a class="el" href="dir_6e143f2a132939b1d8f12d4591e274b5.html">include</a></li><li class="navelem"><a class="el" href="qCSF_8h.html">qCSF.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -110,8 +119,8 @@ Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a483c959b57c8d5029a8a55bb420ddd27"><td class="memItemLeft" align="right" valign="top">static std::function&lt; void(const std::string &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcloudViewer_1_1utility_1_1Logger_1_1Impl.html#a483c959b57c8d5029a8a55bb420ddd27">console_print_fcn_</a></td></tr>
-<tr class="separator:a483c959b57c8d5029a8a55bb420ddd27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e97e067f306a819831870c688da128e"><td class="memItemLeft" align="right" valign="top">static std::function&lt; void(const std::string &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcloudViewer_1_1utility_1_1Logger_1_1Impl.html#a9e97e067f306a819831870c688da128e">console_print_fcn_</a></td></tr>
+<tr class="separator:a9e97e067f306a819831870c688da128e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
@@ -162,8 +171,8 @@ Static Public Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a483c959b57c8d5029a8a55bb420ddd27"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a483c959b57c8d5029a8a55bb420ddd27">&#9670;&nbsp;</a></span>console_print_fcn_</h2>
+<a id="a9e97e067f306a819831870c688da128e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e97e067f306a819831870c688da128e">&#9670;&nbsp;</a></span>console_print_fcn_</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -172,7 +181,7 @@ Static Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::function&lt;void(const std::string &amp;)&gt; cloudViewer::utility::Logger::Impl::console_print_fcn_</td>
+          <td class="memname">std::function&lt; void(const std::string &amp;)&gt; cloudViewer::utility::Logger::Impl::console_print_fcn_</td>
         </tr>
       </table>
   </td>
@@ -181,7 +190,10 @@ Static Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">        [](<span class="keyword">const</span> std::string &amp;msg) { std::cout &lt;&lt; msg &lt;&lt; <a class="code" href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">std::endl</a>; }</div>
+<div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
+</div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="core_2include_2Logging_8h_source.html#l00136">136</a> of file <a class="el" href="core_2include_2Logging_8h_source.html">Logging.h</a>.</p>
 
 </div>
@@ -218,8 +230,9 @@ Static Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
+<hr/>The documentation for this struct was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/include/<a class="el" href="core_2include_2Logging_8h_source.html">Logging.h</a></li>
+<li>/root/ACloudViewer/core/src/<a class="el" href="Logging_8cpp_source.html">Logging.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -227,7 +240,7 @@ Static Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1utility.html">utility</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1utility_1_1Logger.html">Logger</a></li><li class="navelem"><a class="el" href="structcloudViewer_1_1utility_1_1Logger_1_1Impl.html">Impl</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:37 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:17 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

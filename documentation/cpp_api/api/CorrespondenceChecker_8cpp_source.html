@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('CorrespondenceChecker_8cpp_source.html
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CorrespondenceChecker_8h.html">pipelines/registration/CorrespondenceChecker.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;Eigen/Dense&gt;</span></div>
@@ -188,18 +197,18 @@ $(document).ready(function(){initNavTree('CorrespondenceChecker_8cpp_source.html
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnEdgeLength_html_a5daf964e3a4517eff3ba78513e76220e"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnEdgeLength.html#a5daf964e3a4517eff3ba78513e76220e">cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength::similarity_threshold_</a></div><div class="ttdeci">double similarity_threshold_</div><div class="ttdef"><b>Definition:</b> <a href="CorrespondenceChecker_8h_source.html#l00091">CorrespondenceChecker.h:91</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnNormal_html_a7ee7860ef584d1e2cbfd738c4306eedf"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnNormal.html#a7ee7860ef584d1e2cbfd738c4306eedf">cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnNormal::Check</a></div><div class="ttdeci">bool Check(const ccPointCloud &amp;source, const ccPointCloud &amp;target, const CorrespondenceSet &amp;corres, const Eigen::Matrix4d &amp;transformation) const override</div><div class="ttdoc">Function to check if two points can be aligned.</div><div class="ttdef"><b>Definition:</b> <a href="CorrespondenceChecker_8cpp_source.html#l00060">CorrespondenceChecker.cpp:60</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnNormal_html_a9da4360e2fe6f019d259164251732f02"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnNormal.html#a9da4360e2fe6f019d259164251732f02">cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnNormal::normal_angle_threshold_</a></div><div class="ttdeci">double normal_angle_threshold_</div><div class="ttdoc">Radian value for angle threshold.</div><div class="ttdef"><b>Definition:</b> <a href="CorrespondenceChecker_8h_source.html#l00142">CorrespondenceChecker.h:142</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a5d6d302b5823728dae4a97b31820c4b3"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a5d6d302b5823728dae4a97b31820c4b3">cloudViewer::pipelines::registration::CorrespondenceSet</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector2i &gt; CorrespondenceSet</div><div class="ttdef"><b>Definition:</b> <a href="pipelines_2registration_2TransformationEstimation_8h_source.html#l00023">TransformationEstimation.h:23</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="CorrespondenceChecker_8cpp.html">CorrespondenceChecker.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

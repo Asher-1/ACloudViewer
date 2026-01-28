@@ -1,27 +1,31 @@
 <map id="cloudViewer::utility::IJsonConvertible" name="cloudViewer::utility::IJsonConvertible">
-<area shape="rect" id="node1" title=" " alt="" coords="5,483,153,524"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html" title="Contains the pinhole camera intrinsic parameters." alt="" coords="226,5,407,47"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1camera_1_1PinholeCameraParameters.html" title="Contains both intrinsic and extrinsic pinhole camera parameters." alt="" coords="215,71,418,112"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html" title=" " alt="" coords="220,136,413,177"/>
-<area shape="rect" id="node5" href="$classcloudViewer_1_1geometry_1_1Octree.html" title="Octree datastructure." alt="" coords="230,201,403,243"/>
-<area shape="rect" id="node6" href="$classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node." alt="" coords="230,267,403,308"/>
-<area shape="rect" id="node12" href="$classcloudViewer_1_1io_1_1MKVMetadata.html" title=" " alt="" coords="205,333,428,359"/>
-<area shape="rect" id="node13" href="$classcloudViewer_1_1io_1_1RGBDSensorConfig.html" title=" " alt="" coords="211,384,423,425"/>
-<area shape="rect" id="node16" href="$classcloudViewer_1_1pipelines_1_1color__map_1_1ImageWarpingField.html" title=" " alt="" coords="201,449,432,491"/>
-<area shape="rect" id="node17" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html" title="Data structure defining the pose graph." alt="" coords="225,515,408,556"/>
-<area shape="rect" id="node18" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html" title="Edge of PoseGraph." alt="" coords="209,580,424,621"/>
-<area shape="rect" id="node19" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html" title="Node of PoseGraph." alt="" coords="208,645,425,687"/>
-<area shape="rect" id="node20" href="$classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html" title="RGBD video metadata." alt="" coords="233,711,400,752"/>
-<area shape="rect" id="node21" href="$classcloudViewer_1_1visualization_1_1RenderOption.html" title="Defines rendering options for visualizer." alt="" coords="220,776,413,817"/>
-<area shape="rect" id="node23" href="$classcloudViewer_1_1visualization_1_1SelectionPolygonVolume.html" title="Select a polygon volume for cropping." alt="" coords="220,841,413,883"/>
-<area shape="rect" id="node24" href="$classcloudViewer_1_1visualization_1_1ViewParameters.html" title=" " alt="" coords="220,907,413,948"/>
-<area shape="rect" id="node25" href="$classcloudViewer_1_1visualization_1_1ViewTrajectory.html" title=" " alt="" coords="220,972,413,1013"/>
-<area shape="rect" id="node7" title=" " alt="" coords="497,215,671,256"/>
-<area shape="rect" id="node9" href="$classcloudViewer_1_1geometry_1_1OctreeLeafNode.html" title="OctreeLeafNode base class." alt="" coords="497,280,671,321"/>
-<area shape="rect" id="node8" title=" " alt="" coords="736,215,927,256"/>
-<area shape="rect" id="node10" href="$classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html" title="OctreeColorLeafNode class is an OctreeLeafNode containing color." alt="" coords="745,280,918,321"/>
-<area shape="rect" id="node11" href="$classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html" title="OctreePointColorLeafNode class is an OctreeColorLeafNode containing a list of indices corresponding t..." alt="" coords="975,280,1177,321"/>
-<area shape="rect" id="node14" href="$classcloudViewer_1_1io_1_1AzureKinectSensorConfig.html" title=" " alt="" coords="480,371,688,412"/>
-<area shape="rect" id="node15" href="$classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html" title=" " alt="" coords="493,436,675,477"/>
-<area shape="rect" id="node22" href="$classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html" title=" " alt="" coords="487,776,681,817"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,501,153,542"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1AlignmentSession.html" title=" " alt="" coords="205,5,431,32"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html" title="Contains the pinhole camera intrinsic parameters." alt="" coords="227,57,409,98"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1camera_1_1PinholeCameraParameters.html" title="Contains both intrinsic and extrinsic pinhole camera parameters." alt="" coords="217,122,419,163"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html" title=" " alt="" coords="221,187,415,229"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1geometry_1_1Octree.html" title="Octree datastructure." alt="" coords="231,253,405,294"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node." alt="" coords="231,318,405,359"/>
+<area shape="rect" id="node16" href="$classcloudViewer_1_1io_1_1MKVMetadata.html" title=" " alt="" coords="207,384,429,411"/>
+<area shape="rect" id="node17" href="$classcloudViewer_1_1io_1_1RGBDSensorConfig.html" title=" " alt="" coords="212,435,424,477"/>
+<area shape="rect" id="node20" href="$classcloudViewer_1_1pipelines_1_1color__map_1_1ImageWarpingField.html" title=" " alt="" coords="203,501,433,542"/>
+<area shape="rect" id="node21" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html" title="Data structure defining the pose graph." alt="" coords="227,566,409,607"/>
+<area shape="rect" id="node22" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html" title="Edge of PoseGraph." alt="" coords="211,631,425,673"/>
+<area shape="rect" id="node23" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html" title="Node of PoseGraph." alt="" coords="209,697,427,738"/>
+<area shape="rect" id="node24" href="$classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html" title="RGBD video metadata." alt="" coords="235,762,401,803"/>
+<area shape="rect" id="node25" href="$classcloudViewer_1_1visualization_1_1RenderOption.html" title="Defines rendering options for visualizer." alt="" coords="221,827,415,869"/>
+<area shape="rect" id="node27" href="$classcloudViewer_1_1visualization_1_1SelectionPolygonVolume.html" title="Select a polygon volume for cropping." alt="" coords="221,893,415,934"/>
+<area shape="rect" id="node28" href="$classcloudViewer_1_1visualization_1_1ViewParameters.html" title=" " alt="" coords="221,958,415,999"/>
+<area shape="rect" id="node29" href="$classcloudViewer_1_1visualization_1_1ViewTrajectory.html" title=" " alt="" coords="221,1023,415,1065"/>
+<area shape="rect" id="node8" title=" " alt="" coords="527,238,701,279"/>
+<area shape="rect" id="node10" href="$classcloudViewer_1_1geometry_1_1OctreeLeafNode.html" title="OctreeLeafNode base class." alt="" coords="527,305,701,346"/>
+<area shape="rect" id="node15" href="$classcloudViewer_1_1geometry_1_1PyOctreeNode.html" title=" " alt="" coords="483,370,745,411"/>
+<area shape="rect" id="node9" title=" " alt="" coords="967,238,1158,279"/>
+<area shape="rect" id="node11" href="$classcloudViewer_1_1geometry_1_1PyOctreeNode.html" title=" " alt="" coords="933,371,1192,413"/>
+<area shape="rect" id="node13" href="$classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html" title="OctreeColorLeafNode class is an OctreeLeafNode containing color." alt="" coords="976,303,1149,345"/>
+<area shape="rect" id="node12" href="$classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html" title=" " alt="" coords="1241,367,1479,423"/>
+<area shape="rect" id="node14" href="$classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html" title="OctreePointColorLeafNode class is an OctreeColorLeafNode containing a list of indices corresponding t..." alt="" coords="1259,301,1461,342"/>
+<area shape="rect" id="node18" href="$classcloudViewer_1_1io_1_1AzureKinectSensorConfig.html" title=" " alt="" coords="510,435,718,477"/>
+<area shape="rect" id="node19" href="$classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html" title=" " alt="" coords="523,501,705,542"/>
+<area shape="rect" id="node26" href="$classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html" title=" " alt="" coords="517,827,711,869"/>
 </map>

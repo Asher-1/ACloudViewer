@@ -1,5 +1,6 @@
 <map id="Classify3DMASCDialog" name="Classify3DMASCDialog">
-<area shape="rect" id="node1" title="3DMASC plugin &#39;classify&#39; dialog" alt="" coords="36,80,207,107"/>
+<area shape="rect" id="node1" title="3DMASC plugin &#39;classify&#39; dialog" alt="" coords="116,95,287,121"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
 <area shape="rect" id="node3" title=" " alt="" coords="105,5,298,32"/>
+<area shape="rect" id="node4" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="323,5,483,32"/>
 </map>

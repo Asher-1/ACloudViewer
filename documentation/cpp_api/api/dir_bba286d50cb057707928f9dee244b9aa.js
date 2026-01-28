@@ -34,7 +34,7 @@ var dir_bba286d50cb057707928f9dee244b9aa =
     [ "TensorMap.h", "TensorMap_8h.html", [
       [ "TensorMap", "classcloudViewer_1_1t_1_1geometry_1_1TensorMap.html", "classcloudViewer_1_1t_1_1geometry_1_1TensorMap" ]
     ] ],
-    [ "TriangleMesh.cpp", "TriangleMesh_8cpp.html", "TriangleMesh_8cpp" ],
+    [ "TriangleMesh.cpp", "cloudViewer_2t_2geometry_2TriangleMesh_8cpp.html", "cloudViewer_2t_2geometry_2TriangleMesh_8cpp" ],
     [ "TriangleMesh.h", "t_2geometry_2TriangleMesh_8h.html", [
       [ "TriangleMesh", "classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html", "classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh" ]
     ] ],

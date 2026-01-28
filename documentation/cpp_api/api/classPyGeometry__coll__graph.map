@@ -1,0 +1,15 @@
+<map id="PyGeometry&lt; GeometryBase &gt;" name="PyGeometry&lt; GeometryBase &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="85,591,315,617"/>
+<area shape="rect" id="node2" href="$classPyObjectBase.html" title=" " alt="" coords="96,515,304,541"/>
+<area shape="rect" id="node3" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="245,425,333,452"/>
+<area shape="rect" id="node4" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="110,349,189,376"/>
+<area shape="rect" id="node13" href="$classPyObjectBase.html" title=" " alt="" coords="5,425,221,452"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="123,5,277,32"/>
+<area shape="rect" id="node11" href="$classccGLMatrixTpl.html" title=" " alt="" coords="191,171,366,197"/>
+<area shape="rect" id="node12" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="238,81,391,108"/>
+<area shape="rect" id="node6" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="410,349,550,376"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title=" " alt="" coords="397,260,563,287"/>
+<area shape="rect" id="node8" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="463,81,607,108"/>
+<area shape="rect" id="node9" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="391,171,542,197"/>
+<area shape="rect" id="node10" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="231,260,326,287"/>
+</map>

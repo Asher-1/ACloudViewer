@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:32.522987Z",
-     "iopub.status.busy": "2026-01-28T10:07:32.522792Z",
-     "iopub.status.idle": "2026-01-28T10:07:33.203413Z",
-     "shell.execute_reply": "2026-01-28T10:07:33.202815Z"
+     "iopub.execute_input": "2026-01-28T16:47:15.821167Z",
+     "iopub.status.busy": "2026-01-28T16:47:15.820985Z",
+     "iopub.status.idle": "2026-01-28T16:47:16.549398Z",
+     "shell.execute_reply": "2026-01-28T16:47:16.548838Z"
     },
     "nbsphinx": "hidden"
    },
@@ -69,10 +69,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:33.205687Z",
-     "iopub.status.busy": "2026-01-28T10:07:33.205439Z",
-     "iopub.status.idle": "2026-01-28T10:07:33.210219Z",
-     "shell.execute_reply": "2026-01-28T10:07:33.209726Z"
+     "iopub.execute_input": "2026-01-28T16:47:16.551936Z",
+     "iopub.status.busy": "2026-01-28T16:47:16.551472Z",
+     "iopub.status.idle": "2026-01-28T16:47:16.556666Z",
+     "shell.execute_reply": "2026-01-28T16:47:16.556114Z"
     }
    },
    "outputs": [],
@@ -108,10 +108,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:33.212131Z",
-     "iopub.status.busy": "2026-01-28T10:07:33.211953Z",
-     "iopub.status.idle": "2026-01-28T10:07:33.717833Z",
-     "shell.execute_reply": "2026-01-28T10:07:33.717378Z"
+     "iopub.execute_input": "2026-01-28T16:47:16.558777Z",
+     "iopub.status.busy": "2026-01-28T16:47:16.558413Z",
+     "iopub.status.idle": "2026-01-28T16:47:16.990011Z",
+     "shell.execute_reply": "2026-01-28T16:47:16.989450Z"
     }
    },
    "outputs": [
@@ -147,10 +147,10 @@
    "execution_count": 4,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:33.720126Z",
-     "iopub.status.busy": "2026-01-28T10:07:33.719704Z",
-     "iopub.status.idle": "2026-01-28T10:07:34.373652Z",
-     "shell.execute_reply": "2026-01-28T10:07:34.373018Z"
+     "iopub.execute_input": "2026-01-28T16:47:16.992505Z",
+     "iopub.status.busy": "2026-01-28T16:47:16.992034Z",
+     "iopub.status.idle": "2026-01-28T16:47:17.622553Z",
+     "shell.execute_reply": "2026-01-28T16:47:17.619979Z"
     }
    },
    "outputs": [
@@ -165,14 +165,13 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Integrate 1-th image into the volume."
+      "Integrate 1-th image into the volume.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
       "Integrate 2-th image into the volume.\n"
      ]
     },
@@ -223,10 +222,10 @@
    "execution_count": 5,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:34.376223Z",
-     "iopub.status.busy": "2026-01-28T10:07:34.375711Z",
-     "iopub.status.idle": "2026-01-28T10:07:35.107472Z",
-     "shell.execute_reply": "2026-01-28T10:07:35.106691Z"
+     "iopub.execute_input": "2026-01-28T16:47:17.628865Z",
+     "iopub.status.busy": "2026-01-28T16:47:17.628449Z",
+     "iopub.status.idle": "2026-01-28T16:47:18.391687Z",
+     "shell.execute_reply": "2026-01-28T16:47:18.391045Z"
     }
    },
    "outputs": [

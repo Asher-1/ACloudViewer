@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -102,7 +111,7 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPolyline_8h.html">ecvPolyline.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">// ECV_PLUGINS</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;QFile&gt;</span></div>
@@ -112,17 +121,17 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">// Qt5/Qt6 Compatibility</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="QtCompat_8h.html">QtCompat.h</a>&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classProfileLoader.html#a6598b1844da934b4c9b1220067af021f">   25</a></span>&#160;<a class="code" href="classccPolyline.html">ccPolyline</a>* <a class="code" href="classProfileLoader.html#a6598b1844da934b4c9b1220067af021f">ProfileLoader::Load</a>(QString filename,</div>
+<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classProfileLoader.html#a6598b1844da934b4c9b1220067af021f">   25</a></span>&#160;<a class="code" href="classccPolyline.html">ccPolyline</a>* <a class="code" href="classProfileLoader.html#a6598b1844da934b4c9b1220067af021f">ProfileLoader::Load</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                                <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; origin,</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                ecvMainAppInterface* app <span class="comment">/*=0*/</span>) {</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app <span class="comment">/*=0*/</span>) {</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="comment">// load profile as a polyline</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    assert(file.exists());</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::ReadOnly | QFile::Text)) {</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;Failed to open file for reading! Check &quot;</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;Failed to open file for reading! Check &quot;</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                                       <span class="stringliteral">&quot;access rights&quot;</span>),</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                               ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    }</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
@@ -138,10 +147,10 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;            QString headerLine = stream.readLine();</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            <span class="keywordflow">if</span> (headerLine.isEmpty() || !headerLine.startsWith(<span class="stringliteral">&quot;X&quot;</span>)) {</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                    app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                    app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                            QString(<span class="stringliteral">&quot;Malformed file (origin header expected on &quot;</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                                    <span class="stringliteral">&quot;first line)&quot;</span>),</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                            ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                            <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            }</div>
@@ -162,10 +171,10 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                }</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                <span class="keywordflow">if</span> (!validLine) {</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                    <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                                QString(<span class="stringliteral">&quot;Malformed file (origin coordinates &quot;</span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                                        <span class="stringliteral">&quot;expected on second line)&quot;</span>),</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                    <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                }</div>
@@ -177,10 +186,10 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;            QString headerLine = stream.readLine();</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;            <span class="keywordflow">if</span> (headerLine.isEmpty() || !headerLine.startsWith(<span class="stringliteral">&quot;R&quot;</span>)) {</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                    app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                    app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                            QString(<span class="stringliteral">&quot;Malformed file (radii/heights header &quot;</span></div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                    <span class="stringliteral">&quot;expected on third line)&quot;</span>),</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                            ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                            <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            }</div>
@@ -192,11 +201,11 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                        line, <span class="stringliteral">&quot;\\s+&quot;</span>, <a class="code" href="namespaceQtCompat.html#a2d9f30935c99da4eabe7ee9b8ca503d1">QtCompat::SkipEmptyParts</a>);</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                <span class="keywordflow">if</span> (tokens.size() &lt; 2) {</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                    <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                QString(<span class="stringliteral">&quot;Malformed file (radius/height couple &quot;</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                                        <span class="stringliteral">&quot;expected from the 4th line and &quot;</span></div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                                        <span class="stringliteral">&quot;afterwards)&quot;</span>),</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                    <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                }</div>
@@ -210,9 +219,9 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                    <span class="comment">// not enough memory</span></div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                    <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                                QString(<span class="stringliteral">&quot;Not enough memory!&quot;</span>),</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                    <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                }</div>
@@ -228,12 +237,12 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                    polyline = <span class="keyword">new</span> <a class="code" href="classccPolyline.html">ccPolyline</a>(vertices);</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                    polyline-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(vertices);</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                    <span class="keywordflow">if</span> (!vertices-&gt;<a class="code" href="classccPointCloud.html#a7daad7286b0cc90bded6efc84ee40619">reserve</a>(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>) ||</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                        !polyline-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">reserve</a>(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>)) {</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                        !polyline-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>)) {</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;                        <span class="comment">// not enough memory</span></div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;                        <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                            app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                                    QString(<span class="stringliteral">&quot;Not enough memory!&quot;</span>),</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                                    <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                        <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                    }</div>
@@ -251,12 +260,12 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                    }</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160; </div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                    <span class="comment">// add segments</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                    polyline-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(0, <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                    polyline-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0, <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>);</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                    polyline-&gt;<a class="code" href="classcloudViewer_1_1Polyline.html#a3b23bb6bff92f4f6a74540c1dbd44734">setClosed</a>(<span class="keyword">false</span>);  <span class="comment">// just to be sure</span></div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                    polyline-&gt;<a class="code" href="classccPolyline.html#a3ce322b3efe5ec372ca6f214ec83deea">set2DMode</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                    <span class="comment">// add to DB</span></div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                    polyline-&gt;<a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(QFileInfo(filename).baseName());</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                    polyline-&gt;<a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).baseName());</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                    polyline-&gt;<a class="code" href="classccPolyline.html#af712de7d550bec56e1a41c00af06d522">setColor</a>(<a class="code" href="namespaceecvColor.html#a8b4cfc78cfae7cdeb3f2df3a7ad6bf8f">ecvColor::green</a>);</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;                    polyline-&gt;<a class="code" href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">showColors</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                    polyline-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">true</span>);</div>
@@ -267,9 +276,9 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                    vertices-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                    <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                        app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                        app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                                QString(<span class="stringliteral">&quot;Not enough points in profile?!&quot;</span>),</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160; </div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                    <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                    <span class="keywordflow">break</span>;</div>
@@ -289,6 +298,7 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;}</div>
 <div class="ttc" id="aCVGeom_8h_html_aba743094ac3c5f78d2814b141438015c"><div class="ttname"><a href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a></div><div class="ttdeci">Vector3Tpl&lt; PointCoordinateType &gt; CCVector3</div><div class="ttdoc">Default 3D Vector.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00798">CVGeom.h:798</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_af7f8f4a4e39e09fdb5e9f02330ecabef"><div class="ttname"><a href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a></div><div class="ttdeci">int points</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00144">FileIOFactory.cpp:144</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
@@ -313,8 +323,12 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div class="ttc" id="aclassccPolyline_html_af712de7d550bec56e1a41c00af06d522"><div class="ttname"><a href="classccPolyline.html#af712de7d550bec56e1a41c00af06d522">ccPolyline::setColor</a></div><div class="ttdeci">void setColor(const ecvColor::Rgb &amp;col)</div><div class="ttdoc">Sets the polyline color.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00081">ecvPolyline.h:81</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html_a3b23bb6bff92f4f6a74540c1dbd44734"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#a3b23bb6bff92f4f6a74540c1dbd44734">cloudViewer::Polyline::setClosed</a></div><div class="ttdeci">void setClosed(bool state)</div><div class="ttdoc">Sets whether the polyline is closed or not.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00029">Polyline.h:29</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ad4f53966b1708e3b6d147446c4ae4f57"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ad4f53966b1708e3b6d147446c4ae4f57">cloudViewer::ReferenceCloud::reserve</a></div><div class="ttdeci">virtual bool reserve(unsigned n)</div><div class="ttdoc">Reserves some memory for hosting the point references.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ad962545dc4babcf0442883041950e1ee"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">cloudViewer::ReferenceCloud::reserve</a></div><div class="ttdeci">virtual bool reserve(unsigned n)</div><div class="ttdoc">Reserves some memory for hosting the point references.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">ReferenceCloud.cpp:51</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvPolyline_8h_html"><div class="ttname"><a href="ecvPolyline_8h.html">ecvPolyline.h</a></div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
@@ -327,7 +341,7 @@ $(document).ready(function(){initNavTree('profileLoader_8cpp_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_6825a0132d045bbc984f455ea40d2f9f.html">qSRA</a></li><li class="navelem"><a class="el" href="dir_581404efacf73ebdc3c6686d7ffa8b9d.html">src</a></li><li class="navelem"><a class="el" href="profileLoader_8cpp.html">profileLoader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

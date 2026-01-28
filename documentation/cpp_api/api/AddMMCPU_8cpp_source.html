@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -95,7 +104,7 @@ $(document).ready(function(){initNavTree('AddMMCPU_8cpp_source.html',''); initRe
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="AddMM_8h.html">cloudViewer/core/linalg/AddMM.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="BlasWrapper_8h.html">cloudViewer/core/linalg/BlasWrapper.h</a>&quot;</span></div>
@@ -136,17 +145,17 @@ $(document).ready(function(){initNavTree('AddMMCPU_8cpp_source.html',''); initRe
 <div class="ttc" id="aDispatch_8h_html_a6962a4c5efaa3a2c4cb6e1515743790e"><div class="ttname"><a href="Dispatch_8h.html#a6962a4c5efaa3a2c4cb6e1515743790e">DISPATCH_DTYPE_TO_TEMPLATE</a></div><div class="ttdeci">#define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE,...)</div><div class="ttdef"><b>Definition:</b> <a href="Dispatch_8h_source.html#l00031">Dispatch.h:31</a></div></div>
 <div class="ttc" id="aLinalgUtils_8h_html"><div class="ttname"><a href="LinalgUtils_8h.html">LinalgUtils.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Dtype_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Dtype.html">cloudViewer::core::Dtype</a></div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8h_source.html#l00021">Dtype.h:21</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a3355a5d639697b335731e1fa90237970"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a3355a5d639697b335731e1fa90237970">cloudViewer::core::AddMMCPU</a></div><div class="ttdeci">void AddMMCPU(void *A_data, void *B_data, void *C_data, int64_t m, int64_t k, int64_t n, double alpha, double beta, bool gemmTrA, bool gemmTrB, int lda, int ldb, int ldc, Dtype dtype)</div><div class="ttdef"><b>Definition:</b> <a href="AddMMCPU_8cpp_source.html#l00017">AddMMCPU.cpp:17</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a70e9b13291bb7bc628ee044841998b14"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a70e9b13291bb7bc628ee044841998b14">cloudViewer::core::gemm_cpu</a></div><div class="ttdeci">void gemm_cpu(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans_A, CBLAS_TRANSPOSE trans_B, CLOUDVIEWER_CPU_LINALG_INT m, CLOUDVIEWER_CPU_LINALG_INT n, CLOUDVIEWER_CPU_LINALG_INT k, scalar_t alpha, const scalar_t *A_data, CLOUDVIEWER_CPU_LINALG_INT lda, const scalar_t *B_data, CLOUDVIEWER_CPU_LINALG_INT ldb, scalar_t beta, scalar_t *C_data, CLOUDVIEWER_CPU_LINALG_INT ldc)</div><div class="ttdef"><b>Definition:</b> <a href="BlasWrapper_8h_source.html#l00019">BlasWrapper.h:19</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_34199ad14a26b2602fe4e831eacaf8df.html">linalg</a></li><li class="navelem"><a class="el" href="AddMMCPU_8cpp.html">AddMMCPU.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

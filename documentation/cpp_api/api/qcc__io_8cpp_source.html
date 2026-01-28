@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -167,10 +176,10 @@ $(document).ready(function(){initNavTree('qcc__io_8cpp_source.html',''); initRes
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    PyFileIOFilter</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        .def_static(</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;            <span class="stringliteral">&quot;LoadFromFile&quot;</span>,</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            [](<span class="keyword">const</span> QString &amp;filename, <a class="code" href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a> &amp;parameters)</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            [](<span class="keyword">const</span> QString &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <a class="code" href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a> &amp;parameters)</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            {</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                <a class="code" href="classccHObject.html">ccHObject</a> *newGroup = <a class="code" href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a>(filename, parameters, <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                <a class="code" href="classccHObject.html">ccHObject</a> *newGroup = <a class="code" href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, parameters, <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                <a class="code" href="qcc__io_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a>(<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                <span class="keywordflow">return</span> newGroup;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;            },</div>
@@ -178,12 +187,12 @@ $(document).ready(function(){initNavTree('qcc__io_8cpp_source.html',''); initRes
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        .def_static(</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;            <span class="stringliteral">&quot;SaveToFile&quot;</span>,</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            [](<a class="code" href="classccHObject.html">ccHObject</a> *entities,</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;               <span class="keyword">const</span> QString &amp;filename,</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;               <span class="keyword">const</span> QString &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;               <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">FileIOFilter::SaveParameters</a> &amp;parameters,</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;               <span class="keyword">const</span> QString filterName = QString())</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            {</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <span class="keyword">const</span> QString requestedFilterName =</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    filterName.isEmpty() ? QFileInfo(filename).suffix() : filterName;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    filterName.isEmpty() ? QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).suffix() : filterName;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                <span class="keyword">const</span> <a class="code" href="classFileIOFilter.html#ae33d9f93a703f9b810ff90c8dafa6688">FileIOFilter::FilterContainer</a> &amp;availableFilters = <a class="code" href="classFileIOFilter.html#a4d45237b806e46cb25ccac8875547c44">FileIOFilter::GetFilters</a>();</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a> &amp;filter : availableFilters)</div>
@@ -197,7 +206,7 @@ $(document).ready(function(){initNavTree('qcc__io_8cpp_source.html',''); initRes
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    <span class="keywordflow">if</span> (it != filters.end())</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                    {</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                        <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> =</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                            <a class="code" href="classFileIOFilter.html#a13523e667853f0a20214c2ff614a2217">FileIOFilter::SaveToFile</a>(entities, filename, parameters, filter);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                            <a class="code" href="classFileIOFilter.html#a13523e667853f0a20214c2ff614a2217">FileIOFilter::SaveToFile</a>(entities, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, parameters, filter);</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                        <a class="code" href="qcc__io_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a>(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                    }</div>
@@ -235,6 +244,7 @@ $(document).ready(function(){initNavTree('qcc__io_8cpp_source.html',''); initRes
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                       &amp;<a class="code" href="structFileIOFilter_1_1SaveParameters.html#a7d35fcef306cdf5fe9ebe59e881bc693">FileIOFilter::SaveParameters::parentWidget</a>,</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                       py::return_value_policy::reference);</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;}</div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html"><div class="ttname"><a href="FileIOFilter_8h.html">FileIOFilter.h</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795a04361fbae7e2606fa3b1876bfdfc6e09"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a04361fbae7e2606fa3b1876bfdfc6e09">CC_FERR_CONSOLE_ERROR</a></div><div class="ttdeci">@ CC_FERR_CONSOLE_ERROR</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00033">FileIOFilter.h:33</a></div></div>
@@ -265,7 +275,7 @@ $(document).ready(function(){initNavTree('qcc__io_8cpp_source.html',''); initRes
 <div class="ttc" id="aclassFileIOFilter_html_ae33d9f93a703f9b810ff90c8dafa6688"><div class="ttname"><a href="classFileIOFilter.html#ae33d9f93a703f9b810ff90c8dafa6688">FileIOFilter::FilterContainer</a></div><div class="ttdeci">std::vector&lt; FileIOFilter::Shared &gt; FilterContainer</div><div class="ttdoc">Type of a I/O filters container.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00284">FileIOFilter.h:284</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="aqcc__io_8cpp_html_a4bde0ccdbd72451b84527bf0827b24cc"><div class="ttname"><a href="qcc__io_8cpp.html#a4bde0ccdbd72451b84527bf0827b24cc">define_qcc_io</a></div><div class="ttdeci">void define_qcc_io(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="qcc__io_8cpp_source.html#l00063">qcc_io.cpp:63</a></div></div>
 <div class="ttc" id="aqcc__io_8cpp_html_a62e7ac532a5abf3b7058e5ba371a7ab7"><div class="ttname"><a href="qcc__io_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a></div><div class="ttdeci">static void ThrowForFileError(CC_FILE_ERROR error)</div><div class="ttdef"><b>Definition:</b> <a href="qcc__io_8cpp_source.html#l00018">qcc_io.cpp:18</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a></div><div class="ttdoc">Generic loading parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00051">FileIOFilter.h:51</a></div></div>
@@ -286,7 +296,7 @@ $(document).ready(function(){initNavTree('qcc__io_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="dir_6035d288ec2755fce11681a3416a9416.html">qcc_io</a></li><li class="navelem"><a class="el" href="qcc__io_8cpp.html">qcc_io.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

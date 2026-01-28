@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -273,12 +282,12 @@ $(document).ready(function(){initNavTree('LASOpenDlg_8cpp_source.html',''); init
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    extraFieldGroupBox-&gt;setChecked(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;}</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="classLASOpenDlg.html#a6feb365897a9243ac3f5cdb172bbe434">  186</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classLASOpenDlg.html#a6feb365897a9243ac3f5cdb172bbe434">LASOpenDlg::setInfos</a>(QString filename,</div>
+<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="classLASOpenDlg.html#a6feb365897a9243ac3f5cdb172bbe434">  186</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classLASOpenDlg.html#a6feb365897a9243ac3f5cdb172bbe434">LASOpenDlg::setInfos</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                          <span class="keywordtype">unsigned</span> pointCount,</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                          <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; bbMin,</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                          <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; bbMax) {</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="comment">// default output path (for tiling)</span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    outputPathLineEdit-&gt;setText(QFileInfo(filename).absolutePath());</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    outputPathLineEdit-&gt;setText(QFileInfo(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).absolutePath());</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="comment">// number of points</span></div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    pointCountLineEdit-&gt;setText(</div>
@@ -323,6 +332,7 @@ $(document).ready(function(){initNavTree('LASOpenDlg_8cpp_source.html',''); init
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    timeShift = timeShiftDoubleSpinBox-&gt;value();</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;}</div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aLASFields_8h_html_a4a50e3f0dde7ffb6e96b3e5c49a23cc9"><div class="ttname"><a href="LASFields_8h.html#a4a50e3f0dde7ffb6e96b3e5c49a23cc9">LAS_FIELD_NAMES</a></div><div class="ttdeci">const char LAS_FIELD_NAMES[][28]</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00063">LASFields.h:63</a></div></div>
 <div class="ttc" id="aLASFields_8h_html_a75b7b71db516f48729d86dbdf5296a40"><div class="ttname"><a href="LASFields_8h.html#a75b7b71db516f48729d86dbdf5296a40">LAS_FIELDS</a></div><div class="ttdeci">LAS_FIELDS</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00035">LASFields.h:35</a></div></div>
 <div class="ttc" id="aLASFields_8h_html_a75b7b71db516f48729d86dbdf5296a40a1deaa2ed2206c102506e29a29becc3ba"><div class="ttname"><a href="LASFields_8h.html#a75b7b71db516f48729d86dbdf5296a40a1deaa2ed2206c102506e29a29becc3ba">LAS_INVALID</a></div><div class="ttdeci">@ LAS_INVALID</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00061">LASFields.h:60</a></div></div>
@@ -376,7 +386,7 @@ $(document).ready(function(){initNavTree('LASOpenDlg_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_888642a0b7b06326fd06f56c68febd6b.html">qPDALIO</a></li><li class="navelem"><a class="el" href="dir_b1f68d1ca5a79e0c919097fb130588c8.html">src</a></li><li class="navelem"><a class="el" href="LASOpenDlg_8cpp.html">LASOpenDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,9 +1,11 @@
 <map id="MinimumCutSegmentation" name="MinimumCutSegmentation">
-<area shape="rect" id="node1" title="Region Growing Segmentation." alt="" coords="169,184,367,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="111,95,233,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classMinimumCutSegmentationDlg.html" title=" " alt="" coords="257,95,476,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="316,5,391,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="415,5,657,32"/>
+<area shape="rect" id="node1" title="Region Growing Segmentation." alt="" coords="740,171,937,197"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="457,104,578,131"/>
+<area shape="rect" id="node3" title=" " alt="" coords="89,5,163,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="45,56,207,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="59,107,193,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="46,171,206,197"/>
+<area shape="rect" id="node7" href="$classMinimumCutSegmentationDlg.html" title=" " alt="" coords="408,216,627,243"/>
+<area shape="rect" id="node8" title=" " alt="" coords="89,239,163,265"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,289,247,316"/>
 </map>

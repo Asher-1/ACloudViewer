@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,9 +110,11 @@ Inheritance diagram for PythonPlugin:</div>
 <div class="dyncontent">
 <div class="center"><img src="classPythonPlugin__inherit__graph.png" border="0" usemap="#aPythonPlugin_inherit__map" alt="Inheritance graph"/></div>
 <map name="aPythonPlugin_inherit__map" id="aPythonPlugin_inherit__map">
-<area shape="rect" title="&quot;Entry point&quot; of the plugin" alt="" coords="59,80,165,107"/>
-<area shape="rect" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" title=" " alt="" coords="104,5,259,32"/>
+<area shape="rect" title="&quot;Entry point&quot; of the plugin" alt="" coords="59,229,165,256"/>
+<area shape="rect" title=" " alt="" coords="5,155,80,181"/>
+<area shape="rect" href="classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="104,155,259,181"/>
+<area shape="rect" href="classccDefaultPluginInterface.html" title=" " alt="" coords="90,80,273,107"/>
+<area shape="rect" href="classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="114,5,249,32"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -111,9 +122,12 @@ Collaboration diagram for PythonPlugin:</div>
 <div class="dyncontent">
 <div class="center"><img src="classPythonPlugin__coll__graph.png" border="0" usemap="#aPythonPlugin_coll__map" alt="Collaboration graph"/></div>
 <map name="aPythonPlugin_coll__map" id="aPythonPlugin_coll__map">
-<area shape="rect" title="&quot;Entry point&quot; of the plugin" alt="" coords="59,80,165,107"/>
-<area shape="rect" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" title=" " alt="" coords="104,5,259,32"/>
+<area shape="rect" title="&quot;Entry point&quot; of the plugin" alt="" coords="57,247,163,273"/>
+<area shape="rect" title=" " alt="" coords="57,171,131,197"/>
+<area shape="rect" href="classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="155,171,310,197"/>
+<area shape="rect" href="classccDefaultPluginInterface.html" title=" " alt="" coords="5,81,188,108"/>
+<area shape="rect" href="classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="29,5,164,32"/>
+<area shape="rect" href="classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="213,81,373,108"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -122,12 +136,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a43c4f49fcc94d69a2585223c8b87cd9d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a43c4f49fcc94d69a2585223c8b87cd9d">PythonPlugin</a> (QObject *parent=nullptr)</td></tr>
 <tr class="separator:a43c4f49fcc94d69a2585223c8b87cd9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f765fe5d76a622f6f4ff97446ec2192"><td class="memItemLeft" align="right" valign="top">QList&lt; QAction * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a0f765fe5d76a622f6f4ff97446ec2192">getActions</a> () override</td></tr>
+<tr class="memdesc:a0f765fe5d76a622f6f4ff97446ec2192"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a list of actions for this plugin.  <a href="classPythonPlugin.html#a0f765fe5d76a622f6f4ff97446ec2192">More...</a><br /></td></tr>
 <tr class="separator:a0f765fe5d76a622f6f4ff97446ec2192"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d82981074c7fe495079931e71b35720"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a9d82981074c7fe495079931e71b35720">registerCommands</a> (ccCommandLineInterface *cmd) override</td></tr>
+<tr class="memitem:a9d82981074c7fe495079931e71b35720"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a9d82981074c7fe495079931e71b35720">registerCommands</a> (<a class="el" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *cmd) override</td></tr>
 <tr class="separator:a9d82981074c7fe495079931e71b35720"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a07c1c0c59c4f9e14e2cd3ab3fa70979a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">setMainAppInterface</a> (ecvMainAppInterface *app) override</td></tr>
+<tr class="memitem:a07c1c0c59c4f9e14e2cd3ab3fa70979a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">setMainAppInterface</a> (<a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *app) override</td></tr>
+<tr class="memdesc:a07c1c0c59c4f9e14e2cd3ab3fa70979a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets application entry point.  <a href="classPythonPlugin.html#a07c1c0c59c4f9e14e2cd3ab3fa70979a">More...</a><br /></td></tr>
 <tr class="separator:a07c1c0c59c4f9e14e2cd3ab3fa70979a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a293750f536d68654214480f05d69258d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#a293750f536d68654214480f05d69258d">stop</a> () override</td></tr>
+<tr class="memdesc:a293750f536d68654214480f05d69258d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stops the plugin.  <a href="classPythonPlugin.html#a293750f536d68654214480f05d69258d">More...</a><br /></td></tr>
 <tr class="separator:a293750f536d68654214480f05d69258d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac9bf35d1a839f8d9b44b2280708058c4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#ac9bf35d1a839f8d9b44b2280708058c4">PythonPlugin</a> (const <a class="el" href="classPythonPlugin.html">PythonPlugin</a> &amp;)=delete</td></tr>
 <tr class="separator:ac9bf35d1a839f8d9b44b2280708058c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,6 +156,70 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ae63fa513ed772032b92846f5faee5e05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae8b6bba788194a9d7a1044cc8723301"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPythonPlugin.html#aae8b6bba788194a9d7a1044cc8723301">~PythonPlugin</a> () noexcept override</td></tr>
 <tr class="separator:aae8b6bba788194a9d7a1044cc8723301"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccStdPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccStdPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccStdPluginInterface.html">ccStdPluginInterface</a></td></tr>
+<tr class="memitem:a45874923d7f525e48c277247af9eb1cb inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a45874923d7f525e48c277247af9eb1cb">ccStdPluginInterface</a> (const QString &amp;resourcePath=QString())</td></tr>
+<tr class="memdesc:a45874923d7f525e48c277247af9eb1cb inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="classccStdPluginInterface.html#a45874923d7f525e48c277247af9eb1cb">More...</a><br /></td></tr>
+<tr class="separator:a45874923d7f525e48c277247af9eb1cb inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9152bda404ca65ca5dc07422c8050ce inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#af9152bda404ca65ca5dc07422c8050ce">~ccStdPluginInterface</a> () override=default</td></tr>
+<tr class="memdesc:af9152bda404ca65ca5dc07422c8050ce inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="classccStdPluginInterface.html#af9152bda404ca65ca5dc07422c8050ce">More...</a><br /></td></tr>
+<tr class="separator:af9152bda404ca65ca5dc07422c8050ce inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5701c33006c1d973071b17a610a7543d inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="ecvPluginInterface_8h.html#ad54a8f3d5ead901036a146e0800f1777">CC_PLUGIN_TYPE</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a5701c33006c1d973071b17a610a7543d">getType</a> () const override</td></tr>
+<tr class="memdesc:a5701c33006c1d973071b17a610a7543d inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns plugin type (standard or OpenGL filter)  <a href="classccStdPluginInterface.html#a5701c33006c1d973071b17a610a7543d">More...</a><br /></td></tr>
+<tr class="separator:a5701c33006c1d973071b17a610a7543d inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8dbc342471770ca51be02d711b2caaab inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a8dbc342471770ca51be02d711b2caaab">getMainAppInterface</a> ()</td></tr>
+<tr class="memdesc:a8dbc342471770ca51be02d711b2caaab inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">A callback pointer to the main app interface for use by plugins.  <a href="classccStdPluginInterface.html#a8dbc342471770ca51be02d711b2caaab">More...</a><br /></td></tr>
+<tr class="separator:a8dbc342471770ca51be02d711b2caaab inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e9a3a2425114ca14d3693d4c0612a39 inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a8e9a3a2425114ca14d3693d4c0612a39">onNewSelection</a> (const <a class="el" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> &amp;selectedEntities)</td></tr>
+<tr class="separator:a8e9a3a2425114ca14d3693d4c0612a39 inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20b4bf8734bbab25b6115616ba472c2c inherit pub_methods_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#a20b4bf8734bbab25b6115616ba472c2c">dispToConsole</a> (QString message, <a class="el" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25">ecvMainAppInterface::ConsoleMessageLevel</a> level=<a class="el" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a5ff30adc2ac5f3844b16f4254a1f3ebe">ecvMainAppInterface::STD_CONSOLE_MESSAGE</a>)</td></tr>
+<tr class="memdesc:a20b4bf8734bbab25b6115616ba472c2c inherit pub_methods_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shortcut to <a class="el" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a>.  <a href="classccStdPluginInterface.html#a20b4bf8734bbab25b6115616ba472c2c">More...</a><br /></td></tr>
+<tr class="separator:a20b4bf8734bbab25b6115616ba472c2c inherit pub_methods_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccDefaultPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccDefaultPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccDefaultPluginInterface.html">ccDefaultPluginInterface</a></td></tr>
+<tr class="memitem:ab4cbd488cf4aae8217f5d6194f300be0 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ab4cbd488cf4aae8217f5d6194f300be0">~ccDefaultPluginInterface</a> ()</td></tr>
+<tr class="separator:ab4cbd488cf4aae8217f5d6194f300be0 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae463b251ed6700b4510e0689d0e960ae inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ae463b251ed6700b4510e0689d0e960ae">isCore</a> () const override</td></tr>
+<tr class="memdesc:ae463b251ed6700b4510e0689d0e960ae inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is this plugin a core plugin?  <a href="classccDefaultPluginInterface.html#ae463b251ed6700b4510e0689d0e960ae">More...</a><br /></td></tr>
+<tr class="separator:ae463b251ed6700b4510e0689d0e960ae inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a1a1767db7a925da80ee8a356ce423b inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a> () const override</td></tr>
+<tr class="memdesc:a8a1a1767db7a925da80ee8a356ce423b inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (short) name (for menu entry, etc.)  <a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">More...</a><br /></td></tr>
+<tr class="separator:a8a1a1767db7a925da80ee8a356ce423b inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae6336c05f8e7de1be072565b8d6256c inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual QString&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a> () const override</td></tr>
+<tr class="memdesc:aae6336c05f8e7de1be072565b8d6256c inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns long name/description (for tooltip, etc.)  <a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">More...</a><br /></td></tr>
+<tr class="separator:aae6336c05f8e7de1be072565b8d6256c inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9d5f749c5b30b78dab3cc78812e8d8e inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual QIcon&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a> () const override</td></tr>
+<tr class="memdesc:ac9d5f749c5b30b78dab3cc78812e8d8e inherit pub_methods_classccDefaultPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns icon.  <a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">More...</a><br /></td></tr>
+<tr class="separator:ac9d5f749c5b30b78dab3cc78812e8d8e inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d22e238d5714d9cbdc4818c014fafe2 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccPluginInterface.html#a332370f9ecfa67f1fa96d37d3de3e140">ReferenceList</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a3d22e238d5714d9cbdc4818c014fafe2">getReferences</a> () const override</td></tr>
+<tr class="separator:a3d22e238d5714d9cbdc4818c014fafe2 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c7e655f0af6852419242e1b9a481514 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccPluginInterface.html#af78704bf3b703f3c9026781408d10c8d">ContactList</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a0c7e655f0af6852419242e1b9a481514">getAuthors</a> () const override</td></tr>
+<tr class="separator:a0c7e655f0af6852419242e1b9a481514 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7eacb28c4e2b287008e8b90c5c4ee06 inherit pub_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccPluginInterface.html#af78704bf3b703f3c9026781408d10c8d">ContactList</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#ac7eacb28c4e2b287008e8b90c5c4ee06">getMaintainers</a> () const override</td></tr>
+<tr class="separator:ac7eacb28c4e2b287008e8b90c5c4ee06 inherit pub_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classccPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classccPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classccPluginInterface.html">ccPluginInterface</a></td></tr>
+<tr class="memitem:a5b6d0c71bb22372ea7aff45489693766 inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a5b6d0c71bb22372ea7aff45489693766">~ccPluginInterface</a> ()=default</td></tr>
+<tr class="memdesc:a5b6d0c71bb22372ea7aff45489693766 inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Virtual destructor.  <a href="classccPluginInterface.html#a5b6d0c71bb22372ea7aff45489693766">More...</a><br /></td></tr>
+<tr class="separator:a5b6d0c71bb22372ea7aff45489693766 inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d67ba00a2e3df9d701e1653de1ba7db inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a1d67ba00a2e3df9d701e1653de1ba7db">start</a> ()</td></tr>
+<tr class="memdesc:a1d67ba00a2e3df9d701e1653de1ba7db inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts the plugin.  <a href="classccPluginInterface.html#a1d67ba00a2e3df9d701e1653de1ba7db">More...</a><br /></td></tr>
+<tr class="separator:a1d67ba00a2e3df9d701e1653de1ba7db inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad926804a4eaa5cdbc9e686ab71ccc720 inherit pub_methods_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classccExternalFactory.html">ccExternalFactory</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#ad926804a4eaa5cdbc9e686ab71ccc720">getCustomObjectsFactory</a> () const</td></tr>
+<tr class="memdesc:ad926804a4eaa5cdbc9e686ab71ccc720 inherit pub_methods_classccPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the plugin's custom object factory (if any)  <a href="classccPluginInterface.html#ad926804a4eaa5cdbc9e686ab71ccc720">More...</a><br /></td></tr>
+<tr class="separator:ad926804a4eaa5cdbc9e686ab71ccc720 inherit pub_methods_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classccPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classccPluginInterface')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classccPluginInterface.html">ccPluginInterface</a></td></tr>
+<tr class="memitem:af78704bf3b703f3c9026781408d10c8d inherit pub_types_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">typedef QList&lt; <a class="el" href="structccPluginInterface_1_1Contact.html">Contact</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#af78704bf3b703f3c9026781408d10c8d">ContactList</a></td></tr>
+<tr class="separator:af78704bf3b703f3c9026781408d10c8d inherit pub_types_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a332370f9ecfa67f1fa96d37d3de3e140 inherit pub_types_classccPluginInterface"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccPluginInterface.html#a332370f9ecfa67f1fa96d37d3de3e140">ReferenceList</a> = QList&lt; <a class="el" href="structccPluginInterface_1_1Reference.html">Reference</a> &gt;</td></tr>
+<tr class="separator:a332370f9ecfa67f1fa96d37d3de3e140 inherit pub_types_classccPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_methods_classccDefaultPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classccDefaultPluginInterface')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classccDefaultPluginInterface.html">ccDefaultPluginInterface</a></td></tr>
+<tr class="memitem:a097c0bb9d433b5b43146f35e29981218 inherit pro_methods_classccDefaultPluginInterface"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccDefaultPluginInterface.html#a097c0bb9d433b5b43146f35e29981218">ccDefaultPluginInterface</a> (const QString &amp;resourcePath=QString())</td></tr>
+<tr class="separator:a097c0bb9d433b5b43146f35e29981218 inherit pro_methods_classccDefaultPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pro_attribs_classccStdPluginInterface"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classccStdPluginInterface')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classccStdPluginInterface.html">ccStdPluginInterface</a></td></tr>
+<tr class="memitem:af46bcfd10da04c21300a7f1a59b29d86 inherit pro_attribs_classccStdPluginInterface"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a></td></tr>
+<tr class="memdesc:af46bcfd10da04c21300a7f1a59b29d86 inherit pro_attribs_classccStdPluginInterface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main application interface.  <a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">More...</a><br /></td></tr>
+<tr class="separator:af46bcfd10da04c21300a7f1a59b29d86 inherit pro_attribs_classccStdPluginInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>"Entry point" of the plugin </p>
@@ -275,14 +356,18 @@ Public Member Functions</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
+<p>Get a list of actions for this plugin. </p>
+
+<p>Implements <a class="el" href="classccStdPluginInterface.html#aa418ce1ee9864a94cc5990d628c8aa31">ccStdPluginInterface</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="PythonPlugin_8cpp_source.html#l00136">136</a> of file <a class="el" href="PythonPlugin_8cpp_source.html">PythonPlugin.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Resources_8h_source.html#l00013">ABOUT_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00021">ACTION_LAUNCHER_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00028">ADD_PYSCRIPT_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00016">DOCUMENTATION_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00014">EDITOR_ICON_PATH</a>, <a class="el" href="PythonInterpreter_8cpp_source.html#l00293">PythonInterpreter::IsInitialized()</a>, <a class="el" href="PythonPlugin_8cpp_source.html#l00121">LoadSettings()</a>, <a class="el" href="Resources_8h_source.html#l00019">PACKAGE_MANAGER_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00026">PYSCRIPTS_REGISTER_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00030">REMOVE_PYSCRIPT_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00015">REPL_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00018">RUNNER_ICON_PATH</a>, and <a class="el" href="Resources_8h_source.html#l00023">SETTINGS_ICON_PATH</a>.</p>
+<p class="reference">References <a class="el" href="Resources_8h_source.html#l00013">ABOUT_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00021">ACTION_LAUNCHER_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00028">ADD_PYSCRIPT_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00016">DOCUMENTATION_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00014">EDITOR_ICON_PATH</a>, <a class="el" href="PythonInterpreter_8cpp_source.html#l00293">PythonInterpreter::IsInitialized()</a>, <a class="el" href="PythonPlugin_8cpp_source.html#l00121">LoadSettings()</a>, <a class="el" href="Resources_8h_source.html#l00019">PACKAGE_MANAGER_ICON_PATH</a>, <a class="el" href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">cloudViewer::t::geometry::path</a>, <a class="el" href="Resources_8h_source.html#l00026">PYSCRIPTS_REGISTER_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00030">REMOVE_PYSCRIPT_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00015">REPL_ICON_PATH</a>, <a class="el" href="Resources_8h_source.html#l00018">RUNNER_ICON_PATH</a>, and <a class="el" href="Resources_8h_source.html#l00023">SETTINGS_ICON_PATH</a>.</p>
 
 </div>
 </div>
@@ -350,22 +435,24 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">void PythonPlugin::registerCommands </td>
           <td>(</td>
-          <td class="paramtype">ccCommandLineInterface *&#160;</td>
+          <td class="paramtype"><a class="el" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *&#160;</td>
           <td class="paramname"><em>cmd</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 <p>Registers the -PYTHON_SCRIPT command to run Python scripts in ACloudViewer's commandline mode </p>
 
+<p>Reimplemented from <a class="el" href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">ccPluginInterface</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="PythonPlugin_8cpp_source.html#l00500">500</a> of file <a class="el" href="PythonPlugin_8cpp_source.html">PythonPlugin.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Runtime_8cpp_source.html#l00099">Runtime::setCmdLineInterfaceInstance()</a>.</p>
+<p class="reference">References <a class="el" href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">ccCommandLineInterface::registerCommand()</a>, and <a class="el" href="Runtime_8cpp_source.html#l00099">Runtime::setCmdLineInterfaceInstance()</a>.</p>
 
 </div>
 </div>
@@ -381,21 +468,26 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">void PythonPlugin::setMainAppInterface </td>
           <td>(</td>
-          <td class="paramtype">ecvMainAppInterface *&#160;</td>
+          <td class="paramtype"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td>
           <td class="paramname"><em>app</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
+<p>Sets application entry point. </p>
+<p>Called just after plugin creation by qCC </p>
+
+<p>Reimplemented from <a class="el" href="classccStdPluginInterface.html#a81a906999348affa15b28cd8d6bfc714">ccStdPluginInterface</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="PythonPlugin_8cpp_source.html#l00509">509</a> of file <a class="el" href="PythonPlugin_8cpp_source.html">PythonPlugin.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="PythonPluginManager_8cpp_source.html#l00117">PythonPluginManager::loadPluginsFrom()</a>, <a class="el" href="PythonPluginManager_8cpp_source.html#l00021">PythonPluginManager::loadPluginsFromEntryPoints()</a>, <a class="el" href="Utilities_8h_source.html#l00140">LogPythonHome()</a>, <a class="el" href="Utilities_8h_source.html#l00116">LogPythonPath()</a>, <a class="el" href="PythonRuntimeSettings_8cpp_source.html#l00244">PythonRuntimeSettings::pluginsPaths()</a>, <a class="el" href="Runtime_8cpp_source.html#l00082">Runtime::setMainAppInterfaceInstance()</a>, and <a class="el" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning()</a>.</p>
+<p class="reference">References <a class="el" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow()</a>, <a class="el" href="PythonPluginManager_8cpp_source.html#l00117">PythonPluginManager::loadPluginsFrom()</a>, <a class="el" href="PythonPluginManager_8cpp_source.html#l00021">PythonPluginManager::loadPluginsFromEntryPoints()</a>, <a class="el" href="Utilities_8h_source.html#l00140">LogPythonHome()</a>, <a class="el" href="Utilities_8h_source.html#l00116">LogPythonPath()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00085">ccStdPluginInterface::m_app</a>, <a class="el" href="PythonRuntimeSettings_8cpp_source.html#l00244">PythonRuntimeSettings::pluginsPaths()</a>, <a class="el" href="ecvStdPluginInterface_8h_source.html#l00046">ccStdPluginInterface::setMainAppInterface()</a>, <a class="el" href="Runtime_8cpp_source.html#l00082">Runtime::setMainAppInterfaceInstance()</a>, and <a class="el" href="CVLog_8cpp_source.html#l00133">CVLog::Warning()</a>.</p>
 
 </div>
 </div>
@@ -417,10 +509,15 @@ Public Member Functions</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Stops the plugin. </p>
+<p>Should be reimplemented if necessary. Used to stop a plugin previously started (see <a class="el" href="classccPluginInterface.html#a1d67ba00a2e3df9d701e1653de1ba7db" title="Starts the plugin.">ccPluginInterface::start</a>). </p>
+
+<p>Reimplemented from <a class="el" href="classccPluginInterface.html#a6a184a580d35944ffc67231b3ea58c3f">ccPluginInterface</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="PythonPlugin_8cpp_source.html#l00128">128</a> of file <a class="el" href="PythonPlugin_8cpp_source.html">PythonPlugin.cpp</a>.</p>
 
@@ -438,7 +535,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classPythonPlugin.html">PythonPlugin</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:14 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

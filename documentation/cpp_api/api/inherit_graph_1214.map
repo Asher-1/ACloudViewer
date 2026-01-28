@@ -1,3 +1,584 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structSorterRecord.html" title=" " alt="" coords="5,5,112,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="259,309,413,336"/>
+<area shape="rect" id="node2" href="$classqAnimationDlg.html" title="Dialog for qAnimation plugin." alt="" coords="583,441,702,468"/>
+<area shape="rect" id="node3" title=" " alt="" coords="571,289,715,316"/>
+<area shape="rect" id="node4" href="$classecvAnnotationsTool.html" title="Dialog for managing a clipping box." alt="" coords="871,437,1020,464"/>
+<area shape="rect" id="node5" title=" " alt="" coords="225,360,447,387"/>
+<area shape="rect" id="node6" href="$classccApplyTransformationDlg.html" title="Dialog to input a 4x4 matrix." alt="" coords="546,543,739,569"/>
+<area shape="rect" id="node7" title=" " alt="" coords="235,411,437,453"/>
+<area shape="rect" id="node8" href="$classecvAskDoubleIntegerValuesDlg.html" title="Dialog to input 2 values with custom labels." alt="" coords="529,593,756,620"/>
+<area shape="rect" id="node9" title=" " alt="" coords="239,477,433,518"/>
+<area shape="rect" id="node10" href="$classccAskThreeDoubleValuesDlg.html" title="Generic dialog to query 3 (double) values." alt="" coords="539,644,747,671"/>
+<area shape="rect" id="node11" title=" " alt="" coords="224,543,448,569"/>
+<area shape="rect" id="node12" href="$classccAskTwoDoubleValuesDlg.html" title="Dialog to input 2 values with custom labels." alt="" coords="545,695,741,721"/>
+<area shape="rect" id="node13" title=" " alt="" coords="231,593,441,620"/>
+<area shape="rect" id="node14" href="$classccBoundingBoxEditorDlg.html" title="Dialog to define the extents of a 3D box." alt="" coords="551,745,734,772"/>
+<area shape="rect" id="node15" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="539,7789,746,7830"/>
+<area shape="rect" id="node16" href="$classccBBox.html" title="Bounding box structure." alt="" coords="910,7853,981,7880"/>
+<area shape="rect" id="node17" title=" " alt="" coords="257,644,415,671"/>
+<area shape="rect" id="node18" href="$classBundlerImportDlg.html" title="Dialog for importation of Snavely&#39;s Bundler files." alt="" coords="574,796,711,823"/>
+<area shape="rect" id="node19" title=" " alt="" coords="233,695,439,721"/>
+<area shape="rect" id="node20" href="$classccCamSensorProjectionDlg.html" title="Camera sensor parameters dialog." alt="" coords="544,847,741,873"/>
+<area shape="rect" id="node21" title=" " alt="" coords="243,745,429,772"/>
+<area shape="rect" id="node22" href="$classqCanupo2DViewDialog.html" title="CANUPO plugin&#39;s 2D view dialog." alt="" coords="557,897,728,924"/>
+<area shape="rect" id="node23" title=" " alt="" coords="247,897,425,924"/>
+<area shape="rect" id="node24" href="$classqCanupoClassifDialog.html" title="CANUPO plugin&#39;s classification dialog." alt="" coords="560,948,725,975"/>
+<area shape="rect" id="node25" title=" " alt="" coords="243,1049,429,1076"/>
+<area shape="rect" id="node26" href="$classqCanupoTrainingDialog.html" title="CANUPO plugin&#39;s training dialog." alt="" coords="557,1049,729,1076"/>
+<area shape="rect" id="node27" href="$classcc2Point5DimEditor.html" title="2.5D data editor (generic interface)" alt="" coords="261,56,411,83"/>
+<area shape="rect" id="node28" href="$classccRasterizeTool.html" title="Rasterize tool (dialog)" alt="" coords="581,56,704,83"/>
+<area shape="rect" id="node29" href="$classccVolumeCalcTool.html" title="Volume calculation tool (dialog)" alt="" coords="573,107,712,133"/>
+<area shape="rect" id="node30" title=" " alt="" coords="563,340,723,367"/>
+<area shape="rect" id="node31" href="$classccCloudLayersDlg.html" title=" " alt="" coords="876,512,1015,539"/>
+<area shape="rect" id="node32" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="266,8555,406,8581"/>
+<area shape="rect" id="node33" href="$classPyDrawableObjectBase.html" title=" " alt="" coords="549,8783,737,8825"/>
+<area shape="rect" id="node34" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="599,8732,687,8759"/>
+<area shape="rect" id="node35" href="$classPyObjectBase.html" title=" " alt="" coords="841,8376,1049,8403"/>
+<area shape="rect" id="node37" href="$classccArray.html" title=" " alt="" coords="827,9293,1064,9334"/>
+<area shape="rect" id="node39" href="$classccArray.html" title=" " alt="" coords="858,9358,1033,9399"/>
+<area shape="rect" id="node41" href="$classccArray.html" title=" " alt="" coords="847,9423,1043,9465"/>
+<area shape="rect" id="node43" href="$classccArray.html" title=" " alt="" coords="850,9489,1041,9530"/>
+<area shape="rect" id="node45" href="$classccArray.html" title=" " alt="" coords="851,9227,1039,9269"/>
+<area shape="rect" id="node47" href="$classcc2DLabel.html" title="2D label (typically attached to points)" alt="" coords="901,8005,990,8032"/>
+<area shape="rect" id="node48" href="$classcc2DViewportObject.html" title="2D viewport object" alt="" coords="868,8856,1023,8883"/>
+<area shape="rect" id="node51" href="$classccArray.html" title="Shareable array that can be properly inserted in the DB tree." alt="" coords="837,9009,1054,9050"/>
+<area shape="rect" id="node52" href="$classccClipBox.html" title="Clipping box." alt="" coords="902,8427,989,8453"/>
+<area shape="rect" id="node53" href="$classccCustomHObject.html" title="Custom hierarchy object." alt="" coords="876,8907,1015,8933"/>
+<area shape="rect" id="node56" href="$classccFacet.html" title="Facet." alt="" coords="910,9555,981,9581"/>
+<area shape="rect" id="node57" href="$classccGeoObject.html" title=" " alt="" coords="893,8224,997,8251"/>
+<area shape="rect" id="node58" href="$classccImage.html" title="Generic image." alt="" coords="907,8275,984,8301"/>
+<area shape="rect" id="node59" href="$classccIndexedTransformationBuffer.html" title="Indexed Transformation buffer." alt="" coords="833,8957,1057,8984"/>
+<area shape="rect" id="node60" href="$classccKdTree.html" title="KD&#45;tree structure." alt="" coords="905,7904,985,7931"/>
+<area shape="rect" id="node61" href="$classccMaterialSet.html" title="Mesh (triangle) material." alt="" coords="890,9075,1001,9101"/>
+<area shape="rect" id="node62" href="$classccOctreeProxy.html" title="Octree structure proxy." alt="" coords="887,8325,1003,8352"/>
+<area shape="rect" id="node63" href="$classccSensor.html" title="Generic sensor interface." alt="" coords="905,8477,985,8504"/>
+<area shape="rect" id="node66" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="884,8107,1007,8133"/>
+<area shape="rect" id="node99" href="$classcloudViewer_1_1geometry_1_1Image.html" title="The Image class stores image with customizable width, height, num of channels and bytes per channel." alt="" coords="859,8529,1032,8570"/>
+<area shape="rect" id="node100" href="$classcloudViewer_1_1geometry_1_1LineSet.html" title="LineSet define a sets of lines in 3D. A typical application is to display the point cloud corresponde..." alt="" coords="859,8594,1032,8635"/>
+<area shape="rect" id="node101" href="$classcloudViewer_1_1geometry_1_1Octree.html" title="Octree datastructure." alt="" coords="859,12909,1032,12950"/>
+<area shape="rect" id="node102" href="$classcloudViewer_1_1geometry_1_1RGBDImage.html" title="RGBDImage is for a pair of registered color and depth images,." alt="" coords="859,8659,1032,8701"/>
+<area shape="rect" id="node103" href="$classcloudViewer_1_1geometry_1_1VoxelGrid.html" title="VoxelGrid is a collection of voxels which are aligned in grid." alt="" coords="859,8725,1032,8766"/>
+<area shape="rect" id="node104" href="$classcloudViewer_1_1geometry_1_1ecvMeshBase.html" title="ecvMeshBash Class." alt="" coords="859,4631,1032,4673"/>
+<area shape="rect" id="node107" href="$classcloudViewer_1_1visualization_1_1PointCloudPicker.html" title="A utility class to store picked points of a pointcloud." alt="" coords="849,8790,1042,8831"/>
+<area shape="rect" id="node108" href="$classcloudViewer_1_1visualization_1_1SelectionPolygon.html" title=" " alt="" coords="849,8158,1042,8199"/>
+<area shape="rect" id="node109" href="$classecvOrientedBBox.html" title=" " alt="" coords="878,9125,1013,9152"/>
+<area shape="rect" id="node36" href="$classPyGeometry.html" title=" " alt="" coords="1135,8565,1366,8592"/>
+<area shape="rect" id="node38" href="$classNormsIndexesTableType.html" title="Array of compressed 3D normals (single index)" alt="" coords="1161,9297,1340,9324"/>
+<area shape="rect" id="node40" href="$classTextureCoordsContainer.html" title="Array of 2D texture coordinates." alt="" coords="1161,9348,1340,9375"/>
+<area shape="rect" id="node42" href="$classRGBAColorsTableType.html" title="Array of RGBA colors for each point." alt="" coords="1169,9449,1333,9476"/>
+<area shape="rect" id="node44" href="$classNormsTableType.html" title="Array of (uncompressed) 3D normals (Nx,Ny,Nz)" alt="" coords="1186,9500,1315,9527"/>
+<area shape="rect" id="node46" href="$classColorsTableType.html" title="Array of RGB colors for each point." alt="" coords="1187,9235,1314,9261"/>
+<area shape="rect" id="node49" href="$classcc2DViewportLabel.html" title="2D viewport label" alt="" coords="1177,8856,1324,8883"/>
+<area shape="rect" id="node50" href="$classccMouseCircle.html" title=" " alt="" coords="1193,9071,1309,9097"/>
+<area shape="rect" id="node54" href="$classGrainsAsEllipsoids.html" title=" " alt="" coords="1179,9399,1322,9425"/>
+<area shape="rect" id="node55" href="$classccCustomLeafObject.html" title="Custom leaf object." alt="" coords="1173,8907,1329,8933"/>
+<area shape="rect" id="node64" href="$classccCameraSensor.html" title="Camera (projective) sensor." alt="" coords="1185,8667,1316,8693"/>
+<area shape="rect" id="node65" href="$classccGBLSensor.html" title="Ground&#45;based Laser sensor." alt="" coords="1197,8616,1304,8643"/>
+<area shape="rect" id="node67" href="$classccGenericMesh.html" title="Generic mesh interface." alt="" coords="1190,4529,1311,4556"/>
+<area shape="rect" id="node85" href="$classccGenericPointCloud.html" title="A 3D cloud interface with associated features (color, normals, octree, etc.)" alt="" coords="1173,12097,1329,12124"/>
+<area shape="rect" id="node90" href="$classccPolyline.html" title="Colored polyline." alt="" coords="1813,15997,1901,16024"/>
+<area shape="rect" id="node68" href="$classccMesh.html" title="Triangular mesh." alt="" coords="1526,4504,1597,4531"/>
+<area shape="rect" id="node83" href="$classccMeshGroup.html" title=" " alt="" coords="1506,4605,1617,4632"/>
+<area shape="rect" id="node84" href="$classccSubMesh.html" title="A sub&#45;mesh." alt="" coords="1514,4555,1609,4581"/>
+<area shape="rect" id="node69" href="$classccGenericPrimitive.html" title="Generic primitive interface." alt="" coords="1785,7832,1930,7859"/>
+<area shape="rect" id="node70" href="$classPyGenericPrimitive.html" title=" " alt="" coords="2024,7639,2185,7681"/>
+<area shape="rect" id="node71" href="$classccBox.html" title="Box (primitive)" alt="" coords="2074,7705,2135,7732"/>
+<area shape="rect" id="node72" href="$classccCone.html" title="Cone (primitive)" alt="" coords="2070,7756,2139,7783"/>
+<area shape="rect" id="node74" href="$classccCoordinateSystem.html" title="Coordinate System (primitive)" alt="" coords="2027,7807,2183,7833"/>
+<area shape="rect" id="node75" href="$classccDisc.html" title="Disc (primitive)" alt="" coords="2073,7857,2137,7884"/>
+<area shape="rect" id="node76" href="$classccDish.html" title="Dish." alt="" coords="2072,7908,2137,7935"/>
+<area shape="rect" id="node77" href="$classccExtru.html" title="Profile extrusion (primitive)" alt="" coords="2069,7959,2140,7985"/>
+<area shape="rect" id="node78" href="$classccPlane.html" title="Plane (primitive)" alt="" coords="2069,11439,2141,11465"/>
+<area shape="rect" id="node80" href="$classccQuadric.html" title="Quadric (primitive)" alt="" coords="2061,8009,2148,8036"/>
+<area shape="rect" id="node81" href="$classccSphere.html" title="Sphere (primitive)" alt="" coords="2064,8060,2145,8087"/>
+<area shape="rect" id="node82" href="$classccTorus.html" title="Torus (primitive)" alt="" coords="2069,7588,2140,7615"/>
+<area shape="rect" id="node73" href="$classccCylinder.html" title="Cylinder (primitive)" alt="" coords="2262,7756,2353,7783"/>
+<area shape="rect" id="node79" href="$classccFitPlane.html" title=" " alt="" coords="2263,11557,2351,11584"/>
+<area shape="rect" id="node86" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="1461,11555,1661,11597"/>
+<area shape="rect" id="node87" href="$classccPointCloud.html" title="A 3D cloud and its associated features (color, normals, scalar fields, etc.)" alt="" coords="1804,12080,1911,12107"/>
+<area shape="rect" id="node88" href="$classccSNECloud.html" title=" " alt="" coords="2055,12135,2154,12161"/>
+<area shape="rect" id="node89" href="$classccSymbolCloud.html" title=" " alt="" coords="2043,12080,2166,12107"/>
+<area shape="rect" id="node91" href="$classccCircle.html" title="Circle (as a polyline)" alt="" coords="2068,15997,2141,16024"/>
+<area shape="rect" id="node92" href="$classccPointPair.html" title=" " alt="" coords="2058,15439,2151,15465"/>
+<area shape="rect" id="node98" href="$classccTrace.html" title=" " alt="" coords="2069,13292,2140,13319"/>
+<area shape="rect" id="node93" href="$classccLineation.html" title=" " alt="" coords="2259,15337,2355,15364"/>
+<area shape="rect" id="node94" href="$classccNote.html" title=" " alt="" coords="2274,15388,2341,15415"/>
+<area shape="rect" id="node95" href="$classccPinchNode.html" title=" " alt="" coords="2255,15439,2360,15465"/>
+<area shape="rect" id="node96" href="$classccThickness.html" title=" " alt="" coords="2257,15489,2358,15516"/>
+<area shape="rect" id="node97" href="$classccTopologyRelation.html" title=" " alt="" coords="2233,15540,2381,15567"/>
+<area shape="rect" id="node105" href="$classcloudViewer_1_1geometry_1_1HalfEdgeTriangleMesh.html" title="HalfEdgeTriangleMesh inherits TriangleMesh class with the addition of HalfEdge data structure for eac..." alt="" coords="1163,4631,1338,4673"/>
+<area shape="rect" id="node106" href="$classcloudViewer_1_1geometry_1_1TetraMesh.html" title="Tetra mesh contains vertices and tetrahedra represented by the indices to the vertices." alt="" coords="1164,4697,1337,4738"/>
+<area shape="rect" id="node110" href="$classccInteractor.html" title="Interactor interface (entity that can be dragged or clicked in a 3D view)" alt="" coords="593,8479,692,8505"/>
+<area shape="rect" id="node111" href="$classccMeasurement.html" title=" " alt="" coords="1794,13017,1921,13044"/>
+<area shape="rect" id="node112" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="575,4089,710,4116"/>
+<area shape="rect" id="node113" href="$classHSVDialog.html" title=" " alt="" coords="900,4697,991,4724"/>
+<area shape="rect" id="node114" href="$classMainWindow.html" title=" " alt="" coords="892,7701,999,7728"/>
+<area shape="rect" id="node115" href="$classRgbDialog.html" title=" " alt="" coords="901,3937,990,3964"/>
+<area shape="rect" id="node116" href="$classScalarDialog.html" title=" " alt="" coords="893,4140,997,4167"/>
+<area shape="rect" id="node117" href="$classccCompass.html" title=" " alt="" coords="897,11895,993,11921"/>
+<area shape="rect" id="node118" href="$classccMPlaneDlgController.html" title=" " alt="" coords="860,8056,1031,8083"/>
+<area shape="rect" id="node119" href="$classccPlaneEditDlg.html" title="Dialog to create (or edit the parameters) of a plane." alt="" coords="886,4748,1005,4775"/>
+<area shape="rect" id="node120" href="$classccPointPairRegistrationDlg.html" title=" " alt="" coords="848,3836,1043,3863"/>
+<area shape="rect" id="node121" href="$classccPointPickingGenericInterface.html" title=" " alt="" coords="833,3785,1057,3812"/>
+<area shape="rect" id="node124" href="$classccTracePolylineTool.html" title="Graphical Polyline Tracing tool." alt="" coords="871,3887,1019,3913"/>
+<area shape="rect" id="node125" href="$classccWaveDialog.html" title="Waveform dialog." alt="" coords="888,4039,1003,4065"/>
+<area shape="rect" id="node126" href="$classecvAnimationParamDlg.html" title="Dialog to interactively edit the camera pose parameters." alt="" coords="858,3399,1033,3425"/>
+<area shape="rect" id="node127" href="$classecvCameraParamEditDlg.html" title="Dialog to interactively edit the camera pose parameters." alt="" coords="853,3639,1037,3665"/>
+<area shape="rect" id="node128" href="$classecvMeasurementTool.html" title="Dialog for managing measurement tools (Distance, Contour, Protractor)" alt="" coords="865,4089,1026,4116"/>
+<area shape="rect" id="node122" href="$classccPointListPickingDlg.html" title="Dialog/interactor to graphically pick a list of points." alt="" coords="1170,3887,1331,3913"/>
+<area shape="rect" id="node123" href="$classccPointPropertiesDlg.html" title="Dialog for simple point picking (information, distance, etc.)" alt="" coords="1172,6411,1329,6437"/>
+<area shape="rect" id="node129" href="$classccPlanarEntityInterface.html" title="Interface for a planar entity." alt="" coords="556,11439,729,11465"/>
+<area shape="rect" id="node130" href="$classPyPlanarEntityInterface.html" title=" " alt="" coords="826,11373,1065,11414"/>
+<area shape="rect" id="node131" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="15,13481,150,13508"/>
+<area shape="rect" id="node132" href="$classccDefaultPluginInterface.html" title=" " alt="" coords="245,13481,427,13508"/>
+<area shape="rect" id="node133" href="$classccIOPluginInterface.html" title="I/O filter plugin interface." alt="" coords="569,14393,717,14420"/>
+<area shape="rect" id="node148" href="$classccPclPluginInterface.html" title="Pcl ECV plugin interface." alt="" coords="566,12432,719,12459"/>
+<area shape="rect" id="node150" href="$classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="565,13481,720,13508"/>
+<area shape="rect" id="node134" href="$classLasPlugin.html" title=" " alt="" coords="903,14545,987,14572"/>
+<area shape="rect" id="node135" href="$classqAdditionalIO.html" title="Additional I/O Formats." alt="" coords="890,14596,1001,14623"/>
+<area shape="rect" id="node136" href="$classqCSVMatrixIO.html" title="CSV Matrix file (2.5D cloud)" alt="" coords="889,14647,1001,14673"/>
+<area shape="rect" id="node137" href="$classqCoreIO.html" title=" " alt="" coords="908,14697,983,14724"/>
+<area shape="rect" id="node138" href="$classqDracoIO.html" title=" " alt="" coords="904,14748,987,14775"/>
+<area shape="rect" id="node139" href="$classqE57IO.html" title=" " alt="" coords="911,14089,979,14116"/>
+<area shape="rect" id="node140" href="$classqFBXIO.html" title=" " alt="" coords="910,14140,981,14167"/>
+<area shape="rect" id="node141" href="$classqLASFWFIO.html" title=" " alt="" coords="896,14191,995,14217"/>
+<area shape="rect" id="node142" href="$classqMeshIO.html" title=" " alt="" coords="906,14241,985,14268"/>
+<area shape="rect" id="node143" href="$classqPDALIO.html" title=" " alt="" coords="906,14292,985,14319"/>
+<area shape="rect" id="node144" href="$classqPclIO.html" title="PCL IO plugin (PCD format)" alt="" coords="914,14343,977,14369"/>
+<area shape="rect" id="node145" href="$classqPhotoscanIO.html" title="PhotoScan." alt="" coords="890,14393,1001,14420"/>
+<area shape="rect" id="node146" href="$classqRDBIO.html" title="RDB file (3D cloud)" alt="" coords="909,14444,981,14471"/>
+<area shape="rect" id="node147" href="$classqStepCADImport.html" title="Step file import plugin." alt="" coords="880,14495,1011,14521"/>
+<area shape="rect" id="node149" href="$classqPCL.html" title="PCL bridge plugin." alt="" coords="918,11540,973,11567"/>
+<area shape="rect" id="node151" href="$classColorimetricSegmenter.html" title=" " alt="" coords="859,13836,1032,13863"/>
+<area shape="rect" id="node152" href="$classG3PointPlugin.html" title=" " alt="" coords="889,13887,1002,13913"/>
+<area shape="rect" id="node153" href="$classJsonRPCPlugin.html" title="Example qCC plugin." alt="" coords="888,13127,1003,13153"/>
+<area shape="rect" id="node154" href="$classPythonPlugin.html" title="&quot;Entry point&quot; of the plugin" alt="" coords="892,13937,999,13964"/>
+<area shape="rect" id="node155" href="$classccAutoSeg.html" title=" " alt="" coords="900,13633,991,13660"/>
+<area shape="rect" id="node156" href="$classccManualSeg.html" title=" " alt="" coords="891,13785,999,13812"/>
+<area shape="rect" id="node157" href="$classq3DMASCPlugin.html" title="3DMASC plugin" alt="" coords="882,12975,1009,13001"/>
+<area shape="rect" id="node158" href="$classqAnimation.html" title=" " alt="" coords="897,13025,994,13052"/>
+<area shape="rect" id="node159" href="$classqCSF.html" title="A point&#45;clouds filtering algorithm utilize cloth simulation process." alt="" coords="918,13076,973,13103"/>
+<area shape="rect" id="node160" href="$classqCanupoPlugin.html" title="CANUPO plugin." alt="" coords="886,13988,1005,14015"/>
+<area shape="rect" id="node161" href="$classqCloudLayers.html" title=" " alt="" coords="890,14039,1001,14065"/>
+<area shape="rect" id="node162" href="$classqCork.html" title="Mes Boolean Operations (CSG) plugin." alt="" coords="915,13177,975,13204"/>
+<area shape="rect" id="node163" href="$classqFacets.html" title="Facet detection plugin (BRGM)" alt="" coords="910,13228,981,13255"/>
+<area shape="rect" id="node164" href="$classqHoughNormals.html" title=" " alt="" coords="882,13279,1009,13305"/>
+<area shape="rect" id="node165" href="$classqM3C2Plugin.html" title="M3C2 plugin." alt="" coords="892,13329,999,13356"/>
+<area shape="rect" id="node166" href="$classqMPlane.html" title=" " alt="" coords="906,13380,985,13407"/>
+<area shape="rect" id="node167" href="$classqPCV.html" title=" " alt="" coords="917,13431,973,13457"/>
+<area shape="rect" id="node168" href="$classqPoissonRecon.html" title="Wrapper to the &quot;Poisson Surface Reconstruction (Version 9)&quot; algorithm." alt="" coords="885,13481,1005,13508"/>
+<area shape="rect" id="node169" href="$classqRansacSD.html" title=" " alt="" coords="898,13532,993,13559"/>
+<area shape="rect" id="node170" href="$classqSRA.html" title="Surface of Revolution Analysis plugin." alt="" coords="917,13583,973,13609"/>
+<area shape="rect" id="node171" href="$classqTreeIso.html" title="TreeIso plugin." alt="" coords="907,13684,983,13711"/>
+<area shape="rect" id="node172" href="$classqVoxFall.html" title=" " alt="" coords="907,13735,983,13761"/>
+<area shape="rect" id="node173" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="5,948,160,975"/>
+<area shape="rect" id="node174" href="$classccGLMatrixTpl.html" title=" " alt="" coords="241,157,431,184"/>
+<area shape="rect" id="node176" href="$classccGLMatrixTpl.html" title=" " alt="" coords="249,9831,423,9857"/>
+<area shape="rect" id="node179" href="$classWaveformDescriptor.html" title="Waveform descriptor." alt="" coords="258,8605,414,8632"/>
+<area shape="rect" id="node180" href="$classccColorScale.html" title="Color scale." alt="" coords="283,8707,389,8733"/>
+<area shape="rect" id="node181" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="259,208,413,235"/>
+<area shape="rect" id="node182" href="$classccMaterial.html" title="Mesh (triangle) material." alt="" coords="291,259,381,285"/>
+<area shape="rect" id="node183" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="297,7821,375,7848"/>
+<area shape="rect" id="node189" href="$structccPointCloud_1_1Grid.html" title="Grid structure." alt="" coords="265,796,407,823"/>
+<area shape="rect" id="node190" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="1197,4580,1304,4607"/>
+<area shape="rect" id="node191" href="$classccWaveform.html" title="Waveform." alt="" coords="285,847,387,873"/>
+<area shape="rect" id="node192" href="$classecvViewportParameters.html" title="Standard parameters for GL displays/viewports." alt="" coords="247,948,425,975"/>
+<area shape="rect" id="node175" href="$classccGLMatrixd.html" title="Double version of ccGLMatrixTpl." alt="" coords="591,157,694,184"/>
+<area shape="rect" id="node177" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="595,10648,690,10675"/>
+<area shape="rect" id="node178" href="$classccIndexedTransformation.html" title=" " alt="" coords="853,11125,1038,11152"/>
+<area shape="rect" id="node184" href="$classPyObjectBase.html" title=" " alt="" coords="837,7651,1053,7677"/>
+<area shape="rect" id="node185" href="$classPyGeometry.html" title=" " alt="" coords="1135,5561,1367,5588"/>
+<area shape="rect" id="node187" href="$classPyGeometry.html" title=" " alt="" coords="1454,11490,1669,11531"/>
+<area shape="rect" id="node186" href="$classPyGenericTriangleMesh.html" title=" " alt="" coords="1467,2418,1655,2459"/>
+<area shape="rect" id="node188" href="$classPyGenericPointCloud.html" title=" " alt="" coords="1755,12405,1959,12446"/>
+<area shape="rect" id="node193" href="$classCCShareable.html" title=" " alt="" coords="590,9333,695,9360"/>
+<area shape="rect" id="node194" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="855,9605,1036,9632"/>
+<area shape="rect" id="node195" title=" " alt="" coords="266,1100,406,1127"/>
+<area shape="rect" id="node196" href="$classCellsFusionDlg.html" title=" " alt="" coords="583,1100,702,1127"/>
+<area shape="rect" id="node197" title=" " alt="" coords="235,1151,437,1177"/>
+<area shape="rect" id="node198" href="$classClassificationParamsDlg.html" title="Dialog for orientation&#45;based classification of facets (qFacets plugin)" alt="" coords="553,1151,732,1177"/>
+<area shape="rect" id="node199" title=" " alt="" coords="239,1201,433,1228"/>
+<area shape="rect" id="node200" href="$classClassify3DMASCDialog.html" title="3DMASC plugin &#39;classify&#39; dialog" alt="" coords="557,1201,728,1228"/>
+<area shape="rect" id="node201" title=" " alt="" coords="233,1252,439,1279"/>
+<area shape="rect" id="node202" href="$classClassifyDisclaimerDialog.html" title="Dialog for displaying the M3C2/UEB disclaimer." alt="" coords="550,1252,735,1279"/>
+<area shape="rect" id="node203" title=" " alt="" coords="241,1303,431,1329"/>
+<area shape="rect" id="node204" href="$classccClippingBoxRepeatDlg.html" title="Dialog for managing clipping box based repeated processes." alt="" coords="551,1303,734,1329"/>
+<area shape="rect" id="node205" title=" " alt="" coords="248,1353,424,1380"/>
+<area shape="rect" id="node206" href="$classccColorGradientDlg.html" title="Dialog to define a color gradient (default, with 2 colors, banding, etc.)" alt="" coords="569,1353,717,1380"/>
+<area shape="rect" id="node207" title=" " alt="" coords="255,1404,417,1431"/>
+<area shape="rect" id="node208" href="$classccColorLevelsDlg.html" title="Dialog to change the color levels." alt="" coords="575,1404,710,1431"/>
+<area shape="rect" id="node209" title=" " alt="" coords="254,1455,418,1481"/>
+<area shape="rect" id="node210" href="$classccComparisonDlg.html" title="Dialog for cloud/cloud or cloud/mesh comparison setting." alt="" coords="575,1455,711,1481"/>
+<area shape="rect" id="node211" title=" " alt="" coords="581,391,705,417"/>
+<area shape="rect" id="node212" href="$classccCompassDlg.html" title=" " alt="" coords="886,611,1005,637"/>
+<area shape="rect" id="node213" title=" " alt="" coords="242,1505,430,1532"/>
+<area shape="rect" id="node214" href="$classccComputeOctreeDlg.html" title="Dialog for octree computation." alt="" coords="563,1505,723,1532"/>
+<area shape="rect" id="node215" title=" " alt="" coords="248,1556,424,1583"/>
+<area shape="rect" id="node216" href="$classccContourExtractorDlg.html" title="Dialog for debugging contour extraction." alt="" coords="559,1556,727,1583"/>
+<area shape="rect" id="node217" title=" " alt="" coords="237,1607,435,1633"/>
+<area shape="rect" id="node218" href="$classConvexConcaveHullDlg.html" title=" " alt="" coords="555,1607,730,1633"/>
+<area shape="rect" id="node219" title=" " alt="" coords="278,1657,394,1684"/>
+<area shape="rect" id="node220" href="$classccCorkDlg.html" title="Dialog for qCork plugin." alt="" coords="599,1657,687,1684"/>
+<area shape="rect" id="node221" title=" " alt="" coords="231,1709,441,1750"/>
+<area shape="rect" id="node222" href="$classCorrespondenceMatchingDialog.html" title="CANUPO plugin&#39;s training dialog." alt="" coords="528,1708,757,1735"/>
+<area shape="rect" id="node223" title=" " alt="" coords="281,1775,391,1801"/>
+<area shape="rect" id="node224" href="$classccCSFDlg.html" title="Dialog for qCSF plugin." alt="" coords="601,1759,684,1785"/>
+<area shape="rect" id="node225" title=" " alt="" coords="252,1825,420,1852"/>
+<area shape="rect" id="node226" href="$classCSVMatrixOpenDialog.html" title="CSV Matrix Open dialog." alt="" coords="559,1809,726,1836"/>
+<area shape="rect" id="node227" href="$classCVLog.html" title="Main log interface." alt="" coords="611,14875,674,14901"/>
+<area shape="rect" id="node228" href="$classPyPrintLogger.html" title=" " alt="" coords="889,14900,1001,14927"/>
+<area shape="rect" id="node229" href="$classecvConsole.html" title="Console." alt="" coords="897,14849,994,14876"/>
+<area shape="rect" id="node230" href="$classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="247,11283,425,11309"/>
+<area shape="rect" id="node231" href="$classcloudViewer_1_1AutoSegmentationTools.html" title=" " alt="" coords="527,11059,758,11101"/>
+<area shape="rect" id="node232" href="$classcloudViewer_1_1CCMiscTools.html" title="Miscellaneous useful functions (geometrical elements handling)" alt="" coords="547,11191,738,11217"/>
+<area shape="rect" id="node233" href="$classcloudViewer_1_1CloudSamplingTools.html" title="Several point cloud resampling algorithms (octree&#45;based, random, etc.)" alt="" coords="539,11242,747,11283"/>
+<area shape="rect" id="node234" href="$classcloudViewer_1_1DistanceComputationTools.html" title=" " alt="" coords="517,11307,768,11349"/>
+<area shape="rect" id="node235" href="$classcloudViewer_1_1GeometricalAnalysisTools.html" title=" " alt="" coords="547,11373,738,11414"/>
+<area shape="rect" id="node236" href="$classcloudViewer_1_1ManualSegmentationTools.html" title="Manual segmentation algorithms (inside/outside a polyline, etc.)" alt="" coords="518,11541,767,11582"/>
+<area shape="rect" id="node237" href="$classcloudViewer_1_1MeshSamplingTools.html" title="Mesh sampling algorithms." alt="" coords="539,11606,746,11647"/>
+<area shape="rect" id="node238" href="$classcloudViewer_1_1PointProjectionTools.html" title=" " alt="" coords="539,11671,747,11713"/>
+<area shape="rect" id="node239" href="$classcloudViewer_1_1RegistrationTools.html" title="Common point cloud registration algorithms." alt="" coords="548,11125,737,11166"/>
+<area shape="rect" id="node243" href="$classcloudViewer_1_1ScalarFieldTools.html" title="Several scalar field treatment algorithms (gradient, classification, etc.)" alt="" coords="552,10929,733,10970"/>
+<area shape="rect" id="node244" href="$classcloudViewer_1_1StatisticalTestingTools.html" title=" " alt="" coords="555,10994,730,11035"/>
+<area shape="rect" id="node245" href="$classecvGenericDisplayTools.html" title="Generic display tools." alt="" coords="554,11489,731,11516"/>
+<area shape="rect" id="node240" href="$classcloudViewer_1_1FPCSRegistrationTools.html" title=" " alt="" coords="834,11242,1057,11283"/>
+<area shape="rect" id="node241" href="$classcloudViewer_1_1HornRegistrationTools.html" title="Horn point cloud registration algorithm." alt="" coords="835,11307,1055,11349"/>
+<area shape="rect" id="node242" href="$classcloudViewer_1_1ICPRegistrationTools.html" title="ICP point cloud registration algorithm (Besl et al.)." alt="" coords="840,11177,1051,11218"/>
+<area shape="rect" id="node246" href="$classecvDisplayTools.html" title=" " alt="" coords="882,11489,1009,11516"/>
+<area shape="rect" id="node247" title=" " alt="" coords="245,1877,427,1918"/>
+<area shape="rect" id="node248" href="$classDipDirTransformationDialog.html" title="Dialog to define a dip / dip dir. transformation." alt="" coords="541,1860,744,1887"/>
+<area shape="rect" id="node249" title=" " alt="" coords="258,1943,414,1969"/>
+<area shape="rect" id="node250" href="$classDisclaimerDialog.html" title="Dialog for displaying the BRGM disclaimer." alt="" coords="575,1911,710,1937"/>
+<area shape="rect" id="node251" title=" " alt="" coords="225,1993,447,2020"/>
+<area shape="rect" id="node252" href="$classDistanceMapGenerationDlg.html" title="Dialog for generating a distance map (surface of revolution)" alt="" coords="542,1961,743,1988"/>
+<area shape="rect" id="node253" title=" " alt="" coords="243,2044,429,2071"/>
+<area shape="rect" id="node254" href="$classDONSegmentationDlg.html" title=" " alt="" coords="560,2012,725,2039"/>
+<area shape="rect" id="node255" title=" " alt="" coords="247,2095,425,2121"/>
+<area shape="rect" id="node256" href="$classDxfProfilesExportDlg.html" title="Dialog for export multiple 2D profiles in a single DXF file (qSRA plugin)" alt="" coords="564,2063,721,2089"/>
+<area shape="rect" id="node257" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="563,8428,723,8455"/>
+<area shape="rect" id="node258" title=" " alt="" coords="269,2145,403,2172"/>
+<area shape="rect" id="node259" href="$classEditorSettings.html" title=" " alt="" coords="586,2113,699,2140"/>
+<area shape="rect" id="node260" title=" " alt="" coords="249,2196,423,2223"/>
+<area shape="rect" id="node261" href="$classEuclideanClusterDlg.html" title=" " alt="" coords="566,2164,719,2191"/>
+<area shape="rect" id="node262" title=" " alt="" coords="248,4767,424,4793"/>
+<area shape="rect" id="node263" href="$classccExportCoordToSFDlg.html" title="Dialog to choose which dimension(s) (X, Y or Z) should be exported as SF(s)" alt="" coords="559,4799,727,4825"/>
+<area shape="rect" id="node264" title=" " alt="" coords="261,4817,411,4844"/>
+<area shape="rect" id="node265" href="$classFacetsExportDlg.html" title="Dialog for exporting facets or facets info (qFacets plugin)" alt="" coords="579,4849,706,4876"/>
+<area shape="rect" id="node266" title=" " alt="" coords="241,4869,431,4910"/>
+<area shape="rect" id="node267" href="$classFastGlobalRegistrationDialog.html" title="Fast Global Registration dialog." alt="" coords="537,4900,748,4927"/>
+<area shape="rect" id="node268" title=" " alt="" coords="557,492,728,519"/>
+<area shape="rect" id="node269" href="$classecvFilterByLabelDlg.html" title=" " alt="" coords="869,757,1021,784"/>
+<area shape="rect" id="node270" title=" " alt="" coords="250,4935,422,4961"/>
+<area shape="rect" id="node271" href="$classccFilterByValueDlg.html" title=" " alt="" coords="571,4951,715,4977"/>
+<area shape="rect" id="node272" title=" " alt="" coords="580,2367,705,2393"/>
+<area shape="rect" id="node273" href="$classecvFilterTool.html" title="Dialog for managing a clipping box." alt="" coords="893,2443,997,2469"/>
+<area shape="rect" id="node274" title=" " alt="" coords="235,4985,437,5012"/>
+<area shape="rect" id="node275" href="$classccGBLSensorProjectionDlg.html" title="Ground&#45;based (lidar) sensor parameters dialog." alt="" coords="546,5001,739,5028"/>
+<area shape="rect" id="node276" title=" " alt="" coords="257,5036,415,5063"/>
+<area shape="rect" id="node277" href="$classGeneralFiltersDlg.html" title=" " alt="" coords="575,5052,710,5079"/>
+<area shape="rect" id="node278" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="237,16040,435,16067"/>
+<area shape="rect" id="node279" href="$classPyGenericCloud.html" title=" " alt="" coords="529,15982,756,16023"/>
+<area shape="rect" id="node282" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="537,16083,748,16125"/>
+<area shape="rect" id="node280" href="$classPyGenericIndexedCloud.html" title=" " alt="" coords="832,15971,1059,16027"/>
+<area shape="rect" id="node281" href="$classPyGenericIndexedCloudPersist.html" title=" " alt="" coords="1117,15934,1384,15975"/>
+<area shape="rect" id="node283" href="$classPyGenericCloud.html" title=" " alt="" coords="835,16051,1055,16093"/>
+<area shape="rect" id="node288" href="$classNumpyCloud.html" title=" " alt="" coords="892,16183,999,16209"/>
+<area shape="rect" id="node289" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="840,16117,1051,16158"/>
+<area shape="rect" id="node284" href="$classPyGenericIndexedCloud.html" title=" " alt="" coords="1139,15999,1362,16041"/>
+<area shape="rect" id="node285" href="$classPyGenericIndexedCloudPersist.html" title=" " alt="" coords="1440,15946,1683,15987"/>
+<area shape="rect" id="node287" href="$classPyGenericIndexedCloudPersist.html" title=" " alt="" coords="1451,15803,1671,15845"/>
+<area shape="rect" id="node286" href="$classPyGenericReferenceCloud.html" title=" " alt="" coords="1755,15931,1960,15973"/>
+<area shape="rect" id="node290" href="$classcloudViewer_1_1PointCloudTpl.html" title=" " alt="" coords="1133,16117,1368,16158"/>
+<area shape="rect" id="node292" href="$classcloudViewer_1_1DgmOctreeReferenceCloud.html" title="A kind of ReferenceCloud based on the DgmOctree::NeighboursSet structure." alt="" coords="1125,16182,1376,16223"/>
+<area shape="rect" id="node293" href="$classcloudViewer_1_1ReferenceCloud.html" title="A very simple point cloud (no point duplication)" alt="" coords="1144,16065,1357,16092"/>
+<area shape="rect" id="node291" href="$classcloudViewer_1_1PointCloud.html" title=" " alt="" coords="1471,16124,1651,16151"/>
+<area shape="rect" id="node294" href="$classcloudViewer_1_1Polyline.html" title="A simple polyline class." alt="" coords="1480,16037,1643,16064"/>
+<area shape="rect" id="node295" href="$classcloudViewer_1_1GenericMesh.html" title=" " alt="" coords="545,239,740,265"/>
+<area shape="rect" id="node296" href="$classPyGenericMesh.html" title=" " alt="" coords="834,235,1057,277"/>
+<area shape="rect" id="node298" href="$classcloudViewer_1_1GenericIndexedMesh.html" title="A generic mesh with index&#45;based vertex access." alt="" coords="822,375,1069,401"/>
+<area shape="rect" id="node297" href="$classPyGenericIndexedMesh.html" title=" " alt="" coords="1163,241,1338,282"/>
+<area shape="rect" id="node299" href="$classPyGenericMesh.html" title=" " alt="" coords="1141,309,1360,350"/>
+<area shape="rect" id="node301" href="$classcloudViewer_1_1Delaunay2dMesh.html" title="A class to compute and handle a Delaunay 2D mesh on a subset of points." alt="" coords="1139,425,1362,452"/>
+<area shape="rect" id="node302" href="$classcloudViewer_1_1SimpleMesh.html" title="A simple mesh structure, with index&#45;based vertex access." alt="" coords="1155,375,1346,401"/>
+<area shape="rect" id="node300" href="$classPyGenericIndexedMesh.html" title=" " alt="" coords="1451,309,1671,350"/>
+<area shape="rect" id="node303" href="$classcloudViewer_1_1GenericOctree.html" title=" " alt="" coords="235,14799,437,14825"/>
+<area shape="rect" id="node304" href="$classcloudViewer_1_1DgmOctree.html" title="The octree structure used throughout the library." alt="" coords="551,14799,735,14825"/>
+<area shape="rect" id="node305" href="$classccOctree.html" title="Octree structure." alt="" coords="906,14799,985,14825"/>
+<area shape="rect" id="node306" title=" " alt="" coords="245,5087,427,5113"/>
+<area shape="rect" id="node307" href="$classccGeomFeaturesDlg.html" title="Dialog for computing the density of a point clouds." alt="" coords="566,5103,719,5129"/>
+<area shape="rect" id="node308" title=" " alt="" coords="533,2569,752,2596"/>
+<area shape="rect" id="node309" href="$classccGraphicalSegmentationTool.html" title="Graphical segmentation mechanism (with polyline)" alt="" coords="838,2613,1053,2640"/>
+<area shape="rect" id="node310" title=" " alt="" coords="237,5138,435,5179"/>
+<area shape="rect" id="node311" href="$classccGraphicalSegmentationOptionsDlg.html" title=" " alt="" coords="512,5153,773,5180"/>
+<area shape="rect" id="node312" title=" " alt="" coords="529,2620,756,2647"/>
+<area shape="rect" id="node313" href="$classccGraphicalTransformationTool.html" title=" " alt="" coords="834,2701,1057,2728"/>
+<area shape="rect" id="node314" title=" " alt="" coords="237,5204,435,5231"/>
+<area shape="rect" id="node315" href="$classGreedyTriangulationDlg.html" title=" " alt="" coords="555,5204,730,5231"/>
+<area shape="rect" id="node316" title=" " alt="" coords="586,7383,699,7409"/>
+<area shape="rect" id="node317" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="569,15395,717,15437"/>
+<area shape="rect" id="node318" href="$classcloudViewer_1_1AlignmentSession.html" title=" " alt="" coords="832,15592,1059,15619"/>
+<area shape="rect" id="node319" href="$classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html" title="Contains the pinhole camera intrinsic parameters." alt="" coords="855,15774,1036,15815"/>
+<area shape="rect" id="node320" href="$classcloudViewer_1_1camera_1_1PinholeCameraParameters.html" title="Contains both intrinsic and extrinsic pinhole camera parameters." alt="" coords="844,15839,1047,15881"/>
+<area shape="rect" id="node321" href="$classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html" title=" " alt="" coords="849,14951,1042,14993"/>
+<area shape="rect" id="node322" href="$classcloudViewer_1_1geometry_1_1OctreeNode.html" title="The base class for octree node." alt="" coords="859,15905,1032,15946"/>
+<area shape="rect" id="node329" href="$classcloudViewer_1_1io_1_1MKVMetadata.html" title=" " alt="" coords="834,15017,1057,15044"/>
+<area shape="rect" id="node330" href="$classcloudViewer_1_1io_1_1RGBDSensorConfig.html" title=" " alt="" coords="839,15643,1051,15685"/>
+<area shape="rect" id="node333" href="$classcloudViewer_1_1pipelines_1_1color__map_1_1ImageWarpingField.html" title=" " alt="" coords="830,15069,1061,15110"/>
+<area shape="rect" id="node334" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html" title="Data structure defining the pose graph." alt="" coords="854,15134,1037,15175"/>
+<area shape="rect" id="node335" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html" title="Edge of PoseGraph." alt="" coords="838,15199,1053,15241"/>
+<area shape="rect" id="node336" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html" title="Node of PoseGraph." alt="" coords="837,15265,1054,15306"/>
+<area shape="rect" id="node337" href="$classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html" title="RGBD video metadata." alt="" coords="862,15330,1029,15371"/>
+<area shape="rect" id="node338" href="$classcloudViewer_1_1visualization_1_1RenderOption.html" title="Defines rendering options for visualizer." alt="" coords="849,15709,1042,15750"/>
+<area shape="rect" id="node340" href="$classcloudViewer_1_1visualization_1_1SelectionPolygonVolume.html" title="Select a polygon volume for cropping." alt="" coords="849,15395,1042,15437"/>
+<area shape="rect" id="node341" href="$classcloudViewer_1_1visualization_1_1ViewParameters.html" title=" " alt="" coords="849,15461,1042,15502"/>
+<area shape="rect" id="node342" href="$classcloudViewer_1_1visualization_1_1ViewTrajectory.html" title=" " alt="" coords="849,15526,1042,15567"/>
+<area shape="rect" id="node323" href="$classcloudViewer_1_1geometry_1_1OctreeLeafNode.html" title="OctreeLeafNode base class." alt="" coords="1164,15869,1337,15910"/>
+<area shape="rect" id="node328" href="$classcloudViewer_1_1geometry_1_1PyOctreeNode.html" title=" " alt="" coords="1119,15803,1382,15845"/>
+<area shape="rect" id="node324" href="$classcloudViewer_1_1geometry_1_1PyOctreeNode.html" title=" " alt="" coords="1432,15869,1691,15910"/>
+<area shape="rect" id="node326" href="$classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html" title="OctreeColorLeafNode class is an OctreeLeafNode containing color." alt="" coords="1475,15738,1648,15779"/>
+<area shape="rect" id="node325" href="$classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html" title=" " alt="" coords="1739,15851,1976,15907"/>
+<area shape="rect" id="node327" href="$classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html" title="OctreePointColorLeafNode class is an OctreeColorLeafNode containing a list of indices corresponding t..." alt="" coords="1756,15738,1959,15779"/>
+<area shape="rect" id="node331" href="$classcloudViewer_1_1io_1_1AzureKinectSensorConfig.html" title=" " alt="" coords="1147,15643,1355,15685"/>
+<area shape="rect" id="node332" href="$classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html" title=" " alt="" coords="1159,15578,1342,15619"/>
+<area shape="rect" id="node339" href="$classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html" title=" " alt="" coords="1153,15709,1348,15750"/>
+<area shape="rect" id="node343" title=" " alt="" coords="261,5255,411,5281"/>
+<area shape="rect" id="node344" href="$classccInterpolationDlg.html" title="Dialog for generic interpolation algorithms." alt="" coords="572,5255,713,5281"/>
+<area shape="rect" id="node345" title=" " alt="" coords="258,5305,414,5332"/>
+<area shape="rect" id="node346" href="$classccItemSelectionDlg.html" title="Dialog to select one or multiple items." alt="" coords="569,5305,717,5332"/>
+<area shape="rect" id="node347" title=" " alt="" coords="267,5356,405,5383"/>
+<area shape="rect" id="node348" href="$classKmeansDlg.html" title=" " alt="" coords="594,5356,691,5383"/>
+<area shape="rect" id="node349" title=" " alt="" coords="265,5407,407,5433"/>
+<area shape="rect" id="node350" href="$classccLabelingDlg.html" title="Dialog to define connected components labelinng parameters." alt="" coords="586,5407,699,5433"/>
+<area shape="rect" id="node351" title=" " alt="" coords="263,5457,409,5484"/>
+<area shape="rect" id="node352" href="$classLasOpenDialog.html" title="Dialog shown to the user when opening a LAS file." alt="" coords="583,5457,703,5484"/>
+<area shape="rect" id="node353" title=" " alt="" coords="265,5508,407,5535"/>
+<area shape="rect" id="node354" href="$classLasSaveDialog.html" title=" " alt="" coords="583,5508,702,5535"/>
+<area shape="rect" id="node355" title=" " alt="" coords="275,5559,397,5585"/>
+<area shape="rect" id="node356" href="$classqM3C2Dialog.html" title="M3C2 plugin&#39;s main dialog." alt="" coords="588,5559,697,5585"/>
+<area shape="rect" id="node357" title=" " alt="" coords="595,2671,690,2697"/>
+<area shape="rect" id="node358" href="$classccMapDlg.html" title=" " alt="" coords="902,2828,989,2855"/>
+<area shape="rect" id="node359" title=" " alt="" coords="257,5609,415,5636"/>
+<area shape="rect" id="node360" href="$classMarchingCubeDlg.html" title=" " alt="" coords="574,5609,711,5636"/>
+<area shape="rect" id="node361" title=" " alt="" coords="252,5660,420,5687"/>
+<area shape="rect" id="node362" href="$classccMatchScalesDlg.html" title="Scales matching tool dialog." alt="" coords="573,5660,713,5687"/>
+<area shape="rect" id="node363" title=" " alt="" coords="551,6623,734,6649"/>
+<area shape="rect" id="node364" title=" " alt="" coords="215,5711,457,5737"/>
+<area shape="rect" id="node365" href="$classMinimumCutSegmentationDlg.html" title=" " alt="" coords="533,5711,752,5737"/>
+<area shape="rect" id="node366" title=" " alt="" coords="279,5761,393,5788"/>
+<area shape="rect" id="node367" href="$classMLSDialog.html" title=" " alt="" coords="597,5761,688,5788"/>
+<area shape="rect" id="node368" title=" " alt="" coords="575,3633,710,3660"/>
+<area shape="rect" id="node369" href="$classccMPlaneDlg.html" title=" " alt="" coords="892,2968,999,2995"/>
+<area shape="rect" id="node370" title=" " alt="" coords="258,5812,414,5839"/>
+<area shape="rect" id="node371" href="$classecvNoiseFilterDlg.html" title=" " alt="" coords="574,5812,711,5839"/>
+<area shape="rect" id="node372" title=" " alt="" coords="237,5863,435,5889"/>
+<area shape="rect" id="node373" href="$classccNormalComputationDlg.html" title="Dialog for normal computation." alt="" coords="547,5863,738,5889"/>
+<area shape="rect" id="node374" title=" " alt="" coords="234,5913,438,5940"/>
+<area shape="rect" id="node375" href="$classNormalEstimationDialog.html" title=" " alt="" coords="551,5913,734,5940"/>
+<area shape="rect" id="node376" title=" " alt="" coords="245,5964,427,5991"/>
+<area shape="rect" id="node377" href="$classNurbsCurveFittingDlg.html" title=" " alt="" coords="562,5964,723,5991"/>
+<area shape="rect" id="node378" title=" " alt="" coords="259,6015,413,6041"/>
+<area shape="rect" id="node379" href="$classNurbsSurfaceDlg.html" title=" " alt="" coords="577,6015,708,6041"/>
+<area shape="rect" id="node380" title=" " alt="" coords="252,6065,420,6092"/>
+<area shape="rect" id="node381" href="$classLASOpenDlg.html" title="Dialog to choose the LAS fields to load." alt="" coords="591,6065,694,6092"/>
+<area shape="rect" id="node382" href="$classcloudViewer_1_1OrientedBoundingBox.html" title="A bounding box oriented along an arbitrary frame of reference." alt="" coords="517,10368,769,10395"/>
+<area shape="rect" id="node383" href="$classPyOrientedBBoxBase.html" title=" " alt="" coords="858,11059,1033,11101"/>
+<area shape="rect" id="node384" title=" " alt="" coords="225,6116,447,6143"/>
+<area shape="rect" id="node385" href="$classccOrthoSectionGenerationDlg.html" title=" " alt="" coords="535,6116,750,6143"/>
+<area shape="rect" id="node386" title=" " alt="" coords="235,6167,437,6193"/>
+<area shape="rect" id="node387" href="$classccPCDFileOutputForamtDialog.html" title="Dialog for the PCV plugin." alt="" coords="533,6167,752,6193"/>
+<area shape="rect" id="node388" title=" " alt="" coords="280,6217,392,6244"/>
+<area shape="rect" id="node389" href="$classccPcvDlg.html" title="Dialog for the PCV plugin." alt="" coords="602,6217,683,6244"/>
+<area shape="rect" id="node390" title=" " alt="" coords="579,7433,706,7460"/>
+<area shape="rect" id="node391" title=" " alt="" coords="276,6268,396,6295"/>
+<area shape="rect" id="node392" href="$classPlyOpenDlg.html" title="Dialog for configuration of PLY files opening sequence." alt="" coords="593,6268,692,6295"/>
+<area shape="rect" id="node393" title=" " alt="" coords="861,3988,1030,4015"/>
+<area shape="rect" id="node394" title=" " alt="" coords="541,3785,744,3812"/>
+<area shape="rect" id="node395" title=" " alt="" coords="863,9176,1028,9203"/>
+<area shape="rect" id="node396" title=" " alt="" coords="243,6319,429,6345"/>
+<area shape="rect" id="node397" href="$classccPtsSamplingDlg.html" title="Dialog: points sampling on a mesh." alt="" coords="573,6319,712,6345"/>
+<area shape="rect" id="node398" title=" " alt="" coords="227,6395,445,6421"/>
+<area shape="rect" id="node399" href="$classPoissonReconParamDlg.html" title=" " alt="" coords="555,6369,730,6396"/>
+<area shape="rect" id="node400" href="$classecvPoissonReconDlg.html" title=" " alt="" coords="564,6420,721,6447"/>
+<area shape="rect" id="node401" title=" " alt="" coords="229,6471,443,6497"/>
+<area shape="rect" id="node402" href="$classPoissonReconstructionDlg.html" title=" " alt="" coords="547,6471,738,6497"/>
+<area shape="rect" id="node403" title=" " alt="" coords="245,6521,427,6548"/>
+<area shape="rect" id="node404" href="$classecvPrimitiveDistanceDlg.html" title="Dialog for cloud sphere or cloud plane comparison setting." alt="" coords="551,6521,734,6548"/>
+<area shape="rect" id="node405" title=" " alt="" coords="250,6572,422,6599"/>
+<area shape="rect" id="node406" href="$classecvPrimitiveFactoryDlg.html" title="Primitive factory." alt="" coords="556,6572,729,6599"/>
+<area shape="rect" id="node407" title=" " alt="" coords="261,6673,411,6700"/>
+<area shape="rect" id="node408" href="$classProfileImportDlg.html" title="Dialog for importing a 2D revolution profile (qSRA plugin)" alt="" coords="579,6673,707,6700"/>
+<area shape="rect" id="node409" title=" " alt="" coords="254,6724,418,6751"/>
+<area shape="rect" id="node410" href="$classProjectionFilterDlg.html" title=" " alt="" coords="571,6724,714,6751"/>
+<area shape="rect" id="node411" title=" " alt="" coords="579,8681,706,8708"/>
+<area shape="rect" id="node412" href="$classPythonEditor.html" title=" " alt="" coords="893,7955,998,7981"/>
+<area shape="rect" id="node413" title=" " alt="" coords="299,4545,373,4572"/>
+<area shape="rect" id="node414" href="$classAboutDialog.html" title=" " alt="" coords="591,3279,694,3305"/>
+<area shape="rect" id="node415" href="$classAsciiOpenDlg.html" title="Dialog for configuration of ASCII files opening sequence." alt="" coords="588,3329,697,3356"/>
+<area shape="rect" id="node416" href="$classAsciiSaveDlg.html" title="Dialog for configuration of ASCII files saving sequence." alt="" coords="589,3380,696,3407"/>
+<area shape="rect" id="node417" href="$classCommandOutputDialog.html" title=" " alt="" coords="555,3431,730,3457"/>
+<area shape="rect" id="node418" href="$classFileRunner.html" title=" " alt="" coords="597,3481,688,3508"/>
+<area shape="rect" id="node419" href="$classG3PointDialog.html" title=" " alt="" coords="585,3532,700,3559"/>
+<area shape="rect" id="node420" href="$classG3PointDisclaimer.html" title=" " alt="" coords="571,3583,714,3609"/>
+<area shape="rect" id="node421" href="$classInstallDialog.html" title=" " alt="" coords="591,3684,695,3711"/>
+<area shape="rect" id="node422" href="$classLASSaveDlg.html" title="LAS Save dialog." alt="" coords="592,6775,693,6801"/>
+<area shape="rect" id="node423" href="$classPathVariableEditor.html" title=" " alt="" coords="572,3735,713,3761"/>
+<area shape="rect" id="node424" href="$classPathVariableInputDialog.html" title=" " alt="" coords="553,3836,732,3863"/>
+<area shape="rect" id="node425" href="$classPythonRuntimeSettings.html" title=" " alt="" coords="555,4241,730,4268"/>
+<area shape="rect" id="node426" href="$classQUIInputBox.html" title=" " alt="" coords="591,4292,695,4319"/>
+<area shape="rect" id="node427" href="$classQUIMessageBox.html" title=" " alt="" coords="578,4343,707,4369"/>
+<area shape="rect" id="node428" href="$classQUIWidget.html" title=" " alt="" coords="597,4393,689,4420"/>
+<area shape="rect" id="node429" href="$classQuantiDialog.html" title=" " alt="" coords="589,6825,696,6852"/>
+<area shape="rect" id="node430" href="$classRDBOpenDialog.html" title="RDB Open dialog." alt="" coords="579,6876,706,6903"/>
+<area shape="rect" id="node431" href="$classRegionGrowingSegmentationDlg.html" title=" " alt="" coords="525,6927,760,6953"/>
+<area shape="rect" id="node432" href="$classSACSegmentationDlg.html" title=" " alt="" coords="561,6977,724,7004"/>
+<area shape="rect" id="node433" href="$classSIFTExtractDlg.html" title=" " alt="" coords="584,7028,701,7055"/>
+<area shape="rect" id="node434" href="$classSORDialog.html" title=" " alt="" coords="597,7079,688,7105"/>
+<area shape="rect" id="node435" href="$classSaveDracoFileDlg.html" title="DRACO file (https://github.com/google/draco) saving dialog." alt="" coords="574,7129,711,7156"/>
+<area shape="rect" id="node436" href="$classSaveMascaretFileDlg.html" title="Mascaret File Save dialog." alt="" coords="563,7180,722,7207"/>
+<area shape="rect" id="node437" href="$classSavePCDFileDialog.html" title="PCD File Save dialog." alt="" coords="569,7231,716,7257"/>
+<area shape="rect" id="node438" href="$classStereogramDialog.html" title="Dialog for displaying the angular repartition of facets (qFacets plugin)" alt="" coords="573,7281,713,7308"/>
+<area shape="rect" id="node439" href="$classStereogramParamsDlg.html" title="Dialog for stereogram parameters (qFacets plugin)" alt="" coords="559,7332,727,7359"/>
+<area shape="rect" id="node440" href="$classTemplateAlignmentDialog.html" title="CANUPO plugin&#39;s training dialog." alt="" coords="547,7484,738,7511"/>
+<area shape="rect" id="node441" href="$classTrain3DMASCDialog.html" title="3DMASC plugin &#39;train&#39; dialog" alt="" coords="567,7535,718,7561"/>
+<area shape="rect" id="node442" href="$classTrainDisclaimerDialog.html" title="Dialog for displaying the 3DSMAC/UEB disclaimer." alt="" coords="560,7585,725,7612"/>
+<area shape="rect" id="node443" href="$classccAlignDlg.html" title="Rough registration dialog." alt="" coords="597,4444,688,4471"/>
+<area shape="rect" id="node444" href="$classccColorFromScalarDlg.html" title="Dialog to change the color levels." alt="" coords="560,4495,725,4521"/>
+<area shape="rect" id="node445" href="$classccColorScaleEditorDialog.html" title="Dialog to edit/create color scales." alt="" coords="550,4545,735,4572"/>
+<area shape="rect" id="node446" href="$classccCompassInfo.html" title=" " alt="" coords="582,4596,703,4623"/>
+<area shape="rect" id="node447" href="$classccDisplayOptionsDlg.html" title="Dialog to setup display settings." alt="" coords="564,4647,721,4673"/>
+<area shape="rect" id="node448" href="$classccHistogramWindowDlg.html" title="Encapsulating dialog for ccHistogramWindow." alt="" coords="553,2215,732,2241"/>
+<area shape="rect" id="node449" href="$classccOrderChoiceDlg.html" title="Dialog to assign roles to two entities (e.g. compared/reference)" alt="" coords="573,2265,712,2292"/>
+<area shape="rect" id="node450" href="$classccOverlayDialog.html" title="Generic overlay dialog interface." alt="" coords="578,2873,707,2900"/>
+<area shape="rect" id="node451" href="$classccPickOneElementDlg.html" title="Minimal dialog to pick one element in a list (combox box)" alt="" coords="560,2316,725,2343"/>
+<area shape="rect" id="node452" href="$classccPluginInfoDlg.html" title=" " alt="" coords="581,2417,704,2444"/>
+<area shape="rect" id="node453" href="$classccRansacSDDlg.html" title="Dialog for qRansacSD plugin." alt="" coords="581,7636,704,7663"/>
+<area shape="rect" id="node454" href="$classccRegistrationDlg.html" title="Point cloud or mesh registration dialog." alt="" coords="574,7687,711,7713"/>
+<area shape="rect" id="node455" href="$classccRenderToFileDlg.html" title="Dialog for screen to file rendering." alt="" coords="572,2468,713,2495"/>
+<area shape="rect" id="node456" href="$classccScalarFieldArithmeticsDlg.html" title=" " alt="" coords="541,7855,745,7881"/>
+<area shape="rect" id="node457" href="$classccScalarFieldFromColorDlg.html" title=" " alt="" coords="545,7905,741,7932"/>
+<area shape="rect" id="node458" href="$classccScaleDlg.html" title="Scale / multiply dialog." alt="" coords="596,7956,689,7983"/>
+<area shape="rect" id="node459" href="$classccSelectChildrenDlg.html" title="Minimal dialog to pick one element in a list (combo box)" alt="" coords="567,2519,719,2545"/>
+<area shape="rect" id="node460" href="$classccSensorComputeDistancesDlg.html" title="Dialog for sensor range computation." alt="" coords="530,8007,755,8033"/>
+<area shape="rect" id="node461" href="$classccSensorComputeScatteringAnglesDlg.html" title="Dialog for scattering angles computation." alt="" coords="540,8058,745,8099"/>
+<area shape="rect" id="node462" href="$classccSmoothPolylineDialog.html" title="Dialog to smooth a polyline (Chaikin algorithm)" alt="" coords="553,2721,733,2748"/>
+<area shape="rect" id="node463" href="$classccStatisticalTestDlg.html" title="Dialog for the Local Statistical Test tool." alt="" coords="568,8124,717,8151"/>
+<area shape="rect" id="node464" href="$classccSubsamplingDlg.html" title="Subsampling cloud dialog." alt="" coords="571,8225,714,8252"/>
+<area shape="rect" id="node465" href="$classccTreeIsoDlg.html" title="Dialog for qTreeIso plugin." alt="" coords="591,8276,695,8303"/>
+<area shape="rect" id="node466" href="$classccUnrollDlg.html" title="Dialog: unroll clould on a cylinder or a cone." alt="" coords="594,8327,691,8353"/>
+<area shape="rect" id="node467" href="$classecvAboutDialog.html" title=" " alt="" coords="580,2772,705,2799"/>
+<area shape="rect" id="node468" href="$classecvAxesGridDialog.html" title="ParaView&#45;style Axes Grid Properties Dialog." alt="" coords="570,2823,715,2849"/>
+<area shape="rect" id="node469" href="$classecvCustomViewpointButtonDlg.html" title=" " alt="" coords="530,2924,755,2951"/>
+<area shape="rect" id="node470" href="$classecvEntitySelectionDialog.html" title="Dialog to select one or multiple entities." alt="" coords="550,2975,735,3001"/>
+<area shape="rect" id="node471" href="$classecvRansacSegmentationDlg.html" title=" " alt="" coords="540,8377,745,8404"/>
+<area shape="rect" id="node472" href="$classecvSORFilterDlg.html" title="Dialog to choose which dimension(s) (X, Y or Z) should be exported as SF(s)" alt="" coords="579,8529,706,8556"/>
+<area shape="rect" id="node473" href="$classecvShiftAndScaleCloudDlg.html" title="Dialog for selection of cloud center." alt="" coords="546,3025,739,3052"/>
+<area shape="rect" id="node474" href="$classecvShortcutDialog.html" title=" " alt="" coords="572,3076,713,3103"/>
+<area shape="rect" id="node475" href="$classecvShortcutEditDialog.html" title=" " alt="" coords="559,3127,726,3153"/>
+<area shape="rect" id="node476" href="$classecvUpdateDlg.html" title=" " alt="" coords="585,3177,700,3204"/>
+<area shape="rect" id="node477" href="$classqHoughNormalsDialog.html" title=" " alt="" coords="558,3228,727,3255"/>
+<area shape="rect" id="node478" href="$classqVoxFallDialog.html" title="VOXFALL plugin&#39;s main dialog." alt="" coords="583,8631,702,8657"/>
+<area shape="rect" id="node479" title=" " alt="" coords="585,8580,701,8607"/>
+<area shape="rect" id="node480" href="$classPythonRepl.html" title="Homemade REPL (Read Print Eval Loop)" alt="" coords="897,7752,993,7779"/>
+<area shape="rect" id="node481" href="$structWindow.html" title=" " alt="" coords="908,7803,983,7829"/>
+<area shape="rect" id="node482" title=" " alt="" coords="605,13152,680,13179"/>
+<area shape="rect" id="node483" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="885,12553,1006,12580"/>
+<area shape="rect" id="node504" href="$classG3Point_1_1G3PointAction.html" title=" " alt="" coords="859,11692,1032,11719"/>
+<area shape="rect" id="node505" href="$classIconHelper.html" title=" " alt="" coords="899,11743,991,11769"/>
+<area shape="rect" id="node506" href="$classJsonRPCServer.html" title=" " alt="" coords="887,11793,1004,11820"/>
+<area shape="rect" id="node507" href="$classKeyPressEater.html" title="Class used by the REPL to handle key presses." alt="" coords="888,11844,1003,11871"/>
+<area shape="rect" id="node508" href="$classPythonInterpreter.html" title=" " alt="" coords="877,11945,1013,11972"/>
+<area shape="rect" id="node509" href="$classQSimpleUpdater.html" title="Manages the updater instances." alt="" coords="881,12705,1010,12732"/>
+<area shape="rect" id="node510" href="$classUpdater.html" title="Downloads and interprests the update definition file." alt="" coords="908,11996,983,12023"/>
+<area shape="rect" id="node511" href="$classccPickingHub.html" title="Point/triangle picking hub." alt="" coords="891,12047,1000,12073"/>
+<area shape="rect" id="node512" href="$classccPluginManager.html" title=" " alt="" coords="879,12097,1012,12124"/>
+<area shape="rect" id="node513" href="$classccPluginUIManager.html" title="Plugin UI manager." alt="" coords="872,12148,1019,12175"/>
+<area shape="rect" id="node514" href="$classccTranslationManager.html" title=" " alt="" coords="863,12199,1027,12225"/>
+<area shape="rect" id="node515" href="$classecvGenericAnnotationTool.html" title="Generic Annotation Tool interface." alt="" coords="849,12249,1041,12276"/>
+<area shape="rect" id="node516" href="$classecvGenericCameraTool.html" title=" " alt="" coords="859,12300,1031,12327"/>
+<area shape="rect" id="node517" href="$classecvGenericFiltersTool.html" title="Generic Filters Tool interface." alt="" coords="865,12351,1026,12377"/>
+<area shape="rect" id="node518" href="$classecvGenericMeasurementTools.html" title="Generic Measurement Tools interface." alt="" coords="836,12452,1055,12479"/>
+<area shape="rect" id="node519" href="$classecvGenericTransformTool.html" title="Generic Annotation Tool interface." alt="" coords="852,12503,1039,12529"/>
+<area shape="rect" id="node520" href="$classecvGenericVisualizer.html" title="Generic visualizer interface." alt="" coords="866,12857,1025,12884"/>
+<area shape="rect" id="node523" href="$classecvKeySequences.html" title="Manage key sequences used for shortcuts." alt="" coords="876,12604,1015,12631"/>
+<area shape="rect" id="node524" href="$classecvLayoutManager.html" title="Layout manager for MainWindow." alt="" coords="872,12655,1019,12681"/>
+<area shape="rect" id="node525" href="$classecvModalShortcut.html" title="Manage an action and/or widget&#39;s responsivity to a shortcut." alt="" coords="876,12756,1015,12783"/>
+<area shape="rect" id="node526" href="$classecvRecentFiles.html" title=" " alt="" coords="885,12807,1005,12833"/>
+<area shape="rect" id="node527" href="$classecvShortcutDecorator.html" title="Decorate a widget by highlighting its frame when keyboard shortcuts are active." alt="" coords="864,11641,1027,11668"/>
+<area shape="rect" id="node484" href="$classConvexConcaveHullReconstruction.html" title="Convex Concave Hull Reconstruction." alt="" coords="1125,12351,1376,12377"/>
+<area shape="rect" id="node485" href="$classCorrespondenceMatching.html" title="Correspondence Matching." alt="" coords="1157,12452,1344,12479"/>
+<area shape="rect" id="node486" href="$classDONSegmentation.html" title="SIFT keypoints extraction." alt="" coords="1179,12503,1322,12529"/>
+<area shape="rect" id="node487" href="$classEuclideanClusterSegmentation.html" title="SIFT keypoints extraction." alt="" coords="1139,12401,1362,12428"/>
+<area shape="rect" id="node488" href="$classExtractSIFT.html" title="SIFT keypoints extraction." alt="" coords="1203,12553,1298,12580"/>
+<area shape="rect" id="node489" href="$classFastGlobalRegistrationFilter.html" title=" " alt="" coords="1149,12249,1352,12276"/>
+<area shape="rect" id="node490" href="$classGeneralFilters.html" title="Projection Filter." alt="" coords="1194,12604,1307,12631"/>
+<area shape="rect" id="node491" href="$classGreedyTriangulation.html" title="Greedy Triangulation." alt="" coords="1174,12655,1327,12681"/>
+<area shape="rect" id="node492" href="$classMLSSmoothingUpsampling.html" title=" " alt="" coords="1152,12705,1349,12732"/>
+<area shape="rect" id="node493" href="$classMarchingCubeReconstruction.html" title="Pcl Grid Projection." alt="" coords="1145,12756,1357,12783"/>
+<area shape="rect" id="node494" href="$classMinimumCutSegmentation.html" title="Region Growing Segmentation." alt="" coords="1152,12807,1349,12833"/>
+<area shape="rect" id="node495" href="$classNormalEstimation.html" title=" " alt="" coords="1181,12857,1321,12884"/>
+<area shape="rect" id="node496" href="$classNurbsCurveFitting.html" title="Greedy Triangulation." alt="" coords="1181,12908,1320,12935"/>
+<area shape="rect" id="node497" href="$classNurbsSurfaceReconstruction.html" title="Greedy Triangulation." alt="" coords="1147,12959,1354,12985"/>
+<area shape="rect" id="node498" href="$classPoissonReconstruction.html" title="Poisson Reconstruction." alt="" coords="1166,11945,1335,11972"/>
+<area shape="rect" id="node499" href="$classProjectionFilter.html" title="Projection Filter." alt="" coords="1191,11996,1311,12023"/>
+<area shape="rect" id="node500" href="$classRegionGrowingSegmentation.html" title="Region Growing Segmentation." alt="" coords="1145,12047,1357,12073"/>
+<area shape="rect" id="node501" href="$classSACSegmentation.html" title="SIFT keypoints extraction." alt="" coords="1181,12148,1321,12175"/>
+<area shape="rect" id="node502" href="$classStatisticalOutliersRemover.html" title=" " alt="" coords="1152,12199,1349,12225"/>
+<area shape="rect" id="node503" href="$classTemplateAlignment.html" title="Template Alignment." alt="" coords="1176,12300,1325,12327"/>
+<area shape="rect" id="node521" href="$classecvGenericVisualizer2D.html" title="Generic visualizer 2D interface." alt="" coords="1162,13060,1339,13087"/>
+<area shape="rect" id="node522" href="$classecvGenericVisualizer3D.html" title="Generic visualizer 3D interface." alt="" coords="1162,13009,1339,13036"/>
+<area shape="rect" id="node528" title=" " alt="" coords="271,6825,401,6852"/>
+<area shape="rect" id="node529" title=" " alt="" coords="261,7636,411,7663"/>
+<area shape="rect" id="node530" title=" " alt="" coords="234,8377,438,8404"/>
+<area shape="rect" id="node531" title=" " alt="" coords="249,5,423,32"/>
+<area shape="rect" id="node532" title=" " alt="" coords="272,6876,400,6903"/>
+<area shape="rect" id="node533" title=" " alt="" coords="208,6927,464,6953"/>
+<area shape="rect" id="node534" title=" " alt="" coords="253,7687,419,7713"/>
+<area shape="rect" id="node535" title=" " alt="" coords="587,3988,698,4015"/>
+<area shape="rect" id="node536" title=" " alt="" coords="244,6977,428,7004"/>
+<area shape="rect" id="node537" title=" " alt="" coords="257,7129,415,7156"/>
+<area shape="rect" id="node538" title=" " alt="" coords="253,6775,419,6801"/>
+<area shape="rect" id="node539" title=" " alt="" coords="245,7180,427,7207"/>
+<area shape="rect" id="node540" title=" " alt="" coords="262,7231,410,7257"/>
+<area shape="rect" id="node541" title=" " alt="" coords="579,4140,706,4167"/>
+<area shape="rect" id="node542" title=" " alt="" coords="235,7905,437,7932"/>
+<area shape="rect" id="node543" title=" " alt="" coords="275,7956,397,7983"/>
+<area shape="rect" id="node544" title=" " alt="" coords="220,8007,452,8033"/>
+<area shape="rect" id="node545" title=" " alt="" coords="230,8058,442,8099"/>
+<area shape="rect" id="node546" title=" " alt="" coords="259,7771,413,7797"/>
+<area shape="rect" id="node547" title=" " alt="" coords="267,7028,405,7055"/>
+<area shape="rect" id="node548" title=" " alt="" coords="266,8504,406,8531"/>
+<area shape="rect" id="node549" title=" " alt="" coords="215,7079,457,7105"/>
+<area shape="rect" id="node550" title=" " alt="" coords="247,8124,425,8151"/>
+<area shape="rect" id="node551" title=" " alt="" coords="255,7281,417,7308"/>
+<area shape="rect" id="node552" title=" " alt="" coords="241,7332,431,7359"/>
+<area shape="rect" id="node553" title=" " alt="" coords="251,8225,421,8252"/>
+<area shape="rect" id="node554" title=" " alt="" coords="229,7484,443,7511"/>
+<area shape="rect" id="node555" title=" " alt="" coords="565,3887,720,3913"/>
+<area shape="rect" id="node556" title=" " alt="" coords="249,7535,423,7561"/>
+<area shape="rect" id="node557" title=" " alt="" coords="243,7585,429,7612"/>
+<area shape="rect" id="node558" title=" " alt="" coords="270,8276,402,8303"/>
+<area shape="rect" id="node559" href="$classcloudViewer_1_1TrueKdTree.html" title="Proper KD&#45;tree implementation." alt="" coords="552,8175,733,8201"/>
+<area shape="rect" id="node560" title=" " alt="" coords="273,8327,399,8353"/>
+<area shape="rect" id="node561" title=" " alt="" coords="597,9892,688,9919"/>
+<area shape="rect" id="node562" href="$structBSplineElements.html" title=" " alt="" coords="841,9656,1050,9683"/>
+<area shape="rect" id="node563" href="$classCorePointDescSet.html" title="Set of (core) point descriptors." alt="" coords="876,9707,1015,9733"/>
+<area shape="rect" id="node564" href="$classDistanceMapGenerationTool_1_1Map.html" title="&quot;Distance&quot; map" alt="" coords="825,9757,1066,9784"/>
+<area shape="rect" id="node565" href="$classImageList.html" title=" " alt="" coords="902,9808,989,9835"/>
+<area shape="rect" id="node566" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="854,9859,1037,9885"/>
+<area shape="rect" id="node567" href="$classstd_1_1vector_3_01Eigen_1_1Affine3d_00_01std_1_1allocator_3_01Eigen_1_1Affine3d_01_4_01_4.html" title=" " alt="" coords="857,9909,1034,9965"/>
+<area shape="rect" id="node568" href="$classstd_1_1vector_3_01Eigen_1_1Affine3f_00_01std_1_1allocator_3_01Eigen_1_1Affine3f_01_4_01_4.html" title=" " alt="" coords="858,9989,1033,10045"/>
+<area shape="rect" id="node569" href="$classstd_1_1vector_3_01Eigen_1_1Matrix2d_00_01std_1_1allocator_3_01Eigen_1_1Matrix2d_01_4_01_4.html" title=" " alt="" coords="855,10069,1036,10125"/>
+<area shape="rect" id="node570" href="$classstd_1_1vector_3_01Eigen_1_1Matrix2f_00_01std_1_1allocator_3_01Eigen_1_1Matrix2f_01_4_01_4.html" title=" " alt="" coords="856,10149,1035,10205"/>
+<area shape="rect" id="node571" href="$classstd_1_1vector_3_01Eigen_1_1Matrix4d_00_01std_1_1allocator_3_01Eigen_1_1Matrix4d_01_4_01_4.html" title=" " alt="" coords="855,10229,1036,10285"/>
+<area shape="rect" id="node572" href="$classstd_1_1vector_3_01Eigen_1_1Matrix4f_00_01std_1_1allocator_3_01Eigen_1_1Matrix4f_01_4_01_4.html" title=" " alt="" coords="856,10309,1035,10365"/>
+<area shape="rect" id="node573" href="$classstd_1_1vector_3_01Eigen_1_1Matrix_3_01double_00_013_00_014_01_4_00_01std_1_1allocator_3_01E7df457c374d57eafbf39f7a0f6268185.html" title=" " alt="" coords="852,10389,1039,10475"/>
+<area shape="rect" id="node574" href="$classstd_1_1vector_3_01Eigen_1_1Matrix_3_01float_00_013_00_014_01_4_00_01std_1_1allocator_3_01Ei19a796b4413c324b73cbc2163a565e24.html" title=" " alt="" coords="860,10499,1031,10584"/>
+<area shape="rect" id="node575" href="$classstd_1_1vector_3_01Eigen_1_1Quaterniond_00_01std_1_1allocator_3_01Eigen_1_1Quaterniond_01_4_01_4.html" title=" " alt="" coords="821,10608,1069,10664"/>
+<area shape="rect" id="node576" href="$classstd_1_1vector_3_01Eigen_1_1Quaternionf_00_01std_1_1allocator_3_01Eigen_1_1Quaternionf_01_4_01_4.html" title=" " alt="" coords="823,10688,1068,10744"/>
+<area shape="rect" id="node577" href="$classstd_1_1vector_3_01Eigen_1_1Vector2d_00_01std_1_1allocator_3_01Eigen_1_1Vector2d_01_4_01_4.html" title=" " alt="" coords="855,10768,1035,10824"/>
+<area shape="rect" id="node578" href="$classstd_1_1vector_3_01Eigen_1_1Vector4d_00_01std_1_1allocator_3_01Eigen_1_1Vector4d_01_4_01_4.html" title=" " alt="" coords="855,10848,1035,10904"/>
+<area shape="rect" id="node579" href="$classstd_1_1vector_3_01Eigen_1_1Vector4f_00_01std_1_1allocator_3_01Eigen_1_1Vector4f_01_4_01_4.html" title=" " alt="" coords="857,10928,1034,10984"/>
+<area shape="rect" id="node580" href="$classwl_1_1PointCloud.html" title=" " alt="" coords="888,11008,1003,11035"/>
+<area shape="rect" id="node581" title=" " alt="" coords="255,107,417,133"/>
+<area shape="rect" id="node582" title=" " alt="" coords="270,8656,402,8683"/>
 </map>

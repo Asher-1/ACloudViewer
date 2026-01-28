@@ -1,3 +1,8 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structecvGenericCameraTool_1_1CameraInfo.html" title=" " alt="" coords="5,5,177,47"/>
+<area shape="rect" id="node1" href="$classe57_1_1Encoder.html" title=" " alt="" coords="5,89,112,116"/>
+<area shape="rect" id="node2" href="$classe57_1_1BitpackEncoder.html" title=" " alt="" coords="188,64,343,91"/>
+<area shape="rect" id="node6" href="$classe57_1_1ConstantIntegerEncoder.html" title=" " alt="" coords="160,115,371,141"/>
+<area shape="rect" id="node3" href="$classe57_1_1BitpackFloatEncoder.html" title=" " alt="" coords="425,5,613,32"/>
+<area shape="rect" id="node4" href="$classe57_1_1BitpackIntegerEncoder.html" title=" " alt="" coords="419,57,620,98"/>
+<area shape="rect" id="node5" href="$classe57_1_1BitpackStringEncoder.html" title=" " alt="" coords="423,123,616,149"/>
 </map>

@@ -1,4 +1,5 @@
 <map id="ccTraceTool" name="ccTraceTool">
-<area shape="rect" id="node1" title=" " alt="" coords="5,80,101,107"/>
-<area shape="rect" id="node2" href="$classccTool.html" title=" " alt="" coords="22,5,85,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="37,171,133,197"/>
+<area shape="rect" id="node2" href="$classccTool.html" title=" " alt="" coords="54,95,117,121"/>
+<area shape="rect" id="node3" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="5,5,165,32"/>
 </map>

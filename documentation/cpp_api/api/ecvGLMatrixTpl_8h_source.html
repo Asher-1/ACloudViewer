@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -540,8 +549,8 @@ $(document).ready(function(){initNavTree('ecvGLMatrixTpl_8h_source.html',''); in
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;    }</div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160; </div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160; </div>
-<div class="line"><a name="l00520"></a><span class="lineno"><a class="line" href="classccGLMatrixTpl.html#afe0de8fe0e390693e467ba19b7ead3b0">  520</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classccGLMatrixTpl.html#afe0de8fe0e390693e467ba19b7ead3b0">toAsciiFile</a>(QString filename, <span class="keywordtype">int</span> precision = 12)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        QFile fp(filename);</div>
+<div class="line"><a name="l00520"></a><span class="lineno"><a class="line" href="classccGLMatrixTpl.html#afe0de8fe0e390693e467ba19b7ead3b0">  520</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classccGLMatrixTpl.html#afe0de8fe0e390693e467ba19b7ead3b0">toAsciiFile</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keywordtype">int</span> precision = 12)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        QFile fp(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        <span class="keywordflow">if</span> (!fp.open(QFile::WriteOnly | QFile::Text)) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160; </div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        QTextStream stream(&amp;fp);</div>
@@ -556,8 +565,8 @@ $(document).ready(function(){initNavTree('ecvGLMatrixTpl_8h_source.html',''); in
 <div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;    }</div>
 <div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160; </div>
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160; </div>
-<div class="line"><a name="l00538"></a><span class="lineno"><a class="line" href="classccGLMatrixTpl.html#aa756ff9ada47767b8c42f005900c20ff">  538</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classccGLMatrixTpl.html#aa756ff9ada47767b8c42f005900c20ff">fromAsciiFile</a>(QString filename) {</div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;        QFile fp(filename);</div>
+<div class="line"><a name="l00538"></a><span class="lineno"><a class="line" href="classccGLMatrixTpl.html#aa756ff9ada47767b8c42f005900c20ff">  538</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classccGLMatrixTpl.html#aa756ff9ada47767b8c42f005900c20ff">fromAsciiFile</a>(QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
+<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;        QFile fp(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;        <span class="keywordflow">if</span> (!fp.open(QFile::ReadOnly | QFile::Text)) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160; </div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;        QTextStream stream(&amp;fp);</div>
@@ -1332,6 +1341,7 @@ $(document).ready(function(){initNavTree('ecvGLMatrixTpl_8h_source.html',''); in
 <div class="ttc" id="aCVConst_8h_html_ac7b392d30a8cb06410da7ce71b1bab41"><div class="ttname"><a href="CVConst_8h.html#ac7b392d30a8cb06410da7ce71b1bab41">M_PI_2</a></div><div class="ttdeci">constexpr double M_PI_2</div><div class="ttdoc">Pi/2.</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00024">CVConst.h:24</a></div></div>
 <div class="ttc" id="aCVGeom_8h_html"><div class="ttname"><a href="CVGeom_8h.html">CVGeom.h</a></div></div>
 <div class="ttc" id="aCVMath_8h_html"><div class="ttname"><a href="CVMath_8h.html">CVMath.h</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html_a0da543c610d95a9c0726e068ea744090"><div class="ttname"><a href="QtCompat_8h.html#a0da543c610d95a9c0726e068ea744090">qtCompatSplitRegex</a></div><div class="ttdeci">QStringList qtCompatSplitRegex(const QString &amp;str, const QString &amp;pattern, Qt::SplitBehavior behavior=Qt::KeepEmptyParts)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00308">QtCompat.h:308</a></div></div>
 <div class="ttc" id="aSmallVector_8cpp_html_ab385e5bea03d0c55b5efca299f25532e"><div class="ttname"><a href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a></div><div class="ttdeci">void * X</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00045">SmallVector.cpp:45</a></div></div>
@@ -1500,7 +1510,7 @@ $(document).ready(function(){initNavTree('ecvGLMatrixTpl_8h_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvGLMatrixTpl_8h.html">ecvGLMatrixTpl.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

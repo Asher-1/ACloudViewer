@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -115,12 +124,12 @@ $(document).ready(function(){initNavTree('Viewer_8cpp_source.html',''); initResi
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1visualization_1_1app.html#abdf640c2bc50a4e9e7eb15383ddacee5">   26</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1visualization_1_1app.html#abdf640c2bc50a4e9e7eb15383ddacee5">RunViewer</a>(<span class="keywordtype">int</span> argc, <span class="keyword">const</span> <span class="keywordtype">char</span> *argv[]) {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    std::function&lt;void(<span class="keyword">const</span> std::string &amp;)&gt; print_fcn =</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;            <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a2fbefe1f543f1c38a547f7c564dd314c">GetPrintFunction</a>();</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">ResetPrintFunction</a>();</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;            <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#aa5d66f785d03c79bb9b362da8c182569">GetPrintFunction</a>();</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">ResetPrintFunction</a>();</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *path = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordflow">if</span> (argc == 2) {</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        path = argv[1];</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = argv[1];</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (argc &gt; 2) {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<a class="code" href="namespacecloudViewer_1_1visualization_1_1app.html#a488c83e42df2d6cfeb79f7918125af4b">usage</a>.c_str());</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    }</div>
@@ -130,8 +139,8 @@ $(document).ready(function(){initNavTree('Viewer_8cpp_source.html',''); initResi
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keyword">auto</span> vis = std::make_shared&lt;cloudViewer::visualization::GuiVisualizer&gt;(</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            <span class="stringliteral">&quot;CloudViewer&quot;</span>, <a class="code" href="namespacecloudViewer_1_1visualization_1_1app.html#a44383b519f9a7bbcd452ea58adf4cc10">width</a>, <a class="code" href="namespacecloudViewer_1_1visualization_1_1app.html#ac0ab62bfdb573e43c17b72b0d57e2de7">height</a>);</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordflow">if</span> (path &amp;&amp; path[0] != <span class="charliteral">&#39;\0&#39;</span>) {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        vis-&gt;LoadGeometry(path);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> &amp;&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>[0] != <span class="charliteral">&#39;\0&#39;</span>) {</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        vis-&gt;LoadGeometry(<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    }</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Application.html#a2a719ad7e120df6f9ac5cad3747f518e">gui::Application::GetInstance</a>().<a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Application.html#adc21fedba64044f149b2a9aafc0dbec1">AddWindow</a>(vis);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="comment">// When Run() ends, Filament will be stopped, so we can&#39;t be holding on</span></div>
@@ -140,7 +149,7 @@ $(document).ready(function(){initNavTree('Viewer_8cpp_source.html',''); initResi
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    app.Run();</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a4be379fe9a94abddeb41b617923c652c">SetPrintFunction</a>(print_fcn);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">utility::Logger::GetInstance</a>().<a class="code" href="classcloudViewer_1_1utility_1_1Logger.html#a4be379fe9a94abddeb41b617923c652c">SetPrintFunction</a>(print_fcn);</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;}  <span class="comment">// namespace app</span></div>
@@ -150,26 +159,27 @@ $(document).ready(function(){initNavTree('Viewer_8cpp_source.html',''); initResi
 <div class="ttc" id="aGuiVisualizer_8h_html"><div class="ttname"><a href="GuiVisualizer_8h.html">GuiVisualizer.h</a></div></div>
 <div class="ttc" id="aNative_8h_html"><div class="ttname"><a href="Native_8h.html">Native.h</a></div></div>
 <div class="ttc" id="aViewer_8h_html"><div class="ttname"><a href="Viewer_8h.html">Viewer.h</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a2fbefe1f543f1c38a547f7c564dd314c"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a2fbefe1f543f1c38a547f7c564dd314c">cloudViewer::utility::Logger::GetPrintFunction</a></div><div class="ttdeci">const std::function&lt; void(const std::string &amp;)&gt; GetPrintFunction()</div><div class="ttdoc">Get the print function used by the Logger.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a34eb07b824a0a284146cf3a3345b4261"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">cloudViewer::utility::Logger::ResetPrintFunction</a></div><div class="ttdeci">void ResetPrintFunction()</div><div class="ttdoc">Reset the print function to the default one (print to console).</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a4be379fe9a94abddeb41b617923c652c"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a4be379fe9a94abddeb41b617923c652c">cloudViewer::utility::Logger::SetPrintFunction</a></div><div class="ttdeci">void SetPrintFunction(std::function&lt; void(const std::string &amp;)&gt; print_fcn)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_acc81e40a92aeb86a688d12f9a2c9be6e"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e">cloudViewer::utility::Logger::GetInstance</a></div><div class="ttdeci">static Logger &amp; GetInstance()</div><div class="ttdoc">Get Logger global singleton instance.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a34eb07b824a0a284146cf3a3345b4261"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a34eb07b824a0a284146cf3a3345b4261">cloudViewer::utility::Logger::ResetPrintFunction</a></div><div class="ttdeci">void ResetPrintFunction()</div><div class="ttdoc">Reset the print function to the default one (print to console).</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00077">Logging.cpp:77</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_a4be379fe9a94abddeb41b617923c652c"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#a4be379fe9a94abddeb41b617923c652c">cloudViewer::utility::Logger::SetPrintFunction</a></div><div class="ttdeci">void SetPrintFunction(std::function&lt; void(const std::string &amp;)&gt; print_fcn)</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00068">Logging.cpp:68</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_aa5d66f785d03c79bb9b362da8c182569"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#aa5d66f785d03c79bb9b362da8c182569">cloudViewer::utility::Logger::GetPrintFunction</a></div><div class="ttdeci">const std::function&lt; void(const std::string &amp;)&gt; GetPrintFunction()</div><div class="ttdoc">Get the print function used by the Logger.</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00073">Logging.cpp:73</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1Logger_html_af5fadbb1e86d87dd473087e30069ac8a"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a">cloudViewer::utility::Logger::GetInstance</a></div><div class="ttdeci">static Logger &amp; GetInstance()</div><div class="ttdoc">Get Logger global singleton instance.</div><div class="ttdef"><b>Definition:</b> <a href="Logging_8cpp_source.html#l00025">Logging.cpp:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Application_html_a2a719ad7e120df6f9ac5cad3747f518e"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Application.html#a2a719ad7e120df6f9ac5cad3747f518e">cloudViewer::visualization::gui::Application::GetInstance</a></div><div class="ttdeci">static Application &amp; GetInstance()</div><div class="ttdef"><b>Definition:</b> <a href="Application_8cpp_source.html#l00179">Application.cpp:179</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Application_html_adc21fedba64044f149b2a9aafc0dbec1"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Application.html#adc21fedba64044f149b2a9aafc0dbec1">cloudViewer::visualization::gui::Application::AddWindow</a></div><div class="ttdeci">void AddWindow(std::shared_ptr&lt; Window &gt; window)</div><div class="ttdoc">Must be called on the same thread that calls Run()</div><div class="ttdef"><b>Definition:</b> <a href="Application_8cpp_source.html#l00457">Application.cpp:457</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1app_html_a44383b519f9a7bbcd452ea58adf4cc10"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1app.html#a44383b519f9a7bbcd452ea58adf4cc10">cloudViewer::visualization::app::width</a></div><div class="ttdeci">static const int width</div><div class="ttdef"><b>Definition:</b> <a href="Viewer_8cpp_source.html#l00023">Viewer.cpp:23</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1app_html_a488c83e42df2d6cfeb79f7918125af4b"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1app.html#a488c83e42df2d6cfeb79f7918125af4b">cloudViewer::visualization::app::usage</a></div><div class="ttdeci">static const std::string usage</div><div class="ttdef"><b>Definition:</b> <a href="Viewer_8cpp_source.html#l00022">Viewer.cpp:22</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1app_html_abdf640c2bc50a4e9e7eb15383ddacee5"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1app.html#abdf640c2bc50a4e9e7eb15383ddacee5">cloudViewer::visualization::app::RunViewer</a></div><div class="ttdeci">void RunViewer(int argc, const char *argv[])</div><div class="ttdef"><b>Definition:</b> <a href="Viewer_8cpp_source.html#l00026">Viewer.cpp:26</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1app_html_ac0ab62bfdb573e43c17b72b0d57e2de7"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1app.html#ac0ab62bfdb573e43c17b72b0d57e2de7">cloudViewer::visualization::app::height</a></div><div class="ttdeci">static const int height</div><div class="ttdef"><b>Definition:</b> <a href="Viewer_8cpp_source.html#l00024">Viewer.cpp:24</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_aa2f810a456d34e40fbd622d3aa4a994.html">app</a></li><li class="navelem"><a class="el" href="Viewer_8cpp.html">Viewer.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

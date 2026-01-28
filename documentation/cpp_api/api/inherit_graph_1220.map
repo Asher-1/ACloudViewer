@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structsqlite3_1_1sqlite3InitInfo.html" title=" " alt="" coords="5,5,169,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,31,84,57"/>
+<area shape="rect" id="node2" href="$classQCPBarsWithText.html" title="QCustomPlot: vertical bar with text along side." alt="" coords="132,5,267,32"/>
+<area shape="rect" id="node3" href="$classQCPColoredBars.html" title="QCustomPlot: colored histogram." alt="" coords="135,56,263,83"/>
 </map>

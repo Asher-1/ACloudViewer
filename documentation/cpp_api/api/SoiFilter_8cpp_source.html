@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -113,11 +122,11 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;                    QStringList{<span class="stringliteral">&quot;Mensi Soisic cloud (*.soi)&quot;</span>}, QStringList(),</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                    <a class="code" href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">Import</a>}) {}</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classSoiFilter.html#a6b146365690301c32c76954edfd48be0">   26</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSoiFilter.html#a6b146365690301c32c76954edfd48be0">SoiFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classSoiFilter.html#a6b146365690301c32c76954edfd48be0">   26</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classSoiFilter.html#a6b146365690301c32c76954edfd48be0">SoiFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                  <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                                  <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="comment">// open the file</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    FILE* fp = fopen(qPrintable(filename), <span class="stringliteral">&quot;rt&quot;</span>);</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    FILE* fp = fopen(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), <span class="stringliteral">&quot;rt&quot;</span>);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordflow">if</span> (!fp) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee">CC_FERR_READING</a>;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    std::string line;</div>
@@ -148,7 +157,7 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    }</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> ((nbScansTotal == 0) || (nbPointsTotal == 0)) {</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                <span class="stringliteral">&quot;[SoiFilter::loadFile] No points or scans defined in this &quot;</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                <span class="stringliteral">&quot;file!&quot;</span>);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        fclose(fp);</div>
@@ -185,13 +194,13 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            <span class="comment">// CVLog::Print(&quot;[SoiFilter::loadFile] Scan %i - points:</span></div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            <span class="comment">// %i&quot;,k+1,nbOfPoints);</span></div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[SoiFilter::loadFile] Can&#39;t find marker &#39;#pt#&#39;!&quot;</span>);</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[SoiFilter::loadFile] Can&#39;t find marker &#39;#pt#&#39;!&quot;</span>);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            fclose(fp);</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795afd8299651c6d80dc1d0acea8602c5a5a">CC_FERR_WRONG_FILE_TYPE</a>;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keywordflow">if</span> (nbOfPoints == 0) {</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[SoiFilter::loadFile] Scan #%i is empty!&quot;</span>, k);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[SoiFilter::loadFile] Scan #%i is empty!&quot;</span>, k);</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        }</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
@@ -222,7 +231,7 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                    c &lt;&lt; 3));  <span class="comment">//&lt;&lt;2 ? &lt;&lt;3 ? we lack some info. here ...</span></div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;            <span class="keywordflow">if</span> (pDlg) {</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                nprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">oneStep</a>();</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                nprogress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>();</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;            }</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        }</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
@@ -234,6 +243,7 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;}</div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795a5e49671d1e951d77e9d2eea9ef0b4422"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5e49671d1e951d77e9d2eea9ef0b4422">CC_FERR_NO_LOAD</a></div><div class="ttdeci">@ CC_FERR_NO_LOAD</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00028">FileIOFilter.h:28</a></div></div>
@@ -244,7 +254,7 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795afd8299651c6d80dc1d0acea8602c5a5a"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795afd8299651c6d80dc1d0acea8602c5a5a">CC_FERR_WRONG_FILE_TYPE</a></div><div class="ttdeci">@ CC_FERR_WRONG_FILE_TYPE</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00024">FileIOFilter.h:24</a></div></div>
 <div class="ttc" id="aSoiFilter_8cpp_html_a2ec15efbdac92f2a6faadcf21c372ce8"><div class="ttname"><a href="SoiFilter_8cpp.html#a2ec15efbdac92f2a6faadcf21c372ce8">MAX_ASCII_FILE_LINE_LENGTH</a></div><div class="ttdeci">const int MAX_ASCII_FILE_LINE_LENGTH</div><div class="ttdef"><b>Definition:</b> <a href="SoiFilter_8cpp_source.html#l00017">SoiFilter.cpp:17</a></div></div>
 <div class="ttc" id="aSoiFilter_8h_html"><div class="ttname"><a href="SoiFilter_8h.html">SoiFilter.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a056c88c7d5d4c012ca3daf0c515675c9"><div class="ttname"><a href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">FileIOFilter::DEFAULT_PRIORITY</a></div><div class="ttdeci">static constexpr float DEFAULT_PRIORITY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00313">FileIOFilter.h:313</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">FileIOFilter::Import</a></div><div class="ttdeci">@ Import</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00302">FileIOFilter.h:302</a></div></div>
@@ -259,7 +269,7 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div class="ttc" id="aclassccPointCloud_html_aa9333aaf6255b952902a8d4129922a02"><div class="ttname"><a href="classccPointCloud.html#aa9333aaf6255b952902a8d4129922a02">ccPointCloud::reserveTheRGBTable</a></div><div class="ttdeci">bool reserveTheRGBTable()</div><div class="ttdoc">Reserves memory to store the RGB colors.</div></div>
 <div class="ttc" id="aclassccPointCloud_html_ae8d2cfbcd60d60a252e57c97acfc2b58"><div class="ttname"><a href="classccPointCloud.html#ae8d2cfbcd60d60a252e57c97acfc2b58">ccPointCloud::reserveThePointsTable</a></div><div class="ttdeci">bool reserveThePointsTable(unsigned _numberOfPoints)</div><div class="ttdoc">Reserves memory to store the points coordinates.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html">cloudViewer::NormalizedProgress</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00078">GenericProgressCallback.h:78</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_acb12b90f38ce4214da186cb2d5d0b764"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#acb12b90f38ce4214da186cb2d5d0b764">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1NormalizedProgress_html_a6e75fa9a0a99931ed3ed2835e142d2d5"><div class="ttname"><a href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">cloudViewer::NormalizedProgress::oneStep</a></div><div class="ttdeci">bool oneStep()</div><div class="ttdoc">Increments total progress value of a single unit.</div><div class="ttdef"><b>Definition:</b> <a href="NormalizedProgress_8cpp_source.html#l00099">NormalizedProgress.cpp:99</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclassecvProgressDialog_html"><div class="ttname"><a href="classecvProgressDialog.html">ecvProgressDialog</a></div><div class="ttdoc">Graphical progress indicator (thread-safe)</div><div class="ttdef"><b>Definition:</b> <a href="ecvProgressDialog_8h_source.html#l00027">ecvProgressDialog.h:29</a></div></div>
 <div class="ttc" id="aecvColorTypes_8h_html_acdee13170502cf82fda04cd1407b3756"><div class="ttname"><a href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a></div><div class="ttdeci">unsigned char ColorCompType</div><div class="ttdoc">Default color components type (R,G and B)</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00029">ecvColorTypes.h:29</a></div></div>
@@ -273,7 +283,7 @@ $(document).ready(function(){initNavTree('SoiFilter_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_148eb1bec32389d620143c4e90e6b93c.html">qAdditionalIO</a></li><li class="navelem"><a class="el" href="dir_b14736cabb2734d269d4858bfda65e89.html">src</a></li><li class="navelem"><a class="el" href="SoiFilter_8cpp.html">SoiFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

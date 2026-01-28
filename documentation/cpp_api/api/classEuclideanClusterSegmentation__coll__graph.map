@@ -1,9 +1,11 @@
 <map id="EuclideanClusterSegmentation" name="EuclideanClusterSegmentation">
-<area shape="rect" id="node1" title="SIFT keypoints extraction." alt="" coords="150,184,373,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="121,95,242,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classEuclideanClusterDlg.html" title=" " alt="" coords="266,95,419,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="300,5,375,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="399,5,574,32"/>
+<area shape="rect" id="node1" title="SIFT keypoints extraction." alt="" coords="608,157,831,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="357,107,479,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="55,5,130,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="11,56,174,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="25,107,160,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="13,157,173,184"/>
+<area shape="rect" id="node7" href="$classEuclideanClusterDlg.html" title=" " alt="" coords="341,208,495,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="55,208,130,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,180,285"/>
 </map>

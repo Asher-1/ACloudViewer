@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -118,45 +127,45 @@ Collaboration diagram for cloudViewer::ScalarFieldTools:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a605d4ee8e2b624df0474a83ad88b6515"><td class="memItemLeft" align="right" valign="top">static ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a605d4ee8e2b624df0474a83ad88b6515">computeMeanScalarValue</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
-<tr class="memdesc:a605d4ee8e2b624df0474a83ad88b6515"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the mean value of a scalar field associated to a cloud.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a605d4ee8e2b624df0474a83ad88b6515">More...</a><br /></td></tr>
-<tr class="separator:a605d4ee8e2b624df0474a83ad88b6515"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab10adb921863a8e9d3a129a8037ba87b"><td class="memItemLeft" align="right" valign="top">static ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#ab10adb921863a8e9d3a129a8037ba87b">computeMeanSquareScalarValue</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
-<tr class="memdesc:ab10adb921863a8e9d3a129a8037ba87b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the mean square value of a scalar field associated to a cloud.  <a href="classcloudViewer_1_1ScalarFieldTools.html#ab10adb921863a8e9d3a129a8037ba87b">More...</a><br /></td></tr>
-<tr class="separator:ab10adb921863a8e9d3a129a8037ba87b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafa2f9c88409b0d2d75fe8b7783b4e41"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aafa2f9c88409b0d2d75fe8b7783b4e41">computeScalarFieldGradient</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius, bool euclideanDistances, bool sameInAndOutScalarField=false, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *theOctree=nullptr)</td></tr>
-<tr class="separator:aafa2f9c88409b0d2d75fe8b7783b4e41"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7f24b1d19102a6579ccf606d4cb6b67"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aa7f24b1d19102a6579ccf606d4cb6b67">applyScalarFieldGaussianFilter</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> sigma, <a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> sigmaSF, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *theOctree=nullptr)</td></tr>
-<tr class="separator:aa7f24b1d19102a6579ccf606d4cb6b67"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22a28b57db630eaaebfc9a8650e16629"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a22a28b57db630eaaebfc9a8650e16629">multiplyScalarFields</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *firstCloud, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *secondCloud, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="memdesc:a22a28b57db630eaaebfc9a8650e16629"><td class="mdescLeft">&#160;</td><td class="mdescRight">Multiplies two scalar fields of the same size.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a22a28b57db630eaaebfc9a8650e16629">More...</a><br /></td></tr>
-<tr class="separator:a22a28b57db630eaaebfc9a8650e16629"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff16a4e7fd6aa96ec3df91e37cad8ddc"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aff16a4e7fd6aa96ec3df91e37cad8ddc">computeScalarFieldHistogram</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, unsigned numberOfClasses, std::vector&lt; int &gt; &amp;histo)</td></tr>
-<tr class="memdesc:aff16a4e7fd6aa96ec3df91e37cad8ddc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an histogram of the scalar field with a given number of classes.  <a href="classcloudViewer_1_1ScalarFieldTools.html#aff16a4e7fd6aa96ec3df91e37cad8ddc">More...</a><br /></td></tr>
-<tr class="separator:aff16a4e7fd6aa96ec3df91e37cad8ddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a731b2be89d20b8cd3274c110ef12a33f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a731b2be89d20b8cd3274c110ef12a33f">computeScalarFieldExtremas</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, ScalarType &amp;minV, ScalarType &amp;maxV)</td></tr>
-<tr class="memdesc:a731b2be89d20b8cd3274c110ef12a33f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the extreme values of a scalar field.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a731b2be89d20b8cd3274c110ef12a33f">More...</a><br /></td></tr>
-<tr class="separator:a731b2be89d20b8cd3274c110ef12a33f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a588a7d96c19b7cabc44734e951ce84a1"><td class="memItemLeft" align="right" valign="top">static unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a588a7d96c19b7cabc44734e951ce84a1">countScalarFieldValidValues</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
-<tr class="memdesc:a588a7d96c19b7cabc44734e951ce84a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Count the number of valid values in a scalar field.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a588a7d96c19b7cabc44734e951ce84a1">More...</a><br /></td></tr>
-<tr class="separator:a588a7d96c19b7cabc44734e951ce84a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a919255ddf8e77c8c9afef65c91f71f83"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a919255ddf8e77c8c9afef65c91f71f83">computeKmeans</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, unsigned char K, <a class="el" href="structcloudViewer_1_1KMeanClass.html">KMeanClass</a> kmcc[], <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="separator:a919255ddf8e77c8c9afef65c91f71f83"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a044c6c81c15405a458ee9af0eb37d0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a3a044c6c81c15405a458ee9af0eb37d0">SetScalarValueToNaN</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, ScalarType &amp;scalarValue)</td></tr>
-<tr class="memdesc:a3a044c6c81c15405a458ee9af0eb37d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance value associated to a point.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a3a044c6c81c15405a458ee9af0eb37d0">More...</a><br /></td></tr>
-<tr class="separator:a3a044c6c81c15405a458ee9af0eb37d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3f6861a3d589dffcdc7b82f58b7dce06"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a3f6861a3d589dffcdc7b82f58b7dce06">SetScalarValueToZero</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, ScalarType &amp;scalarValue)</td></tr>
-<tr class="memdesc:a3f6861a3d589dffcdc7b82f58b7dce06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance value associated to a point to zero.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a3f6861a3d589dffcdc7b82f58b7dce06">More...</a><br /></td></tr>
-<tr class="separator:a3f6861a3d589dffcdc7b82f58b7dce06"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a996a526c7504fda5da49d9dfc5a0514b"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a996a526c7504fda5da49d9dfc5a0514b">SetScalarValueInverted</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, ScalarType &amp;scalarValue)</td></tr>
-<tr class="separator:a996a526c7504fda5da49d9dfc5a0514b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3237e0cad9b197bff8677d3a7d77e4a2"><td class="memItemLeft" align="right" valign="top">static ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a3237e0cad9b197bff8677d3a7d77e4a2">computeMeanScalarValue</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
+<tr class="memdesc:a3237e0cad9b197bff8677d3a7d77e4a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the mean value of a scalar field associated to a cloud.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a3237e0cad9b197bff8677d3a7d77e4a2">More...</a><br /></td></tr>
+<tr class="separator:a3237e0cad9b197bff8677d3a7d77e4a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a960878a703a805b71d05a111b05a5137"><td class="memItemLeft" align="right" valign="top">static ScalarType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a960878a703a805b71d05a111b05a5137">computeMeanSquareScalarValue</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
+<tr class="memdesc:a960878a703a805b71d05a111b05a5137"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the mean square value of a scalar field associated to a cloud.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a960878a703a805b71d05a111b05a5137">More...</a><br /></td></tr>
+<tr class="separator:a960878a703a805b71d05a111b05a5137"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbd1168f8082539f4bc13c313f042d54"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#adbd1168f8082539f4bc13c313f042d54">computeScalarFieldGradient</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius, bool euclideanDistances, bool sameInAndOutScalarField=false, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *theOctree=nullptr)</td></tr>
+<tr class="separator:adbd1168f8082539f4bc13c313f042d54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82ef9bfb5b032a5d87f570c55d09bfe2"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a82ef9bfb5b032a5d87f570c55d09bfe2">applyScalarFieldGaussianFilter</a> (<a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> sigma, <a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> sigmaSF, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *theOctree=nullptr)</td></tr>
+<tr class="separator:a82ef9bfb5b032a5d87f570c55d09bfe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1af0219d80305fd27a34ba2be5fc5694"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a1af0219d80305fd27a34ba2be5fc5694">multiplyScalarFields</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *firstCloud, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *secondCloud, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memdesc:a1af0219d80305fd27a34ba2be5fc5694"><td class="mdescLeft">&#160;</td><td class="mdescRight">Multiplies two scalar fields of the same size.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a1af0219d80305fd27a34ba2be5fc5694">More...</a><br /></td></tr>
+<tr class="separator:a1af0219d80305fd27a34ba2be5fc5694"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c4dbb05014e4fd510e795d5fbae1504"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a7c4dbb05014e4fd510e795d5fbae1504">computeScalarFieldHistogram</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, unsigned numberOfClasses, std::vector&lt; int &gt; &amp;histo)</td></tr>
+<tr class="memdesc:a7c4dbb05014e4fd510e795d5fbae1504"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an histogram of the scalar field with a given number of classes.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a7c4dbb05014e4fd510e795d5fbae1504">More...</a><br /></td></tr>
+<tr class="separator:a7c4dbb05014e4fd510e795d5fbae1504"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af042be51e657fa7467b8c9c9f2abce35"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#af042be51e657fa7467b8c9c9f2abce35">computeScalarFieldExtremas</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, ScalarType &amp;minV, ScalarType &amp;maxV)</td></tr>
+<tr class="memdesc:af042be51e657fa7467b8c9c9f2abce35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the extreme values of a scalar field.  <a href="classcloudViewer_1_1ScalarFieldTools.html#af042be51e657fa7467b8c9c9f2abce35">More...</a><br /></td></tr>
+<tr class="separator:af042be51e657fa7467b8c9c9f2abce35"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74a8cc1e928447df8ec1b7cb88ff7313"><td class="memItemLeft" align="right" valign="top">static unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a74a8cc1e928447df8ec1b7cb88ff7313">countScalarFieldValidValues</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
+<tr class="memdesc:a74a8cc1e928447df8ec1b7cb88ff7313"><td class="mdescLeft">&#160;</td><td class="mdescRight">Count the number of valid values in a scalar field.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a74a8cc1e928447df8ec1b7cb88ff7313">More...</a><br /></td></tr>
+<tr class="separator:a74a8cc1e928447df8ec1b7cb88ff7313"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9bbd676844873f6cc418912eea3ef59"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#ab9bbd676844873f6cc418912eea3ef59">computeKmeans</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, unsigned char K, <a class="el" href="structcloudViewer_1_1KMeanClass.html">KMeanClass</a> kmcc[], <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="separator:ab9bbd676844873f6cc418912eea3ef59"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7390e4a77a7edac9f0754f396b853a17"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a7390e4a77a7edac9f0754f396b853a17">SetScalarValueToNaN</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, ScalarType &amp;scalarValue)</td></tr>
+<tr class="memdesc:a7390e4a77a7edac9f0754f396b853a17"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance value associated to a point.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a7390e4a77a7edac9f0754f396b853a17">More...</a><br /></td></tr>
+<tr class="separator:a7390e4a77a7edac9f0754f396b853a17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97bf267ac693ff3f9277ecc45206993f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a97bf267ac693ff3f9277ecc45206993f">SetScalarValueToZero</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, ScalarType &amp;scalarValue)</td></tr>
+<tr class="memdesc:a97bf267ac693ff3f9277ecc45206993f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distance value associated to a point to zero.  <a href="classcloudViewer_1_1ScalarFieldTools.html#a97bf267ac693ff3f9277ecc45206993f">More...</a><br /></td></tr>
+<tr class="separator:a97bf267ac693ff3f9277ecc45206993f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af89e9aca9cf8ae2cd4f23360f7983a2a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#af89e9aca9cf8ae2cd4f23360f7983a2a">SetScalarValueInverted</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, ScalarType &amp;scalarValue)</td></tr>
+<tr class="separator:af89e9aca9cf8ae2cd4f23360f7983a2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-methods"></a>
 Static Protected Member Functions</h2></td></tr>
-<tr class="memitem:aa37f38b4b545ea6ba715e8ba907bc71f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aa37f38b4b545ea6ba715e8ba907bc71f">computeMeanGradientOnPatch</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="separator:aa37f38b4b545ea6ba715e8ba907bc71f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a27a5b11c31e03f10c351764c215cdb6c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a27a5b11c31e03f10c351764c215cdb6c">computeCellGaussianFilter</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="separator:a27a5b11c31e03f10c351764c215cdb6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83a2ce12101a7b5e43663d6c6be3a787"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a83a2ce12101a7b5e43663d6c6be3a787">computeMeanGradientOnPatch</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="separator:a83a2ce12101a7b5e43663d6c6be3a787"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa1d3e97419ebb9b3971c21e5392c077"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aaa1d3e97419ebb9b3971c21e5392c077">computeCellGaussianFilter</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="separator:aaa1d3e97419ebb9b3971c21e5392c077"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Several scalar field treatment algorithms (gradient, classification, etc.) </p>
@@ -164,8 +173,8 @@ Static Protected Member Functions</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ScalarFieldTools_8h_source.html#l00035">35</a> of file <a class="el" href="ScalarFieldTools_8h_source.html">ScalarFieldTools.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="aa7f24b1d19102a6579ccf606d4cb6b67"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa7f24b1d19102a6579ccf606d4cb6b67">&#9670;&nbsp;</a></span>applyScalarFieldGaussianFilter()</h2>
+<a id="a82ef9bfb5b032a5d87f570c55d09bfe2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82ef9bfb5b032a5d87f570c55d09bfe2">&#9670;&nbsp;</a></span>applyScalarFieldGaussianFilter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -174,7 +183,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::ScalarFieldTools::applyScalarFieldGaussianFilter </td>
+          <td class="memname">bool ScalarFieldTools::applyScalarFieldGaussianFilter </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a>&#160;</td>
           <td class="paramname"><em>sigma</em>, </td>
@@ -227,10 +236,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00231">231</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00289">computeCellGaussianFilter()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a1721a624f9694430f84ce9c98d954ed3">cloudViewer::GenericCloud::enableScalarField()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02664">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">cloudViewer::GenericProgressCallback::setInfo()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="GenericProgressCallback_8h_source.html#l00070">cloudViewer::GenericProgressCallback::textCanBeEdited()</a>, and <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#aa5fd646271a5367bf5761e1262e92466">cloudViewer::GenericProgressCallback::update()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2AutoSegmentationTools_8cpp_source.html#l00109">cloudViewer::AutoSegmentationTools::frontPropagationBasedSegmentation()</a>, and <a class="el" href="ecvEntityAction_8cpp_source.html#l00829">ccEntityAction::sfGaussianFilter()</a>.</p>
+
 </div>
 </div>
-<a id="a27a5b11c31e03f10c351764c215cdb6c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a27a5b11c31e03f10c351764c215cdb6c">&#9670;&nbsp;</a></span>computeCellGaussianFilter()</h2>
+<a id="aaa1d3e97419ebb9b3971c21e5392c077"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa1d3e97419ebb9b3971c21e5392c077">&#9670;&nbsp;</a></span>computeCellGaussianFilter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -239,7 +254,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::ScalarFieldTools::computeCellGaussianFilter </td>
+          <td class="memname">bool ScalarFieldTools::computeCellGaussianFilter </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -268,7 +283,7 @@ Static Protected Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>"Cellular" function to apply a gaussian filter on the scalar values of points inside an octree cell This function is meant to be applied to all cells of the octree The method also permits to use a bilateral behaviour for the filter. This is automatically switched on if its sigmaSF parameter in additionalParameters is different than -1 (it is of the form DgmOctree::localFunctionPtr). See <a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aa7f24b1d19102a6579ccf606d4cb6b67">ScalarFieldTools::applyScalarFieldGaussianFilter</a>. Method parameters (defined in "additionalParameters") are :</p><ul>
+<p>"Cellular" function to apply a gaussian filter on the scalar values of points inside an octree cell This function is meant to be applied to all cells of the octree The method also permits to use a bilateral behaviour for the filter. This is automatically switched on if its sigmaSF parameter in additionalParameters is different than -1 (it is of the form DgmOctree::localFunctionPtr). See <a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#a82ef9bfb5b032a5d87f570c55d09bfe2">ScalarFieldTools::applyScalarFieldGaussianFilter</a>. Method parameters (defined in "additionalParameters") are :</p><ul>
 <li>(PointCoordinateType*) sigma</li>
 <li>(std::vector&lt;ScalarType&gt;*) the smoothed values <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -281,10 +296,16 @@ Static Protected Member Functions</h2></td></tr>
 </li>
 </ul>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00289">289</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="DgmOctree_8h_source.html#l00225">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::alreadyVisitedNeighbourhoodSize</a>, <a class="el" href="DgmOctree_8h_source.html#l00189">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellCenter</a>, <a class="el" href="DgmOctree_8h_source.html#l00184">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellPos</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02479">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00206">cloudViewer::ReferenceCloud::getAssociatedCloud()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00093">cloudViewer::ReferenceCloud::getPointPersistentPtr()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00072">cloudViewer::ReferenceCloud::getPointScalarValue()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="DgmOctree_8h_source.html#l00215">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::pointsInNeighbourhood</a>, <a class="el" href="DgmOctree_8h_source.html#l00167">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::queryPoint</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00066">cloudViewer::ReferenceCloud::setPointScalarValue()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00231">applyScalarFieldGaussianFilter()</a>.</p>
+
 </div>
 </div>
-<a id="a919255ddf8e77c8c9afef65c91f71f83"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a919255ddf8e77c8c9afef65c91f71f83">&#9670;&nbsp;</a></span>computeKmeans()</h2>
+<a id="ab9bbd676844873f6cc418912eea3ef59"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9bbd676844873f6cc418912eea3ef59">&#9670;&nbsp;</a></span>computeKmeans()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -293,7 +314,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::ScalarFieldTools::computeKmeans </td>
+          <td class="memname">bool ScalarFieldTools::computeKmeans </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -338,10 +359,14 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00520">520</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l01267">abs()</a>, <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00419">computeScalarFieldExtremas()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="ScalarFieldTools_8h_source.html#l00028">cloudViewer::KMeanClass::maxValue</a>, <a class="el" href="ScalarFieldTools_8h_source.html#l00024">cloudViewer::KMeanClass::mean</a>, <a class="el" href="ScalarFieldTools_8h_source.html#l00026">cloudViewer::KMeanClass::minValue</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">cloudViewer::GenericProgressCallback::setInfo()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">cloudViewer::GenericProgressCallback::start()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a180a3040de667058a3656505b059d66a">cloudViewer::GenericProgressCallback::stop()</a>, <a class="el" href="GenericProgressCallback_8h_source.html#l00070">cloudViewer::GenericProgressCallback::textCanBeEdited()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#aa5fd646271a5367bf5761e1262e92466">cloudViewer::GenericProgressCallback::update()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
 </div>
 </div>
-<a id="aa37f38b4b545ea6ba715e8ba907bc71f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa37f38b4b545ea6ba715e8ba907bc71f">&#9670;&nbsp;</a></span>computeMeanGradientOnPatch()</h2>
+<a id="a83a2ce12101a7b5e43663d6c6be3a787"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83a2ce12101a7b5e43663d6c6be3a787">&#9670;&nbsp;</a></span>computeMeanGradientOnPatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -350,7 +375,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::ScalarFieldTools::computeMeanGradientOnPatch </td>
+          <td class="memname">bool ScalarFieldTools::computeMeanGradientOnPatch </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -379,7 +404,7 @@ Static Protected Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>"Cellular" function to compute the gradient norms of points inside an octree cell This function is meant to be applied to all cells of the octree (it is of the form DgmOctree::localFunctionPtr). See <a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#aafa2f9c88409b0d2d75fe8b7783b4e41">ScalarFieldTools::computeScalarFieldGradient</a>. Method parameters (defined in "additionalParameters") are :</p><ul>
+<p>"Cellular" function to compute the gradient norms of points inside an octree cell This function is meant to be applied to all cells of the octree (it is of the form DgmOctree::localFunctionPtr). See <a class="el" href="classcloudViewer_1_1ScalarFieldTools.html#adbd1168f8082539f4bc13c313f042d54">ScalarFieldTools::computeScalarFieldGradient</a>. Method parameters (defined in "additionalParameters") are :</p><ul>
 <li>(GenericCloud*) the point cloud</li>
 <li>(bool*) specifies if the scalar values are euclidean distances</li>
 <li>(PointCoordinateType*) radius</li>
@@ -394,10 +419,16 @@ Static Protected Member Functions</h2></td></tr>
 </li>
 </ul>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00113">113</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="DgmOctree_8h_source.html#l00225">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::alreadyVisitedNeighbourhoodSize</a>, <a class="el" href="DgmOctree_8h_source.html#l00189">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellCenter</a>, <a class="el" href="DgmOctree_8h_source.html#l00184">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellPos</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02479">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00206">cloudViewer::ReferenceCloud::getAssociatedCloud()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="DgmOctree_8h_source.html#l00494">cloudViewer::DgmOctree::getCellSize()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00093">cloudViewer::ReferenceCloud::getPointPersistentPtr()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00072">cloudViewer::ReferenceCloud::getPointScalarValue()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="DgmOctree_8h_source.html#l00215">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::pointsInNeighbourhood</a>, <a class="el" href="DgmOctree_8h_source.html#l00270">cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct::prepare()</a>, <a class="el" href="DgmOctree_8h_source.html#l00167">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::queryPoint</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00037">computeScalarFieldGradient()</a>.</p>
+
 </div>
 </div>
-<a id="a605d4ee8e2b624df0474a83ad88b6515"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a605d4ee8e2b624df0474a83ad88b6515">&#9670;&nbsp;</a></span>computeMeanScalarValue()</h2>
+<a id="a3237e0cad9b197bff8677d3a7d77e4a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3237e0cad9b197bff8677d3a7d77e4a2">&#9670;&nbsp;</a></span>computeMeanScalarValue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -406,7 +437,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static ScalarType cloudViewer::ScalarFieldTools::computeMeanScalarValue </td>
+          <td class="memname">ScalarType ScalarFieldTools::computeMeanScalarValue </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em></td><td>)</td>
@@ -429,10 +460,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the associated scalar field mean value </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00695">695</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="FastMarchingForPropagation_8cpp_source.html#l00027">cloudViewer::FastMarchingForPropagation::init()</a>.</p>
+
 </div>
 </div>
-<a id="ab10adb921863a8e9d3a129a8037ba87b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab10adb921863a8e9d3a129a8037ba87b">&#9670;&nbsp;</a></span>computeMeanSquareScalarValue()</h2>
+<a id="a960878a703a805b71d05a111b05a5137"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a960878a703a805b71d05a111b05a5137">&#9670;&nbsp;</a></span>computeMeanSquareScalarValue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -441,7 +478,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static ScalarType cloudViewer::ScalarFieldTools::computeMeanSquareScalarValue </td>
+          <td class="memname">ScalarType ScalarFieldTools::computeMeanSquareScalarValue </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em></td><td>)</td>
@@ -464,10 +501,14 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the associated scalar field mean of squares value </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00716">716</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
 </div>
 </div>
-<a id="a731b2be89d20b8cd3274c110ef12a33f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a731b2be89d20b8cd3274c110ef12a33f">&#9670;&nbsp;</a></span>computeScalarFieldExtremas()</h2>
+<a id="af042be51e657fa7467b8c9c9f2abce35"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af042be51e657fa7467b8c9c9f2abce35">&#9670;&nbsp;</a></span>computeScalarFieldExtremas()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -476,7 +517,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::ScalarFieldTools::computeScalarFieldExtremas </td>
+          <td class="memname">void ScalarFieldTools::computeScalarFieldExtremas </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -516,12 +557,16 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="reference">Referenced by <a class="el" href="ScalarFieldTools_8cpp_source.html#l00025">define_ScalarFieldTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00419">419</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00520">computeKmeans()</a>, <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00464">computeScalarFieldHistogram()</a>, <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp_source.html#l00025">define_ScalarFieldTools()</a>, and <a class="el" href="core_2src_2CloudSamplingTools_8cpp_source.html#l00256">cloudViewer::CloudSamplingTools::resampleCloudSpatially()</a>.</p>
 
 </div>
 </div>
-<a id="aafa2f9c88409b0d2d75fe8b7783b4e41"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aafa2f9c88409b0d2d75fe8b7783b4e41">&#9670;&nbsp;</a></span>computeScalarFieldGradient()</h2>
+<a id="adbd1168f8082539f4bc13c313f042d54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbd1168f8082539f4bc13c313f042d54">&#9670;&nbsp;</a></span>computeScalarFieldGradient()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -530,7 +575,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static int cloudViewer::ScalarFieldTools::computeScalarFieldGradient </td>
+          <td class="memname">int ScalarFieldTools::computeScalarFieldGradient </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -590,12 +635,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>error code (0 if ok) </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="ccTrace_8cpp_source.html#l00680">ccTrace::buildGradientCost()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00037">37</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00020">AVERAGE_NUMBER_OF_POINTS_FOR_GRADIENT_COMPUTATION</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00113">computeMeanGradientOnPatch()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a1721a624f9694430f84ce9c98d954ed3">cloudViewer::GenericCloud::enableScalarField()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02664">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02737">cloudViewer::DgmOctree::findBestLevelForAGivenPopulationPerCell()</a>, <a class="el" href="DgmOctree_8h_source.html#l00494">cloudViewer::DgmOctree::getCellSize()</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00038">octreeLevel</a>, <a class="el" href="CVShareable_8cpp_source.html#l00035">CCShareable::release()</a>, <a class="el" href="core_2src_2ScalarField_8cpp_source.html#l00071">cloudViewer::ScalarField::reserveSafe()</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, and <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00395">ccLibAlgorithms::ApplyCCLibAlgorithm()</a>, <a class="el" href="ccTrace_8cpp_source.html#l00680">ccTrace::buildGradientCost()</a>, and <a class="el" href="core_2src_2AutoSegmentationTools_8cpp_source.html#l00109">cloudViewer::AutoSegmentationTools::frontPropagationBasedSegmentation()</a>.</p>
 
 </div>
 </div>
-<a id="aff16a4e7fd6aa96ec3df91e37cad8ddc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff16a4e7fd6aa96ec3df91e37cad8ddc">&#9670;&nbsp;</a></span>computeScalarFieldHistogram()</h2>
+<a id="a7c4dbb05014e4fd510e795d5fbae1504"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7c4dbb05014e4fd510e795d5fbae1504">&#9670;&nbsp;</a></span>computeScalarFieldHistogram()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -604,7 +653,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::ScalarFieldTools::computeScalarFieldHistogram </td>
+          <td class="memname">void ScalarFieldTools::computeScalarFieldHistogram </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -644,10 +693,14 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00464">464</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00419">computeScalarFieldExtremas()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
 </div>
 </div>
-<a id="a588a7d96c19b7cabc44734e951ce84a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a588a7d96c19b7cabc44734e951ce84a1">&#9670;&nbsp;</a></span>countScalarFieldValidValues()</h2>
+<a id="a74a8cc1e928447df8ec1b7cb88ff7313"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74a8cc1e928447df8ec1b7cb88ff7313">&#9670;&nbsp;</a></span>countScalarFieldValidValues()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -656,7 +709,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static unsigned cloudViewer::ScalarFieldTools::countScalarFieldValidValues </td>
+          <td class="memname">unsigned ScalarFieldTools::countScalarFieldValidValues </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em></td><td>)</td>
@@ -678,10 +731,16 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00447">447</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2WeibullDistribution_8cpp_source.html#l00328">cloudViewer::WeibullDistribution::computeChi2Dist()</a>, and <a class="el" href="core_2src_2NormalDistribution_8cpp_source.html#l00164">cloudViewer::NormalDistribution::computeChi2Dist()</a>.</p>
+
 </div>
 </div>
-<a id="a22a28b57db630eaaebfc9a8650e16629"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a22a28b57db630eaaebfc9a8650e16629">&#9670;&nbsp;</a></span>multiplyScalarFields()</h2>
+<a id="a1af0219d80305fd27a34ba2be5fc5694"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1af0219d80305fd27a34ba2be5fc5694">&#9670;&nbsp;</a></span>multiplyScalarFields()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -690,7 +749,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::ScalarFieldTools::multiplyScalarFields </td>
+          <td class="memname">void ScalarFieldTools::multiplyScalarFields </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *&#160;</td>
           <td class="paramname"><em>firstCloud</em>, </td>
@@ -730,10 +789,14 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00399">399</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aef2261d89fae22ce9a5a5ee06ccb4c37">cloudViewer::GenericCloud::setPointScalarValue()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>.</p>
+
 </div>
 </div>
-<a id="a996a526c7504fda5da49d9dfc5a0514b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a996a526c7504fda5da49d9dfc5a0514b">&#9670;&nbsp;</a></span>SetScalarValueInverted()</h2>
+<a id="af89e9aca9cf8ae2cd4f23360f7983a2a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af89e9aca9cf8ae2cd4f23360f7983a2a">&#9670;&nbsp;</a></span>SetScalarValueInverted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -742,7 +805,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::ScalarFieldTools::SetScalarValueInverted </td>
+          <td class="memname">void ScalarFieldTools::SetScalarValueInverted </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td>
           <td class="paramname"><em>P</em>, </td>
@@ -766,10 +829,12 @@ Static Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00032">32</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
 </div>
 </div>
-<a id="a3a044c6c81c15405a458ee9af0eb37d0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3a044c6c81c15405a458ee9af0eb37d0">&#9670;&nbsp;</a></span>SetScalarValueToNaN()</h2>
+<a id="a7390e4a77a7edac9f0754f396b853a17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7390e4a77a7edac9f0754f396b853a17">&#9670;&nbsp;</a></span>SetScalarValueToNaN()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -778,7 +843,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::ScalarFieldTools::SetScalarValueToNaN </td>
+          <td class="memname">void ScalarFieldTools::SetScalarValueToNaN </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td>
           <td class="paramname"><em>P</em>, </td>
@@ -811,12 +876,16 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="reference">Referenced by <a class="el" href="ScalarFieldTools_8cpp_source.html#l00025">define_ScalarFieldTools()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00022">22</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l02498">cloudViewer::DistanceComputationTools::computeCloud2MeshDistances()</a>, <a class="el" href="core_2src_2DistanceComputationTools_8cpp_source.html#l03680">cloudViewer::DistanceComputationTools::computeGeodesicDistances()</a>, and <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp_source.html#l00025">define_ScalarFieldTools()</a>.</p>
 
 </div>
 </div>
-<a id="a3f6861a3d589dffcdc7b82f58b7dce06"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3f6861a3d589dffcdc7b82f58b7dce06">&#9670;&nbsp;</a></span>SetScalarValueToZero()</h2>
+<a id="a97bf267ac693ff3f9277ecc45206993f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97bf267ac693ff3f9277ecc45206993f">&#9670;&nbsp;</a></span>SetScalarValueToZero()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -825,7 +894,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void cloudViewer::ScalarFieldTools::SetScalarValueToZero </td>
+          <td class="memname">void ScalarFieldTools::SetScalarValueToZero </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td>
           <td class="paramname"><em>P</em>, </td>
@@ -858,10 +927,15 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00027">27</a> of file <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00300">cloudViewer::GeometricalAnalysisTools::FlagDuplicatePoints()</a>.</p>
+
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/include/<a class="el" href="ScalarFieldTools_8h_source.html">ScalarFieldTools.h</a></li>
+<li>/root/ACloudViewer/core/src/<a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html">ScalarFieldTools.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -869,7 +943,7 @@ Static Protected Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1ScalarFieldTools.html">ScalarFieldTools</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

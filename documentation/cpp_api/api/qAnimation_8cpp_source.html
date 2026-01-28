@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -170,7 +179,7 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;qAnimation::qAnimation(QObject *parent)</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;      ccStdPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qAnimation/info.json&quot;</span>),</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;      <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qAnimation/info.json&quot;</span>),</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;      m_action(nullptr) {}</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keywordtype">void</span> qAnimation::onNewSelection(<span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a> &amp;selectedEntities) {</div>
@@ -179,15 +188,15 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    }</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a195c1108080bf45bc6aed686ae198da0">ViewPortList</a> viewports = <a class="code" href="qAnimation_8cpp.html#a0c4e077cef7f42d22910f5611388e6c0">GetSelectedViewPorts</a>(selectedEntities);</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a207547c3ebc7ce784dc5e13d1871c7f7">MeshList</a> meshes = <a class="code" href="qAnimation_8cpp.html#abf5089346a1ab2fa0487333c250d0f48">GetSelectedMeshes</a>(m_app-&gt;getSelectedEntities());</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a207547c3ebc7ce784dc5e13d1871c7f7">MeshList</a> meshes = <a class="code" href="qAnimation_8cpp.html#abf5089346a1ab2fa0487333c250d0f48">GetSelectedMeshes</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>());</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordflow">if</span> (viewports.size() &gt;= 2 || !meshes.empty()) {</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        m_action-&gt;setEnabled(<span class="keyword">true</span>);</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        m_action-&gt;setToolTip(getDescription());</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        m_action-&gt;setToolTip(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>());</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        m_action-&gt;setEnabled(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        m_action-&gt;setToolTip(tr(<span class="stringliteral">&quot;%1\nAt least 2 viewports must be selected.&quot;</span>)</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                                     .arg(getDescription()));</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                                     .arg(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>()));</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;}</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
@@ -195,9 +204,9 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="comment">// default action (if it has not been already created, it&#39;s the moment to do</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="comment">// it)</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keywordflow">if</span> (!m_action) {</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        m_action = <span class="keyword">new</span> QAction(getName(), <span class="keyword">this</span>);</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        m_action-&gt;setToolTip(getDescription());</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        m_action-&gt;setIcon(getIcon());</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        m_action = <span class="keyword">new</span> QAction(<a class="code" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a>(), <span class="keyword">this</span>);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        m_action-&gt;setToolTip(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>());</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        m_action-&gt;setIcon(<a class="code" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a>());</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        connect(m_action, &amp;QAction::triggered, <span class="keyword">this</span>, &amp;qAnimation::doAction);</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    }</div>
@@ -209,20 +218,20 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keywordtype">void</span> qAnimation::doAction() {</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="comment">// m_app should have already been initialized by CC when plugin is loaded!</span></div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="comment">//(--&gt; pure internal check)</span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    assert(m_app);</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (!m_app) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    assert(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>);</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="comment">// get active GL window</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    QWidget *glWindow = m_app-&gt;getActiveWindow();</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    QWidget *glWindow = <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>();</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordflow">if</span> (!glWindow) {</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        m_app-&gt;dispToConsole(<span class="stringliteral">&quot;No active 3D view!&quot;</span>,</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                             ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(<span class="stringliteral">&quot;No active 3D view!&quot;</span>,</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                             <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    }</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a195c1108080bf45bc6aed686ae198da0">ViewPortList</a> viewports = <a class="code" href="qAnimation_8cpp.html#a0c4e077cef7f42d22910f5611388e6c0">GetSelectedViewPorts</a>(m_app-&gt;getSelectedEntities());</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a195c1108080bf45bc6aed686ae198da0">ViewPortList</a> viewports = <a class="code" href="qAnimation_8cpp.html#a0c4e077cef7f42d22910f5611388e6c0">GetSelectedViewPorts</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>());</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a207547c3ebc7ce784dc5e13d1871c7f7">MeshList</a> meshes = <a class="code" href="qAnimation_8cpp.html#abf5089346a1ab2fa0487333c250d0f48">GetSelectedMeshes</a>(m_app-&gt;getSelectedEntities());</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <a class="code" href="qAnimation_8cpp.html#a207547c3ebc7ce784dc5e13d1871c7f7">MeshList</a> meshes = <a class="code" href="qAnimation_8cpp.html#abf5089346a1ab2fa0487333c250d0f48">GetSelectedMeshes</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>());</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="comment">// store history texture files</span></div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    std::vector&lt;std::vector&lt;std::string&gt;&gt; textureFileList;</div>
@@ -231,7 +240,7 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        std::vector&lt;std::string&gt; textureFiles;</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        <span class="keywordflow">if</span> (materials) {</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; materials-&gt;size(); ++i) {</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                textureFiles.push_back(<a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                textureFiles.push_back(<a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                        materials-&gt;at(i)-&gt;getTextureFilename()));</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;            }</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        }</div>
@@ -242,17 +251,17 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;              !meshes.empty()));  <span class="comment">// action will not be active unless we</span></div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                                  <span class="comment">// have at least 2 viewports or have meshes</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160; </div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    m_app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;[qAnimation] Selected viewports: %1&quot;</span>)</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;[qAnimation] Selected viewports: %1&quot;</span>)</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                                 .arg(viewports.size()));</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            QString(<span class="stringliteral">&quot;[qAnimation] Selected meshes: %1&quot;</span>).arg(meshes.size()));</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <a class="code" href="classqAnimationDlg.html">qAnimationDlg</a> videoDlg(glWindow, m_app-&gt;getMainWindow());</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <a class="code" href="classqAnimationDlg.html">qAnimationDlg</a> videoDlg(glWindow, <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keywordflow">if</span> (!videoDlg.init(viewports, meshes)) {</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        m_app-&gt;dispToConsole(</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                <span class="stringliteral">&quot;Failed to initialize the plugin dialog (not enough memory?)&quot;</span>,</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    }</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160; </div>
@@ -263,7 +272,7 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="keyword">auto</span> &amp;mesh = meshes[i];</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <span class="keywordflow">if</span> (mesh &amp;&amp; mesh-&gt;getMaterialSet()) {</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <span class="keywordflow">if</span> (!mesh-&gt;updateTextures(textureFileList[i])) {</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Restore texture for %1 failed!&quot;</span>)</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Restore texture for %1 failed!&quot;</span>)</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                                       .arg(mesh-&gt;getName()));</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            };</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        }</div>
@@ -274,23 +283,26 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordflow">if</span> (videoDlg.exportTrajectoryOnExit() &amp;&amp; videoDlg.getTrajectory()) {</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;        <a class="code" href="classccPolyline.html">ccPolyline</a> *trajectory = <span class="keyword">new</span> <a class="code" href="classccPolyline.html">ccPolyline</a>(*videoDlg.getTrajectory());</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        <span class="keywordflow">if</span> (!trajectory) {</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;            trajectory-&gt;<a class="code" href="classccPolyline.html#af712de7d550bec56e1a41c00af06d522">setColor</a>(<a class="code" href="namespaceecvColor.html#ad2272be8f247b9ce52d904ff41938de4">ecvColor::yellow</a>);</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            trajectory-&gt;<a class="code" href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">showColors</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            trajectory-&gt;<a class="code" href="classccPolyline.html#afa5cd7899b0e778f6773080e70f7b3e9">setWidth</a>(2);</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            getMainAppInterface()-&gt;addToDB(trajectory);</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            <a class="code" href="classccStdPluginInterface.html#a8dbc342471770ca51be02d711b2caaab">getMainAppInterface</a>()-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(trajectory);</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        }</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    }</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;}</div>
 <div class="ttc" id="aCVTools_8h_html"><div class="ttname"><a href="CVTools_8h.html">CVTools.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
-<div class="ttc" id="aclassCVTools_html_a7f3e812812684324ba0b995e7c81b02d"><div class="ttname"><a href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a></div><div class="ttdeci">static std::string FromQString(const QString &amp;qs)</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
+<div class="ttc" id="aclassCVTools_html_a5573c72e90199b38eff39a3e35f45caa"><div class="ttname"><a href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a></div><div class="ttdeci">static std::string FromQString(const QString &amp;qs)</div><div class="ttdef"><b>Definition:</b> <a href="CVTools_8cpp_source.html#l00100">CVTools.cpp:100</a></div></div>
 <div class="ttc" id="aclasscc2DViewportObject_html"><div class="ttname"><a href="classcc2DViewportObject.html">cc2DViewportObject</a></div><div class="ttdoc">2D viewport object</div><div class="ttdef"><b>Definition:</b> <a href="ecv2DViewportObject_8h_source.html#l00015">ecv2DViewportObject.h:15</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_a8a1a1767db7a925da80ee8a356ce423b"><div class="ttname"><a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">ccDefaultPluginInterface::getName</a></div><div class="ttdeci">virtual QString getName() const override</div><div class="ttdoc">Returns (short) name (for menu entry, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00100">ecvDefaultPluginInterface.cpp:100</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_aae6336c05f8e7de1be072565b8d6256c"><div class="ttname"><a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">ccDefaultPluginInterface::getDescription</a></div><div class="ttdeci">virtual QString getDescription() const override</div><div class="ttdoc">Returns long name/description (for tooltip, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00104">ecvDefaultPluginInterface.cpp:104</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_ac9d5f749c5b30b78dab3cc78812e8d8e"><div class="ttname"><a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">ccDefaultPluginInterface::getIcon</a></div><div class="ttdeci">virtual QIcon getIcon() const override</div><div class="ttdoc">Returns icon.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00108">ecvDefaultPluginInterface.cpp:108</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_abafa4534cf5bd169084fcdbf9d636c9b"><div class="ttname"><a href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">ccDrawableObject::showColors</a></div><div class="ttdeci">virtual void showColors(bool state)</div><div class="ttdoc">Sets colors visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00084">ecvDrawableObject.h:84</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
@@ -299,7 +311,16 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div class="ttc" id="aclassccPolyline_html"><div class="ttname"><a href="classccPolyline.html">ccPolyline</a></div><div class="ttdoc">Colored polyline.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00023">ecvPolyline.h:24</a></div></div>
 <div class="ttc" id="aclassccPolyline_html_af712de7d550bec56e1a41c00af06d522"><div class="ttname"><a href="classccPolyline.html#af712de7d550bec56e1a41c00af06d522">ccPolyline::setColor</a></div><div class="ttdeci">void setColor(const ecvColor::Rgb &amp;col)</div><div class="ttdoc">Sets the polyline color.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00081">ecvPolyline.h:81</a></div></div>
 <div class="ttc" id="aclassccPolyline_html_afa5cd7899b0e778f6773080e70f7b3e9"><div class="ttname"><a href="classccPolyline.html#afa5cd7899b0e778f6773080e70f7b3e9">ccPolyline::setWidth</a></div><div class="ttdeci">void setWidth(PointCoordinateType width)</div><div class="ttdoc">Sets the width of the line.</div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_a8dbc342471770ca51be02d711b2caaab"><div class="ttname"><a href="classccStdPluginInterface.html#a8dbc342471770ca51be02d711b2caaab">ccStdPluginInterface::getMainAppInterface</a></div><div class="ttdeci">virtual ecvMainAppInterface * getMainAppInterface()</div><div class="ttdoc">A callback pointer to the main app interface for use by plugins.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00059">ecvStdPluginInterface.h:59</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_af46bcfd10da04c21300a7f1a59b29d86"><div class="ttname"><a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">ccStdPluginInterface::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Main application interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00085">ecvStdPluginInterface.h:85</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_ad1b3d8337bff3d3f8c8200b608411a88"><div class="ttname"><a href="classecvDisplayTools.html#ad1b3d8337bff3d3f8c8200b608411a88">ecvDisplayTools::UpdateScreen</a></div><div class="ttdeci">static void UpdateScreen()</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l01242">ecvDisplayTools.h:1242</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="aclassqAnimationDlg_html"><div class="ttname"><a href="classqAnimationDlg.html">qAnimationDlg</a></div><div class="ttdoc">Dialog for qAnimation plugin.</div><div class="ttdef"><b>Definition:</b> <a href="qAnimationDlg_8h_source.html#l00048">qAnimationDlg.h:48</a></div></div>
 <div class="ttc" id="aecv2DViewportObject_8h_html"><div class="ttname"><a href="ecv2DViewportObject_8h.html">ecv2DViewportObject.h</a></div></div>
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
@@ -323,7 +344,7 @@ $(document).ready(function(){initNavTree('qAnimation_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8e0e1ff7f24769e85414f2ebafbc6cf9.html">qAnimation</a></li><li class="navelem"><a class="el" href="dir_505c055bef624d0937ac01eb6698c77a.html">src</a></li><li class="navelem"><a class="el" href="qAnimation_8cpp.html">qAnimation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

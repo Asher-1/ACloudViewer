@@ -1,6 +1,8 @@
 <map id="ccCompass" name="ccCompass">
-<area shape="rect" id="node1" title=" " alt="" coords="133,80,229,107"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="104,5,259,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="283,5,418,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="133,229,229,256"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,155,80,181"/>
+<area shape="rect" id="node3" href="$classccStdPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="104,155,259,181"/>
+<area shape="rect" id="node4" href="$classccDefaultPluginInterface.html" title=" " alt="" coords="90,80,273,107"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="114,5,249,32"/>
+<area shape="rect" id="node6" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="283,155,418,181"/>
 </map>

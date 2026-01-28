@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -291,12 +300,12 @@ $(document).ready(function(){initNavTree('LasExtraScalarFieldCard_8cpp_source.ht
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="comment">// used  too many non ascii symbols</span></div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="keywordflow">if</span> (stdName.size() &gt; <a class="code" href="classLasExtraScalarField.html#a0ea513d9bbeb4a475948021b38c8384b">LasExtraScalarField::MAX_NAME_SIZE</a>)</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    {</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Extra Scalar field name &#39;%s&#39; is too long and will be truncated&quot;</span>,</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Extra Scalar field name &#39;%s&#39; is too long and will be truncated&quot;</span>,</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                       stdName.c_str());</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    }</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="keywordflow">if</span> (stdDescription.size() &gt; <a class="code" href="classLasExtraScalarField.html#a3909c98f75e66021e2361d2a4fdc7df8">LasExtraScalarField::MAX_DESCRIPTION_SIZE</a>)</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    {</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Extra scalar field description &#39;%s&#39; is too long and will be truncated&quot;</span>,</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LAS] Extra scalar field description &#39;%s&#39; is too long and will be truncated&quot;</span>,</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                       stdDescription.c_str());</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    }</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
@@ -339,7 +348,7 @@ $(document).ready(function(){initNavTree('LasExtraScalarFieldCard_8cpp_source.ht
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160; </div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        <span class="keywordflow">if</span> (sfIndex &lt; 0)</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        {</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to get scalar field named &#39;%s&#39;&quot;</span>, sfName.c_str());</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to get scalar field named &#39;%s&#39;&quot;</span>, sfName.c_str());</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        }</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        field.<a class="code" href="classLasExtraScalarField.html#ad7bbea3f08506248fd3bc260782f6add">scalarFields</a>[i] = <span class="keyword">static_cast&lt;</span><a class="code" href="classccScalarField.html">ccScalarField</a>*<span class="keyword">&gt;</span>(pointCloud.<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a4184d316a52e83046216dd14bd0204df">getScalarField</a>(sfIndex));</div>
@@ -453,7 +462,7 @@ $(document).ready(function(){initNavTree('LasExtraScalarFieldCard_8cpp_source.ht
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    }</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;}</div>
 <div class="ttc" id="aLasExtraScalarFieldCard_8h_html"><div class="ttname"><a href="LasExtraScalarFieldCard_8h.html">LasExtraScalarFieldCard.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassLasExtraScalarFieldCard_html_a3047664a536e4db02e8b3f1cbd77875f"><div class="ttname"><a href="classLasExtraScalarFieldCard.html#a3047664a536e4db02e8b3f1cbd77875f">LasExtraScalarFieldCard::reset</a></div><div class="ttdeci">void reset()</div><div class="ttdef"><b>Definition:</b> <a href="LasExtraScalarFieldCard_8cpp_source.html#l00061">LasExtraScalarFieldCard.cpp:61</a></div></div>
 <div class="ttc" id="aclassLasExtraScalarFieldCard_html_a38cb8745f7fc89601d17e462ea258601"><div class="ttname"><a href="classLasExtraScalarFieldCard.html#a38cb8745f7fc89601d17e462ea258601">LasExtraScalarFieldCard::fillFrom</a></div><div class="ttdeci">void fillFrom(const LasExtraScalarField &amp;field)</div><div class="ttdef"><b>Definition:</b> <a href="LasExtraScalarFieldCard_8cpp_source.html#l00085">LasExtraScalarFieldCard.cpp:85</a></div></div>
 <div class="ttc" id="aclassLasExtraScalarFieldCard_html_a5cc2d3191da79cd259f928d5ca6347ea"><div class="ttname"><a href="classLasExtraScalarFieldCard.html#a5cc2d3191da79cd259f928d5ca6347ea">LasExtraScalarFieldCard::dataType</a></div><div class="ttdeci">LasExtraScalarField::DataType dataType() const</div><div class="ttdef"><b>Definition:</b> <a href="LasExtraScalarFieldCard_8cpp_source.html#l00261">LasExtraScalarFieldCard.cpp:261</a></div></div>
@@ -500,7 +509,7 @@ $(document).ready(function(){initNavTree('LasExtraScalarFieldCard_8cpp_source.ht
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasExtraScalarFieldCard_8cpp.html">LasExtraScalarFieldCard.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

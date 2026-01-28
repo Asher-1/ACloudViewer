@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -160,9 +169,9 @@ Static Protected Member Functions</h2></td></tr>
 
 <p>Frees previously allocated memory at address <code>ptr</code> on device <code>device</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="MemoryManager_8cpp_source.html#l00029">29</a> of file <a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00029">29</a> of file <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00143">cloudViewer::core::MemoryManagerStatistic::CountFree()</a>, <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00019">cloudViewer::core::MemoryManagerStatistic::GetInstance()</a>, and <a class="el" href="MemoryManager_8cpp_source.html#l00094">GetMemoryManagerDevice()</a>.</p>
+<p class="reference">References <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00143">cloudViewer::core::MemoryManagerStatistic::CountFree()</a>, <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00019">cloudViewer::core::MemoryManagerStatistic::GetInstance()</a>, and <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00094">GetMemoryManagerDevice()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="StdAllocator_8h_source.html#l00058">cloudViewer::core::StdAllocator&lt; T &gt;::deallocate()</a>, <a class="el" href="SlabHashBackend_8h_source.html#l00113">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::Erase()</a>, <a class="el" href="SlabHashBackend_8h_source.html#l00291">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::Free()</a>, <a class="el" href="SlabHashBackend_8h_source.html#l00140">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::GetActiveIndices()</a>, <a class="el" href="LUCUDA_8cpp_source.html#l00015">cloudViewer::core::LUCUDA()</a>, <a class="el" href="CUDAHashBackendBufferAccessor_8h_source.html#l00073">cloudViewer::core::CUDAHashBackendBufferAccessor::Shutdown()</a>, <a class="el" href="Blob_8h_source.html#l00061">cloudViewer::core::Blob::~Blob()</a>, and <a class="el" href="SlabNodeManager_8h_source.html#l00233">cloudViewer::core::SlabNodeManager::~SlabNodeManager()</a>.</p>
 
@@ -194,11 +203,11 @@ Static Protected Member Functions</h2></td></tr>
 
 <p>Internally dispatches the appropriate <a class="el" href="classcloudViewer_1_1core_1_1MemoryManagerDevice.html" title="Interface for all concrete memory manager classes.">MemoryManagerDevice</a> instance. </p>
 
-<p class="definition">Definition at line <a class="el" href="MemoryManager_8cpp_source.html#l00094">94</a> of file <a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00094">94</a> of file <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589a2b55387dd066c5bac646ac61543d152d">cloudViewer::core::Device::CPU</a>, <a class="el" href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589aa33b7755e5f9b504d2d038eaca4ff28d">cloudViewer::core::Device::CUDA</a>, <a class="el" href="Device_8h_source.html#l00058">cloudViewer::core::Device::GetType()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="classcloudViewer_1_1core_1_1Device.html#a89ef0256b6ee05646703c8ef8bf24589a4427481c96bb7dc6b1add3207cdc622d">cloudViewer::core::Device::SYCL</a>, and <a class="el" href="Device_8cpp_source.html#l00089">cloudViewer::core::Device::ToString()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="MemoryManager_8cpp_source.html#l00029">Free()</a>, <a class="el" href="MemoryManager_8cpp_source.html#l00023">Malloc()</a>, and <a class="el" href="MemoryManager_8cpp_source.html#l00036">Memcpy()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00029">Free()</a>, <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00023">Malloc()</a>, and <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00036">Memcpy()</a>.</p>
 
 </div>
 </div>
@@ -237,9 +246,9 @@ Static Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Allocates memory of <code>byte_size</code> bytes on device <code>device</code> and returns a pointer to the beginning of the allocated memory block. </p>
 
-<p class="definition">Definition at line <a class="el" href="MemoryManager_8cpp_source.html#l00023">23</a> of file <a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00023">23</a> of file <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00118">cloudViewer::core::MemoryManagerStatistic::CountMalloc()</a>, <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00019">cloudViewer::core::MemoryManagerStatistic::GetInstance()</a>, and <a class="el" href="MemoryManager_8cpp_source.html#l00094">GetMemoryManagerDevice()</a>.</p>
+<p class="reference">References <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00118">cloudViewer::core::MemoryManagerStatistic::CountMalloc()</a>, <a class="el" href="MemoryManagerStatistic_8cpp_source.html#l00019">cloudViewer::core::MemoryManagerStatistic::GetInstance()</a>, and <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00094">GetMemoryManagerDevice()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="SlabHashBackend_8h_source.html#l00265">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::Allocate()</a>, <a class="el" href="StdAllocator_8h_source.html#l00051">cloudViewer::core::StdAllocator&lt; T &gt;::allocate()</a>, <a class="el" href="SlabHashBackend_8h_source.html#l00113">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::Erase()</a>, <a class="el" href="SlabHashBackend_8h_source.html#l00140">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::GetActiveIndices()</a>, <a class="el" href="LUCUDA_8cpp_source.html#l00015">cloudViewer::core::LUCUDA()</a>, <a class="el" href="CUDAHashBackendBufferAccessor_8h_source.html#l00026">cloudViewer::core::CUDAHashBackendBufferAccessor::Setup()</a>, and <a class="el" href="SlabNodeManager_8h_source.html#l00221">cloudViewer::core::SlabNodeManager::SlabNodeManager()</a>.</p>
 
@@ -298,11 +307,11 @@ Static Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Copies <code>num_bytes</code> bytes of memory at address <code>src_ptr</code> on device <code>src_device</code> to address <code>dst_ptr</code> on device <code>dst_device</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="MemoryManager_8cpp_source.html#l00036">36</a> of file <a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00036">36</a> of file <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="MemoryManager_8cpp_source.html#l00094">GetMemoryManagerDevice()</a>, <a class="el" href="Device_8h_source.html#l00046">cloudViewer::core::Device::IsCPU()</a>, <a class="el" href="Device_8h_source.html#l00049">cloudViewer::core::Device::IsCUDA()</a>, <a class="el" href="Device_8h_source.html#l00052">cloudViewer::core::Device::IsSYCL()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, and <a class="el" href="Device_8cpp_source.html#l00089">cloudViewer::core::Device::ToString()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00094">GetMemoryManagerDevice()</a>, <a class="el" href="Device_8h_source.html#l00046">cloudViewer::core::Device::IsCPU()</a>, <a class="el" href="Device_8h_source.html#l00049">cloudViewer::core::Device::IsCUDA()</a>, <a class="el" href="Device_8h_source.html#l00052">cloudViewer::core::Device::IsSYCL()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, and <a class="el" href="Device_8cpp_source.html#l00089">cloudViewer::core::Device::ToString()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="UnaryEWCPU_8cpp_source.html#l00174">cloudViewer::core::kernel::CopyCPU()</a>, <a class="el" href="UnaryEWSYCL_8cpp_source.html#l00131">cloudViewer::core::kernel::CopySYCL()</a>, <a class="el" href="MemoryManager_8cpp_source.html#l00078">MemcpyFromHost()</a>, and <a class="el" href="MemoryManager_8cpp_source.html#l00086">MemcpyToHost()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="UnaryEWCPU_8cpp_source.html#l00174">cloudViewer::core::kernel::CopyCPU()</a>, <a class="el" href="UnaryEWSYCL_8cpp_source.html#l00131">cloudViewer::core::kernel::CopySYCL()</a>, <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00078">MemcpyFromHost()</a>, and <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00086">MemcpyToHost()</a>.</p>
 
 </div>
 </div>
@@ -354,9 +363,9 @@ Static Protected Member Functions</h2></td></tr>
 
 <p>Same as Memcpy, but with host (CPU:0) as default src_device. </p>
 
-<p class="definition">Definition at line <a class="el" href="MemoryManager_8cpp_source.html#l00078">78</a> of file <a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00078">78</a> of file <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="MemoryManager_8cpp_source.html#l00036">Memcpy()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00036">Memcpy()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="Tensor_8h_source.html#l00220">cloudViewer::core::Tensor::AssignObject()</a>, <a class="el" href="Image_8cpp_source.html#l00505">cloudViewer::t::geometry::Image::FromLegacy()</a>, <a class="el" href="FileJPG_8cpp_source.html#l00041">cloudViewer::t::io::ReadImageFromJPG()</a>, <a class="el" href="CUDAHashBackendBufferAccessor_8h_source.html#l00026">cloudViewer::core::CUDAHashBackendBufferAccessor::Setup()</a>, and <a class="el" href="Tensor_8h_source.html#l00050">cloudViewer::core::Tensor::Tensor()</a>.</p>
 
@@ -410,9 +419,9 @@ Static Protected Member Functions</h2></td></tr>
 
 <p>Same as Memcpy, but with host (CPU:0) as default dst_device. </p>
 
-<p class="definition">Definition at line <a class="el" href="MemoryManager_8cpp_source.html#l00086">86</a> of file <a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00086">86</a> of file <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="MemoryManager_8cpp_source.html#l00036">Memcpy()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html#l00036">Memcpy()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="SlabHashBackend_8h_source.html#l00140">cloudViewer::core::SlabHashBackend&lt; Key, Hash, Eq &gt;::GetActiveIndices()</a>, <a class="el" href="Tensor_8h_source.html#l00618">cloudViewer::core::Tensor::Item()</a>, <a class="el" href="EigenConverter_8cpp_source.html#l00082">cloudViewer::core::eigen_converter::TensorToEigenVectorNxVector()</a>, <a class="el" href="Tensor_8h_source.html#l01025">cloudViewer::core::Tensor::ToFlatVector()</a>, <a class="el" href="Image_8cpp_source.html#l00534">cloudViewer::t::geometry::Image::ToLegacy()</a>, and <a class="el" href="FileJPG_8cpp_source.html#l00113">cloudViewer::t::io::WriteImageToJPG()</a>.</p>
 
@@ -420,7 +429,7 @@ Static Protected Member Functions</h2></td></tr>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/libs/cloudViewer/core/<a class="el" href="MemoryManager_8h_source.html">MemoryManager.h</a></li>
-<li>/root/ACloudViewer/libs/cloudViewer/core/<a class="el" href="MemoryManager_8cpp_source.html">MemoryManager.cpp</a></li>
+<li>/root/ACloudViewer/libs/cloudViewer/core/<a class="el" href="cloudViewer_2core_2MemoryManager_8cpp_source.html">MemoryManager.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -428,7 +437,7 @@ Static Protected Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1core.html">core</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1core_1_1MemoryManager.html">MemoryManager</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

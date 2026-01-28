@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -106,34 +115,35 @@ $(document).ready(function(){initNavTree('CV__io_2include_2PinholeCameraTrajecto
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">namespace </span>io {</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;std::shared_ptr&lt;camera::PinholeCameraTrajectory&gt; <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div>
-<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#ad3af039827470faa094ab9b21eae8602">   22</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#ad3af039827470faa094ab9b21eae8602">CreatePinholeCameraTrajectoryFromFile</a>(<span class="keyword">const</span> std::string &amp;filename);</div>
+<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#ad3af039827470faa094ab9b21eae8602">   22</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#ad3af039827470faa094ab9b21eae8602">CreatePinholeCameraTrajectoryFromFile</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div>
-<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a54323ad331b5e8e6022d53667e0c1376">   28</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a54323ad331b5e8e6022d53667e0c1376">ReadPinholeCameraTrajectory</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a54323ad331b5e8e6022d53667e0c1376">   28</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a54323ad331b5e8e6022d53667e0c1376">ReadPinholeCameraTrajectory</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                            <a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;trajectory);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">   35</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">WritePinholeCameraTrajectory</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">   35</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">WritePinholeCameraTrajectory</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                             <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;trajectory);</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a1f7c1ff342e364ed14057e2edcfd5709">   39</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a1f7c1ff342e364ed14057e2edcfd5709">ReadPinholeCameraTrajectoryFromLOG</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a1f7c1ff342e364ed14057e2edcfd5709">   39</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a1f7c1ff342e364ed14057e2edcfd5709">ReadPinholeCameraTrajectoryFromLOG</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                                   <a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;trajectory);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a77662e5a20f106a8e7e7a717003f64a0">   42</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a77662e5a20f106a8e7e7a717003f64a0">WritePinholeCameraTrajectoryToLOG</a>(</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;trajectory);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a61e620049615322a1519ca7d3ba75da3">   47</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a61e620049615322a1519ca7d3ba75da3">ReadPinholeCameraTrajectoryFromTUM</a>(<span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a61e620049615322a1519ca7d3ba75da3">   47</a></span>&#160;<a class="code" href="namespacecloudViewer_1_1io.html#a61e620049615322a1519ca7d3ba75da3">ReadPinholeCameraTrajectoryFromTUM</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                   <a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;trajectory);</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io.html#a3f87890766b29129796ab08fdd7fbf72">   50</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a> <a class="code" href="namespacecloudViewer_1_1io.html#a3f87890766b29129796ab08fdd7fbf72">WritePinholeCameraTrajectoryToTUM</a>(</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keyword">const</span> std::string &amp;filename,</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;trajectory);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aCV__io_8h_html"><div class="ttname"><a href="CV__io_8h.html">CV_io.h</a></div></div>
 <div class="ttc" id="aCV__io_8h_html_ad6ec50f27d85b0cbac57c50291db956f"><div class="ttname"><a href="CV__io_8h.html#ad6ec50f27d85b0cbac57c50291db956f">CV_IO_LIB_API</a></div><div class="ttdeci">#define CV_IO_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__io_8h_source.html#l00015">CV_io.h:15</a></div></div>
 <div class="ttc" id="aPinholeCameraTrajectory_8h_html"><div class="ttname"><a href="PinholeCameraTrajectory_8h.html">PinholeCameraTrajectory.h</a></div></div>
@@ -145,14 +155,14 @@ $(document).ready(function(){initNavTree('CV__io_2include_2PinholeCameraTrajecto
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a73479d14bbbbdb92a665acfa7f73495a"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">cloudViewer::io::WritePinholeCameraTrajectory</a></div><div class="ttdeci">bool WritePinholeCameraTrajectory(const std::string &amp;filename, const camera::PinholeCameraTrajectory &amp;trajectory)</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a77662e5a20f106a8e7e7a717003f64a0"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a77662e5a20f106a8e7e7a717003f64a0">cloudViewer::io::WritePinholeCameraTrajectoryToLOG</a></div><div class="ttdeci">bool WritePinholeCameraTrajectoryToLOG(const std::string &amp;filename, const camera::PinholeCameraTrajectory &amp;trajectory)</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_ad3af039827470faa094ab9b21eae8602"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#ad3af039827470faa094ab9b21eae8602">cloudViewer::io::CreatePinholeCameraTrajectoryFromFile</a></div><div class="ttdeci">std::shared_ptr&lt; camera::PinholeCameraTrajectory &gt; CreatePinholeCameraTrajectoryFromFile(const std::string &amp;filename)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_3886bc5fbdde051dbb667d23ac4e3d40.html">CV_io</a></li><li class="navelem"><a class="el" href="dir_e4c5393be4f54449f4c55d38d92d28ac.html">include</a></li><li class="navelem"><a class="el" href="CV__io_2include_2PinholeCameraTrajectoryIO_8h.html">PinholeCameraTrajectoryIO.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

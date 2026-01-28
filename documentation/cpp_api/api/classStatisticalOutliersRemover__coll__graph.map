@@ -1,9 +1,11 @@
 <map id="StatisticalOutliersRemover" name="StatisticalOutliersRemover">
-<area shape="rect" id="node1" title=" " alt="" coords="157,184,355,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="125,95,246,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classSORDialog.html" title=" " alt="" coords="283,95,373,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="291,5,365,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="390,5,631,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="643,157,840,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="408,107,529,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="89,5,163,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="45,56,207,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="59,107,193,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="46,157,206,184"/>
+<area shape="rect" id="node7" href="$classSORDialog.html" title=" " alt="" coords="423,208,514,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="89,208,163,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,247,285"/>
 </map>

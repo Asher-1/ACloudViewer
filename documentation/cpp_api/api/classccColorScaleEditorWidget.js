@@ -1,0 +1,26 @@
+var classccColorScaleEditorWidget =
+[
+    [ "ccColorScaleEditorWidget", "classccColorScaleEditorWidget.html#a46a43195c9852832eeb934e5bce6e941", null ],
+    [ "~ccColorScaleEditorWidget", "classccColorScaleEditorWidget.html#ae4e8918744fdd235baef876a552fa94d", null ],
+    [ "deleteStep", "classccColorScaleEditorWidget.html#adb5ed5b151bb9134feea98d0764379f9", null ],
+    [ "exportColorScale", "classccColorScaleEditorWidget.html#a70378fbe9bd470215b9c43817183dc02", null ],
+    [ "getSelectedStepIndex", "classccColorScaleEditorWidget.html#a3ce0939f58dfe88742a655fb93a0e66e", null ],
+    [ "getStep", "classccColorScaleEditorWidget.html#a015e2f7b64e05db253655ebc049467a7", null ],
+    [ "getStepCount", "classccColorScaleEditorWidget.html#afc58f2fdbd3982009fbb43341334882e", null ],
+    [ "importColorScale", "classccColorScaleEditorWidget.html#ad538b03be9fffe3b056282330592a5b0", null ],
+    [ "onPointClicked", "classccColorScaleEditorWidget.html#aee9a0f4c213cdc247ce7634766ade718", null ],
+    [ "onSliderModified", "classccColorScaleEditorWidget.html#a1bab4e24511b59bc7345baa8485a041b", null ],
+    [ "onSliderSelected", "classccColorScaleEditorWidget.html#aa06745ce1d4b9fd0a2f759ea4af6ef2b", null ],
+    [ "setLabelColor", "classccColorScaleEditorWidget.html#a54fcc833cdd2732092a884d3ce426d3d", null ],
+    [ "setLabelPrecision", "classccColorScaleEditorWidget.html#a687fed19996f3c7c2def814e38b760c2", null ],
+    [ "setSelectedStepIndex", "classccColorScaleEditorWidget.html#a02f2c38cd17709543465de7ef547298d", null ],
+    [ "setSliders", "classccColorScaleEditorWidget.html#a2aa894383a7e047f4b77be34a095d343", null ],
+    [ "setStepColor", "classccColorScaleEditorWidget.html#aed310ff6af708fb1505266d62f537a83", null ],
+    [ "setStepRelativePosition", "classccColorScaleEditorWidget.html#a9d06154be4126a3538dc622c5609a1d9", null ],
+    [ "showLabels", "classccColorScaleEditorWidget.html#a09f06dd8356f4be1a0eb3eca1e13e0ef", null ],
+    [ "stepModified", "classccColorScaleEditorWidget.html#aab04dda8540ff58279882a36d711c80c", null ],
+    [ "stepSelected", "classccColorScaleEditorWidget.html#ad083032ec300c9c6e194bad73a8f2a19", null ],
+    [ "m_colorBarWidget", "classccColorScaleEditorWidget.html#a1104677516e33d836787ff5b68bc9c4f", null ],
+    [ "m_labelsWidget", "classccColorScaleEditorWidget.html#ab0f78fb77103b4a1c92b227e59a3d9df", null ],
+    [ "m_slidersWidget", "classccColorScaleEditorWidget.html#add13a66f731c862b3c5cacecb7fa76ac", null ]
+];

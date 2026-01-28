@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -108,7 +117,7 @@ $(document).ready(function(){initNavTree('DONSegmentation_8cpp_source.html','');
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">// ECV_PLUGINS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">// QT</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;QMainWindow&gt;</span></div>
@@ -151,7 +160,7 @@ $(document).ready(function(){initNavTree('DONSegmentation_8cpp_source.html','');
 <div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classDONSegmentation.html#ab07a64d017d640f542031afee5432fdc">   61</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="classDONSegmentation.html#ab07a64d017d640f542031afee5432fdc">DONSegmentation::openInputDialog</a>() {</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="comment">// initialize the dialog object</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classDONSegmentation.html#a199843b324080a052c655d4af2327577">m_dialog</a>)</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <a class="code" href="classDONSegmentation.html#a199843b324080a052c655d4af2327577">m_dialog</a> = <span class="keyword">new</span> <a class="code" href="classDONSegmentationDlg.html">DONSegmentationDlg</a>(<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> ? <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;getActiveWindow() : 0);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <a class="code" href="classDONSegmentation.html#a199843b324080a052c655d4af2327577">m_dialog</a> = <span class="keyword">new</span> <a class="code" href="classDONSegmentationDlg.html">DONSegmentationDlg</a>(<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a> ? <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>() : 0);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classDONSegmentation.html#a199843b324080a052c655d4af2327577">m_dialog</a>-&gt;exec()) <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
@@ -315,15 +324,15 @@ $(document).ready(function(){initNavTree('DONSegmentation_8cpp_source.html','');
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                               .arg(<a class="code" href="classDONSegmentation.html#a0e09b75213e6c79ffee0f42ace99240f">m_maxClusterSize</a>));</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keywordtype">unsigned</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = group-&gt;<a class="code" href="classccHObject.html#a7c3df2a6b013186cdc2470451c47877d">getChildrenNumber</a>();</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;dispToConsole(tr(<span class="stringliteral">&quot;[DONSegmentation] %1 cluster(s) where created &quot;</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(tr(<span class="stringliteral">&quot;[DONSegmentation] %1 cluster(s) where created &quot;</span></div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                                <span class="stringliteral">&quot;from cloud &#39;%2&#39;&quot;</span>)</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                                     .arg(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>)</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                                     .arg(cloud-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>()));</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;            <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;dispToConsole(tr(<span class="stringliteral">&quot;Error(s) occurred during the generation &quot;</span></div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;            <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(tr(<span class="stringliteral">&quot;Error(s) occurred during the generation &quot;</span></div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                                    <span class="stringliteral">&quot;of clusters! Result may be incomplete&quot;</span>),</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                                 ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                                 <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        }</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        cloud-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">false</span>);</div>
@@ -404,6 +413,10 @@ $(document).ready(function(){initNavTree('DONSegmentation_8cpp_source.html','');
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9f0e313a854dd2ff9803d7b6d074872c"><div class="ttname"><a href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">ccObject::setEnabled</a></div><div class="ttdeci">virtual void setEnabled(bool state)</div><div class="ttdoc">Sets the &quot;enabled&quot; property.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00102">ecvObject.h:102</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
@@ -413,7 +426,7 @@ $(document).ready(function(){initNavTree('DONSegmentation_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_7a125ce43ce386082f777aa258cb1964.html">Segmentations</a></li><li class="navelem"><a class="el" href="DONSegmentation_8cpp.html">DONSegmentation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

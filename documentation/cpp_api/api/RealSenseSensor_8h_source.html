@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -127,13 +136,13 @@ $(document).ready(function(){initNavTree('RealSenseSensor_8h_source.html',''); i
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#a060986f3ef79b14ec434d475ca7a13a4">InitSensor</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html">RealSenseSensorConfig</a> &amp;sensor_config =</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                    <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html">RealSenseSensorConfig</a>{},</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                            <span class="keywordtype">size_t</span> sensor_index = 0,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                            <span class="keyword">const</span> std::string &amp;filename = <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                            <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <span class="stringliteral">&quot;&quot;</span>);</div>
 <div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#a6ac6812c5408b1d7a4dfa18969c176ff">   64</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#a6ac6812c5408b1d7a4dfa18969c176ff">InitSensor</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1io_1_1RGBDSensorConfig.html">RGBDSensorConfig</a> &amp;sensor_config,</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                            <span class="keywordtype">size_t</span> sensor_index = 0,</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                            <span class="keyword">const</span> std::string &amp;filename = <span class="stringliteral">&quot;&quot;</span>)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                            <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = <span class="stringliteral">&quot;&quot;</span>)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#a060986f3ef79b14ec434d475ca7a13a4">InitSensor</a>(</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                <span class="keyword">dynamic_cast&lt;</span><span class="keyword">const </span><a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html">RealSenseSensorConfig</a> &amp;<span class="keyword">&gt;</span>(sensor_config),</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                sensor_index, filename);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                sensor_index, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    }</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#acc1149e102edf597637f3f054d08e190">StartCapture</a>(<span class="keywordtype">bool</span> start_record = <span class="keyword">false</span>) <span class="keyword">override</span>;</div>
@@ -175,6 +184,7 @@ $(document).ready(function(){initNavTree('RealSenseSensor_8h_source.html',''); i
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;}  <span class="comment">// namespace t</span></div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aRGBDVideoMetadata_8h_html"><div class="ttname"><a href="RGBDVideoMetadata_8h.html">RGBDVideoMetadata.h</a></div></div>
 <div class="ttc" id="aRealSenseSensorConfig_8h_html"><div class="ttname"><a href="RealSenseSensorConfig_8h.html">RealSenseSensorConfig.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1io_1_1RGBDSensorConfig_html"><div class="ttname"><a href="classcloudViewer_1_1io_1_1RGBDSensorConfig.html">cloudViewer::io::RGBDSensorConfig</a></div><div class="ttdef"><b>Definition:</b> <a href="RGBDSensorConfig_8h_source.html#l00015">RGBDSensorConfig.h:15</a></div></div>
@@ -201,7 +211,7 @@ $(document).ready(function(){initNavTree('RealSenseSensor_8h_source.html',''); i
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RealSenseSensor_html_acbcfd22ff105085f984b8d4c9de639a7"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#acbcfd22ff105085f984b8d4c9de639a7">cloudViewer::t::io::RealSenseSensor::CaptureFrame</a></div><div class="ttdeci">virtual geometry::RGBDImage CaptureFrame(bool wait=true, bool align_depth_to_color=true) override</div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensor_8cpp_source.html#l00256">RealSenseSensor.cpp:256</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RealSenseSensor_html_acc1149e102edf597637f3f054d08e190"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensor.html#acc1149e102edf597637f3f054d08e190">cloudViewer::t::io::RealSenseSensor::StartCapture</a></div><div class="ttdeci">virtual bool StartCapture(bool start_record=false) override</div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensor_8cpp_source.html#l00198">RealSenseSensor.cpp:198</a></div></div>
 <div class="ttc" id="acloudViewer_2t_2geometry_2RGBDImage_8h_html"><div class="ttname"><a href="cloudViewer_2t_2geometry_2RGBDImage_8h.html">RGBDImage.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="anamespacers2_html"><div class="ttname"><a href="namespacers2.html">rs2</a></div><div class="ttdef"><b>Definition:</b> <a href="RealSenseSensor_8h_source.html#l00017">RealSenseSensor.h:17</a></div></div>
 <div class="ttc" id="at_2io_2sensor_2RGBDSensor_8h_html"><div class="ttname"><a href="t_2io_2sensor_2RGBDSensor_8h.html">RGBDSensor.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -210,7 +220,7 @@ $(document).ready(function(){initNavTree('RealSenseSensor_8h_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_69f8b599ab6abe28788f204e4ebacea4.html">sensor</a></li><li class="navelem"><a class="el" href="dir_c25649614c58c629c45561295a1d464e.html">realsense</a></li><li class="navelem"><a class="el" href="RealSenseSensor_8h.html">RealSenseSensor.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

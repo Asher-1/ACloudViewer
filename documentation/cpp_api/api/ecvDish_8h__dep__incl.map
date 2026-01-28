@@ -1,5 +1,8 @@
 <map id="/root/ACloudViewer/libs/CV_db/include/ecvDish.h" name="/root/ACloudViewer/libs/CV_db/include/ecvDish.h">
-<area shape="rect" id="node1" title=" " alt="" coords="135,5,282,61"/>
-<area shape="rect" id="node2" href="$PDMSFilter_8cpp.html" title=" " alt="" coords="5,117,193,173"/>
-<area shape="rect" id="node3" href="$ccDish_8cpp.html" title=" " alt="" coords="218,109,421,180"/>
+<area shape="rect" id="node1" title=" " alt="" coords="464,5,611,61"/>
+<area shape="rect" id="node2" href="$geometry_2geometry_8cpp.html" title=" " alt="" coords="5,117,187,173"/>
+<area shape="rect" id="node3" href="$primitives_8cpp.html" title=" " alt="" coords="211,117,397,173"/>
+<area shape="rect" id="node4" href="$ecvPrimitiveFactoryDlg_8cpp.html" title=" " alt="" coords="421,124,653,165"/>
+<area shape="rect" id="node5" href="$PDMSFilter_8cpp.html" title=" " alt="" coords="678,117,866,173"/>
+<area shape="rect" id="node6" href="$ccDish_8cpp.html" title=" " alt="" coords="891,109,1093,180"/>
 </map>

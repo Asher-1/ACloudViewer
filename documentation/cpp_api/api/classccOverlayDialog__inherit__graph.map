@@ -1,0 +1,21 @@
+<map id="ccOverlayDialog" name="ccOverlayDialog">
+<area shape="rect" id="node1" title="Generic overlay dialog interface." alt="" coords="128,360,257,387"/>
+<area shape="rect" id="node3" href="$classccCloudLayersDlg.html" title=" " alt="" coords="348,5,487,32"/>
+<area shape="rect" id="node4" href="$classccCompassDlg.html" title=" " alt="" coords="358,56,477,83"/>
+<area shape="rect" id="node5" href="$classccGraphicalSegmentationTool.html" title="Graphical segmentation mechanism (with polyline)" alt="" coords="310,107,525,133"/>
+<area shape="rect" id="node6" href="$classccGraphicalTransformationTool.html" title=" " alt="" coords="306,157,529,184"/>
+<area shape="rect" id="node7" href="$classccMPlaneDlg.html" title=" " alt="" coords="364,208,471,235"/>
+<area shape="rect" id="node8" href="$classccMapDlg.html" title=" " alt="" coords="374,259,461,285"/>
+<area shape="rect" id="node9" href="$classccPointPairRegistrationDlg.html" title=" " alt="" coords="320,309,515,336"/>
+<area shape="rect" id="node10" href="$classccPointPickingGenericInterface.html" title=" " alt="" coords="305,360,529,387"/>
+<area shape="rect" id="node13" href="$classccTracePolylineTool.html" title="Graphical Polyline Tracing tool." alt="" coords="343,411,491,437"/>
+<area shape="rect" id="node14" href="$classecvAnimationParamDlg.html" title="Dialog to interactively edit the camera pose parameters." alt="" coords="330,461,505,488"/>
+<area shape="rect" id="node15" href="$classecvAnnotationsTool.html" title="Dialog for managing a clipping box." alt="" coords="343,512,492,539"/>
+<area shape="rect" id="node16" href="$classecvCameraParamEditDlg.html" title="Dialog to interactively edit the camera pose parameters." alt="" coords="325,563,509,589"/>
+<area shape="rect" id="node17" href="$classecvFilterByLabelDlg.html" title=" " alt="" coords="341,613,493,640"/>
+<area shape="rect" id="node18" href="$classecvFilterTool.html" title="Dialog for managing a clipping box." alt="" coords="365,664,469,691"/>
+<area shape="rect" id="node19" href="$classecvMeasurementTool.html" title="Dialog for managing measurement tools (Distance, Contour, Protractor)" alt="" coords="337,715,498,741"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,360,80,387"/>
+<area shape="rect" id="node11" href="$classccPointListPickingDlg.html" title="Dialog/interactor to graphically pick a list of points." alt="" coords="577,335,739,361"/>
+<area shape="rect" id="node12" href="$classccPointPropertiesDlg.html" title="Dialog for simple point picking (information, distance, etc.)" alt="" coords="579,385,737,412"/>
+</map>

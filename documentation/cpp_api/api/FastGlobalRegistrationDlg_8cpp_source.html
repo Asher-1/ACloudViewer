@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="FastGlobalRegistrationDlg_8h.html">FastGlobalRegistrationDlg.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// common</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;ecvQtHelpers.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvQtHelpers_8h.html">ecvQtHelpers.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// qCC_db</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a>&gt;</span></div>
@@ -119,8 +128,8 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      referencesCloudUinqueID(<a class="code" href="classccUniqueIDGenerator.html">ccUniqueIDGenerator</a>::InvalidUniqueID) {</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    setupUi(<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    ccQtHelpers::SetButtonColor(dataColorButton, <a class="code" href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">Qt::red</a>);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    ccQtHelpers::SetButtonColor(modelColorButton, <a class="code" href="namespaceecvColor.html#ad2272be8f247b9ce52d904ff41938de4">Qt::yellow</a>);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <a class="code" href="classccQtHelpers.html#a4353cd39b8844e6c981aab60c2de5f58">ccQtHelpers::SetButtonColor</a>(dataColorButton, <a class="code" href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">Qt::red</a>);</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <a class="code" href="classccQtHelpers.html#a4353cd39b8844e6c981aab60c2de5f58">ccQtHelpers::SetButtonColor</a>(modelColorButton, <a class="code" href="namespaceecvColor.html#ad2272be8f247b9ce52d904ff41938de4">Qt::yellow</a>);</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">for</span> (<a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud : <a class="code" href="classFastGlobalRegistrationDialog.html#abe32c38b846891bef6269d3afe0a31a2">clouds</a>) {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        referenceComboBox-&gt;addItem(cloud-&gt;getName(), cloud-&gt;getUniqueID());</div>
@@ -238,7 +247,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> radius =</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                <a class="code" href="classccOctree.html#a17b6fe3f5ed5eaca51b3735fd05ccb24">ccOctree::GuessBestRadiusAutoComputeOctree</a>(cloud, <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>, <span class="keyword">this</span>);</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordflow">if</span> (radius &lt; 0) {</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(tr(<span class="stringliteral">&quot;Failed to estimate the radius for cloud %1&quot;</span>)</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(tr(<span class="stringliteral">&quot;Failed to estimate the radius for cloud %1&quot;</span>)</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                                 .arg(cloud-&gt;getName()));</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        }</div>
@@ -251,7 +260,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div class="ttc" id="aFastGlobalRegistrationDlg_8cpp_html_a547a01c4a9b17f668721d270479923fb"><div class="ttname"><a href="FastGlobalRegistrationDlg_8cpp.html#a547a01c4a9b17f668721d270479923fb">s_featureRadius</a></div><div class="ttdeci">static double s_featureRadius</div><div class="ttdef"><b>Definition:</b> <a href="FastGlobalRegistrationDlg_8cpp_source.html#l00021">FastGlobalRegistrationDlg.cpp:21</a></div></div>
 <div class="ttc" id="aFastGlobalRegistrationDlg_8h_html"><div class="ttname"><a href="FastGlobalRegistrationDlg_8h.html">FastGlobalRegistrationDlg.h</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassFastGlobalRegistrationDialog_html"><div class="ttname"><a href="classFastGlobalRegistrationDialog.html">FastGlobalRegistrationDialog</a></div><div class="ttdoc">Fast Global Registration dialog.</div><div class="ttdef"><b>Definition:</b> <a href="FastGlobalRegistrationDlg_8h_source.html#l00035">FastGlobalRegistrationDlg.h:36</a></div></div>
 <div class="ttc" id="aclassFastGlobalRegistrationDialog_html_a0fc2905b4688595186cf51681de98ff0"><div class="ttname"><a href="classFastGlobalRegistrationDialog.html#a0fc2905b4688595186cf51681de98ff0">FastGlobalRegistrationDialog::getFeatureRadius</a></div><div class="ttdeci">double getFeatureRadius() const</div><div class="ttdoc">Returns the feature descritor comptation radius.</div><div class="ttdef"><b>Definition:</b> <a href="FastGlobalRegistrationDlg_8cpp_source.html#l00087">FastGlobalRegistrationDlg.cpp:87</a></div></div>
 <div class="ttc" id="aclassFastGlobalRegistrationDialog_html_a493f985e7a88754e1b7da7b0d7ed4549"><div class="ttname"><a href="classFastGlobalRegistrationDialog.html#a493f985e7a88754e1b7da7b0d7ed4549">FastGlobalRegistrationDialog::referenceEntityChanged</a></div><div class="ttdeci">void referenceEntityChanged(int index)</div><div class="ttdef"><b>Definition:</b> <a href="FastGlobalRegistrationDlg_8cpp_source.html#l00131">FastGlobalRegistrationDlg.cpp:131</a></div></div>
@@ -271,6 +280,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div class="ttc" id="aclassccOctree_html_a17b6fe3f5ed5eaca51b3735fd05ccb24"><div class="ttname"><a href="classccOctree.html#a17b6fe3f5ed5eaca51b3735fd05ccb24">ccOctree::GuessBestRadiusAutoComputeOctree</a></div><div class="ttdeci">static PointCoordinateType GuessBestRadiusAutoComputeOctree(ccGenericPointCloud *cloud, const BestRadiusParams &amp;params, QWidget *parentWidget=nullptr)</div></div>
 <div class="ttc" id="aclassccOctree_html_a9a1e054d3e960e7948f94341929f751b"><div class="ttname"><a href="classccOctree.html#a9a1e054d3e960e7948f94341929f751b">ccOctree::GuessNaiveRadius</a></div><div class="ttdeci">static PointCoordinateType GuessNaiveRadius(ccGenericPointCloud *cloud)</div><div class="ttdoc">Tries to guess a very naive 'local radius' for octree-based computation.</div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
+<div class="ttc" id="aclassccQtHelpers_html_a4353cd39b8844e6c981aab60c2de5f58"><div class="ttname"><a href="classccQtHelpers.html#a4353cd39b8844e6c981aab60c2de5f58">ccQtHelpers::SetButtonColor</a></div><div class="ttdeci">static void SetButtonColor(QAbstractButton *button, const QColor &amp;col)</div><div class="ttdoc">Sets a button background color.</div><div class="ttdef"><b>Definition:</b> <a href="ecvQtHelpers_8h_source.html#l00017">ecvQtHelpers.h:17</a></div></div>
 <div class="ttc" id="aclassccUniqueIDGenerator_html"><div class="ttname"><a href="classccUniqueIDGenerator.html">ccUniqueIDGenerator</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00022">ecvObject.h:22</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_aa29d1469d3fd7b184ff420fba0cac6b2"><div class="ttname"><a href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive</a></div><div class="ttdeci">static void SetRedrawRecursive(bool redraw=false)</div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_afa498d2f484a7a5b752d9541574d2fc4"><div class="ttname"><a href="classecvDisplayTools.html#afa498d2f484a7a5b752d9541574d2fc4">ecvDisplayTools::RedrawDisplay</a></div><div class="ttdeci">static void RedrawDisplay(bool only2D=false, bool forceRedraw=true)</div></div>
@@ -278,6 +288,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
 <div class="ttc" id="aecvOctree_8h_html"><div class="ttname"><a href="ecvOctree_8h.html">ecvOctree.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
+<div class="ttc" id="aecvQtHelpers_8h_html"><div class="ttname"><a href="ecvQtHelpers_8h.html">ecvQtHelpers.h</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a5a10c8a75a92da7b2628dfeeb13fcd2a"><div class="ttname"><a href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red</a></div><div class="ttdeci">constexpr Rgb red(MAX, 0, 0)</div></div>
 <div class="ttc" id="anamespaceecvColor_html_ad2272be8f247b9ce52d904ff41938de4"><div class="ttname"><a href="namespaceecvColor.html#ad2272be8f247b9ce52d904ff41938de4">ecvColor::yellow</a></div><div class="ttdeci">constexpr Rgb yellow(MAX, MAX, 0)</div></div>
@@ -288,7 +299,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationDlg_8cpp_source.
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_4eb7fc12d0f78aca30086c5af62647fb.html">Filters</a></li><li class="navelem"><a class="el" href="dir_b2ac1677663d7b06cff70e32d6da4ea3.html">dialogs</a></li><li class="navelem"><a class="el" href="FastGlobalRegistrationDlg_8cpp.html">FastGlobalRegistrationDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

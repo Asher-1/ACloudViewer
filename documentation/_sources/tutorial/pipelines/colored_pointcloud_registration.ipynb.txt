@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:00.300967Z",
-     "iopub.status.busy": "2026-01-28T10:07:00.300536Z",
-     "iopub.status.idle": "2026-01-28T10:07:00.983085Z",
-     "shell.execute_reply": "2026-01-28T10:07:00.982523Z"
+     "iopub.execute_input": "2026-01-28T16:46:43.589101Z",
+     "iopub.status.busy": "2026-01-28T16:46:43.588918Z",
+     "iopub.status.idle": "2026-01-28T16:46:44.301654Z",
+     "shell.execute_reply": "2026-01-28T16:46:44.301090Z"
     },
     "nbsphinx": "hidden"
    },
@@ -56,10 +56,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:00.985503Z",
-     "iopub.status.busy": "2026-01-28T10:07:00.985053Z",
-     "iopub.status.idle": "2026-01-28T10:07:00.988367Z",
-     "shell.execute_reply": "2026-01-28T10:07:00.987913Z"
+     "iopub.execute_input": "2026-01-28T16:46:44.304303Z",
+     "iopub.status.busy": "2026-01-28T16:46:44.303755Z",
+     "iopub.status.idle": "2026-01-28T16:46:44.307565Z",
+     "shell.execute_reply": "2026-01-28T16:46:44.306953Z"
     }
    },
    "outputs": [],
@@ -87,10 +87,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:00.990335Z",
-     "iopub.status.busy": "2026-01-28T10:07:00.990053Z",
-     "iopub.status.idle": "2026-01-28T10:07:01.858327Z",
-     "shell.execute_reply": "2026-01-28T10:07:01.857727Z"
+     "iopub.execute_input": "2026-01-28T16:46:44.309628Z",
+     "iopub.status.busy": "2026-01-28T16:46:44.309439Z",
+     "iopub.status.idle": "2026-01-28T16:46:45.130852Z",
+     "shell.execute_reply": "2026-01-28T16:46:45.130246Z"
     }
    },
    "outputs": [
@@ -150,10 +150,10 @@
    "execution_count": 4,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:01.865402Z",
-     "iopub.status.busy": "2026-01-28T10:07:01.864877Z",
-     "iopub.status.idle": "2026-01-28T10:07:02.761117Z",
-     "shell.execute_reply": "2026-01-28T10:07:02.760583Z"
+     "iopub.execute_input": "2026-01-28T16:46:45.137296Z",
+     "iopub.status.busy": "2026-01-28T16:46:45.137066Z",
+     "iopub.status.idle": "2026-01-28T16:46:45.996649Z",
+     "shell.execute_reply": "2026-01-28T16:46:45.995979Z"
     }
    },
    "outputs": [
@@ -236,10 +236,10 @@
    "execution_count": 5,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T10:07:02.767678Z",
-     "iopub.status.busy": "2026-01-28T10:07:02.767205Z",
-     "iopub.status.idle": "2026-01-28T10:07:03.784195Z",
-     "shell.execute_reply": "2026-01-28T10:07:03.783593Z"
+     "iopub.execute_input": "2026-01-28T16:46:46.002879Z",
+     "iopub.status.busy": "2026-01-28T16:46:46.002334Z",
+     "iopub.status.idle": "2026-01-28T16:46:47.035931Z",
+     "shell.execute_reply": "2026-01-28T16:46:47.035242Z"
     }
    },
    "outputs": [
@@ -251,7 +251,13 @@
       "[50, 0.04, 0]\n",
       "3-1. Downsample with a voxel size 0.04\n",
       "3-2. Estimate normal.\n",
-      "3-3. Applying colored point cloud registration\n",
+      "3-3. Applying colored point cloud registration\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "RegistrationResult with fitness=8.713204e-01, inlier_rmse=1.347489e-02, and correspondence_set size of 2072\n",
       "Access transformation to get result.\n",
       "[30, 0.02, 1]\n",
@@ -267,7 +273,13 @@
       "RegistrationResult with fitness=8.660694e-01, inlier_rmse=8.757013e-03, and correspondence_set size of 7540\n",
       "Access transformation to get result.\n",
       "[14, 0.01, 2]\n",
-      "3-1. Downsample with a voxel size 0.01\n",
+      "3-1. Downsample with a voxel size 0.01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "3-2. Estimate normal.\n",
       "3-3. Applying colored point cloud registration\n"
      ]

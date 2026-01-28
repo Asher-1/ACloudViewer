@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PoseGraph_8h.html">pipelines/registration/PoseGraph.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
@@ -112,7 +121,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    value[<span class="stringliteral">&quot;version_minor&quot;</span>] = 0;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    Json::Value pose_object;</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a9bbbf84419c648ea42ff4e40a713abd3">EigenMatrix4dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>, pose_object)) {</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">EigenMatrix4dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>, pose_object)) {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    }</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    value[<span class="stringliteral">&quot;pose&quot;</span>] = pose_object;</div>
@@ -134,7 +143,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    }</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">const</span> Json::Value &amp;pose_object = value[<span class="stringliteral">&quot;pose&quot;</span>];</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a33423172b5bd7a272a2a730d8a918f87">EigenMatrix4dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>, pose_object)) {</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">EigenMatrix4dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>, pose_object)) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    }</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -152,12 +161,12 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    value[<span class="stringliteral">&quot;uncertain&quot;</span>] = <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a8db7e1a0538ed0e0579eba10adbbd83b">uncertain_</a>;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    value[<span class="stringliteral">&quot;confidence&quot;</span>] = <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#af923fd56ace27be56d76e19a5301b433">confidence_</a>;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    Json::Value transformation_object;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a9bbbf84419c648ea42ff4e40a713abd3">EigenMatrix4dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a18eef90fa5e256b3e2411da2eafd10c0">transformation_</a>, transformation_object)) {</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">EigenMatrix4dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a18eef90fa5e256b3e2411da2eafd10c0">transformation_</a>, transformation_object)) {</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    }</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    value[<span class="stringliteral">&quot;transformation&quot;</span>] = transformation_object;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    Json::Value information_object;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af247813e4319a5eb32ff470a7de059b6">EigenMatrix6dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aee8779626fa4968b98d7581d0bdba914">information_</a>, information_object)) {</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa2b7bb44502977638106be0ce421d721">EigenMatrix6dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aee8779626fa4968b98d7581d0bdba914">information_</a>, information_object)) {</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    }</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    value[<span class="stringliteral">&quot;information&quot;</span>] = information_object;</div>
@@ -183,11 +192,11 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a8db7e1a0538ed0e0579eba10adbbd83b">uncertain_</a> = value.get(<span class="stringliteral">&quot;uncertain&quot;</span>, <span class="keyword">false</span>).asBool();</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#af923fd56ace27be56d76e19a5301b433">confidence_</a> = value.get(<span class="stringliteral">&quot;confidence&quot;</span>, 1.0).asDouble();</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keyword">const</span> Json::Value &amp;transformation_object = value[<span class="stringliteral">&quot;transformation&quot;</span>];</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a33423172b5bd7a272a2a730d8a918f87">EigenMatrix4dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a18eef90fa5e256b3e2411da2eafd10c0">transformation_</a>, transformation_object)) {</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">EigenMatrix4dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a18eef90fa5e256b3e2411da2eafd10c0">transformation_</a>, transformation_object)) {</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    }</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">const</span> Json::Value &amp;information_object = value[<span class="stringliteral">&quot;information&quot;</span>];</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#abab9dc755e33054e58f46fe671286cd2">EigenMatrix6dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aee8779626fa4968b98d7581d0bdba914">information_</a>, information_object)) {</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8dc0cd83b5aa6b6b3508a455a84f4b91">EigenMatrix6dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aee8779626fa4968b98d7581d0bdba914">information_</a>, information_object)) {</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    }</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -295,20 +304,20 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html_ac1151efcbe473a0aa266c07c72f67557"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ac1151efcbe473a0aa266c07c72f67557">cloudViewer::pipelines::registration::PoseGraph::PoseGraph</a></div><div class="ttdeci">PoseGraph()</div><div class="ttdoc">Default Constructor.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8cpp_source.html#l00106">PoseGraph.cpp:106</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html_ad7486247462d5ebd03cebdd9adc217c0"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">cloudViewer::pipelines::registration::PoseGraph::nodes_</a></div><div class="ttdeci">std::vector&lt; PoseGraphNode &gt; nodes_</div><div class="ttdoc">List of PoseGraphNode.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8h_source.html#l00108">PoseGraph.h:108</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html_af774a10e3f1795a9dbedacae093417ee"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#af774a10e3f1795a9dbedacae093417ee">cloudViewer::pipelines::registration::PoseGraph::edges_</a></div><div class="ttdeci">std::vector&lt; PoseGraphEdge &gt; edges_</div><div class="ttdoc">List of PoseGraphEdge.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8h_source.html#l00111">PoseGraph.h:111</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a33423172b5bd7a272a2a730d8a918f87"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a33423172b5bd7a272a2a730d8a918f87">cloudViewer::utility::IJsonConvertible::EigenMatrix4dFromJsonArray</a></div><div class="ttdeci">static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &amp;mat, const Json::Value &amp;value)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a9bbbf84419c648ea42ff4e40a713abd3"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a9bbbf84419c648ea42ff4e40a713abd3">cloudViewer::utility::IJsonConvertible::EigenMatrix4dToJsonArray</a></div><div class="ttdeci">static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &amp;mat, Json::Value &amp;value)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_abab9dc755e33054e58f46fe671286cd2"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#abab9dc755e33054e58f46fe671286cd2">cloudViewer::utility::IJsonConvertible::EigenMatrix6dFromJsonArray</a></div><div class="ttdeci">static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d &amp;mat, const Json::Value &amp;value)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_af247813e4319a5eb32ff470a7de059b6"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af247813e4319a5eb32ff470a7de059b6">cloudViewer::utility::IJsonConvertible::EigenMatrix6dToJsonArray</a></div><div class="ttdeci">static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d &amp;mat, Json::Value &amp;value)</div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_a8dc0cd83b5aa6b6b3508a455a84f4b91"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8dc0cd83b5aa6b6b3508a455a84f4b91">cloudViewer::utility::IJsonConvertible::EigenMatrix6dFromJsonArray</a></div><div class="ttdeci">static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d &amp;mat, const Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00150">IJsonConvertible.cpp:150</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_aa2b7bb44502977638106be0ce421d721"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa2b7bb44502977638106be0ce421d721">cloudViewer::utility::IJsonConvertible::EigenMatrix6dToJsonArray</a></div><div class="ttdeci">static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d &amp;mat, Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00162">IJsonConvertible.cpp:162</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_ae6fd69ef2426c5ec67dd890d7fbc724c"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">cloudViewer::utility::IJsonConvertible::EigenMatrix4dFromJsonArray</a></div><div class="ttdeci">static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &amp;mat, const Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00108">IJsonConvertible.cpp:108</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_af1b19a42dc0ec6d4a5fc7e5d2a992819"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">cloudViewer::utility::IJsonConvertible::EigenMatrix4dToJsonArray</a></div><div class="ttdeci">static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &amp;mat, Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00120">IJsonConvertible.cpp:120</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="PoseGraph_8cpp.html">PoseGraph.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

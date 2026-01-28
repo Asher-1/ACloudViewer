@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -111,7 +120,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">// CV_CORE_LIB</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CVTools_8h.html">CVTools.h</a>&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ProgressReporters_8h.html">ProgressReporters.h</a>&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">// CV_DB_LIB</span></div>
@@ -175,11 +184,11 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keywordtype">bool</span> CheckHeader(PCDHeader&amp; header) {</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">if</span> (header.points &lt;= 0 || header.pointsize &lt;= 0) {</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CheckHeader] PCD has no data.&quot;</span>));</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CheckHeader] PCD has no data.&quot;</span>));</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    }</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">if</span> (header.fields.size() == 0 || header.pointsize &lt;= 0) {</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CheckHeader] PCD has no fields.&quot;</span>));</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CheckHeader] PCD has no fields.&quot;</span>));</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    }</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    header.has_points = <span class="keyword">false</span>;</div>
@@ -231,7 +240,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    header.has_timestamp = has_timestamp;</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    header.has_ring = <a class="code" href="FileIOFactory_8cpp.html#a4b183167a6bd4134261a2f12c1002790">has_ring</a>;</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keywordflow">if</span> (header.has_points == <span class="keyword">false</span>) {</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                <span class="stringliteral">&quot;[CheckHeader] Fields for point data are not complete.&quot;</span>));</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    }</div>
@@ -262,7 +271,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                   line_type.substr(0, 7) == <span class="stringliteral">&quot;COLUMNS&quot;</span>) {</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            specified_channel_count = st.size() - 1;</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            <span class="keywordflow">if</span> (specified_channel_count == 0) {</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            }</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            header.fields.resize(specified_channel_count);</div>
@@ -280,7 +289,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            header.pointsize = <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>;</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (line_type.substr(0, 4) == <span class="stringliteral">&quot;SIZE&quot;</span>) {</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            <span class="keywordflow">if</span> (specified_channel_count != st.size() - 1) {</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;            }</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> = 0, col_type = 0;</div>
@@ -293,7 +302,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            header.pointsize = <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>;</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (line_type.substr(0, 4) == <span class="stringliteral">&quot;TYPE&quot;</span>) {</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;            <span class="keywordflow">if</span> (specified_channel_count != st.size() - 1) {</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            }</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; specified_channel_count; i++) {</div>
@@ -301,7 +310,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            }</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (line_type.substr(0, 5) == <span class="stringliteral">&quot;COUNT&quot;</span>) {</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;            <span class="keywordflow">if</span> (specified_channel_count != st.size() - 1) {</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDHeader] Bad PCD file format.&quot;</span>));</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;            }</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;            <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#ad8fc34c4a09aa07fbf6c122a982ebbdc">count_offset</a> = 0, <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> = 0, col_count = 0;</div>
@@ -485,7 +494,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keywordflow">if</span> (header.has_points) {</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;        pointcloud.<a class="code" href="classccPointCloud.html#abe8df9cd9f90ec74e219482500f710e8">resize</a>(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(header.points));</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;                <span class="stringliteral">&quot;[ReadPCDData] Fields for point data are not complete.&quot;</span>));</div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    }</div>
@@ -508,9 +517,9 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;        }</div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160; </div>
 <div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        cc_intensity_field = <span class="keyword">new</span> <a class="code" href="classccScalarField.html">ccScalarField</a>(<span class="stringliteral">&quot;intensity&quot;</span>);</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        <span class="keywordflow">if</span> (!cc_intensity_field-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a1cd318b0e744f580db5032272609f2bf">reserveSafe</a>(</div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        <span class="keywordflow">if</span> (!cc_intensity_field-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a624ac0787431898be1997a7796387b13">reserveSafe</a>(</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(pointCount))) {</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;            cc_intensity_field-&gt;<a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;            cc_intensity_field-&gt;<a class="code" href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">release</a>();</div>
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;        }</div>
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;    }</div>
@@ -522,9 +531,9 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        }</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160; </div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        cc_timestamp_field = <span class="keyword">new</span> <a class="code" href="classccScalarField.html">ccScalarField</a>(<span class="stringliteral">&quot;timestamp&quot;</span>);</div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <span class="keywordflow">if</span> (!cc_timestamp_field-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a1cd318b0e744f580db5032272609f2bf">reserveSafe</a>(</div>
+<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <span class="keywordflow">if</span> (!cc_timestamp_field-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a624ac0787431898be1997a7796387b13">reserveSafe</a>(</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(pointCount))) {</div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            cc_timestamp_field-&gt;<a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            cc_timestamp_field-&gt;<a class="code" href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">release</a>();</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;        }</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    }</div>
@@ -535,8 +544,8 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#ac0a4ed452db28911235629c17ba1da63">deleteScalarField</a>(<span class="keywordtype">id</span>);</div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;        }</div>
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        cc_ring_field = <span class="keyword">new</span> <a class="code" href="classccScalarField.html">ccScalarField</a>(<span class="stringliteral">&quot;ring&quot;</span>);</div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        <span class="keywordflow">if</span> (!cc_ring_field-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a1cd318b0e744f580db5032272609f2bf">reserveSafe</a>(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(pointCount))) {</div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;            cc_ring_field-&gt;<a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        <span class="keywordflow">if</span> (!cc_ring_field-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a624ac0787431898be1997a7796387b13">reserveSafe</a>(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(pointCount))) {</div>
+<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;            cc_ring_field-&gt;<a class="code" href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">release</a>();</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;        }</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    }</div>
@@ -652,7 +661,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;        std::unique_ptr&lt;char[]&gt; buffer(<span class="keyword">new</span> <span class="keywordtype">char</span>[header.pointsize]);</div>
 <div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; (<span class="keywordtype">unsigned</span> int)header.points; i++) {</div>
 <div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;            <span class="keywordflow">if</span> (fread(buffer.get(), header.pointsize, 1, file) != 1) {</div>
-<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;                        QString(<span class="stringliteral">&quot;[ReadPCDData] Failed to read data record.&quot;</span>));</div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;                pointcloud.<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>();</div>
 <div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -741,20 +750,20 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        std::uint32_t compressed_size;</div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        std::uint32_t uncompressed_size;</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;        <span class="keywordflow">if</span> (fread(&amp;compressed_size, <span class="keyword">sizeof</span>(compressed_size), 1, file) != 1) {</div>
-<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;                    QString(<span class="stringliteral">&quot;[ReadPCDData] Failed to read data record.&quot;</span>));</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>();</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        }</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        <span class="keywordflow">if</span> (fread(&amp;uncompressed_size, <span class="keyword">sizeof</span>(uncompressed_size), 1, file) !=</div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;            1) {</div>
-<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;                    QString(<span class="stringliteral">&quot;[ReadPCDData] Failed to read data record.&quot;</span>));</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>();</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        }</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160; </div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;                QString(<span class="stringliteral">&quot;PCD data with %1 compressed size, and %2 uncompressed &quot;</span></div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;                        <span class="stringliteral">&quot;size.&quot;</span>)</div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;                        .arg(compressed_size)</div>
@@ -763,7 +772,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        reporter.Update(<span class="keywordtype">int</span>(reporter_total * .1));</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        <span class="keywordflow">if</span> (fread(buffer_compressed.get(), 1, compressed_size, file) !=</div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;            compressed_size) {</div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;                    QString(<span class="stringliteral">&quot;[ReadPCDData] Failed to read data record.&quot;</span>));</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>();</div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -774,14 +783,14 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;                           (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)compressed_size, buffer.get(),</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;                           (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)uncompressed_size) !=</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;            uncompressed_size) {</div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDData] Uncompression failed.&quot;</span>));</div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[ReadPCDData] Uncompression failed.&quot;</span>));</div>
 <div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>();</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;        }</div>
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160; </div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;        std::vector&lt;CCVector3&gt; <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>;</div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;        std::vector&lt;CCVector3&gt; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>;</div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;        <span class="keywordflow">if</span> (header.has_normals) {</div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;            <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>.resize(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(header.points));</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;            <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>.resize(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(header.points));</div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;        }</div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160; </div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; field : header.fields) {</div>
@@ -810,19 +819,19 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;                }</div>
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (field.name == <span class="stringliteral">&quot;normal_x&quot;</span>) {</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; (size_t)header.points; i++) {</div>
-<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;                    <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>[i].x = UnpackBinaryPCDElement(</div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;                    <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>[i].x = UnpackBinaryPCDElement(</div>
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;                            base_ptr + i * field.size * field.count, field.type,</div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;                            field.size);</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                }</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (field.name == <span class="stringliteral">&quot;normal_y&quot;</span>) {</div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; (size_t)header.points; i++) {</div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                    <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>[i].y = UnpackBinaryPCDElement(</div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                    <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>[i].y = UnpackBinaryPCDElement(</div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                            base_ptr + i * field.size * field.count, field.type,</div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;                            field.size);</div>
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;                }</div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (field.name == <span class="stringliteral">&quot;normal_z&quot;</span>) {</div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; (size_t)header.points; i++) {</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                    <a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>[i].z = UnpackBinaryPCDElement(</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                    <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>[i].z = UnpackBinaryPCDElement(</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                            base_ptr + i * field.size * field.count, field.type,</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;                            field.size);</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;                }</div>
@@ -858,7 +867,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        }</div>
 <div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160; </div>
 <div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;        <span class="keywordflow">if</span> (header.has_normals) {</div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#a2d5873431a8cfa3e57c9b9406d86bc3f">addNorms</a>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>);</div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;            pointcloud.<a class="code" href="classccPointCloud.html#a2d5873431a8cfa3e57c9b9406d86bc3f">addNorms</a>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>);</div>
 <div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        }</div>
 <div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;    }</div>
 <div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160; </div>
@@ -887,42 +896,42 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;}</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160; </div>
-<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io.html#a30bd5e1adb7b386c302239261790ec73">ReadPointCloudFromPCD</a>(<span class="keyword">const</span> std::string&amp; filename,</div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io.html#a30bd5e1adb7b386c302239261790ec73">ReadPointCloudFromPCD</a>(<span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;                           <a class="code" href="classccPointCloud.html">ccPointCloud</a>&amp; pointcloud) {</div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;    PCDHeader header;</div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;    FILE* file = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a6964ab5d5de2f98cfdb18b5bef997ae2">utility::filesystem::FOpen</a>(filename.c_str(), <span class="stringliteral">&quot;rb&quot;</span>);</div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;    FILE* file = <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#ad587bec3df2a7d15b97d6b6f7299b051">utility::filesystem::FOpen</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), <span class="stringliteral">&quot;rb&quot;</span>);</div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;    <span class="keywordflow">if</span> (file == <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) {</div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Read PCD failed: unable to open file: %1&quot;</span>)</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                               .arg(qPrintable(filename.c_str())));</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Read PCD failed: unable to open file: %1&quot;</span>)</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                               .arg(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str())));</div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;    }</div>
 <div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a99829eb5114cf740741fbfeff1c6b331">ReadPCDHeader</a>(file, header) == <span class="keyword">false</span>) {</div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Read PCD failed: unable to parse header.&quot;</span>));</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Read PCD failed: unable to parse header.&quot;</span>));</div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;        fclose(file);</div>
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;    }</div>
 <div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160; </div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;    <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(QString(<span class="stringliteral">&quot;PCD header indicates %1 fields, %2 bytes &quot;</span></div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;    <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(QString(<span class="stringliteral">&quot;PCD header indicates %1 fields, %2 bytes &quot;</span></div>
 <div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                              <span class="stringliteral">&quot;per point, and %3 points in total.&quot;</span>)</div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;                              .arg(header.fields.size())</div>
 <div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                              .arg(header.pointsize)</div>
 <div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                              .arg(header.points));</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; field : header.fields) {</div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(QString(<span class="stringliteral">&quot;%1, %2, %3, %4, %5&quot;</span>)</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(QString(<span class="stringliteral">&quot;%1, %2, %3, %4, %5&quot;</span>)</div>
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                                  .arg(field.name.c_str())</div>
 <div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                                  .arg(field.type)</div>
 <div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                                  .arg(field.size)</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;                                  .arg(field.count)</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                                  .arg(field.offset));</div>
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;    }</div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;    <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(</div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;    <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(</div>
 <div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;            QString(<span class="stringliteral">&quot;Compression method is %1.&quot;</span>).arg(header.datatype));</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;    <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(QString(<span class="stringliteral">&quot;Points: %1;  normals: %2;  colors: %3&quot;</span>)</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;    <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(QString(<span class="stringliteral">&quot;Points: %1;  normals: %2;  colors: %3&quot;</span>)</div>
 <div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;                              .arg(header.has_points ? <span class="stringliteral">&quot;yes&quot;</span> : <span class="stringliteral">&quot;no&quot;</span>)</div>
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;                              .arg(header.has_normals ? <span class="stringliteral">&quot;yes&quot;</span> : <span class="stringliteral">&quot;no&quot;</span>)</div>
 <div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;                              .arg(header.has_colors ? <span class="stringliteral">&quot;yes&quot;</span> : <span class="stringliteral">&quot;no&quot;</span>));</div>
 <div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a4c6ac697c1aeee3beba732a60c9411ad">ReadPCDData</a>(file, header, pointcloud)) {</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Read PCD failed: unable to read data.&quot;</span>));</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;Read PCD failed: unable to read data.&quot;</span>));</div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;        fclose(file);</div>
 <div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;    }</div>
@@ -976,16 +985,16 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;};</div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160; </div>
 <div class="line"><a name="l00891"></a><span class="lineno"><a class="line" href="classPcdFilter.html#a76108729355251eb3a19c603510c116b">  891</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classPcdFilter.html#a76108729355251eb3a19c603510c116b">PcdFilter::saveToFile</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity,</div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;                                    <span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;                                    <span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;                                    <span class="keyword">const</span> <a class="code" href="structFileIOFilter_1_1SaveParameters.html">SaveParameters</a>&amp; parameters) {</div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;    <span class="keywordflow">if</span> (!entity || filename.isEmpty()) {</div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;    <span class="keywordflow">if</span> (!entity || <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.isEmpty()) {</div>
 <div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
 <div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;    }</div>
 <div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160; </div>
 <div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;    <span class="comment">// the cloud to save</span></div>
 <div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* ccCloud = <a class="code" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a>(entity);</div>
 <div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;    <span class="keywordflow">if</span> (!ccCloud) {</div>
-<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[PCL] This filter can only save one cloud at a time!&quot;</span>);</div>
+<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[PCL] This filter can only save one cloud at a time!&quot;</span>);</div>
 <div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ac69606ed4e828590a336cf9dd4de8d75">CC_FERR_BAD_ENTITY_TYPE</a>;</div>
 <div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;    }</div>
 <div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160; </div>
@@ -1144,7 +1153,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160; </div>
 <div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;        <span class="keywordflow">if</span> (ccCloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() == 0) {</div>
 <div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;            pcl::PCDWriter w;</div>
-<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;            QFile file(filename);</div>
+<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;            QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160;            <span class="keywordflow">if</span> (!file.open(QFile::WriteOnly | QFile::Truncate))</div>
 <div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;                <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04">CC_FERR_WRITING</a>;</div>
 <div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;            QTextStream stream(&amp;file);</div>
@@ -1165,13 +1174,13 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;        <span class="keywordflow">if</span> (compressedMode) {</div>
 <div class="line"><a name="l01079"></a><span class="lineno"> 1079</span>&#160;            pcl::PCDWriter w;</div>
 <div class="line"><a name="l01080"></a><span class="lineno"> 1080</span>&#160;            <span class="keywordflow">if</span> (w.writeBinaryCompressed(</div>
-<div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160;                        <span class="comment">/*qPrintable*/</span> <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160;                        <span class="comment">/*qPrintable*/</span> <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01082"></a><span class="lineno"> 1082</span>&#160;                        *pclCloud, pos, ori) &lt; 0) {</div>
 <div class="line"><a name="l01083"></a><span class="lineno"> 1083</span>&#160;                <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01084"></a><span class="lineno"> 1084</span>&#160;            }</div>
 <div class="line"><a name="l01085"></a><span class="lineno"> 1085</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;            <span class="keywordflow">if</span> (pcl::io::savePCDFile(</div>
-<div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160;                        <span class="comment">/*qPrintable*/</span> <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160;                        <span class="comment">/*qPrintable*/</span> <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160;                        *pclCloud, pos, ori,</div>
 <div class="line"><a name="l01089"></a><span class="lineno"> 1089</span>&#160;                        saveBinary) &lt; 0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t</span></div>
 <div class="line"><a name="l01090"></a><span class="lineno"> 1090</span>&#160;                                          <span class="comment">// preserve &quot;local&quot; characters</span></div>
@@ -1182,7 +1191,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01095"></a><span class="lineno"> 1095</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01096"></a><span class="lineno"> 1096</span>&#160;        <span class="keywordflow">if</span> (ccCloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>() == 0) {</div>
 <div class="line"><a name="l01097"></a><span class="lineno"> 1097</span>&#160;            pcl::PCDWriter w;</div>
-<div class="line"><a name="l01098"></a><span class="lineno"> 1098</span>&#160;            QFile file(filename);</div>
+<div class="line"><a name="l01098"></a><span class="lineno"> 1098</span>&#160;            QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l01099"></a><span class="lineno"> 1099</span>&#160;            <span class="keywordflow">if</span> (!file.open(QFile::WriteOnly | QFile::Truncate))</div>
 <div class="line"><a name="l01100"></a><span class="lineno"> 1100</span>&#160;                <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a7697ac8dacf31e09dcccebdf8c44de04">CC_FERR_WRITING</a>;</div>
 <div class="line"><a name="l01101"></a><span class="lineno"> 1101</span>&#160;            QTextStream stream(&amp;file);</div>
@@ -1213,14 +1222,14 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;            }</div>
 <div class="line"><a name="l01127"></a><span class="lineno"> 1127</span>&#160;            <span class="keywordflow">if</span> (compressedMode) {</div>
 <div class="line"><a name="l01128"></a><span class="lineno"> 1128</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFileBinaryCompressed(</div>
-<div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;                            <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename), *rgbCloud) &lt;</div>
+<div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;                            <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), *rgbCloud) &lt;</div>
 <div class="line"><a name="l01130"></a><span class="lineno"> 1130</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01131"></a><span class="lineno"> 1131</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
 <div class="line"><a name="l01132"></a><span class="lineno"> 1132</span>&#160;                {</div>
 <div class="line"><a name="l01133"></a><span class="lineno"> 1133</span>&#160;                    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01134"></a><span class="lineno"> 1134</span>&#160;                }</div>
 <div class="line"><a name="l01135"></a><span class="lineno"> 1135</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01136"></a><span class="lineno"> 1136</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01136"></a><span class="lineno"> 1136</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01137"></a><span class="lineno"> 1137</span>&#160;                                         *rgbCloud, saveBinary) &lt;</div>
 <div class="line"><a name="l01138"></a><span class="lineno"> 1138</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01139"></a><span class="lineno"> 1139</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
@@ -1236,14 +1245,14 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01149"></a><span class="lineno"> 1149</span>&#160;            }</div>
 <div class="line"><a name="l01150"></a><span class="lineno"> 1150</span>&#160;            <span class="keywordflow">if</span> (compressedMode) {</div>
 <div class="line"><a name="l01151"></a><span class="lineno"> 1151</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFileBinaryCompressed(</div>
-<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;                            <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename), *normalCloud) &lt;</div>
+<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;                            <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), *normalCloud) &lt;</div>
 <div class="line"><a name="l01153"></a><span class="lineno"> 1153</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01154"></a><span class="lineno"> 1154</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
 <div class="line"><a name="l01155"></a><span class="lineno"> 1155</span>&#160;                {</div>
 <div class="line"><a name="l01156"></a><span class="lineno"> 1156</span>&#160;                    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01157"></a><span class="lineno"> 1157</span>&#160;                }</div>
 <div class="line"><a name="l01158"></a><span class="lineno"> 1158</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01159"></a><span class="lineno"> 1159</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01159"></a><span class="lineno"> 1159</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01160"></a><span class="lineno"> 1160</span>&#160;                                         *normalCloud, saveBinary) &lt;</div>
 <div class="line"><a name="l01161"></a><span class="lineno"> 1161</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
@@ -1259,7 +1268,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01172"></a><span class="lineno"> 1172</span>&#160;            }</div>
 <div class="line"><a name="l01173"></a><span class="lineno"> 1173</span>&#160;            <span class="keywordflow">if</span> (compressedMode) {</div>
 <div class="line"><a name="l01174"></a><span class="lineno"> 1174</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFileBinaryCompressed(</div>
-<div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160;                            <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160;                            <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;                            *rgbNormalCloud) &lt;</div>
 <div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
@@ -1267,7 +1276,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;                    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;                }</div>
 <div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01184"></a><span class="lineno"> 1184</span>&#160;                                         *rgbNormalCloud, saveBinary) &lt;</div>
 <div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01186"></a><span class="lineno"> 1186</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
@@ -1284,14 +1293,14 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01197"></a><span class="lineno"> 1197</span>&#160;            }</div>
 <div class="line"><a name="l01198"></a><span class="lineno"> 1198</span>&#160;            <span class="keywordflow">if</span> (compressedMode) {</div>
 <div class="line"><a name="l01199"></a><span class="lineno"> 1199</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFileBinaryCompressed(</div>
-<div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160;                            <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename), *xyzCloud) &lt;</div>
+<div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160;                            <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), *xyzCloud) &lt;</div>
 <div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
 <div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;                {</div>
 <div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;                    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;                }</div>
 <div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename),</div>
+<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;                <span class="keywordflow">if</span> (pcl::io::savePCDFile(<a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
 <div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;                                         *xyzCloud, saveBinary) &lt;</div>
 <div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;                    0)  <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve</span></div>
 <div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;                        <span class="comment">// &quot;local&quot; characters</span></div>
@@ -1305,7 +1314,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
 <div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;}</div>
 <div class="line"><a name="l01220"></a><span class="lineno"> 1220</span>&#160; </div>
-<div class="line"><a name="l01221"></a><span class="lineno"><a class="line" href="classPcdFilter.html#aa5f0d70548d0e48494ca7082e660b489"> 1221</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classPcdFilter.html#aa5f0d70548d0e48494ca7082e660b489">PcdFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l01221"></a><span class="lineno"><a class="line" href="classPcdFilter.html#aa5f0d70548d0e48494ca7082e660b489"> 1221</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classPcdFilter.html#aa5f0d70548d0e48494ca7082e660b489">PcdFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l01222"></a><span class="lineno"> 1222</span>&#160;                                  <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160;                                  <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l01224"></a><span class="lineno"> 1224</span>&#160;    Eigen::Vector4f origin;</div>
@@ -1318,29 +1327,29 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01231"></a><span class="lineno"> 1231</span>&#160;    <span class="comment">// Load the given file</span></div>
 <div class="line"><a name="l01232"></a><span class="lineno"> 1232</span>&#160;    pcl::PCDReader p;</div>
 <div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160; </div>
-<div class="line"><a name="l01234"></a><span class="lineno"> 1234</span>&#160;    <span class="keyword">const</span> std::string&amp; fileName = <a class="code" href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a>(filename);</div>
+<div class="line"><a name="l01234"></a><span class="lineno"> 1234</span>&#160;    <span class="keyword">const</span> std::string&amp; fileName = <a class="code" href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l01235"></a><span class="lineno"> 1235</span>&#160; </div>
 <div class="line"><a name="l01236"></a><span class="lineno"> 1236</span>&#160;    <span class="keywordflow">if</span> (p.readHeader(fileName, *inputCloud, origin, orientation, pcd_version,</div>
 <div class="line"><a name="l01237"></a><span class="lineno"> 1237</span>&#160;                     data_type, data_idx) &lt; 0) {</div>
-<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] An error occurred while reading PCD &quot;</span></div>
+<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] An error occurred while reading PCD &quot;</span></div>
 <div class="line"><a name="l01239"></a><span class="lineno"> 1239</span>&#160;                               <span class="stringliteral">&quot;header and try to &quot;</span></div>
 <div class="line"><a name="l01240"></a><span class="lineno"> 1240</span>&#160;                               <span class="stringliteral">&quot;mannually read %1&quot;</span>)</div>
-<div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160;                               .arg(qPrintable(filename)));</div>
+<div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160;                               .arg(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)));</div>
 <div class="line"><a name="l01242"></a><span class="lineno"> 1242</span>&#160;        <a class="code" href="classccPointCloud.html">ccPointCloud</a>* ccCloud = <span class="keyword">new</span> <a class="code" href="classccPointCloud.html">ccPointCloud</a>(<span class="stringliteral">&quot;pointCloud&quot;</span>);</div>
 <div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1io.html#a30bd5e1adb7b386c302239261790ec73">ReadPointCloudFromPCD</a>(fileName, *ccCloud)) {</div>
 <div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;            container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(ccCloud);</div>
 <div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
 <div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] Failed to &quot;</span></div>
+<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] Failed to &quot;</span></div>
 <div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;                                   <span class="stringliteral">&quot;mannually read %1&quot;</span>)</div>
-<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;                                   .arg(qPrintable(filename)));</div>
+<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;                                   .arg(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)));</div>
 <div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;        }</div>
 <div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160;    }</div>
 <div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160; </div>
 <div class="line"><a name="l01254"></a><span class="lineno"> 1254</span>&#160;    pointCount = inputCloud-&gt;width * inputCloud-&gt;height;</div>
-<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QString(<span class="stringliteral">&quot;%1: Point Count: %2&quot;</span>)</div>
-<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;                         .arg(qPrintable(filename))</div>
+<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QString(<span class="stringliteral">&quot;%1: Point Count: %2&quot;</span>)</div>
+<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;                         .arg(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>))</div>
 <div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;                         .arg(pointCount));</div>
 <div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160; </div>
 <div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;    <span class="keywordflow">if</span> (pointCount == 0) {</div>
@@ -1349,18 +1358,18 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160; </div>
 <div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;    <span class="comment">// DGM: warning, toStdString doesn&#39;t preserve &quot;local&quot; characters</span></div>
 <div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;    <span class="keywordflow">if</span> (pcl::io::loadPCDFile(fileName, *inputCloud, origin, orientation) &lt; 0) {</div>
-<div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] An error occurred while &quot;</span></div>
+<div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] An error occurred while &quot;</span></div>
 <div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;                               <span class="stringliteral">&quot;pcl::io::loadPCDFile and try to &quot;</span></div>
 <div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;                               <span class="stringliteral">&quot;mannually read %1&quot;</span>)</div>
-<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;                               .arg(qPrintable(filename)));</div>
+<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;                               .arg(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)));</div>
 <div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;        <a class="code" href="classccPointCloud.html">ccPointCloud</a>* ccCloud = <span class="keyword">new</span> <a class="code" href="classccPointCloud.html">ccPointCloud</a>(<span class="stringliteral">&quot;pointCloud&quot;</span>);</div>
 <div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1io.html#a30bd5e1adb7b386c302239261790ec73">ReadPointCloudFromPCD</a>(fileName, *ccCloud)) {</div>
 <div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;            container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(ccCloud);</div>
 <div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
 <div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] Failed to &quot;</span></div>
+<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[PCL] Failed to &quot;</span></div>
 <div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160;                                   <span class="stringliteral">&quot;mannually read %1&quot;</span>)</div>
-<div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;                                   .arg(qPrintable(filename)));</div>
+<div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;                                   .arg(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)));</div>
 <div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160;        }</div>
 <div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a5b414af8d157fac3afb1ba4099b1474c">CC_FERR_THIRD_PARTY_LIB_FAILURE</a>;</div>
 <div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160;    }</div>
@@ -1376,7 +1385,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160; </div>
 <div class="line"><a name="l01290"></a><span class="lineno"> 1290</span>&#160;    <span class="comment">// convert to CC cloud</span></div>
 <div class="line"><a name="l01291"></a><span class="lineno"> 1291</span>&#160;    <span class="keywordflow">if</span> (!ccCloud) {</div>
-<div class="line"><a name="l01292"></a><span class="lineno"> 1292</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l01292"></a><span class="lineno"> 1292</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l01293"></a><span class="lineno"> 1293</span>&#160;                <span class="stringliteral">&quot;[PCL] An error occurred while converting PCD cloud to &quot;</span></div>
 <div class="line"><a name="l01294"></a><span class="lineno"> 1294</span>&#160;                <span class="stringliteral">&quot;CloudViewer  cloud!&quot;</span>);</div>
 <div class="line"><a name="l01295"></a><span class="lineno"> 1295</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a04361fbae7e2606fa3b1876bfdfc6e09">CC_FERR_CONSOLE_ERROR</a>;</div>
@@ -1433,6 +1442,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="ttc" id="aCVTools_8h_html"><div class="ttname"><a href="CVTools_8h.html">CVTools.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_aa66963602203f53f35f21154b8631813"><div class="ttname"><a href="CVTypes_8h.html#aa66963602203f53f35f21154b8631813">CV_CLASS_ENUM</a></div><div class="ttdeci">int64_t CV_CLASS_ENUM</div><div class="ttdoc">Type of object type flags (64 bits)</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00097">CVTypes.h:97</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFilamentResourceManager_8cpp_html_a1acaede49c416601578d9bbd854f5106"><div class="ttname"><a href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a></div><div class="ttdeci">filament::Texture::InternalFormat format</div><div class="ttdef"><b>Definition:</b> <a href="FilamentResourceManager_8cpp_source.html#l00181">FilamentResourceManager.cpp:181</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
@@ -1470,11 +1480,11 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="ttc" id="aProgressReporters_8h_html"><div class="ttname"><a href="ProgressReporters_8h.html">ProgressReporters.h</a></div></div>
 <div class="ttc" id="aSmallVector_8cpp_html_ab385e5bea03d0c55b5efca299f25532e"><div class="ttname"><a href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a></div><div class="ttdeci">void * X</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00045">SmallVector.cpp:45</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_ab8ad53d1acfbe69894cd01504d42b0a1"><div class="ttname"><a href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_a9f2bdbc25c84bbcce78166ad1047ee06"><div class="ttname"><a href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a></div><div class="ttdeci">static bool PrintDebug(const char *format,...)</div><div class="ttdoc">Same as Print, but works only in Debug mode.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVTools_html_a7f3e812812684324ba0b995e7c81b02d"><div class="ttname"><a href="classCVTools.html#a7f3e812812684324ba0b995e7c81b02d">CVTools::FromQString</a></div><div class="ttdeci">static std::string FromQString(const QString &amp;qs)</div></div>
+<div class="ttc" id="aclassCCShareable_html_a2ea8a973d6ed745b1abf65155167a49e"><div class="ttname"><a href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8cpp_source.html#l00035">CVShareable.cpp:35</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a235aef414cd0e85f7463aba5041b9c9f"><div class="ttname"><a href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a></div><div class="ttdeci">static bool PrintDebug(const char *format,...)</div><div class="ttdoc">Same as Print, but works only in Debug mode.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00153">CVLog.cpp:153</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVTools_html_a5573c72e90199b38eff39a3e35f45caa"><div class="ttname"><a href="classCVTools.html#a5573c72e90199b38eff39a3e35f45caa">CVTools::FromQString</a></div><div class="ttdeci">static std::string FromQString(const QString &amp;qs)</div><div class="ttdef"><b>Definition:</b> <a href="CVTools_8cpp_source.html#l00100">CVTools.cpp:100</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7c034fb5a01863739fc8d9c5790811a">FileIOFilter::Export</a></div><div class="ttdeci">@ Export</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00303">FileIOFilter.h:303</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">FileIOFilter::Import</a></div><div class="ttdeci">@ Import</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00302">FileIOFilter.h:302</a></div></div>
@@ -1542,17 +1552,17 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a46bcd463c0e4a04f618e9b3171824536"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a46bcd463c0e4a04f618e9b3171824536">cloudViewer::PointCloudTpl::getPointPtr</a></div><div class="ttdeci">CCVector3 * getPointPtr(size_t index)</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00146">PointCloudTpl.h:146</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ad0b0c8d1f54d4eb09a587b3b68ace678"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ad0b0c8d1f54d4eb09a587b3b68ace678">cloudViewer::PointCloudTpl::setPoint</a></div><div class="ttdeci">void setPoint(size_t index, const CCVector3 &amp;P)</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00259">PointCloudTpl.h:259</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a1cd318b0e744f580db5032272609f2bf"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a1cd318b0e744f580db5032272609f2bf">cloudViewer::ScalarField::reserveSafe</a></div><div class="ttdeci">bool reserveSafe(std::size_t count)</div><div class="ttdoc">Reserves memory (no exception thrown)</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a31ce5eee4a27b8f84d4dd9fd3c40ee87"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a31ce5eee4a27b8f84d4dd9fd3c40ee87">cloudViewer::ScalarField::addElement</a></div><div class="ttdeci">void addElement(ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00099">ScalarField.h:99</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a624ac0787431898be1997a7796387b13"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a624ac0787431898be1997a7796387b13">cloudViewer::ScalarField::reserveSafe</a></div><div class="ttdeci">bool reserveSafe(std::size_t count)</div><div class="ttdoc">Reserves memory (no exception thrown)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarField_8cpp_source.html#l00071">ScalarField.cpp:71</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1CountingProgressReporter_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">cloudViewer::utility::CountingProgressReporter</a></div><div class="ttdef"><b>Definition:</b> <a href="ProgressReporters_8h_source.html#l00019">ProgressReporters.h:19</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
-<div class="ttc" id="acore_2include_2Helper_8h_html"><div class="ttname"><a href="core_2include_2Helper_8h.html">Helper.h</a></div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_abb9ec697f94a31a8fdffdbdf3eddd14c"><div class="ttname"><a href="core_2include_2Logging_8h.html#abb9ec697f94a31a8fdffdbdf3eddd14c">DEFAULT_IO_BUFFER_SIZE</a></div><div class="ttdeci">#define DEFAULT_IO_BUFFER_SIZE</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00031">Logging.h:31</a></div></div>
 <div class="ttc" id="aecvGBLSensor_8h_html"><div class="ttname"><a href="ecvGBLSensor_8h.html">ecvGBLSensor.h</a></div></div>
 <div class="ttc" id="aecvHObjectCaster_8h_html"><div class="ttname"><a href="ecvHObjectCaster_8h.html">ecvHObjectCaster.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvScalarField_8h_html"><div class="ttname"><a href="ecvScalarField_8h.html">ecvScalarField.h</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
 <div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a30bd5e1adb7b386c302239261790ec73"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a30bd5e1adb7b386c302239261790ec73">cloudViewer::io::ReadPointCloudFromPCD</a></div><div class="ttdeci">bool ReadPointCloudFromPCD(const std::string &amp;filename, ccPointCloud &amp;pointcloud, const ReadPointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l01041">FileIOFactory.cpp:1041</a></div></div>
@@ -1560,9 +1570,9 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a4c6ac697c1aeee3beba732a60c9411ad"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a4c6ac697c1aeee3beba732a60c9411ad">cloudViewer::t::io::ReadPCDData</a></div><div class="ttdeci">static bool ReadPCDData(FILE *file, PCDHeader &amp;header, t::geometry::PointCloud &amp;pointcloud, const ReadPointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="FilePCD_8cpp_source.html#l00457">FilePCD.cpp:457</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a99829eb5114cf740741fbfeff1c6b331"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a99829eb5114cf740741fbfeff1c6b331">cloudViewer::t::io::ReadPCDHeader</a></div><div class="ttdeci">static bool ReadPCDHeader(FILE *file, PCDHeader &amp;header)</div><div class="ttdef"><b>Definition:</b> <a href="FilePCD_8cpp_source.html#l00197">FilePCD.cpp:197</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ab99e4b4f7f5a1f7f3d9711afcd0a15d7"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ab99e4b4f7f5a1f7f3d9711afcd0a15d7">cloudViewer::t::io::UnpackASCIIPCDElement</a></div><div class="ttdeci">static void UnpackASCIIPCDElement(scalar_t &amp;data, const char *data_ptr)=delete</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a6964ab5d5de2f98cfdb18b5bef997ae2"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a6964ab5d5de2f98cfdb18b5bef997ae2">cloudViewer::utility::filesystem::FOpen</a></div><div class="ttdeci">FILE * FOpen(const std::string &amp;filename, const std::string &amp;mode)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_ad587bec3df2a7d15b97d6b6f7299b051"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#ad587bec3df2a7d15b97d6b6f7299b051">cloudViewer::utility::filesystem::FOpen</a></div><div class="ttdeci">FILE * FOpen(const std::string &amp;filename, const std::string &amp;mode)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00609">FileSystem.cpp:609</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00197">Helper.cpp:197</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a130363ede0dcec29fea72299720873c6"><div class="ttname"><a href="namespaceecvColor.html#a130363ede0dcec29fea72299720873c6">ecvColor::Rgb</a></div><div class="ttdeci">RgbTpl&lt; ColorCompType &gt; Rgb</div><div class="ttdoc">3 components, default type</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00141">ecvColorTypes.h:141</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a></div><div class="ttdoc">Generic loading parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00051">FileIOFilter.h:51</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1SaveParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1SaveParameters.html">FileIOFilter::SaveParameters</a></div><div class="ttdoc">Generic saving parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00084">FileIOFilter.h:84</a></div></div>
@@ -1573,7 +1583,7 @@ $(document).ready(function(){initNavTree('PcdFilter_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_dd8f96d969f88ea4d7b2fe4b95bcee82.html">PclIO</a></li><li class="navelem"><a class="el" href="dir_5838395ce0058262df276e20f55ec47f.html">src</a></li><li class="navelem"><a class="el" href="PcdFilter_8cpp.html">PcdFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

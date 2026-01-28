@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -104,8 +113,8 @@ $(document).ready(function(){initNavTree('Runtime_8cpp_source.html',''); initRes
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;QEventLoop&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;QtConcurrent&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;ecvCommandLineInterface.h&gt;</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a>&gt;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Consoles_8h.html">Consoles.h</a>&quot;</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Runtime_8h.html">Runtime.h</a>&quot;</span></div>
@@ -153,19 +162,19 @@ $(document).ready(function(){initNavTree('Runtime_8cpp_source.html',''); initRes
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#ad75aa24dfb5fa9ad8608e78d8d415580">   68</a></span>&#160;<span class="keyword">static</span> <a class="code" href="classccGuiPythonInstance.html">ccGuiPythonInstance</a> *<a class="code" href="namespaceRuntime.html#ad75aa24dfb5fa9ad8608e78d8d415580">s_pythonInstance</a>{<span class="keyword">nullptr</span>};</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">   70</a></span>&#160;<span class="keyword">static</span> ccCommandLineInterface *<a class="code" href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">s_cmdLineInstance</a>{<span class="keyword">nullptr</span>};</div>
+<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">   70</a></span>&#160;<span class="keyword">static</span> <a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *<a class="code" href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">s_cmdLineInstance</a>{<span class="keyword">nullptr</span>};</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
 <div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">   72</a></span>&#160;<a class="code" href="classccGuiPythonInstance.html">ccGuiPythonInstance</a> *<a class="code" href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">GetInstance</a>() noexcept</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;{</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespaceRuntime.html#ad75aa24dfb5fa9ad8608e78d8d415580">s_pythonInstance</a>;</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;}</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a98e85e287e650b40006b37bcac6514e3">   77</a></span>&#160;ccCommandLineInterface *<a class="code" href="namespaceRuntime.html#a98e85e287e650b40006b37bcac6514e3">GetCmdLineInstance</a>() noexcept</div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a98e85e287e650b40006b37bcac6514e3">   77</a></span>&#160;<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *<a class="code" href="namespaceRuntime.html#a98e85e287e650b40006b37bcac6514e3">GetCmdLineInstance</a>() noexcept</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;{</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">s_cmdLineInstance</a>;</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">   82</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">setMainAppInterfaceInstance</a>(ecvMainAppInterface *appInterface) noexcept(<span class="keyword">false</span>)</div>
+<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">   82</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">setMainAppInterfaceInstance</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *appInterface) noexcept(<span class="keyword">false</span>)</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;{</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespaceRuntime.html#ad75aa24dfb5fa9ad8608e78d8d415580">s_pythonInstance</a> == <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    {</div>
@@ -182,7 +191,7 @@ $(document).ready(function(){initNavTree('Runtime_8cpp_source.html',''); initRes
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    }</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;}</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
-<div class="line"><a name="l00099"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">   99</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">setCmdLineInterfaceInstance</a>(ccCommandLineInterface *cmdLine) noexcept</div>
+<div class="line"><a name="l00099"></a><span class="lineno"><a class="line" href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">   99</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceRuntime.html#a5f307c2df990898b9beb09285533042f">setCmdLineInterfaceInstance</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *cmdLine) noexcept</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;{</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">s_cmdLineInstance</a> == <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    {</div>
@@ -357,10 +366,14 @@ $(document).ready(function(){initNavTree('Runtime_8cpp_source.html',''); initRes
 <div class="ttc" id="aclassRuntime_1_1PythonPluginTrampoline_html_a8dc5d039c9dd7cb2204b2a76436776a9"><div class="ttname"><a href="classRuntime_1_1PythonPluginTrampoline.html#a8dc5d039c9dd7cb2204b2a76436776a9">Runtime::PythonPluginTrampoline::getActions</a></div><div class="ttdeci">std::vector&lt; Runtime::RegisteredPlugin::Action &gt; getActions() override</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00054">Runtime.cpp:54</a></div></div>
 <div class="ttc" id="aclassRuntime_1_1PythonPluginTrampoline_html_a99dfb5b62c3c9b64d4457bc8aee99e64"><div class="ttname"><a href="classRuntime_1_1PythonPluginTrampoline.html#a99dfb5b62c3c9b64d4457bc8aee99e64">Runtime::PythonPluginTrampoline::PythonPluginTrampoline</a></div><div class="ttdeci">PythonPluginTrampoline()</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00052">Runtime.cpp:52</a></div></div>
 <div class="ttc" id="aclassRuntime_1_1PythonPluginTrampoline_html_afc98c178f8f6fcb804912c9acc1ef26c"><div class="ttname"><a href="classRuntime_1_1PythonPluginTrampoline.html#afc98c178f8f6fcb804912c9acc1ef26c">Runtime::PythonPluginTrampoline::getIcon</a></div><div class="ttdeci">py::object getIcon() override</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00061">Runtime.cpp:61</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
 <div class="ttc" id="aclassccConsoleOutput_html_a4ee52dc4c4951cd30d348e00fdf75dd1"><div class="ttname"><a href="classccConsoleOutput.html#a4ee52dc4c4951cd30d348e00fdf75dd1">ccConsoleOutput::isatty</a></div><div class="ttdeci">bool isatty() const</div><div class="ttdef"><b>Definition:</b> <a href="Consoles_8h_source.html#l00094">Consoles.h:94</a></div></div>
 <div class="ttc" id="aclassccConsoleOutput_html_a8fe56c9b626d6a958dd4a9d96a1ef5ab"><div class="ttname"><a href="classccConsoleOutput.html#a8fe56c9b626d6a958dd4a9d96a1ef5ab">ccConsoleOutput::write</a></div><div class="ttdeci">void write(const char *messagePart)</div><div class="ttdef"><b>Definition:</b> <a href="Consoles_8h_source.html#l00082">Consoles.h:82</a></div></div>
 <div class="ttc" id="aclassccConsoleOutput_html_aa15268ac349d472d9374d0f47766cbf3"><div class="ttname"><a href="classccConsoleOutput.html#aa15268ac349d472d9374d0f47766cbf3">ccConsoleOutput::flush</a></div><div class="ttdeci">void flush() const</div><div class="ttdef"><b>Definition:</b> <a href="Consoles_8h_source.html#l00099">Consoles.h:99</a></div></div>
 <div class="ttc" id="aclassccGuiPythonInstance_html"><div class="ttname"><a href="classccGuiPythonInstance.html">ccGuiPythonInstance</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00026">ccGuiPythonInstance.h:27</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html"><div class="ttname"><a href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html"><div class="ttname"><a href="namespaceRuntime.html">Runtime</a></div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00028">Runtime.cpp:29</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a3a8530ce0f197a3767aa2d41ce28add8"><div class="ttname"><a href="namespaceRuntime.html#a3a8530ce0f197a3767aa2d41ce28add8">Runtime::setMainAppInterfaceInstance</a></div><div class="ttdeci">void setMainAppInterfaceInstance(ecvMainAppInterface *appInterface) noexcept(false)</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00082">Runtime.cpp:82</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a5b51e10a6229c9312a845189f2beb38b"><div class="ttname"><a href="namespaceRuntime.html#a5b51e10a6229c9312a845189f2beb38b">Runtime::unsetMainAppInterfaceInstance</a></div><div class="ttdeci">void unsetMainAppInterfaceInstance() noexcept</div><div class="ttdoc">Unsets the app interface pointer.</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00090">Runtime.cpp:90</a></div></div>
@@ -370,7 +383,7 @@ $(document).ready(function(){initNavTree('Runtime_8cpp_source.html',''); initRes
 <div class="ttc" id="anamespaceRuntime_html_ad43c13f4b776fa9b254ce8f0257031e4"><div class="ttname"><a href="namespaceRuntime.html#ad43c13f4b776fa9b254ce8f0257031e4">Runtime::unsetCmdLineInterfaceInstance</a></div><div class="ttdeci">void unsetCmdLineInterfaceInstance() noexcept</div><div class="ttdoc">Unsets the pointer to the cmdline app interface.</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00107">Runtime.cpp:107</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_ad75aa24dfb5fa9ad8608e78d8d415580"><div class="ttname"><a href="namespaceRuntime.html#ad75aa24dfb5fa9ad8608e78d8d415580">Runtime::s_pythonInstance</a></div><div class="ttdeci">static ccGuiPythonInstance * s_pythonInstance</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00068">Runtime.cpp:68</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_af375a57682b2a8777fb41d1972412c4a"><div class="ttname"><a href="namespaceRuntime.html#af375a57682b2a8777fb41d1972412c4a">Runtime::s_cmdLineInstance</a></div><div class="ttdeci">static ccCommandLineInterface * s_cmdLineInstance</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00070">Runtime.cpp:70</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="astructPyThreadStateReleaser_html"><div class="ttname"><a href="structPyThreadStateReleaser.html">PyThreadStateReleaser</a></div><div class="ttdef"><b>Definition:</b> <a href="Threading_8h_source.html#l00037">Threading.h:38</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -378,7 +391,7 @@ $(document).ready(function(){initNavTree('Runtime_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="dir_55cc919656e65b5b0b09260db66aea16.html">Runtime</a></li><li class="navelem"><a class="el" href="Runtime_8cpp.html">Runtime.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

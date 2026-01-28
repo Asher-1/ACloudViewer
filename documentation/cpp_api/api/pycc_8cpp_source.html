@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -234,7 +243,7 @@ $(document).ready(function(){initNavTree('pycc_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="comment">// When pycc is a standalone python module, there are</span></div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="comment">// some ACloudViewer facilities we have to initialize ourselves</span></div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="comment">// to have a more complete experience</span></div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <a class="code" href="classCVLog.html#ada39d05be58b1924de534b79a5867170">CVLog::RegisterInstance</a>(<span class="keyword">new</span> <a class="code" href="classPyPrintLogger.html">PyPrintLogger</a>);</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <a class="code" href="classCVLog.html#af12d381b04566edb619622f4704b0dbc">CVLog::RegisterInstance</a>(<span class="keyword">new</span> <a class="code" href="classPyPrintLogger.html">PyPrintLogger</a>);</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    FileIOFilter::InitInternalFilters();</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="comment">// TODO at module exit definition to cleanup ?</span></div>
@@ -254,7 +263,7 @@ $(document).ready(function(){initNavTree('pycc_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    }</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <span class="keywordflow">catch</span> (std::exception &amp;e)</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    {</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to import wrapped plugins: &quot;</span>, e.what());</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to import wrapped plugins: &quot;</span>, e.what());</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    }</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160; </div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="preprocessor">#ifdef DEFINE_PYCC_RUNTIME</span></div>
@@ -264,7 +273,7 @@ $(document).ready(function(){initNavTree('pycc_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    }</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    <span class="keywordflow">catch</span> (std::exception &amp;e)</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    {</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to import pycc_runtime content: &quot;</span>, e.what());</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to import pycc_runtime content: &quot;</span>, e.what());</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    }</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;}</div>
@@ -290,11 +299,11 @@ $(document).ready(function(){initNavTree('pycc_8cpp_source.html',''); initResiza
 <div class="ttc" id="aRuntime_8cpp_html_ad5acfcd2b26d71da3f02d02efe8c996a"><div class="ttname"><a href="Runtime_8cpp.html#ad5acfcd2b26d71da3f02d02efe8c996a">PYBIND11_EMBEDDED_MODULE</a></div><div class="ttdeci">PYBIND11_EMBEDDED_MODULE(ccinternals, m)</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00117">Runtime.cpp:117</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
 <div class="ttc" id="acasters_8h_html"><div class="ttname"><a href="casters_8h.html">casters.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_ada39d05be58b1924de534b79a5867170"><div class="ttname"><a href="classCVLog.html#ada39d05be58b1924de534b79a5867170">CVLog::RegisterInstance</a></div><div class="ttdeci">static void RegisterInstance(CVLog *logInstance)</div><div class="ttdoc">Registers a unique instance.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af12d381b04566edb619622f4704b0dbc"><div class="ttname"><a href="classCVLog.html#af12d381b04566edb619622f4704b0dbc">CVLog::RegisterInstance</a></div><div class="ttdeci">static void RegisterInstance(CVLog *logInstance)</div><div class="ttdoc">Registers a unique instance.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00081">CVLog.cpp:81</a></div></div>
 <div class="ttc" id="aclassPyPrintLogger_html"><div class="ttname"><a href="classPyPrintLogger.html">PyPrintLogger</a></div><div class="ttdef"><b>Definition:</b> <a href="PyPrintLogger_8h_source.html#l00025">PyPrintLogger.h:26</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="apycc_8cpp_html_a03bfd025b924f1e42c745ec4f9ecfdef"><div class="ttname"><a href="pycc_8cpp.html#a03bfd025b924f1e42c745ec4f9ecfdef">import_pyccRuntime</a></div><div class="ttdeci">void import_pyccRuntime(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="pycc_8cpp_source.html#l00088">pycc.cpp:88</a></div></div>
 <div class="ttc" id="apycc_8cpp_html_a206e2577604b025b536ccc774dfa6379"><div class="ttname"><a href="pycc_8cpp.html#a206e2577604b025b536ccc774dfa6379">load_pluginWrappers</a></div><div class="ttdeci">void load_pluginWrappers(py::module &amp;)</div></div>
 <div class="ttc" id="apycc_8cpp_html_a3ed04da342f2e081222a2c286796d987"><div class="ttname"><a href="pycc_8cpp.html#a3ed04da342f2e081222a2c286796d987">define_scalar_type</a></div><div class="ttdeci">std::enable_if&lt; std::is_same&lt; T, double &gt;::value, void &gt;::type define_scalar_type(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="pycc_8cpp_source.html#l00043">pycc.cpp:43</a></div></div>
@@ -311,7 +320,7 @@ $(document).ready(function(){initNavTree('pycc_8cpp_source.html',''); initResiza
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="pycc_8cpp.html">pycc.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

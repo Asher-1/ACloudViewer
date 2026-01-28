@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -104,11 +113,13 @@ Inheritance diagram for cloudViewer::visualization::Visualizer:</div>
 <div class="dyncontent">
 <div class="center"><img src="classcloudViewer_1_1visualization_1_1Visualizer__inherit__graph.png" border="0" usemap="#acloudViewer_1_1visualization_1_1Visualizer_inherit__map" alt="Inheritance graph"/></div>
 <map name="acloudViewer_1_1visualization_1_1Visualizer_inherit__map" id="acloudViewer_1_1visualization_1_1Visualizer_inherit__map">
-<area shape="rect" title="The main Visualizer class." alt="" coords="5,104,199,145"/>
-<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html" title=" " alt="" coords="247,5,488,47"/>
-<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html" title="Visualizer with editing capabilities." alt="" coords="271,71,464,112"/>
-<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html" title="Visualizer with custom key callack capabilities." alt="" coords="265,136,469,177"/>
-<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html" title=" " alt="" coords="254,201,481,243"/>
+<area shape="rect" title="The main Visualizer class." alt="" coords="5,169,199,211"/>
+<area shape="rect" href="classPyVisualizer.html" title=" " alt="" coords="277,5,458,47"/>
+<area shape="rect" href="classcloudViewer_1_1VisualizerForAlignment.html" title=" " alt="" coords="270,71,465,112"/>
+<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html" title=" " alt="" coords="247,136,488,177"/>
+<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html" title="Visualizer with editing capabilities." alt="" coords="271,201,464,243"/>
+<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html" title="Visualizer with custom key callack capabilities." alt="" coords="265,267,469,308"/>
+<area shape="rect" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html" title=" " alt="" coords="254,332,481,373"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -197,17 +208,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:abb44bbd0d73e96119d5e4b3be3cd2d10"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">geometry::Image</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#abb44bbd0d73e96119d5e4b3be3cd2d10">CaptureScreenFloatBuffer</a> (bool do_render=true)</td></tr>
 <tr class="memdesc:abb44bbd0d73e96119d5e4b3be3cd2d10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to capture screen and store RGB in a float buffer.  <a href="classcloudViewer_1_1visualization_1_1Visualizer.html#abb44bbd0d73e96119d5e4b3be3cd2d10">More...</a><br /></td></tr>
 <tr class="separator:abb44bbd0d73e96119d5e4b3be3cd2d10"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f9bdc1be29e0f9d4e94b6c4e4071ded"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f9bdc1be29e0f9d4e94b6c4e4071ded">CaptureScreenImage</a> (const std::string &amp;filename=&quot;&quot;, bool do_render=true)</td></tr>
+<tr class="memitem:a4f9bdc1be29e0f9d4e94b6c4e4071ded"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f9bdc1be29e0f9d4e94b6c4e4071ded">CaptureScreenImage</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>=&quot;&quot;, bool do_render=true)</td></tr>
 <tr class="memdesc:a4f9bdc1be29e0f9d4e94b6c4e4071ded"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to capture and save a screen image.  <a href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f9bdc1be29e0f9d4e94b6c4e4071ded">More...</a><br /></td></tr>
 <tr class="separator:a4f9bdc1be29e0f9d4e94b6c4e4071ded"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2ada2d720cb34636cdb9dddd2f2adf1f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1Image.html">geometry::Image</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a2ada2d720cb34636cdb9dddd2f2adf1f">CaptureDepthFloatBuffer</a> (bool do_render=true)</td></tr>
 <tr class="separator:a2ada2d720cb34636cdb9dddd2f2adf1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb912afb68c28288bc885757ca7998ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#aeb912afb68c28288bc885757ca7998ac">CaptureDepthImage</a> (const std::string &amp;filename=&quot;&quot;, bool do_render=true, double depth_scale=1000.0)</td></tr>
+<tr class="memitem:aeb912afb68c28288bc885757ca7998ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#aeb912afb68c28288bc885757ca7998ac">CaptureDepthImage</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>=&quot;&quot;, bool do_render=true, double depth_scale=1000.0)</td></tr>
 <tr class="separator:aeb912afb68c28288bc885757ca7998ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30c516d461ffb55fd702daac31eb6e78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a30c516d461ffb55fd702daac31eb6e78">CaptureDepthPointCloud</a> (const std::string &amp;filename=&quot;&quot;, bool do_render=true, bool convert_to_world_coordinate=false)</td></tr>
+<tr class="memitem:a30c516d461ffb55fd702daac31eb6e78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a30c516d461ffb55fd702daac31eb6e78">CaptureDepthPointCloud</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>=&quot;&quot;, bool do_render=true, bool convert_to_world_coordinate=false)</td></tr>
 <tr class="memdesc:a30c516d461ffb55fd702daac31eb6e78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to capture and save local point cloud.  <a href="classcloudViewer_1_1visualization_1_1Visualizer.html#a30c516d461ffb55fd702daac31eb6e78">More...</a><br /></td></tr>
 <tr class="separator:a30c516d461ffb55fd702daac31eb6e78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad55fd8184b3601d3eba29ebf81c37eaa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ad55fd8184b3601d3eba29ebf81c37eaa">CaptureRenderOption</a> (const std::string &amp;filename=&quot;&quot;)</td></tr>
+<tr class="memitem:ad55fd8184b3601d3eba29ebf81c37eaa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ad55fd8184b3601d3eba29ebf81c37eaa">CaptureRenderOption</a> (const std::string &amp;<a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>=&quot;&quot;)</td></tr>
 <tr class="separator:ad55fd8184b3601d3eba29ebf81c37eaa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a938b23473e192a9a3933152beb87ff4c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a938b23473e192a9a3933152beb87ff4c">ResetViewPoint</a> (bool reset_bounding_box=false)</td></tr>
 <tr class="memdesc:a938b23473e192a9a3933152beb87ff4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to reset view point.  <a href="classcloudViewer_1_1visualization_1_1Visualizer.html#a938b23473e192a9a3933152beb87ff4c">More...</a><br /></td></tr>
@@ -452,13 +463,13 @@ Protected Attributes</h2></td></tr>
   </dd>
 </dl>
 
-<p>Reimplemented in <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a2199267d894afc3f84c82d9f430b4bec">cloudViewer::visualization::VisualizerWithVertexSelection</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#ad9be234de9d39af39e986a6d9b1e985e">cloudViewer::visualization::VisualizerWithEditing</a>.</p>
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#a8e64235d56560d3ab3e4f16b804ea8ad">PyVisualizer&lt; VisualizerBase &gt;</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a2199267d894afc3f84c82d9f430b4bec">cloudViewer::visualization::VisualizerWithVertexSelection</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#ad9be234de9d39af39e986a6d9b1e985e">cloudViewer::visualization::VisualizerWithEditing</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00336">336</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="CVTypes_8h_source.html#l00154">CV_TYPES::BBOX</a>, <a class="el" href="CVTypes_8h_source.html#l00179">CV_TYPES::CUSTOM_H_OBJECT</a>, <a class="el" href="CVTypes_8h_source.html#l00109">CV_TYPES::FACET</a>, <a class="el" href="Visualizer_8h_source.html#l00287">geometry_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00291">geometry_renderer_ptrs_</a>, <a class="el" href="CVTypes_8h_source.html#l00150">CV_TYPES::HALF_EDGE_MESH</a>, <a class="el" href="CVTypes_8h_source.html#l00156">CV_TYPES::IMAGE2</a>, <a class="el" href="Visualizer_8h_source.html#l00271">is_initialized_</a>, <a class="el" href="CVTypes_8h_source.html#l00152">CV_TYPES::LINESET</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="CVTypes_8h_source.html#l00105">CV_TYPES::MESH</a>, <a class="el" href="CVTypes_8h_source.html#l00155">CV_TYPES::ORIENTED_BBOX</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="CVTypes_8h_source.html#l00157">CV_TYPES::POINT_OCTREE2</a>, <a class="el" href="CVTypes_8h_source.html#l00112">CV_TYPES::POLY_LINE</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00151">ResetViewPoint()</a>, <a class="el" href="CVTypes_8h_source.html#l00158">CV_TYPES::RGBD_IMAGE</a>, <a class="el" href="CVTypes_8h_source.html#l00149">CV_TYPES::TETRA_MESH</a>, <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="CVTypes_8h_source.html#l00151">CV_TYPES::VOXEL_GRID</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, and <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00031">cloudViewer::VisualizerForAlignment::AddSourceAndTarget()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, <a class="el" href="ViewGeometry_8cpp_source.html#l00049">main()</a>, and <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -485,13 +496,13 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a068528685f4c3672cf58c0c121592c46">cloudViewer::visualization::VisualizerWithVertexSelection</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a51fd41ec26e6ba7b38febadb0aef8db5">cloudViewer::visualization::VisualizerWithEditing</a>.</p>
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#a8d4f9a32e8ff7f5b7aec458e535cbbab">PyVisualizer&lt; VisualizerBase &gt;</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a068528685f4c3672cf58c0c121592c46">cloudViewer::visualization::VisualizerWithVertexSelection</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a51fd41ec26e6ba7b38febadb0aef8db5">cloudViewer::visualization::VisualizerWithEditing</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00271">271</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00304">coordinate_frame_mesh_ptr_</a>, <a class="el" href="Visualizer_8h_source.html#l00306">coordinate_frame_mesh_renderer_ptr_</a>, <a class="el" href="classccMesh.html#a340ac85e02c96e97993784cc7b147a34">ccMesh::CreateCoordinateFrame()</a>, <a class="el" href="ViewControl_8h_source.html#l00131">cloudViewer::visualization::ViewControl::GetBoundingBox()</a>, <a class="el" href="Visualizer_8h_source.html#l00175">GetViewControl()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="Visualizer_8h_source.html#l00294">utility_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00297">utility_renderer_ptrs_</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00142">cloudViewer::visualization::VisualizerWithEditing::BuildUtilities()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00278">cloudViewer::visualization::VisualizerWithVertexSelection::BuildUtilities()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00142">cloudViewer::visualization::VisualizerWithEditing::BuildUtilities()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00278">cloudViewer::visualization::VisualizerWithVertexSelection::BuildUtilities()</a>, <a class="el" href="ManuallyAlignPointCloud_8cpp_source.html#l00057">main()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>.</p>
 
 </div>
 </div>
@@ -521,6 +532,8 @@ Protected Attributes</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="VisualizerRender_8cpp_source.html#l00278">278</a> of file <a class="el" href="VisualizerRender_8cpp_source.html">VisualizerRender.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, and <a class="el" href="CV__db_2include_2Image_8h_source.html#l00219">cloudViewer::geometry::Image::width_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -567,7 +580,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="VisualizerRender_8cpp_source.html#l00342">342</a> of file <a class="el" href="VisualizerRender_8cpp_source.html">VisualizerRender.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#aa6877a3b1468f7e8ad6958a035087d6d">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00219">cloudViewer::geometry::Image::width_</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>, and <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>.</p>
+<p class="reference">References <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="Helper_8cpp_source.html#l00286">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00219">cloudViewer::geometry::Image::width_</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>, and <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, and <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00067">cloudViewer::visualization::VisualizerWithCustomAnimation::Play()</a>.</p>
 
@@ -617,7 +630,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="VisualizerRender_8cpp_source.html#l00425">425</a> of file <a class="el" href="VisualizerRender_8cpp_source.html">VisualizerRender.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="PointCloudTpl_8h_source.html#l00246">cloudViewer::PointCloudTpl&lt; T &gt;::addPoint()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#aa6877a3b1468f7e8ad6958a035087d6d">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="GLHelper_8cpp_source.html#l00097">cloudViewer::visualization::gl_util::Unproject()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00219">cloudViewer::geometry::Image::width_</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>, and <a class="el" href="io_2PointCloudIO_8cpp_source.html#l00191">cloudViewer::io::WritePointCloud()</a>.</p>
+<p class="reference">References <a class="el" href="PointCloudTpl_8h_source.html#l00246">cloudViewer::PointCloudTpl&lt; T &gt;::addPoint()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="Helper_8cpp_source.html#l00286">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="GLHelper_8cpp_source.html#l00097">cloudViewer::visualization::gl_util::Unproject()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00219">cloudViewer::geometry::Image::width_</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>, and <a class="el" href="cloudViewer_2io_2PointCloudIO_8cpp_source.html#l00191">cloudViewer::io::WritePointCloud()</a>.</p>
 
 </div>
 </div>
@@ -639,7 +652,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="VisualizerRender_8cpp_source.html#l00507">507</a> of file <a class="el" href="VisualizerRender_8cpp_source.html">VisualizerRender.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="namespacecloudViewer_1_1utility.html#aa6877a3b1468f7e8ad6958a035087d6d">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="Visualizer_8h_source.html#l00284">render_option_ptr_</a>, and <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>.</p>
+<p class="reference">References <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="Helper_8cpp_source.html#l00286">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="Visualizer_8h_source.html#l00284">render_option_ptr_</a>, and <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>.</p>
 
@@ -672,6 +685,8 @@ Protected Attributes</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="VisualizerRender_8cpp_source.html#l00201">201</a> of file <a class="el" href="VisualizerRender_8cpp_source.html">VisualizerRender.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -712,7 +727,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="VisualizerRender_8cpp_source.html#l00232">232</a> of file <a class="el" href="VisualizerRender_8cpp_source.html">VisualizerRender.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#aa6877a3b1468f7e8ad6958a035087d6d">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>, and <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>.</p>
+<p class="reference">References <a class="el" href="CV__db_2include_2Image_8h_source.html#l00122">cloudViewer::geometry::Image::BytesPerLine()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00227">cloudViewer::geometry::Image::data_</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="Helper_8cpp_source.html#l00286">cloudViewer::utility::GetCurrentTimeStamp()</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00221">cloudViewer::geometry::Image::height_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="CV__db_2include_2Image_8h_source.html#l00109">cloudViewer::geometry::Image::Prepare()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00094">Render()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible()</a>, and <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, and <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00067">cloudViewer::visualization::VisualizerWithCustomAnimation::Play()</a>.</p>
 
@@ -746,6 +761,8 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00287">geometry_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00291">geometry_renderer_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00271">is_initialized_</a>, <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
+
 </div>
 </div>
 <a id="aaa8e373e3f73a7e0116e296537e26386"></a>
@@ -769,7 +786,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, and <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00067">cloudViewer::visualization::VisualizerWithCustomAnimation::Play()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00067">cloudViewer::visualization::VisualizerWithCustomAnimation::Play()</a>, and <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -903,7 +920,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8cpp_source.html#l00065">cloudViewer::visualization::GLFWContext::GetInstance()</a>, <a class="el" href="Visualizer_8h_source.html#l00256">glfw_context_</a>, <a class="el" href="Visualizer_8cpp_source.html#l00076">cloudViewer::visualization::GLFWContext::GLFWErrorCallback()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00034">InitOpenGL()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00260">InitRenderOption()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00254">InitViewControl()</a>, <a class="el" href="Visualizer_8h_source.html#l00271">is_initialized_</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00072">MouseButtonCallback()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00029">MouseMoveCallback()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00067">MouseScrollCallback()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00265">UpdateWindowTitle()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>, <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>, <a class="el" href="Visualizer_8h_source.html#l00253">window_name_</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00350">WindowCloseCallback()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00017">WindowRefreshCallback()</a>, and <a class="el" href="VisualizerCallback_8cpp_source.html#l00024">WindowResizeCallback()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00199">cloudViewer::visualization::DrawGeometriesWithEditing()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, and <a class="el" href="DrawGeometry_8cpp_source.html#l00228">cloudViewer::visualization::DrawGeometriesWithVertexSelection()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00199">cloudViewer::visualization::DrawGeometriesWithEditing()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00228">cloudViewer::visualization::DrawGeometriesWithVertexSelection()</a>, <a class="el" href="ManuallyAlignPointCloud_8cpp_source.html#l00057">main()</a>, and <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -929,7 +946,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00256">glfw_context_</a>, <a class="el" href="Visualizer_8h_source.html#l00271">is_initialized_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="Visualizer_8h_source.html#l00272">vao_id_</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00199">cloudViewer::visualization::DrawGeometriesWithEditing()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00228">cloudViewer::visualization::DrawGeometriesWithVertexSelection()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00087">~Visualizer()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00199">cloudViewer::visualization::DrawGeometriesWithEditing()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00228">cloudViewer::visualization::DrawGeometriesWithVertexSelection()</a>, <a class="el" href="ManuallyAlignPointCloud_8cpp_source.html#l00057">main()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00087">~Visualizer()</a>.</p>
 
 </div>
 </div>
@@ -962,7 +979,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00284">render_option_ptr_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00313">cloudViewer::visualization::VisualizerWithVertexSelection::GetDepth()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00177">cloudViewer::visualization::VisualizerWithEditing::PickPoint()</a>, and <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00353">cloudViewer::visualization::VisualizerWithVertexSelection::PickPoints()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00031">cloudViewer::VisualizerForAlignment::AddSourceAndTarget()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00313">cloudViewer::visualization::VisualizerWithVertexSelection::GetDepth()</a>, <a class="el" href="ManuallyAlignPointCloud_8cpp_source.html#l00057">main()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00177">cloudViewer::visualization::VisualizerWithEditing::PickPoint()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00353">cloudViewer::visualization::VisualizerWithVertexSelection::PickPoints()</a>, and <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -995,7 +1012,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00271">BuildUtilities()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00313">cloudViewer::visualization::VisualizerWithVertexSelection::GetDepth()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00177">cloudViewer::visualization::VisualizerWithEditing::PickPoint()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00353">cloudViewer::visualization::VisualizerWithVertexSelection::PickPoints()</a>, and <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00644">cloudViewer::visualization::VisualizerWithEditing::SaveCroppingResult()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00271">BuildUtilities()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00313">cloudViewer::visualization::VisualizerWithVertexSelection::GetDepth()</a>, <a class="el" href="ViewGeometry_8cpp_source.html#l00049">main()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00177">cloudViewer::visualization::VisualizerWithEditing::PickPoint()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00353">cloudViewer::visualization::VisualizerWithVertexSelection::PickPoints()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, and <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00644">cloudViewer::visualization::VisualizerWithEditing::SaveCroppingResult()</a>.</p>
 
 </div>
 </div>
@@ -1026,6 +1043,8 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00253">window_name_</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
+
 </div>
 </div>
 <a id="a32239aedafda17f3f894b171a616a01c"></a>
@@ -1051,9 +1070,13 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#ac43d48546c55385acfb059b6dc873131">PyVisualizer&lt; VisualizerBase &gt;</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00481">481</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00287">geometry_ptrs_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ViewGeometry_8cpp_source.html#l00049">main()</a>.</p>
 
 </div>
 </div>
@@ -1187,7 +1210,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00503">ToggleFullScreen()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00503">ToggleFullScreen()</a>.</p>
 
 </div>
 </div>
@@ -1243,13 +1266,13 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a2a71f6f8bf0797765fdc2e9a5cf5bf81">cloudViewer::visualization::VisualizerWithVertexSelection</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a4f2dcafc7216be5c5020daed6a004895">cloudViewer::visualization::VisualizerWithKeyCallback</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a410707d16daa003e0e312f1e2daadf05">cloudViewer::visualization::VisualizerWithEditing</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a7210bcbfed8acb94d2e45c85c15d74ce">cloudViewer::visualization::VisualizerWithCustomAnimation</a>.</p>
+<p>Reimplemented in <a class="el" href="classcloudViewer_1_1VisualizerForAlignment.html#ae094f78824ccf56a461aa6c5dbd02031">cloudViewer::VisualizerForAlignment</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a2a71f6f8bf0797765fdc2e9a5cf5bf81">cloudViewer::visualization::VisualizerWithVertexSelection</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a4f2dcafc7216be5c5020daed6a004895">cloudViewer::visualization::VisualizerWithKeyCallback</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a410707d16daa003e0e312f1e2daadf05">cloudViewer::visualization::VisualizerWithEditing</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a7210bcbfed8acb94d2e45c85c15d74ce">cloudViewer::visualization::VisualizerWithCustomAnimation</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">106</a> of file <a class="el" href="VisualizerCallback_8cpp_source.html">VisualizerCallback.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="VisualizerRender_8cpp_source.html#l00342">CaptureDepthImage()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00507">CaptureRenderOption()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00232">CaptureScreenImage()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00305">Close()</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3eacb5feb1b7314637725a2e73bdc9f7295">cloudViewer::visualization::RenderOption::Color</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00184">CopyViewStatusFromClipboard()</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00169">CopyViewStatusToClipboard()</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea7a1920d61156abc05a60135aefe8bc67">cloudViewer::visualization::RenderOption::Default</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a1ed20cdaf908d035742517539e93815aa00907e54416b1b54fccb313858347fe1">cloudViewer::visualization::RenderOption::FlatShade</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1ColorMap.html#a2e193534d52a562f33fa7dbe905b9f5ba994ae1d9731cebe455aff211bcb25b93">cloudViewer::visualization::ColorMap::Gray</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1ColorMap.html#a2e193534d52a562f33fa7dbe905b9f5ba4194726ee334e1085d93e002837b73f0">cloudViewer::visualization::ColorMap::Hot</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="Visualizer_8cpp_source.html#l00511">IsFullScreen()</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1ColorMap.html#a2e193534d52a562f33fa7dbe905b9f5ba252ce7e80c1ffd8c2558ad9b13d4ca2b">cloudViewer::visualization::ColorMap::Jet</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea960b44c579bc2f6818d2daaf9e4c16f0">cloudViewer::visualization::RenderOption::Normal</a>, <a class="el" href="Visualizer_8cpp_source.html#l00515">PrintVisualizerHelp()</a>, <a class="el" href="Visualizer_8h_source.html#l00284">render_option_ptr_</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00151">ResetViewPoint()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00483">SetFullScreen()</a>, <a class="el" href="ColorMap_8cpp_source.html#l00088">cloudViewer::visualization::SetGlobalColorMap()</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1ColorMap.html#a2e193534d52a562f33fa7dbe905b9f5ba95884b5232ea01d055768613fc84f242">cloudViewer::visualization::ColorMap::Summer</a>, <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1ColorMap.html#a2e193534d52a562f33fa7dbe905b9f5bab18e66b41efd9a3df1a7bc8758da1883">cloudViewer::visualization::ColorMap::Winter</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3eaba3e3b288b005bf644924d6b3ef0475f">cloudViewer::visualization::RenderOption::XCoordinate</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea9e68f9058b927ba1f3b7177e5ce8ef31">cloudViewer::visualization::RenderOption::YCoordinate</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea9427669d5b1a69f184a0ddcba8090571">cloudViewer::visualization::RenderOption::ZCoordinate</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00095">CreateVisualizerWindow()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00158">cloudViewer::visualization::VisualizerWithCustomAnimation::KeyPressCallback()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00260">cloudViewer::visualization::VisualizerWithEditing::KeyPressCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00066">cloudViewer::visualization::VisualizerWithKeyCallback::KeyPressCallback()</a>, and <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00470">cloudViewer::visualization::VisualizerWithVertexSelection::KeyPressCallback()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00095">CreateVisualizerWindow()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00158">cloudViewer::visualization::VisualizerWithCustomAnimation::KeyPressCallback()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00260">cloudViewer::visualization::VisualizerWithEditing::KeyPressCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00066">cloudViewer::visualization::VisualizerWithKeyCallback::KeyPressCallback()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00470">cloudViewer::visualization::VisualizerWithVertexSelection::KeyPressCallback()</a>, and <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00044">cloudViewer::VisualizerForAlignment::KeyPressCallback()</a>.</p>
 
 </div>
 </div>
@@ -1456,7 +1479,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00260">animation_callback_func_</a>, <a class="el" href="Visualizer_8h_source.html#l00265">animation_callback_func_in_loop_</a>, <a class="el" href="Visualizer_8h_source.html#l00271">is_initialized_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>, and <a class="el" href="VisualizerCallback_8cpp_source.html#l00017">WindowRefreshCallback()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ManuallyAlignPointCloud_8cpp_source.html#l00057">main()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>.</p>
 
 </div>
 </div>
@@ -1483,13 +1506,13 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#acbd9e934aecdeea92c1fc2a65bcac716">cloudViewer::visualization::VisualizerWithVertexSelection</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#aae64ab3508848b311cc2406b15cd2df5">cloudViewer::visualization::VisualizerWithKeyCallback</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#af87fbebe469d4ff4ff62bc42c966db9b">cloudViewer::visualization::VisualizerWithEditing</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#aa7bfb0116516bf0cd6de8dccdc4d17ff">cloudViewer::visualization::VisualizerWithCustomAnimation</a>.</p>
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#a42181b5a49688c91579e3d33699cad63">PyVisualizer&lt; VisualizerBase &gt;</a>, <a class="el" href="classcloudViewer_1_1VisualizerForAlignment.html#ae83806d6e8a83f8fc1ae72dc2409bcd0">cloudViewer::VisualizerForAlignment</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#acbd9e934aecdeea92c1fc2a65bcac716">cloudViewer::visualization::VisualizerWithVertexSelection</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#aae64ab3508848b311cc2406b15cd2df5">cloudViewer::visualization::VisualizerWithKeyCallback</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#af87fbebe469d4ff4ff62bc42c966db9b">cloudViewer::visualization::VisualizerWithEditing</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#aa7bfb0116516bf0cd6de8dccdc4d17ff">cloudViewer::visualization::VisualizerWithCustomAnimation</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00515">515</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00026">cloudViewer::visualization::VisualizerWithCustomAnimation::PrintVisualizerHelp()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00107">cloudViewer::visualization::VisualizerWithEditing::PrintVisualizerHelp()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00021">cloudViewer::visualization::VisualizerWithKeyCallback::PrintVisualizerHelp()</a>, and <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00250">cloudViewer::visualization::VisualizerWithVertexSelection::PrintVisualizerHelp()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00026">cloudViewer::visualization::VisualizerWithCustomAnimation::PrintVisualizerHelp()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00107">cloudViewer::visualization::VisualizerWithEditing::PrintVisualizerHelp()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00021">cloudViewer::visualization::VisualizerWithKeyCallback::PrintVisualizerHelp()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00250">cloudViewer::visualization::VisualizerWithVertexSelection::PrintVisualizerHelp()</a>, and <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00016">cloudViewer::VisualizerForAlignment::PrintVisualizerHelp()</a>.</p>
 
 </div>
 </div>
@@ -1522,7 +1545,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00260">animation_callback_func_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, and <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00067">cloudViewer::visualization::VisualizerWithCustomAnimation::Play()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00067">cloudViewer::visualization::VisualizerWithCustomAnimation::Play()</a>, and <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -1576,6 +1599,8 @@ Protected Attributes</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00433">433</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00287">geometry_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00291">geometry_renderer_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00271">is_initialized_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="VisualizerRender_8cpp_source.html#l00151">ResetViewPoint()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>, <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -1634,7 +1659,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00304">coordinate_frame_mesh_ptr_</a>, <a class="el" href="Visualizer_8h_source.html#l00306">coordinate_frame_mesh_renderer_ptr_</a>, <a class="el" href="classccMesh.html#a340ac85e02c96e97993784cc7b147a34">ccMesh::CreateCoordinateFrame()</a>, <a class="el" href="Visualizer_8h_source.html#l00287">geometry_ptrs_</a>, <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>, and <a class="el" href="Visualizer_8h_source.html#l00281">view_control_ptr_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00336">AddGeometry()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00032">cloudViewer::visualization::VisualizerWithEditing::AddGeometry()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00082">cloudViewer::visualization::VisualizerWithVertexSelection::AddGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00254">InitViewControl()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00151">cloudViewer::visualization::VisualizerWithCustomAnimation::InitViewControl()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00247">cloudViewer::visualization::VisualizerWithEditing::InitViewControl()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00435">cloudViewer::visualization::VisualizerWithVertexSelection::InitViewControl()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00433">RemoveGeometry()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00336">AddGeometry()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00032">cloudViewer::visualization::VisualizerWithEditing::AddGeometry()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00082">cloudViewer::visualization::VisualizerWithVertexSelection::AddGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00254">InitViewControl()</a>, <a class="el" href="VisualizerWithCustomAnimation_8cpp_source.html#l00151">cloudViewer::visualization::VisualizerWithCustomAnimation::InitViewControl()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00247">cloudViewer::visualization::VisualizerWithEditing::InitViewControl()</a>, <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00435">cloudViewer::visualization::VisualizerWithVertexSelection::InitViewControl()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00044">cloudViewer::VisualizerForAlignment::KeyPressCallback()</a>, <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00248">cloudViewer::VisualizerForAlignment::LoadSessionFromFile()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00433">RemoveGeometry()</a>.</p>
 
 </div>
 </div>
@@ -1660,7 +1685,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00260">animation_callback_func_</a>, <a class="el" href="Visualizer_8h_source.html#l00265">animation_callback_func_in_loop_</a>, <a class="el" href="Visualizer_8cpp_source.html#l00271">BuildUtilities()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00323">PollEvents()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00479">UpdateRender()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00265">UpdateWindowTitle()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00310">WaitEvents()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00199">cloudViewer::visualization::DrawGeometriesWithEditing()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, and <a class="el" href="DrawGeometry_8cpp_source.html#l00228">cloudViewer::visualization::DrawGeometriesWithVertexSelection()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="DrawGeometry_8cpp_source.html#l00032">cloudViewer::visualization::DrawGeometries()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00130">cloudViewer::visualization::DrawGeometriesWithAnimationCallback()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00084">cloudViewer::visualization::DrawGeometriesWithCustomAnimation()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00199">cloudViewer::visualization::DrawGeometriesWithEditing()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00163">cloudViewer::visualization::DrawGeometriesWithKeyCallbacks()</a>, <a class="el" href="DrawGeometry_8cpp_source.html#l00228">cloudViewer::visualization::DrawGeometriesWithVertexSelection()</a>, <a class="el" href="ManuallyCropGeometry_8cpp_source.html#l00029">main()</a>, and <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
 
 </div>
 </div>
@@ -1694,7 +1719,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="UVUnwrapping_8cpp_source.html#l00040">NULL</a>, <a class="el" href="Visualizer_8h_source.html#l00259">saved_window_pos_</a>, <a class="el" href="Visualizer_8h_source.html#l00258">saved_window_size_</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00503">ToggleFullScreen()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00503">ToggleFullScreen()</a>.</p>
 
 </div>
 </div>
@@ -1725,6 +1750,8 @@ Protected Attributes</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Visualizer_8cpp_source.html#l00511">IsFullScreen()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00483">SetFullScreen()</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>.</p>
+
 </div>
 </div>
 <a id="a0198fffe8d0a895aa4d35095b66ff79f"></a>
@@ -1754,13 +1781,13 @@ Protected Attributes</h2></td></tr>
 <p>Function to update geometry. </p>
 <p>This function must be called when geometry has been changed. Otherwise the behavior of <a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html" title="The main Visualizer class.">Visualizer</a> is undefined. If called without an argument, updates all geometries, otherwise only updates the geometry specified. </p>
 
-<p>Reimplemented in <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a9da0c98e53265f552508b4a9e01a8472">cloudViewer::visualization::VisualizerWithVertexSelection</a>.</p>
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#a25f096c9c672df671a8b5d5ab2e84ac9">PyVisualizer&lt; VisualizerBase &gt;</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a9da0c98e53265f552508b4a9e01a8472">cloudViewer::visualization::VisualizerWithVertexSelection</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00466">466</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00291">geometry_renderer_ptrs_</a>, <a class="el" href="Visualizer_8cpp_source.html#l00479">UpdateRender()</a>, and <a class="el" href="Visualizer_8h_source.html#l00252">window_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00336">AddGeometry()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00032">cloudViewer::visualization::VisualizerWithEditing::AddGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00456">ClearGeometries()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00260">cloudViewer::visualization::VisualizerWithEditing::KeyPressCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00066">cloudViewer::visualization::VisualizerWithKeyCallback::KeyPressCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00117">cloudViewer::visualization::VisualizerWithKeyCallback::MouseButtonCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00091">cloudViewer::visualization::VisualizerWithKeyCallback::MouseMoveCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00104">cloudViewer::visualization::VisualizerWithKeyCallback::MouseScrollCallback()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00433">RemoveGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>, and <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00162">cloudViewer::visualization::VisualizerWithVertexSelection::UpdateGeometry()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="Visualizer_8cpp_source.html#l00336">AddGeometry()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00032">cloudViewer::visualization::VisualizerWithEditing::AddGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00456">ClearGeometries()</a>, <a class="el" href="VisualizerCallback_8cpp_source.html#l00106">KeyPressCallback()</a>, <a class="el" href="VisualizerWithEditing_8cpp_source.html#l00260">cloudViewer::visualization::VisualizerWithEditing::KeyPressCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00066">cloudViewer::visualization::VisualizerWithKeyCallback::KeyPressCallback()</a>, <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00044">cloudViewer::VisualizerForAlignment::KeyPressCallback()</a>, <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00248">cloudViewer::VisualizerForAlignment::LoadSessionFromFile()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00117">cloudViewer::visualization::VisualizerWithKeyCallback::MouseButtonCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00091">cloudViewer::visualization::VisualizerWithKeyCallback::MouseMoveCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00104">cloudViewer::visualization::VisualizerWithKeyCallback::MouseScrollCallback()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00433">RemoveGeometry()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>, and <a class="el" href="VisualizerWithVertexSelection_8cpp_source.html#l00162">cloudViewer::visualization::VisualizerWithVertexSelection::UpdateGeometry()</a>.</p>
 
 </div>
 </div>
@@ -1789,11 +1816,13 @@ Protected Attributes</h2></td></tr>
 
 <p>Function to inform render needed to be updated. </p>
 
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#a4fce2ef68901ab1198abe33befac4556">PyVisualizer&lt; VisualizerBase &gt;</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00479">479</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Visualizer_8h_source.html#l00270">is_redraw_required_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00066">cloudViewer::visualization::VisualizerWithKeyCallback::KeyPressCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00117">cloudViewer::visualization::VisualizerWithKeyCallback::MouseButtonCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00091">cloudViewer::visualization::VisualizerWithKeyCallback::MouseMoveCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00104">cloudViewer::visualization::VisualizerWithKeyCallback::MouseScrollCallback()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00066">cloudViewer::visualization::VisualizerWithKeyCallback::KeyPressCallback()</a>, <a class="el" href="VisualizerForAlignment_8cpp_source.html#l00248">cloudViewer::VisualizerForAlignment::LoadSessionFromFile()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00117">cloudViewer::visualization::VisualizerWithKeyCallback::MouseButtonCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00091">cloudViewer::visualization::VisualizerWithKeyCallback::MouseMoveCallback()</a>, <a class="el" href="VisualizerWithKeyCallback_8cpp_source.html#l00104">cloudViewer::visualization::VisualizerWithKeyCallback::MouseScrollCallback()</a>, <a class="el" href="visualizer_8cpp_source.html#l00042">cloudViewer::visualization::pybind_visualizer()</a>, <a class="el" href="Visualizer_8cpp_source.html#l00289">Run()</a>, and <a class="el" href="Visualizer_8cpp_source.html#l00466">UpdateGeometry()</a>.</p>
 
 </div>
 </div>
@@ -1820,7 +1849,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a91a29fc1ca61da883b1aa6b9bc2fb93e">cloudViewer::visualization::VisualizerWithVertexSelection</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a8248aff2923db664b1a9e5a38a6d8675">cloudViewer::visualization::VisualizerWithEditing</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a34419fa34d32e96e013e3ac1b2d48b44">cloudViewer::visualization::VisualizerWithCustomAnimation</a>.</p>
+<p>Reimplemented in <a class="el" href="classPyVisualizer.html#a86a45ec2b5953c1729d6cecf930dd490">PyVisualizer&lt; VisualizerBase &gt;</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html#a91a29fc1ca61da883b1aa6b9bc2fb93e">cloudViewer::visualization::VisualizerWithVertexSelection</a>, <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html#a8248aff2923db664b1a9e5a38a6d8675">cloudViewer::visualization::VisualizerWithEditing</a>, and <a class="el" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a34419fa34d32e96e013e3ac1b2d48b44">cloudViewer::visualization::VisualizerWithCustomAnimation</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="Visualizer_8cpp_source.html#l00265">265</a> of file <a class="el" href="Visualizer_8cpp_source.html">Visualizer.cpp</a>.</p>
 
@@ -2585,7 +2614,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1visualization.html">visualization</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1visualization_1_1Visualizer.html">Visualizer</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:37 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:17 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

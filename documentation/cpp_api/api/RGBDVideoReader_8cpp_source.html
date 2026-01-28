@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('RGBDVideoReader_8cpp_source.html','');
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RGBDVideoReader_8h.html">cloudViewer/t/io/sensor/RGBDVideoReader.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;IJsonConvertibleIO.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;ImageIO.h&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
@@ -168,15 +177,15 @@ $(document).ready(function(){initNavTree('RGBDVideoReader_8cpp_source.html','');
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;}</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#a222fe4b6a877d9d31c5107985eb55051">   80</a></span>&#160;std::unique_ptr&lt;RGBDVideoReader&gt; <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#a222fe4b6a877d9d31c5107985eb55051">RGBDVideoReader::Create</a>(</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">const</span> std::string &amp;filename) {</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#ifdef BUILD_LIBREALSENSE</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1utility.html#a58297f7ef8ed2ecb26b4674b2256fa93">utility::ToLower</a>(filename).compare(filename.length() - 4, 4, <span class="stringliteral">&quot;.bag&quot;</span>) ==</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1utility.html#a58297f7ef8ed2ecb26b4674b2256fa93">utility::ToLower</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>).<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a1189db82348127d8f58c1d89ae7c45af">compare</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.length() - 4, 4, <span class="stringliteral">&quot;.bag&quot;</span>) ==</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        0) {</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keyword">auto</span> reader = std::make_unique&lt;RSBagReader&gt;();</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        reader-&gt;Open(filename);</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        reader-&gt;Open(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">return</span> reader;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Unsupported file format for {}.&quot;</span>, filename);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Unsupported file format for {}.&quot;</span>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    }</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(</div>
@@ -186,6 +195,8 @@ $(document).ready(function(){initNavTree('RGBDVideoReader_8cpp_source.html','');
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;}  <span class="comment">// namespace t</span></div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_a1189db82348127d8f58c1d89ae7c45af"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#a1189db82348127d8f58c1d89ae7c45af">compare</a></div><div class="ttdeci">Compare compare</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00050">PointCloudIO.cpp:50</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFilamentResourceManager_8cpp_html_a1acaede49c416601578d9bbd854f5106"><div class="ttname"><a href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a></div><div class="ttdeci">filament::Texture::InternalFormat format</div><div class="ttdef"><b>Definition:</b> <a href="FilamentResourceManager_8cpp_source.html#l00181">FilamentResourceManager.cpp:181</a></div></div>
 <div class="ttc" id="aFileSystem_8h_html"><div class="ttname"><a href="FileSystem_8h.html">FileSystem.h</a></div></div>
 <div class="ttc" id="aRGBDVideoReader_8h_html"><div class="ttname"><a href="RGBDVideoReader_8h.html">RGBDVideoReader.h</a></div></div>
@@ -201,22 +212,22 @@ $(document).ready(function(){initNavTree('RGBDVideoReader_8cpp_source.html','');
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoReader_html_adb64464e5f42b5a134665c208fc50477"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#adb64464e5f42b5a134665c208fc50477">cloudViewer::t::io::RGBDVideoReader::GetTimestamp</a></div><div class="ttdeci">virtual uint64_t GetTimestamp() const =0</div><div class="ttdoc">Get current timestamp (in us).</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoReader_html_ae5a1d657de9ead6333bc39ac5a0971e7"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#ae5a1d657de9ead6333bc39ac5a0971e7">cloudViewer::t::io::RGBDVideoReader::IsOpened</a></div><div class="ttdeci">virtual bool IsOpened() const =0</div><div class="ttdoc">Check If the RGBD video file is opened.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoReader_html_ae9582706ee29214905c661f41646cc21"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#ae9582706ee29214905c661f41646cc21">cloudViewer::t::io::RGBDVideoReader::GetFilename</a></div><div class="ttdeci">virtual std::string GetFilename() const =0</div><div class="ttdoc">Return filename being read.</div></div>
-<div class="ttc" id="acore_2include_2Helper_8h_html"><div class="ttname"><a href="core_2include_2Helper_8h.html">Helper.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a1bab392a3210598a6eb903f135f2a28a"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage</a></div><div class="ttdeci">bool WriteImage(const std::string &amp;filename, const geometry::Image &amp;image, int quality=kCloudViewerImageIODefaultQuality)</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a951051b314ead9560c6efe818162cdbc"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a951051b314ead9560c6efe818162cdbc">cloudViewer::io::WriteIJsonConvertibleToJSON</a></div><div class="ttdeci">bool WriteIJsonConvertibleToJSON(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a5d9af191de0dc57cce1e8eb1693d2534"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">cloudViewer::utility::filesystem::MakeDirectoryHierarchy</a></div><div class="ttdeci">bool MakeDirectoryHierarchy(const std::string &amp;directory)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a58297f7ef8ed2ecb26b4674b2256fa93"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a58297f7ef8ed2ecb26b4674b2256fa93">cloudViewer::utility::ToLower</a></div><div class="ttdeci">std::string ToLower(const std::string &amp;s)</div><div class="ttdoc">Convert string to the lower case.</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a5d9af191de0dc57cce1e8eb1693d2534"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">cloudViewer::utility::filesystem::MakeDirectoryHierarchy</a></div><div class="ttdeci">bool MakeDirectoryHierarchy(const std::string &amp;directory)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00499">FileSystem.cpp:499</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a58297f7ef8ed2ecb26b4674b2256fa93"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a58297f7ef8ed2ecb26b4674b2256fa93">cloudViewer::utility::ToLower</a></div><div class="ttdeci">std::string ToLower(const std::string &amp;s)</div><div class="ttdoc">Convert string to the lower case.</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00242">Helper.cpp:242</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_69f8b599ab6abe28788f204e4ebacea4.html">sensor</a></li><li class="navelem"><a class="el" href="RGBDVideoReader_8cpp.html">RGBDVideoReader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

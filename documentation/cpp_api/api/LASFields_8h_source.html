@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -252,7 +261,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                            (lasFields[j].<a class="code" href="structLasField.html#a3add9213e894b2676b53803f1194d819">maxValue</a> != -1.0 &amp;&amp;</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                             sfMax &gt; lasFields[j].<a class="code" href="structLasField.html#a3add9213e894b2676b53803f1194d819">maxValue</a>))  <span class="comment">// outbounds?</span></div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                        {</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;                                    QString(<span class="stringliteral">&quot;[LAS] Found a &#39;%1&#39; scalar field, &quot;</span></div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                                            <span class="stringliteral">&quot;but its values outbound LAS &quot;</span></div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;                                            <span class="stringliteral">&quot;specifications (%2-%3)...&quot;</span>)</div>
@@ -274,7 +283,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                }</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            }</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(<span class="stringliteral">&quot;[LasField::GetLASFields] Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;[LasField::GetLASFields] Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        }</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160; </div>
@@ -458,7 +467,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="ttc" id="aLASFields_8h_html_ab7ea819eb92d49c89ab8a66ca769e4bf"><div class="ttname"><a href="LASFields_8h.html#ab7ea819eb92d49c89ab8a66ca769e4bf">LAS_POINT_FORMAT_META_DATA</a></div><div class="ttdeci">static const char LAS_POINT_FORMAT_META_DATA[]</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00031">LASFields.h:31</a></div></div>
 <div class="ttc" id="aLASFields_8h_html_addc4276f1ebf1307fc6a619840552250"><div class="ttname"><a href="LASFields_8h.html#addc4276f1ebf1307fc6a619840552250">LAS_GLOBAL_ENCODING_META_DATA</a></div><div class="ttdeci">static const char LAS_GLOBAL_ENCODING_META_DATA[]</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00032">LASFields.h:32</a></div></div>
 <div class="ttc" id="aLASFields_8h_html_af25f04cd75b6f0d6372197bc63e5ad56"><div class="ttname"><a href="LASFields_8h.html#af25f04cd75b6f0d6372197bc63e5ad56">LAS_VERSION_MINOR_META_DATA</a></div><div class="ttdeci">static const char LAS_VERSION_MINOR_META_DATA[]</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00030">LASFields.h:30</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccScalarField_html"><div class="ttname"><a href="classccScalarField.html">ccScalarField</a></div><div class="ttdoc">A scalar field associated to display-related parameters.</div><div class="ttdef"><b>Definition:</b> <a href="ecvScalarField_8h_source.html#l00019">ecvScalarField.h:20</a></div></div>
 <div class="ttc" id="aclassccScalarField_html_a8406a8407958481b0b3531244ef90e54"><div class="ttname"><a href="classccScalarField.html#a8406a8407958481b0b3531244ef90e54">ccScalarField::getGlobalShift</a></div><div class="ttdeci">double getGlobalShift() const</div><div class="ttdoc">Returns the global shift (if any)</div><div class="ttdef"><b>Definition:</b> <a href="ecvScalarField_8h_source.html#l00234">ecvScalarField.h:234</a></div></div>
@@ -496,7 +505,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_888642a0b7b06326fd06f56c68febd6b.html">qPDALIO</a></li><li class="navelem"><a class="el" href="dir_4643caca16d2b24ab8979d5dba840b1d.html">include</a></li><li class="navelem"><a class="el" href="LASFields_8h.html">LASFields.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -105,14 +114,14 @@ $(document).ready(function(){initNavTree('Polyline_8h_source.html',''); initResi
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1Polyline.html">   20</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a> <a class="code" href="classcloudViewer_1_1Polyline.html">Polyline</a> : <span class="keyword">public</span> <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a> {</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1Polyline.html#afe4c93f1fe4168dbd52fcc6b60129f10">   23</a></span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classcloudViewer_1_1Polyline.html#afe4c93f1fe4168dbd52fcc6b60129f10">Polyline</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* associatedCloud);</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classcloudViewer_1_1Polyline.html">Polyline</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* associatedCloud);</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1Polyline.html#aef5efb4232143501ba0b7f1ccd213fc0">   26</a></span>&#160;    <span class="keyword">inline</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1Polyline.html#aef5efb4232143501ba0b7f1ccd213fc0">isClosed</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_isClosed; }</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1Polyline.html#a3b23bb6bff92f4f6a74540c1dbd44734">   29</a></span>&#160;    <span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1Polyline.html#a3b23bb6bff92f4f6a74540c1dbd44734">setClosed</a>(<span class="keywordtype">bool</span> state) { m_isClosed = state; }</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="comment">// inherited from ReferenceCloud</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1Polyline.html#a35d952ca2caf3fcc87a559cca60531a9">   32</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1Polyline.html#a35d952ca2caf3fcc87a559cca60531a9">clear</a>(<span class="keywordtype">bool</span> unusedParam = <span class="keyword">true</span>) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordtype">void</span> clear(<span class="keywordtype">bool</span> unusedParam = <span class="keyword">true</span>) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1Polyline.html#afc59d5a1ab70ce0c000238f8fd9ad2e3">   36</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1Polyline.html#afc59d5a1ab70ce0c000238f8fd9ad2e3">m_isClosed</a>;</div>
@@ -123,20 +132,18 @@ $(document).ready(function(){initNavTree('Polyline_8h_source.html',''); initResi
 <div class="ttc" id="aReferenceCloud_8h_html"><div class="ttname"><a href="ReferenceCloud_8h.html">ReferenceCloud.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericIndexedCloudPersist_html"><div class="ttname"><a href="classcloudViewer_1_1GenericIndexedCloudPersist.html">cloudViewer::GenericIndexedCloudPersist</a></div><div class="ttdoc">A generic 3D point cloud with index-based and presistent access to points.</div><div class="ttdef"><b>Definition:</b> <a href="GenericIndexedCloudPersist_8h_source.html#l00018">GenericIndexedCloudPersist.h:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html">cloudViewer::Polyline</a></div><div class="ttdoc">A simple polyline class.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00020">Polyline.h:20</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1Polyline_html_a35d952ca2caf3fcc87a559cca60531a9"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#a35d952ca2caf3fcc87a559cca60531a9">cloudViewer::Polyline::clear</a></div><div class="ttdeci">void clear(bool unusedParam=true) override</div><div class="ttdoc">Clears the cloud.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html_a3b23bb6bff92f4f6a74540c1dbd44734"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#a3b23bb6bff92f4f6a74540c1dbd44734">cloudViewer::Polyline::setClosed</a></div><div class="ttdeci">void setClosed(bool state)</div><div class="ttdoc">Sets whether the polyline is closed or not.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00029">Polyline.h:29</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html_aef5efb4232143501ba0b7f1ccd213fc0"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#aef5efb4232143501ba0b7f1ccd213fc0">cloudViewer::Polyline::isClosed</a></div><div class="ttdeci">bool isClosed() const</div><div class="ttdoc">Returns whether the polyline is closed or not.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00026">Polyline.h:26</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Polyline_html_afc59d5a1ab70ce0c000238f8fd9ad2e3"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#afc59d5a1ab70ce0c000238f8fd9ad2e3">cloudViewer::Polyline::m_isClosed</a></div><div class="ttdeci">bool m_isClosed</div><div class="ttdoc">Closing state.</div><div class="ttdef"><b>Definition:</b> <a href="Polyline_8h_source.html#l00036">Polyline.h:36</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1Polyline_html_afe4c93f1fe4168dbd52fcc6b60129f10"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#afe4c93f1fe4168dbd52fcc6b60129f10">cloudViewer::Polyline::Polyline</a></div><div class="ttdeci">Polyline(GenericIndexedCloudPersist *associatedCloud)</div><div class="ttdoc">Polyline constructor.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="Polyline_8h.html">Polyline.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

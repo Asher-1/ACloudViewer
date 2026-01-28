@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -91,16 +100,21 @@ $(document).ready(function(){initNavTree('classPCVCommand.html',''); initResizab
 
 <p>This is the complete list of members for <a class="el" href="classPCVCommand.html">PCVCommand</a>, including all inherited members.</p>
 <table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="classPCVCommand.html#ac476c23b682749fa05cfa8484c943dcd">PCVCommand</a>()</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classPCVCommand.html#ad4a480fb965dc254da84b6ccffc5c2c5">Process</a>(const ccHObject::Container &amp;candidates, const std::vector&lt; CCVector3 &gt; &amp;rays, bool meshIsClosed, unsigned resolution, ecvProgressDialog *progressDlg=nullptr, ecvMainAppInterface *app=nullptr)</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classPCVCommand.html#a3ef2083df1cbca20f3aac68617e72f1d">process</a>(ccCommandLineInterface &amp;cmd) override</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classPCVCommand.html#aa2a774af4ae85255c13d2f769720fc31">~PCVCommand</a>() override=default</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html#a7a0032026a888378a199ba0d18264e55">Command</a>(const QString &amp;name, const QString &amp;keyword)</td><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html#a0441c0ea36dae3f5a2875937c4a1a551">m_keyword</a></td><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html#a5b66e901b409664d011cdff9fbeeb1d8">m_name</a></td><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="classPCVCommand.html#ac476c23b682749fa05cfa8484c943dcd">PCVCommand</a>()</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPCVCommand.html#ad4a480fb965dc254da84b6ccffc5c2c5">Process</a>(const ccHObject::Container &amp;candidates, const std::vector&lt; CCVector3 &gt; &amp;rays, bool meshIsClosed, unsigned resolution, ecvProgressDialog *progressDlg=nullptr, ecvMainAppInterface *app=nullptr)</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classPCVCommand.html#a3ef2083df1cbca20f3aac68617e72f1d">process</a>(ccCommandLineInterface &amp;cmd) override</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"><span class="mlabel">virtual</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">Shared</a> typedef</td><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html#ae24d3e20a438a1508be560524d35569b">~Command</a>()=default</td><td class="entry"><a class="el" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></td><td class="entry"><span class="mlabel">virtual</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classPCVCommand.html#aa2a774af4ae85255c13d2f769720fc31">~PCVCommand</a>() override=default</td><td class="entry"><a class="el" href="classPCVCommand.html">PCVCommand</a></td><td class="entry"></td></tr>
 </table></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:14 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -289,7 +298,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Initialize a hash map given a key and a value dtype and element shape. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00020">20</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00020">20</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 </div>
 </div>
@@ -350,9 +359,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Initialize a hash map given a key dtype and element shape, and a vector of value dtypes and element shapes for values stored in structure of arrays. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00034">34</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00034">34</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00319">Init()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00319">Init()</a>.</p>
 
 </div>
 </div>
@@ -401,9 +410,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Parallel activate arrays of keys in <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a>. Specifically useful for large value elements (e.g., a 3D tensor), where we can do in-place management after activation. Return: output_buf_indices and output_masks, their roles are the same as in Insert. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00094">94</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00094">94</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -440,9 +451,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Same as Activate, but takes output_buf_indices and output_masks as input. If their shapes and types match, reallocation is not needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00166">166</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00166">166</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00256">Size()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00256">Size()</a>.</p>
 
 </div>
 </div>
@@ -463,7 +474,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Return number of elements per bucket. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00313">313</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00313">313</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 </div>
 </div>
@@ -491,11 +502,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00383">383</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00383">383</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="Dtype_8h_source.html#l00059">cloudViewer::core::Dtype::ByteSize()</a>, <a class="el" href="SmallVector_8h_source.html#l00779">cloudViewer::core::SmallVectorImpl&lt; T &gt;::erase()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, and <a class="el" href="SizeVector_8cpp_source.html#l00108">cloudViewer::core::SizeVector::NumElements()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00198">Erase()</a>, <a class="el" href="HashMap_8cpp_source.html#l00182">Find()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00198">Erase()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00182">Find()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
 
 </div>
 </div>
@@ -523,11 +534,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00357">357</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00357">357</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00198">Erase()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00182">Find()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00198">Erase()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00182">Find()</a>.</p>
 
 </div>
 </div>
@@ -565,11 +576,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00364">364</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00364">364</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
 
 </div>
 </div>
@@ -597,11 +608,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00398">398</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00398">398</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="Dtype_8h_source.html#l00059">cloudViewer::core::Dtype::ByteSize()</a>, <a class="el" href="SmallVector_8h_source.html#l00779">cloudViewer::core::SmallVectorImpl&lt; T &gt;::erase()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01127">cloudViewer::core::Tensor::GetShape()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, and <a class="el" href="SizeVector_8cpp_source.html#l00108">cloudViewer::core::SizeVector::NumElements()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
 
 </div>
 </div>
@@ -622,7 +633,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Clear stored map without reallocating the buffers. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00217">217</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00217">217</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 </div>
 </div>
@@ -643,9 +654,11 @@ Protected Member Functions</h2></td></tr>
 
 <p>Clone the hash map with buffers. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00227">227</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00227">227</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00264">GetDevice()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00264">GetDevice()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -666,7 +679,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Parallel erase an array of keys in <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a>. Return: output_masks stores if the erase is a success or failure (key not found all already erased in another thread). </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00106">106</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00106">106</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -697,9 +712,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Same as Erase, but takes output_masks as input. If its shape and type matches, reallocation is not needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00198">198</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00198">198</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00383">CheckKeyCompatibility()</a>, <a class="el" href="HashMap_8cpp_source.html#l00357">CheckKeyLength()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00383">CheckKeyCompatibility()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00357">CheckKeyLength()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>.</p>
 
 </div>
 </div>
@@ -720,9 +735,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Parallel find an array of keys in <a class="el" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a>. Return: output_buf_indices, its role is the same as in Insert. Return: output_masks stores if the finding is a success or failure (key not found). </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00100">100</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00100">100</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -759,9 +776,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Same as Find, but takes output_buf_indices and output_masks as input. If their shapes and types match, reallocation is not needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00182">182</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00182">182</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00383">CheckKeyCompatibility()</a>, <a class="el" href="HashMap_8cpp_source.html#l00357">CheckKeyLength()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00383">CheckKeyCompatibility()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00357">CheckKeyLength()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>.</p>
 
 </div>
 </div>
@@ -781,9 +798,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Parallel collect all indices in the buffer corresponding to the active entries in the hash map. Return output_buf_indices, collected buffer indices. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00112">112</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00112">112</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>, <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>, and <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>, and <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
 
 </div>
 </div>
@@ -804,9 +821,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Same as GetActiveIndices, but takes output_buf_indices as input. If its shape and type matches, reallocation is not needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00209">209</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00209">209</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>.</p>
+<p class="reference">References <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>.</p>
 
 </div>
 </div>
@@ -827,7 +844,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Get the number of buckets of the internal hash map. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00260">260</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00260">260</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 </div>
 </div>
@@ -848,9 +865,9 @@ Protected Member Functions</h2></td></tr>
 
 <p>Get the capacity of the hash map. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00258">258</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">258</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="HashMap_8cpp_source.html#l00266">GetKeyTensor()</a>, <a class="el" href="HashMap_8cpp_source.html#l00294">GetValueTensor()</a>, <a class="el" href="HashMap_8cpp_source.html#l00275">GetValueTensors()</a>, <a class="el" href="HashMap_8cpp_source.html#l00152">Insert()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00266">GetKeyTensor()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00294">GetValueTensor()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00275">GetValueTensors()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00152">Insert()</a>, <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>.</p>
 
 </div>
 </div>
@@ -906,9 +923,9 @@ Protected Member Functions</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1core_1_1IsDevice.html#acba2214889f10507ad42af17b3421f0c">cloudViewer::core::IsDevice</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00264">264</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00264">264</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00227">Clone()</a>, <a class="el" href="HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>, <a class="el" href="HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00227">Clone()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>, <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>.</p>
 
 </div>
 </div>
@@ -957,11 +974,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Get the key tensor buffer to be used along with buf_indices and masks. Example: <a class="el" href="classcloudViewer_1_1core_1_1HashMap.html#a9b2843e575299e048fd66245bbdc800c">GetKeyTensor()</a>.IndexGet({buf_indices.To(core::Int64).IndexGet{masks}}) </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00266">266</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00266">266</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="ShapeUtil_8cpp_source.html#l00214">cloudViewer::core::shape_util::DefaultStrides()</a>, <a class="el" href="HashMap_8cpp_source.html#l00258">GetCapacity()</a>, and <a class="el" href="SmallVector_8h_source.html#l00853">cloudViewer::core::SmallVectorImpl&lt; T &gt;::insert()</a>.</p>
+<p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="ShapeUtil_8cpp_source.html#l00214">cloudViewer::core::shape_util::DefaultStrides()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">GetCapacity()</a>, and <a class="el" href="SmallVector_8h_source.html#l00853">cloudViewer::core::SmallVectorImpl&lt; T &gt;::insert()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>, <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>, and <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>, and <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
 
 </div>
 </div>
@@ -982,11 +999,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Get the i-th value tensor buffer to be used along with buf_indices and masks. Example: GetValueTensors(0).IndexGet({buf_indices.To(core::Int64).IndexGet{masks}}) </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00294">294</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00294">294</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="ShapeUtil_8cpp_source.html#l00214">cloudViewer::core::shape_util::DefaultStrides()</a>, <a class="el" href="Tensor_8h_source.html#l01168">cloudViewer::core::Tensor::GetBlob()</a>, <a class="el" href="HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="SmallVector_8h_source.html#l00853">cloudViewer::core::SmallVectorImpl&lt; T &gt;::insert()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>.</p>
+<p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="ShapeUtil_8cpp_source.html#l00214">cloudViewer::core::shape_util::DefaultStrides()</a>, <a class="el" href="Tensor_8h_source.html#l01168">cloudViewer::core::Tensor::GetBlob()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="SmallVector_8h_source.html#l00853">cloudViewer::core::SmallVectorImpl&lt; T &gt;::insert()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="VoxelBlockGrid_8cpp_source.html#l00054">cloudViewer::t::geometry::ConstructTensorMap()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="VoxelBlockGrid_8cpp_source.html#l00054">cloudViewer::t::geometry::ConstructTensorMap()</a>, and <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -1006,11 +1023,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Get the values tensor buffers to be used along with buf_indices and masks. Example: <a class="el" href="classcloudViewer_1_1core_1_1HashMap.html#a411d7ca0af7f0abc68e7d1c2985de94c">GetValueTensors()</a>[0].IndexGet({buf_indices.To(core::Int64).IndexGet{masks}}) </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00275">275</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00275">275</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="ShapeUtil_8cpp_source.html#l00214">cloudViewer::core::shape_util::DefaultStrides()</a>, <a class="el" href="HashMap_8cpp_source.html#l00258">GetCapacity()</a>, and <a class="el" href="SmallVector_8h_source.html#l00853">cloudViewer::core::SmallVectorImpl&lt; T &gt;::insert()</a>.</p>
+<p class="reference">References <a class="el" href="SmallVector_8h_source.html#l00301">cloudViewer::core::SmallVectorTemplateCommon&lt; T, typename &gt;::begin()</a>, <a class="el" href="ShapeUtil_8cpp_source.html#l00214">cloudViewer::core::shape_util::DefaultStrides()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">GetCapacity()</a>, and <a class="el" href="SmallVector_8h_source.html#l00853">cloudViewer::core::SmallVectorImpl&lt; T &gt;::insert()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>, <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>, and <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>, and <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
 
 </div>
 </div>
@@ -1054,11 +1071,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00319">319</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00319">319</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="DeviceHashBackend_8cpp_source.html#l00018">cloudViewer::core::CreateDeviceHashBackend()</a>, <a class="el" href="Dtype_8h_source.html#l00061">cloudViewer::core::Dtype::GetDtypeCode()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="SizeVector_8cpp_source.html#l00108">cloudViewer::core::SizeVector::NumElements()</a>, and <a class="el" href="classcloudViewer_1_1core_1_1Dtype.html#aa1dde376eef2a26431ff4a3830964d3baec0fc0100c4fc1ce4eea230c3dc10360">cloudViewer::core::Dtype::Undefined</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00034">HashMap()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00034">HashMap()</a>.</p>
 
 </div>
 </div>
@@ -1089,9 +1106,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Parallel insert arrays of keys and a structure of value arrays in Tensors. Return: output_buf_indices and output_masks, their role are the same as in single value Insert interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00087">87</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00087">87</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00080">Insert()</a>, and <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00080">Insert()</a>, and <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>.</p>
 
 </div>
 </div>
@@ -1134,9 +1151,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Same as Insert with a SoA of values, but takes output_buf_indices and output_masks as input. If their shapes and types match, reallocation is not needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00152">152</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00152">152</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00256">Size()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00256">Size()</a>.</p>
 
 </div>
 </div>
@@ -1167,11 +1184,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Parallel insert arrays of keys and values in Tensors. Return: output_buf_indices stores buffer indices that access buffer tensors obtained from <a class="el" href="classcloudViewer_1_1core_1_1HashMap.html#a9b2843e575299e048fd66245bbdc800c">GetKeyTensor()</a> and <a class="el" href="classcloudViewer_1_1core_1_1HashMap.html#af1f5586f07f3b596e1a1fda007fc84db">GetValueTensor()</a> via advanced indexing. NOTE: output_buf_indices are stored in Int32. A conversion to Int64 is required for further indexing. Return: output_masks stores if the insertion is a success or failure (key already exists). </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00080">80</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00080">80</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00087">Insert()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00229">To()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00087">Insert()</a>, <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">To()</a>.</p>
 
 </div>
 </div>
@@ -1214,9 +1231,9 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Same as Insert with a single value array, but takes output_buf_indices and output_masks as input. If their shapes and types match, reallocation is not needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00144">144</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00144">144</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00080">Insert()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00080">Insert()</a>.</p>
 
 </div>
 </div>
@@ -1272,11 +1289,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00118">118</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">118</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00383">CheckKeyCompatibility()</a>, <a class="el" href="HashMap_8cpp_source.html#l00364">CheckKeyValueLengthCompatibility()</a>, <a class="el" href="HashMap_8cpp_source.html#l00398">CheckValueCompatibility()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00383">CheckKeyCompatibility()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00364">CheckKeyValueLengthCompatibility()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00398">CheckValueCompatibility()</a>, <a class="el" href="Tensor_8h_source.html#l01144">cloudViewer::core::Tensor::GetDataPtr()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00429">PrepareIndicesOutput()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00438">PrepareMasksOutput()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="HashMap_8cpp_source.html#l00152">Insert()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00152">Insert()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>.</p>
 
 </div>
 </div>
@@ -1305,9 +1322,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Load active keys and values from a npz file that contains 'key', 'n_values', 'value_{:03d}'. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00223">223</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00223">223</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="HashMapIO_8cpp_source.html#l00048">cloudViewer::t::io::ReadHashMap()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -1328,7 +1347,7 @@ Protected Member Functions</h2></td></tr>
 
 <p>Return size / bucket_count. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00317">317</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00317">317</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 </div>
 </div>
@@ -1366,11 +1385,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00429">429</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00429">429</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="HashMap_8cpp_source.html#l00264">GetDevice()</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, and <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>.</p>
+<p class="reference">References <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00264">GetDevice()</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, <a class="el" href="Dtype_8cpp_source.html#l00046">cloudViewer::core::Int32</a>, and <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00182">Find()</a>, <a class="el" href="HashMap_8cpp_source.html#l00209">GetActiveIndices()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00182">Find()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00209">GetActiveIndices()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
 
 </div>
 </div>
@@ -1408,11 +1427,11 @@ Protected Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00438">438</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00438">438</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="Dtype_8cpp_source.html#l00052">cloudViewer::core::Bool</a>, <a class="el" href="HashMap_8cpp_source.html#l00264">GetDevice()</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>.</p>
+<p class="reference">References <a class="el" href="Dtype_8cpp_source.html#l00052">cloudViewer::core::Bool</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00264">GetDevice()</a>, <a class="el" href="Tensor_8cpp_source.html#l01435">cloudViewer::core::Tensor::GetDevice()</a>, <a class="el" href="Tensor_8h_source.html#l01164">cloudViewer::core::Tensor::GetDtype()</a>, <a class="el" href="Tensor_8h_source.html#l01125">cloudViewer::core::Tensor::GetLength()</a>, and <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00198">Erase()</a>, <a class="el" href="HashMap_8cpp_source.html#l00182">Find()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00198">Erase()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00182">Find()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>.</p>
 
 </div>
 </div>
@@ -1434,11 +1453,11 @@ Protected Member Functions</h2></td></tr>
 
 <p>Reserve the internal hash map with the given capacity by rehashing. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00048">48</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">48</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="HashMap_8cpp_source.html#l00112">GetActiveIndices()</a>, <a class="el" href="HashMap_8cpp_source.html#l00266">GetKeyTensor()</a>, <a class="el" href="HashMap_8cpp_source.html#l00275">GetValueTensors()</a>, <a class="el" href="Tensor_8cpp_source.html#l00905">cloudViewer::core::Tensor::IndexGet()</a>, <a class="el" href="HashMap_8cpp_source.html#l00118">InsertImpl()</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="HashMap_8cpp_source.html#l00256">Size()</a>, and <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>.</p>
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00112">GetActiveIndices()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00266">GetKeyTensor()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00275">GetValueTensors()</a>, <a class="el" href="Tensor_8cpp_source.html#l00905">cloudViewer::core::Tensor::IndexGet()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00118">InsertImpl()</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00256">Size()</a>, and <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00166">Activate()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00152">Insert()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00152">Insert()</a>, and <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -1459,9 +1478,11 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Save active keys and values to a npz file at 'key' and 'value_{:03d}'. The number of values is stored in 'n_values'. The file name should end with 'npz', otherwise 'npz' will be added as an extension. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00219">219</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00219">219</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="HashMapIO_8cpp_source.html#l00017">cloudViewer::t::io::WriteHashMap()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
@@ -1482,9 +1503,9 @@ Protected Member Functions</h2></td></tr>
 
 <p>Get the size (number of active entries) of the hash map. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00256">256</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00256">256</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="HashMap_8cpp_source.html#l00152">Insert()</a>, and <a class="el" href="HashMap_8cpp_source.html#l00048">Reserve()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00166">Activate()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00152">Insert()</a>, <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>, and <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00048">Reserve()</a>.</p>
 
 </div>
 </div>
@@ -1516,17 +1537,17 @@ Protected Member Functions</h2></td></tr>
 
 <p>Convert the hash map to another device. </p>
 
-<p class="definition">Definition at line <a class="el" href="HashMap_8cpp_source.html#l00229">229</a> of file <a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00229">229</a> of file <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="VtkUtils_8cpp_source.html#l00074">copy</a>, <a class="el" href="HashMap_8cpp_source.html#l00112">GetActiveIndices()</a>, <a class="el" href="HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="HashMap_8cpp_source.html#l00264">GetDevice()</a>, <a class="el" href="HashMap_8cpp_source.html#l00266">GetKeyTensor()</a>, <a class="el" href="HashMap_8cpp_source.html#l00275">GetValueTensors()</a>, <a class="el" href="Tensor_8cpp_source.html#l00905">cloudViewer::core::Tensor::IndexGet()</a>, <a class="el" href="HashMap_8cpp_source.html#l00080">Insert()</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, and <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>.</p>
+<p class="reference">References <a class="el" href="VtkUtils_8cpp_source.html#l00074">copy</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00112">GetActiveIndices()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00258">GetCapacity()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00264">GetDevice()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00266">GetKeyTensor()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00275">GetValueTensors()</a>, <a class="el" href="Tensor_8cpp_source.html#l00905">cloudViewer::core::Tensor::IndexGet()</a>, <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00080">Insert()</a>, <a class="el" href="Dtype_8cpp_source.html#l00047">cloudViewer::core::Int64</a>, and <a class="el" href="Tensor_8cpp_source.html#l00739">cloudViewer::core::Tensor::To()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="HashMap_8cpp_source.html#l00227">Clone()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html#l00227">Clone()</a>, and <a class="el" href="hashmap_8cpp_source.html#l00053">cloudViewer::core::pybind_core_hashmap()</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/libs/cloudViewer/core/hashmap/<a class="el" href="HashMap_8h_source.html">HashMap.h</a></li>
-<li>/root/ACloudViewer/libs/cloudViewer/core/hashmap/<a class="el" href="HashMap_8cpp_source.html">HashMap.cpp</a></li>
+<li>/root/ACloudViewer/libs/cloudViewer/core/hashmap/<a class="el" href="cloudViewer_2core_2hashmap_2HashMap_8cpp_source.html">HashMap.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1534,7 +1555,7 @@ Protected Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1core.html">core</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1core_1_1HashMap.html">HashMap</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -119,7 +128,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    QImage <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordflow">if</span> (inScene-&gt;mNumTextures == 0) {</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Scene requests embedded texture, but &quot;</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                               <span class="stringliteral">&quot;there are none&quot;</span>));</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>;</div>
@@ -131,7 +140,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordtype">bool</span> isCompressed = (texture-&gt;mHeight == 0);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordflow">if</span> (!isCompressed) {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Uncompressed embedded textures not &quot;</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                               <span class="stringliteral">&quot;yet implemented&quot;</span>));</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>;</div>
@@ -151,10 +160,10 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                           <span class="keyword">const</span> QString &amp;inTexturePath) {</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    QString cPath = QStringLiteral(<span class="stringliteral">&quot;%1/%2&quot;</span>).arg(inPath, inTexturePath);</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    cPath = <a class="code" href="classCVTools.html#a25a2423e5e32da1d8c8ddb51d24054bc">CVTools::ToNativeSeparators</a>(cPath);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    cPath = <a class="code" href="classCVTools.html#af2ed7481f82bc355f004dcf6517f6a2c">CVTools::ToNativeSeparators</a>(cPath);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">if</span> (!QFile::exists(cPath)) {</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Material not found: &#39;%1&#39;&quot;</span>)</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Material not found: &#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                               .arg(cPath));</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordflow">return</span> {};</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    }</div>
@@ -163,7 +172,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    QImage <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a> = reader.read();</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.isNull()) {</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                QString(<span class="stringliteral">&quot;[_getTextureFromFile] failed to read image %1, %2&quot;</span>)</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                        .arg(cPath)</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                        .arg(reader.errorString()));</div>
@@ -223,7 +232,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keyword">auto</span> newMaterial = <a class="code" href="classccMaterial.html#aaf8b5b4031b2a75fb4b2fa5f41acd2ab">ccMaterial::Shared</a>(<span class="keyword">new</span> <a class="code" href="classccMaterial.html">ccMaterial</a>(cName.C_Str()));</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Creating material &#39;%1&#39;&quot;</span>)</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Creating material &#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                              .arg(newMaterial-&gt;getName()));</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    <span class="comment">// ========================================================================</span></div>
@@ -242,8 +251,8 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                <span class="keyword">auto</span> match = sRegExp.match(texturePath.C_Str());</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                QImage <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>;</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                QString path =</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                        <a class="code" href="classCVTools.html#a25a2423e5e32da1d8c8ddb51d24054bc">CVTools::ToNativeSeparators</a>(QStringLiteral(<span class="stringliteral">&quot;%1/%2&quot;</span>).arg(</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                QString <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> =</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                        <a class="code" href="classCVTools.html#af2ed7481f82bc355f004dcf6517f6a2c">CVTools::ToNativeSeparators</a>(QStringLiteral(<span class="stringliteral">&quot;%1/%2&quot;</span>).arg(</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                                inPath, texturePath.C_Str()));</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;                <span class="comment">// Try different loading methods</span></div>
@@ -251,7 +260,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                    <span class="comment">// Embedded texture by index</span></div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                    <span class="keyword">const</span> QString cIndex = match.captured(<span class="stringliteral">&quot;index&quot;</span>);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                    <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a> = _getEmbeddedTexture(cIndex.toUInt(), inScene);</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!QFile::exists(path) &amp;&amp; inScene-&gt;HasTextures()) {</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (!QFile::exists(<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>) &amp;&amp; inScene-&gt;HasTextures()) {</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                    <span class="comment">// Find embedded texture by name</span></div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> cIndex = 0;</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; inScene-&gt;mNumTextures; ++i) {</div>
@@ -269,23 +278,23 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                <span class="keywordflow">if</span> (!<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.isNull()) {</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                    <span class="comment">// Use new multi-texture API</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                    <span class="keywordflow">if</span> (newMaterial-&gt;loadAndSetTextureMap(ccType, path)) {</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                        <a class="code" href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a>(</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                    <span class="keywordflow">if</span> (newMaterial-&gt;loadAndSetTextureMap(ccType, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>)) {</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                        <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                                QStringLiteral(</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                                        <span class="stringliteral">&quot;[qMeshIO] Loaded %1 texture: %2&quot;</span>)</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                                        .arg(typeName, path));</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                                        .arg(typeName, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>));</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                    }</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                    <span class="comment">// For diffuse, also set legacy texture for backward</span></div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                    <span class="comment">// compatibility</span></div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                    <span class="keywordflow">if</span> (ccType == <a class="code" href="classccMaterial.html#a1e48033c20bb5b2f25d7937871d80f69a84a9d8c4d046cae1f87af62f45f07e68">ccMaterial::TextureMapType::DIFFUSE</a>) {</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                        newMaterial-&gt;setTexture(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, path, <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                        newMaterial-&gt;setTexture(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                    }</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                            QStringLiteral(</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                                    <span class="stringliteral">&quot;[qMeshIO] Failed to load %1 texture: %2&quot;</span>)</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                                    .arg(typeName, path));</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                                    .arg(typeName, <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>));</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                }</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;            }</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        }</div>
@@ -336,13 +345,13 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> = QStringLiteral(<span class="stringliteral">&quot;Mesh&quot;</span>);</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    }</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Mesh &#39;%1&#39; has %2 verts &amp; %3 faces&quot;</span>)</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Mesh &#39;%1&#39; has %2 verts &amp; %3 faces&quot;</span>)</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                         .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>,</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                              QLocale::system().<a class="code" href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">toString</a>(inMesh-&gt;mNumVertices),</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                              QLocale::system().toString(inMesh-&gt;mNumFaces)));</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <span class="keywordflow">if</span> (!inMesh-&gt;HasPositions() || !inMesh-&gt;HasFaces()) {</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                QStringLiteral(</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                        <span class="stringliteral">&quot;[qMeshIO] Mesh &#39;%1&#39; does not have vertices or faces&quot;</span>)</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                        .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>));</div>
@@ -366,7 +375,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    <span class="keywordflow">if</span> (hasVertexColors) {</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        <span class="keywordtype">bool</span> allocated = newPC-&gt;reserveTheRGBTable();</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        <span class="keywordflow">if</span> (!allocated) {</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                    QStringLiteral(</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                            <span class="stringliteral">&quot;[qMeshIO] Cannot allocate colors for mesh &#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                            .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>));</div>
@@ -378,7 +387,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keywordtype">bool</span> allocated = newPC-&gt;reserveTheNormsTable();</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        <span class="keywordflow">if</span> (!allocated) {</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                    QStringLiteral(</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                            <span class="stringliteral">&quot;[qMeshIO] Cannot allocate normals for mesh &#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                            .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>));</div>
@@ -403,7 +412,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordflow">if</span> (!allocated) {</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            <span class="keyword">delete</span> texCoords;</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            hasTextureCoordinates = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Cannot allocate texture &quot;</span></div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Cannot allocate texture &quot;</span></div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                                          <span class="stringliteral">&quot;coordinates for mesh &#39;%1&#39;&quot;</span>)</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                                   .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>));</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        } <span class="keywordflow">else</span> {</div>
@@ -423,11 +432,11 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160; </div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        <span class="comment">// colors</span></div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">if</span> (newPC-&gt;hasColors()) {</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            <span class="keyword">const</span> aiColor4D &amp;<a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a> = inMesh-&gt;mColors[0][i];</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            <span class="keyword">const</span> aiColor4D &amp;<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a> = inMesh-&gt;mColors[0][i];</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160; </div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;            <a class="code" href="classecvColor_1_1RgbTpl.html">ecvColor::Rgb</a> <a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a><span class="keyword">&gt;</span>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.r * 255),</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                                <span class="keyword">static_cast&lt;</span><a class="code" href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a><span class="keyword">&gt;</span>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.g * 255),</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                                <span class="keyword">static_cast&lt;</span><a class="code" href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a><span class="keyword">&gt;</span>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.b * 255));</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;            <a class="code" href="classecvColor_1_1RgbTpl.html">ecvColor::Rgb</a> <a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a><span class="keyword">&gt;</span>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.r * 255),</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                                <span class="keyword">static_cast&lt;</span><a class="code" href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a><span class="keyword">&gt;</span>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.g * 255),</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                                <span class="keyword">static_cast&lt;</span><a class="code" href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a><span class="keyword">&gt;</span>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.b * 255));</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            newPC-&gt;addRGBColor(<a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>);</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        }</div>
@@ -460,29 +469,29 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        newMesh-&gt;reserve(inMesh-&gt;mNumFaces);</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; inMesh-&gt;mNumFaces; ++i) {</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            <span class="keyword">const</span> aiFace &amp;<a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a> = inMesh-&gt;mFaces[i];</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            <span class="keyword">const</span> aiFace &amp;<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a> = inMesh-&gt;mFaces[i];</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160; </div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mNumIndices != 3) {</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mNumIndices != 3) {</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;                <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;            }</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;            newMesh-&gt;addTriangle(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[0], <a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[1],</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;                                 <a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[2]);</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;            newMesh-&gt;addTriangle(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[0], <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[1],</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;                                 <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[2]);</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;            <span class="comment">// texture coordinates</span></div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;            <span class="keywordflow">if</span> (hasTextureCoordinates) {</div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;                newMesh-&gt;addTriangleMtlIndex(0);</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160; </div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                newMesh-&gt;addTriangleTexCoordIndexes(</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[0]),</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[1]),</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[2]));</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[0]),</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[1]),</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                        <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a>.mIndices[2]));</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;            }</div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        }</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;    }</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    <span class="keywordflow">if</span> (newMesh-&gt;size() == 0) {</div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;                QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Mesh &#39;%1&#39; does not have any faces&quot;</span>)</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                        .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>));</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
@@ -496,7 +505,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    newMesh-&gt;setVisible(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160; </div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    <span class="keywordflow">if</span> (!newPC-&gt;hasNormals()) {</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;                QStringLiteral(<span class="stringliteral">&quot;[qMeshIO] Mesh &#39;%1&#39; does not have normals - &quot;</span></div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;                               <span class="stringliteral">&quot;will compute them per vertex automatically!&quot;</span>)</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;                        .arg(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>));</div>
@@ -615,10 +624,10 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aIoUtils_8h_html"><div class="ttname"><a href="IoUtils_8h.html">IoUtils.h</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_a9f2bdbc25c84bbcce78166ad1047ee06"><div class="ttname"><a href="classCVLog.html#a9f2bdbc25c84bbcce78166ad1047ee06">CVLog::PrintDebug</a></div><div class="ttdeci">static bool PrintDebug(const char *format,...)</div><div class="ttdoc">Same as Print, but works only in Debug mode.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
-<div class="ttc" id="aclassCVTools_html_a25a2423e5e32da1d8c8ddb51d24054bc"><div class="ttname"><a href="classCVTools.html#a25a2423e5e32da1d8c8ddb51d24054bc">CVTools::ToNativeSeparators</a></div><div class="ttdeci">static QString ToNativeSeparators(const QString &amp;path)</div></div>
+<div class="ttc" id="aclassCVLog_html_a235aef414cd0e85f7463aba5041b9c9f"><div class="ttname"><a href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a></div><div class="ttdeci">static bool PrintDebug(const char *format,...)</div><div class="ttdoc">Same as Print, but works only in Debug mode.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00153">CVLog.cpp:153</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
+<div class="ttc" id="aclassCVTools_html_af2ed7481f82bc355f004dcf6517f6a2c"><div class="ttname"><a href="classCVTools.html#af2ed7481f82bc355f004dcf6517f6a2c">CVTools::ToNativeSeparators</a></div><div class="ttdeci">static QString ToNativeSeparators(const QString &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="CVTools_8cpp_source.html#l00045">CVTools.cpp:45</a></div></div>
 <div class="ttc" id="aclassTextureCoordsContainer_html"><div class="ttname"><a href="classTextureCoordsContainer.html">TextureCoordsContainer</a></div><div class="ttdoc">Array of 2D texture coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvAdvancedTypes_8h_source.html#l00151">ecvAdvancedTypes.h:151</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccArray_html_a2334ffbe8d1d031a32a98458daf5019c"><div class="ttname"><a href="classccArray.html#a2334ffbe8d1d031a32a98458daf5019c">ccArray::isAllocated</a></div><div class="ttdeci">bool isAllocated() const</div><div class="ttdoc">Returns whether some memory has been allocated or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvArray_8h_source.html#l00067">ecvArray.h:67</a></div></div>
@@ -645,19 +654,20 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbaTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbaTpl.html">ecvColor::RgbaTpl</a></div><div class="ttdoc">RGBA color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00145">ecvColorTypes.h:145</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbaTpl_html_a233b3804223147cd3983bda8fe695087"><div class="ttname"><a href="classecvColor_1_1RgbaTpl.html#a233b3804223147cd3983bda8fe695087">ecvColor::RgbaTpl::r</a></div><div class="ttdeci">Type r</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00150">ecvColorTypes.h:150</a></div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a567da34081d0e17107546aa55edd6c04"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a></div><div class="ttdeci">double colors[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00053">TriangleMeshIO.cpp:53</a></div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a634516ba67a2cfe0937c5cee4bae658b"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a></div><div class="ttdeci">std::vector&lt; unsigned int &gt; face</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00050">TriangleMeshIO.cpp:50</a></div></div>
 <div class="ttc" id="aecvColorTypes_8h_html_acdee13170502cf82fda04cd1407b3756"><div class="ttname"><a href="ecvColorTypes_8h.html#acdee13170502cf82fda04cd1407b3756">ColorCompType</a></div><div class="ttdeci">unsigned char ColorCompType</div><div class="ttdoc">Default color components type (R,G and B)</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00029">ecvColorTypes.h:29</a></div></div>
 <div class="ttc" id="aecvGLMatrixTpl_8h_html_aed018a2c40b8940250c971a3218f2b84"><div class="ttname"><a href="ecvGLMatrixTpl_8h.html#aed018a2c40b8940250c971a3218f2b84">OPENGL_MATRIX_SIZE</a></div><div class="ttdeci">static const unsigned OPENGL_MATRIX_SIZE</div><div class="ttdoc">Model view matrix size (OpenGL)</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrixTpl_8h_source.html#l00024">ecvGLMatrixTpl.h:24</a></div></div>
 <div class="ttc" id="aecvHObjectCaster_8h_html"><div class="ttname"><a href="ecvHObjectCaster_8h.html">ecvHObjectCaster.h</a></div></div>
 <div class="ttc" id="aecvMaterialSet_8h_html"><div class="ttname"><a href="ecvMaterialSet_8h.html">ecvMaterialSet.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a567da34081d0e17107546aa55edd6c04"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a></div><div class="ttdeci">double colors[3]</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00053">TriangleMeshIO.cpp:53</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a634516ba67a2cfe0937c5cee4bae658b"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a634516ba67a2cfe0937c5cee4bae658b">face</a></div><div class="ttdeci">std::vector&lt; unsigned int &gt; face</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00050">TriangleMeshIO.cpp:50</a></div></div>
 <div class="ttc" id="anamespaceIoUtils_html"><div class="ttname"><a href="namespaceIoUtils.html">IoUtils</a></div><div class="ttdef"><b>Definition:</b> <a href="IoUtils_8h_source.html#l00024">IoUtils.h:24</a></div></div>
 <div class="ttc" id="anamespaceIoUtils_html_aa7fc1500455d172ab2fc2db0a71f6294"><div class="ttname"><a href="namespaceIoUtils.html#aa7fc1500455d172ab2fc2db0a71f6294">IoUtils::createMaterialSetForMesh</a></div><div class="ttdeci">ccMaterialSet * createMaterialSetForMesh(const aiMesh *inMesh, const QString &amp;inPath, const aiScene *inScene)</div><div class="ttdef"><b>Definition:</b> <a href="IoUtils_8cpp_source.html#l00122">IoUtils.cpp:122</a></div></div>
 <div class="ttc" id="anamespaceIoUtils_html_acd7891b8a0c1e06f11638c8705ee3e48"><div class="ttname"><a href="namespaceIoUtils.html#acd7891b8a0c1e06f11638c8705ee3e48">IoUtils::newCCMeshFromAIMesh</a></div><div class="ttdeci">ccMesh * newCCMeshFromAIMesh(const aiMesh *inMesh)</div><div class="ttdef"><b>Definition:</b> <a href="IoUtils_8cpp_source.html#l00239">IoUtils.cpp:239</a></div></div>
 <div class="ttc" id="anamespaceIoUtils_html_af33a9cc1a7a07dd5a469d1dbaef3b998"><div class="ttname"><a href="namespaceIoUtils.html#af33a9cc1a7a07dd5a469d1dbaef3b998">IoUtils::convertMetaValueToVariant</a></div><div class="ttdeci">QVariant convertMetaValueToVariant(aiMetadata *inData, unsigned int inValueIndex)</div><div class="ttdef"><b>Definition:</b> <a href="IoUtils_8cpp_source.html#l00440">IoUtils.cpp:440</a></div></div>
 <div class="ttc" id="anamespaceIoUtils_html_afc839d214a242760eb8194a4cbc2faea"><div class="ttname"><a href="namespaceIoUtils.html#afc839d214a242760eb8194a4cbc2faea">IoUtils::convertMatrix</a></div><div class="ttdeci">ccGLMatrix convertMatrix(const aiMatrix4x4 &amp;inAssimpMatrix)</div><div class="ttdef"><b>Definition:</b> <a href="IoUtils_8cpp_source.html#l00424">IoUtils.cpp:424</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacee57_html_ac51cd6698affda7bd6180e4ff19e2c99"><div class="ttname"><a href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">e57::toString</a></div><div class="ttdeci">std::string toString(T x)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00080">Common.h:80</a></div></div>
 <div class="ttc" id="astructTexCoords2D_html"><div class="ttname"><a href="structTexCoords2D.html">TexCoords2D</a></div><div class="ttdoc">2D texture coordinates</div><div class="ttdef"><b>Definition:</b> <a href="ecvAdvancedTypes_8h_source.html#l00138">ecvAdvancedTypes.h:138</a></div></div>
 <div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
@@ -669,7 +679,7 @@ $(document).ready(function(){initNavTree('IoUtils_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_93729575d6fedf5bf48258f8bebc2d7a.html">qMeshIO</a></li><li class="navelem"><a class="el" href="dir_cbaf5887df0850fa9bfa13889c85bbfc.html">src</a></li><li class="navelem"><a class="el" href="IoUtils_8cpp.html">IoUtils.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -142,25 +151,25 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
 <div class="line"><a name="l00086"></a><span class="lineno"><a class="line" href="classccSerializableObject.html#adcf23e696e7bd0bbf18a0c42b199ac7c">   86</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializableObject.html#adcf23e696e7bd0bbf18a0c42b199ac7c">WriteError</a>() {</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Write error (disk full or no access right?)&quot;</span>);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Write error (disk full or no access right?)&quot;</span>);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    }</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="classccSerializableObject.html#a77efab0f94b6e2938153bbe7e47e9fda">   95</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializableObject.html#a77efab0f94b6e2938153bbe7e47e9fda">ReadError</a>() {</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Read error (corrupted file or no access right?)&quot;</span>);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Read error (corrupted file or no access right?)&quot;</span>);</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    }</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
 <div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="classccSerializableObject.html#aee85a5594a3f6691031f4415f81c4c58">  104</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializableObject.html#aee85a5594a3f6691031f4415f81c4c58">MemoryError</a>() {</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    }</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
 <div class="line"><a name="l00113"></a><span class="lineno"><a class="line" href="classccSerializableObject.html#a231a0882e72dbb37bd335a9c6b3a7514">  113</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializableObject.html#a231a0882e72dbb37bd335a9c6b3a7514">CorruptError</a>() {</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;File seems to be corrupted&quot;</span>);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;File seems to be corrupted&quot;</span>);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    }</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;};</div>
@@ -263,7 +272,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#a231a0882e72dbb37bd335a9c6b3a7514">ccSerializableObject::CorruptError</a>();</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        }</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <a class="code" href="classCVLog.html#aa6e9e5f0b0ff4a2c2940185f043cadfb">CVLog::PrintVerbose</a>(</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <a class="code" href="classCVLog.html#a90ad89e8d220d6484f50e8bfba487591">CVLog::PrintVerbose</a>(</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                QString(<span class="stringliteral">&quot;Loading %0: %1 elements and %2 dimension(s)&quot;</span>)</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                        .arg(verboseDescription)</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                        .arg(elementCount)</div>
@@ -318,7 +327,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#a231a0882e72dbb37bd335a9c6b3a7514">ccSerializableObject::CorruptError</a>();</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;        }</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160; </div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <a class="code" href="classCVLog.html#aa6e9e5f0b0ff4a2c2940185f043cadfb">CVLog::PrintVerbose</a>(</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <a class="code" href="classCVLog.html#a90ad89e8d220d6484f50e8bfba487591">CVLog::PrintVerbose</a>(</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                QString(<span class="stringliteral">&quot;Loading %0: %1 elements and %2 dimension(s)&quot;</span>)</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                        .arg(verboseDescription)</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                        .arg(elementCount)</div>
@@ -408,8 +417,8 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa6e9e5f0b0ff4a2c2940185f043cadfb"><div class="ttname"><a href="classCVLog.html#aa6e9e5f0b0ff4a2c2940185f043cadfb">CVLog::PrintVerbose</a></div><div class="ttdeci">static bool PrintVerbose(const char *format,...)</div><div class="ttdoc">Prints out a verbose formatted message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a90ad89e8d220d6484f50e8bfba487591"><div class="ttname"><a href="classCVLog.html#a90ad89e8d220d6484f50e8bfba487591">CVLog::PrintVerbose</a></div><div class="ttdeci">static bool PrintVerbose(const char *format,...)</div><div class="ttdoc">Prints out a verbose formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00103">CVLog.cpp:103</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassccSerializableObject_html"><div class="ttname"><a href="classccSerializableObject.html">ccSerializableObject</a></div><div class="ttdoc">Serializable object interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00025">ecvSerializableObject.h:25</a></div></div>
 <div class="ttc" id="aclassccSerializableObject_html_a231a0882e72dbb37bd335a9c6b3a7514"><div class="ttname"><a href="classccSerializableObject.html#a231a0882e72dbb37bd335a9c6b3a7514">ccSerializableObject::CorruptError</a></div><div class="ttdeci">static bool CorruptError()</div><div class="ttdoc">Sends a custom error message (corrupted file) and returns 'false'.</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00113">ecvSerializableObject.h:113</a></div></div>
 <div class="ttc" id="aclassccSerializableObject_html_a3691493492dbbcdbea0f0c6a1300b151"><div class="ttname"><a href="classccSerializableObject.html#a3691493492dbbcdbea0f0c6a1300b151">ccSerializableObject::isSerializable</a></div><div class="ttdeci">virtual bool isSerializable() const</div><div class="ttdoc">Returns whether object is serializable of not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00031">ecvSerializableObject.h:31</a></div></div>
@@ -439,7 +448,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvSerializableObject_8h.html">ecvSerializableObject.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -105,37 +114,43 @@ $(document).ready(function(){initNavTree('qLASFWFIO_8cpp_source.html',''); initR
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;QtPlugin&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;qLASFWFIO::qLASFWFIO(QObject* parent)</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    : QObject(parent), ccIOPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qLASFWFIO/info.json&quot;</span>) {}</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    : QObject(parent), <a class="code" href="classccIOPluginInterface.html">ccIOPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qLASFWFIO/info.json&quot;</span>) {}</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;ccIOPluginInterface::FilterList qLASFWFIO::getFilters() {</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<a class="code" href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a> qLASFWFIO::getFilters() {</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="keywordflow">return</span> {<a class="code" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a>(<span class="keyword">new</span> <a class="code" href="classLASFWFFilter.html">LASFWFFilter</a>)};</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;}</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keywordtype">void</span> qLASFWFIO::registerCommands(ccCommandLineInterface* cmd) {</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">qLASFWFIO::registerCommands</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>* cmd) {</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordflow">if</span> (!cmd) {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    }</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    cmd-&gt;registerCommand(</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;            ccCommandLineInterface::Command::Shared(<span class="keyword">new</span> <a class="code" href="structCommandLoadLASFWF.html">CommandLoadLASFWF</a>));</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    cmd-&gt;registerCommand(</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;            ccCommandLineInterface::Command::Shared(<span class="keyword">new</span> <a class="code" href="structCommandSaveLASFWF.html">CommandSaveLASFWF</a>));</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    cmd-&gt;<a class="code" href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">registerCommand</a>(</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;            <a class="code" href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a>(<span class="keyword">new</span> <a class="code" href="structCommandLoadLASFWF.html">CommandLoadLASFWF</a>));</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    cmd-&gt;<a class="code" href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">registerCommand</a>(</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;            <a class="code" href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a>(<span class="keyword">new</span> <a class="code" href="structCommandSaveLASFWF.html">CommandSaveLASFWF</a>));</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;}</div>
 <div class="ttc" id="aLASFWFFilter_8h_html"><div class="ttname"><a href="LASFWFFilter_8h.html">LASFWFFilter.h</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_abfe3e5d65638ebcf0ec20432b23da4bd"><div class="ttname"><a href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a></div><div class="ttdeci">QSharedPointer&lt; FileIOFilter &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00097">FileIOFilter.h:97</a></div></div>
 <div class="ttc" id="aclassLASFWFFilter_html"><div class="ttname"><a href="classLASFWFFilter.html">LASFWFFilter</a></div><div class="ttdoc">LAS with Full WaveForm support (version &gt;= 1.3) filter.</div><div class="ttdef"><b>Definition:</b> <a href="LASFWFFilter_8h_source.html#l00014">LASFWFFilter.h:14</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab4644e6978732163718383530cd5cd6b"><div class="ttname"><a href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">ccCommandLineInterface::registerCommand</a></div><div class="ttdeci">virtual bool registerCommand(Command::Shared command)=0</div><div class="ttdoc">Registers a new command.</div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html"><div class="ttname"><a href="classccIOPluginInterface.html">ccIOPluginInterface</a></div><div class="ttdoc">I/O filter plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00020">ecvIOPluginInterface.h:20</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html_a66bef21cd54a0c6c13a1279a0ff1a827"><div class="ttname"><a href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a></div><div class="ttdeci">QVector&lt; FileIOFilter::Shared &gt; FilterList</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00022">ecvIOPluginInterface.h:22</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html_a7a86584af99d29165624d778c016b05a"><div class="ttname"><a href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">ccPluginInterface::registerCommands</a></div><div class="ttdeci">virtual void registerCommands(ccCommandLineInterface *cmd)</div><div class="ttdoc">Optional: registers commands (for the command line mode)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00121">ecvPluginInterface.h:121</a></div></div>
 <div class="ttc" id="aqLASFWFIOCommands_8h_html"><div class="ttname"><a href="qLASFWFIOCommands_8h.html">qLASFWFIOCommands.h</a></div></div>
 <div class="ttc" id="aqLASFWFIO_8h_html"><div class="ttname"><a href="qLASFWFIO_8h.html">qLASFWFIO.h</a></div></div>
 <div class="ttc" id="astructCommandLoadLASFWF_html"><div class="ttname"><a href="structCommandLoadLASFWF.html">CommandLoadLASFWF</a></div><div class="ttdef"><b>Definition:</b> <a href="qLASFWFIOCommands_8h_source.html#l00020">qLASFWFIOCommands.h:20</a></div></div>
 <div class="ttc" id="astructCommandSaveLASFWF_html"><div class="ttname"><a href="structCommandSaveLASFWF.html">CommandSaveLASFWF</a></div><div class="ttdef"><b>Definition:</b> <a href="qLASFWFIOCommands_8h_source.html#l00063">qLASFWFIOCommands.h:63</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html_a40d4dd296bcd3331b8e0ea78479fd55e"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a></div><div class="ttdeci">QSharedPointer&lt; Command &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00132">ecvCommandLineInterface.h:132</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_42608493b1a3c9d45a5c789faa6219a1.html">qLASFWFIO</a></li><li class="navelem"><a class="el" href="dir_78eca8fa0ddb3910a757d1256d54e4e3.html">src</a></li><li class="navelem"><a class="el" href="qLASFWFIO_8cpp.html">qLASFWFIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

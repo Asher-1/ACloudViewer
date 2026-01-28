@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,7 +110,7 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPolyline_8h.html">ecvPolyline.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// ECV_plugins</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// DXF lib</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#ifdef CV_DXF_SUPPORT</span></div>
@@ -139,12 +148,12 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classDxfProfilesExporter.html#a9d366b9e1361028c4997e4bf08706d90">   49</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classDxfProfilesExporter.html#a9d366b9e1361028c4997e4bf08706d90">DxfProfilesExporter::SaveVerticalProfiles</a>(</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keyword">const</span> QSharedPointer&lt;DistanceMapGenerationTool::Map&gt;&amp; map,</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <a class="code" href="classccPolyline.html">ccPolyline</a>* <a class="code" href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a>,</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        QString filename,</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="keywordtype">unsigned</span> angularStepCount,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keywordtype">double</span> heightStep,</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordtype">double</span> heightShift,</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keyword">const</span> <a class="code" href="structDxfProfilesExporter_1_1Parameters.html">Parameters</a>&amp; <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>,</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        ecvMainAppInterface* app <span class="comment">/*=0*/</span>) {</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app <span class="comment">/*=0*/</span>) {</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">#ifdef CV_DXF_SUPPORT</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    assert(<a class="code" href="dxfProfilesExporter_8cpp.html#a825b5b87b4caaa29b9d16c7e3f70f9b3">c_pageMargin_mm</a> &lt; <a class="code" href="dxfProfilesExporter_8cpp.html#a0bf27768ed3daa3ade3d499d030212bb">c_profileMargin_mm</a>);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    assert(2.0 * <a class="code" href="dxfProfilesExporter_8cpp.html#a0bf27768ed3daa3ade3d499d030212bb">c_profileMargin_mm</a> &lt;</div>
@@ -171,18 +180,18 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keywordflow">if</span> (xSpan == 0.0 &amp;&amp; ySpan == 0.0) {</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;Internal error: null profile?!&quot;</span>),</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                               ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;Internal error: null profile?!&quot;</span>),</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    }</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    DL_Dxf dxf;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    DL_WriterA* dw = dxf.out(qPrintable(filename), DL_VERSION_R12);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    DL_WriterA* dw = dxf.out(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), DL_VERSION_R12);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">if</span> (!dw) {</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;Failed to open &#39;%1&#39; file for writing!&quot;</span>)</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                                       .arg(filename),</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                               ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;Failed to open &#39;%1&#39; file for writing!&quot;</span>)</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                                       .arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
@@ -697,14 +706,14 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="line"><a name="l00607"></a><span class="lineno"><a class="line" href="classDxfProfilesExporter.html#a1b3d67e5b053a9367bcc66c2cdb4e25e">  607</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classDxfProfilesExporter.html#a1b3d67e5b053a9367bcc66c2cdb4e25e">DxfProfilesExporter::SaveHorizontalProfiles</a>(</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;        <span class="keyword">const</span> QSharedPointer&lt;DistanceMapGenerationTool::Map&gt;&amp; map,</div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;        <a class="code" href="classccPolyline.html">ccPolyline</a>* <a class="code" href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a>,</div>
-<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;        QString filename,</div>
+<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;        QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        <span class="keywordtype">unsigned</span> heightStepCount,</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;        <span class="keywordtype">double</span> heightShift,</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;        <span class="keywordtype">double</span> angularStep_rad,</div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;        <span class="keywordtype">double</span> radToUnitConvFactor,</div>
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;        QString angleUnit,</div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;        <span class="keyword">const</span> <a class="code" href="structDxfProfilesExporter_1_1Parameters.html">Parameters</a>&amp; <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>,</div>
-<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;        ecvMainAppInterface* app <span class="comment">/*= 0*/</span>) {</div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;        <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* app <span class="comment">/*= 0*/</span>) {</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;<span class="preprocessor">#ifdef CV_DXF_SUPPORT</span></div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;    assert(<a class="code" href="dxfProfilesExporter_8cpp.html#a825b5b87b4caaa29b9d16c7e3f70f9b3">c_pageMargin_mm</a> &lt; <a class="code" href="dxfProfilesExporter_8cpp.html#a0bf27768ed3daa3ade3d499d030212bb">c_profileMargin_mm</a>);</div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;    assert(2.0 * <a class="code" href="dxfProfilesExporter_8cpp.html#a0bf27768ed3daa3ade3d499d030212bb">c_profileMargin_mm</a> &lt;</div>
@@ -736,18 +745,18 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160; </div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;    <span class="keywordflow">if</span> (ySpan == 0.0) {</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;Internal error: null profile?!&quot;</span>),</div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;                               ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;Internal error: null profile?!&quot;</span>),</div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;    }</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160; </div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;    DL_Dxf dxf;</div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;    DL_WriterA* dw = dxf.out(qPrintable(filename), DL_VERSION_R12);</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;    DL_WriterA* dw = dxf.out(qPrintable(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>), DL_VERSION_R12);</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;    <span class="keywordflow">if</span> (!dw) {</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keywordflow">if</span> (app)</div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;            app-&gt;dispToConsole(QString(<span class="stringliteral">&quot;Failed to open &#39;%1&#39; file for writing!&quot;</span>)</div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;                                       .arg(filename),</div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;                               ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;            app-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(QString(<span class="stringliteral">&quot;Failed to open &#39;%1&#39; file for writing!&quot;</span>)</div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;                                       .arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>),</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;                               <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;    }</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160; </div>
@@ -1334,6 +1343,7 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;}</div>
 <div class="ttc" id="aCVConst_8h_html_a7dd8de910244c0c514f90d00e2854724"><div class="ttname"><a href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a></div><div class="ttdeci">constexpr double M_PI</div><div class="ttdoc">Pi.</div><div class="ttdef"><b>Definition:</b> <a href="CVConst_8h_source.html#l00019">CVConst.h:19</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad12fc34ce789bce6c8a05d8a17138534"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a></div><div class="ttdeci">int height</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00143">FileIOFactory.cpp:143</a></div></div>
 <div class="ttc" id="aO3DVisualizer_8cpp_html_a0bbf218724b31893cbaf637fc7ce5798"><div class="ttname"><a href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a></div><div class="ttdeci">CloudViewerScene::LightingProfile profile</div><div class="ttdef"><b>Definition:</b> <a href="O3DVisualizer_8cpp_source.html#l00271">O3DVisualizer.cpp:271</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
@@ -1345,6 +1355,9 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="ttc" id="aclassTuple3Tpl_html_aea57f32b7c87f9388205c027216ba132"><div class="ttname"><a href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">Tuple3Tpl::z</a></div><div class="ttdeci">Type z</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccPolyline_html"><div class="ttname"><a href="classccPolyline.html">ccPolyline</a></div><div class="ttdoc">Colored polyline.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00023">ecvPolyline.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
 <div class="ttc" id="acutil__math_8h_html_aad6a2701675cd2a4bc1b1da7b79948ae"><div class="ttname"><a href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a></div><div class="ttdeci">__host__ __device__ float2 fabs(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01254">cutil_math.h:1254</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
@@ -1360,6 +1373,7 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div class="ttc" id="adxfProfilesExporter_8cpp_html_ac4d6b158eed875637dfe3c28de10f93e"><div class="ttname"><a href="dxfProfilesExporter_8cpp.html#ac4d6b158eed875637dfe3c28de10f93e">VERT_PROFILE_LAYER</a></div><div class="ttdeci">static const char VERT_PROFILE_LAYER[]</div><div class="ttdef"><b>Definition:</b> <a href="dxfProfilesExporter_8cpp_source.html#l00032">dxfProfilesExporter.cpp:32</a></div></div>
 <div class="ttc" id="adxfProfilesExporter_8cpp_html_afb3b9c91c734c259f88e6021cb4abf06"><div class="ttname"><a href="dxfProfilesExporter_8cpp.html#afb3b9c91c734c259f88e6021cb4abf06">s_lineWidth</a></div><div class="ttdeci">static const int s_lineWidth</div><div class="ttdef"><b>Definition:</b> <a href="dxfProfilesExporter_8cpp_source.html#l00034">dxfProfilesExporter.cpp:34</a></div></div>
 <div class="ttc" id="adxfProfilesExporter_8h_html"><div class="ttname"><a href="dxfProfilesExporter_8h.html">dxfProfilesExporter.h</a></div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPolyline_8h_html"><div class="ttname"><a href="ecvPolyline_8h.html">ecvPolyline.h</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a1914e6250583e693fb8c0e432a31ca26"><div class="ttname"><a href="namespaceecvColor.html#a1914e6250583e693fb8c0e432a31ca26">ecvColor::black</a></div><div class="ttdeci">constexpr Rgb black(0, 0, 0)</div></div>
 <div class="ttc" id="anamespaceecvColor_html_a5a10c8a75a92da7b2628dfeeb13fcd2a"><div class="ttname"><a href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red</a></div><div class="ttdeci">constexpr Rgb red(MAX, 0, 0)</div></div>
@@ -1381,7 +1395,7 @@ $(document).ready(function(){initNavTree('dxfProfilesExporter_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_6825a0132d045bbc984f455ea40d2f9f.html">qSRA</a></li><li class="navelem"><a class="el" href="dir_581404efacf73ebdc3c6686d7ffa8b9d.html">src</a></li><li class="navelem"><a class="el" href="dxfProfilesExporter_8cpp.html">dxfProfilesExporter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

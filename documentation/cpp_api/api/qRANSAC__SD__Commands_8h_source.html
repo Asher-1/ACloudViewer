@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,7 +110,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvGenericMesh_8h.html">ecvGenericMesh.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMesh_8h.html">ecvMesh.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;ecvCommandLineInterface.h&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// Local</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="qRANSAC__SD_8h.html">qRANSAC_SD.h</a>&quot;</span></div>
@@ -136,14 +145,14 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="qRANSAC__SD__Commands_8h.html#a9fc57325587c3db81289b357fcf767f7">   46</a></span>&#160;constexpr <span class="keywordtype">char</span> <a class="code" href="qRANSAC__SD__Commands_8h.html#a9fc57325587c3db81289b357fcf767f7">PRIM_CONE</a>[] = <span class="stringliteral">&quot;CONE&quot;</span>;</div>
 <div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="qRANSAC__SD__Commands_8h.html#a5f548f67ddac42319f677a319b2015ea">   47</a></span>&#160;constexpr <span class="keywordtype">char</span> <a class="code" href="qRANSAC__SD__Commands_8h.html#a5f548f67ddac42319f677a319b2015ea">PRIM_TORUS</a>[] = <span class="stringliteral">&quot;TORUS&quot;</span>;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html">   49</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structCommandRANSAC.html">CommandRANSAC</a> : <span class="keyword">public</span> ccCommandLineInterface::Command {</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html">   49</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structCommandRANSAC.html">CommandRANSAC</a> : <span class="keyword">public</span> <a class="code" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a> {</div>
 <div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html#a5de0a4ab7e9b9ad87a61397ffa59e52a">   50</a></span>&#160;    <a class="code" href="structCommandRANSAC.html#a5de0a4ab7e9b9ad87a61397ffa59e52a">CommandRANSAC</a>()</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        : ccCommandLineInterface::Command(QObject::tr(<span class="stringliteral">&quot;RANSAC&quot;</span>),</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        : <a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>::<a class="code" href="structccCommandLineInterface_1_1Command.html#a7a0032026a888378a199ba0d18264e55">Command</a>(QObject::tr(<span class="stringliteral">&quot;RANSAC&quot;</span>),</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                          <a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>) {}</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html#a2eaab34be8963f072bd324abc3352d0e">   54</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="structCommandRANSAC.html#a2eaab34be8963f072bd324abc3352d0e">process</a>(ccCommandLineInterface&amp; cmd)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">if</span> (cmd.clouds().empty()) {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordflow">return</span> cmd.error(QObject::tr(<span class="stringliteral">&quot;No point cloud to attempt RANSAC on &quot;</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html#a2eaab34be8963f072bd324abc3352d0e">   54</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="structCommandRANSAC.html#a2eaab34be8963f072bd324abc3352d0e">process</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>&amp; cmd)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">clouds</a>().empty()) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(QObject::tr(<span class="stringliteral">&quot;No point cloud to attempt RANSAC on &quot;</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                         <span class="stringliteral">&quot;(be sure to open one with \&quot;-O &quot;</span></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                         <span class="stringliteral">&quot;[cloud filename]\&quot; before \&quot;-%2\&quot;)&quot;</span>)</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                     .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>));</div>
@@ -182,116 +191,116 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[k] = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        }</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (!cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            QString param = cmd.arguments().takeFirst().toUpper();</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (!cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            QString param = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toUpper();</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <span class="keywordflow">while</span> (paramNames.contains(param)) {</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                cmd.print(QObject::tr(<span class="stringliteral">&quot;\t%1 : %2&quot;</span>).arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, param));</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\t%1 : %2&quot;</span>).arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, param));</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#aca54fa8f8c30ad57969e765ea7a35c2f">EPSILON_ABSOLUTE</a>) {</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: number after &quot;</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                                            <span class="stringliteral">&quot;\&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, <a class="code" href="qRANSAC__SD__Commands_8h.html#aca54fa8f8c30ad57969e765ea7a35c2f">EPSILON_ABSOLUTE</a>));</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                    }</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    <span class="keywordtype">float</span> val = cmd.arguments().takeFirst().toFloat(&amp;ok);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    <span class="keywordtype">float</span> val = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;ok);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                        <span class="keywordflow">return</span> cmd.error(<span class="stringliteral">&quot;Invalid number for epsilon!&quot;</span>);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(<span class="stringliteral">&quot;Invalid number for epsilon!&quot;</span>);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                    }</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tEpsilon : %1&quot;</span>).arg(val));</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tEpsilon : %1&quot;</span>).arg(val));</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                    epsilonABS = val;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#a880c8c8fec897d1ac65c0b844e336912">EPSILON_PERCENTAGE_OF_SCALE</a>) {</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: number after &quot;</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                                            <span class="stringliteral">&quot;\&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>,</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                                             <a class="code" href="qRANSAC__SD__Commands_8h.html#a880c8c8fec897d1ac65c0b844e336912">EPSILON_PERCENTAGE_OF_SCALE</a>));</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                    }</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                    <span class="keywordtype">float</span> val = cmd.arguments().takeFirst().toFloat(&amp;ok);</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                    <span class="keywordtype">float</span> val = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;ok);</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                    <span class="keywordflow">if</span> (!ok || (val &lt;= 0.0f || val &gt;= 1.0f)) {</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                                <span class="stringliteral">&quot;Invalid number for epsilon percentage must be &quot;</span></div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                                <span class="stringliteral">&quot;a float greater than 0.0 and less than 1.0!&quot;</span>);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                    }</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tEpsilon : %1&quot;</span>).arg(val));</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tEpsilon : %1&quot;</span>).arg(val));</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                    epsilonPercentage = val;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#ad9df752e5695431d7b239b4e552194b9">BITMAP_EPSILON_ABSOLUTE</a>) {</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                        <span class="keywordflow">return</span> cmd.error(QObject::tr(<span class="stringliteral">&quot;Missing parameter: &quot;</span></div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(QObject::tr(<span class="stringliteral">&quot;Missing parameter: &quot;</span></div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                                                     <span class="stringliteral">&quot;number after \&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                                                 .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>,</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                                                      <a class="code" href="qRANSAC__SD__Commands_8h.html#ad9df752e5695431d7b239b4e552194b9">BITMAP_EPSILON_ABSOLUTE</a>));</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;                    }</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                    <span class="keywordtype">float</span> val = cmd.arguments().takeFirst().toFloat(&amp;ok);</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                    <span class="keywordtype">float</span> val = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;ok);</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                        <span class="keywordflow">return</span> cmd.error(<span class="stringliteral">&quot;Invalid number for Bitmap epsilon!&quot;</span>);</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(<span class="stringliteral">&quot;Invalid number for Bitmap epsilon!&quot;</span>);</div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                    }</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tBitmap Epsilon : %1&quot;</span>).arg(val));</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tBitmap Epsilon : %1&quot;</span>).arg(val));</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;                    bitmapEpsilonABS = val;</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#a0a3cf7a123b3a099f847f0a95d3326bf">BITMAP_EPSILON_PERCENTAGE_OF_SCALE</a>) {</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: number after &quot;</span></div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                                            <span class="stringliteral">&quot;\&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>,</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;                                             <a class="code" href="qRANSAC__SD__Commands_8h.html#a0a3cf7a123b3a099f847f0a95d3326bf">BITMAP_EPSILON_PERCENTAGE_OF_SCALE</a>));</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                    }</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                    <span class="keywordtype">float</span> val = cmd.arguments().takeFirst().toFloat(&amp;ok);</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                    <span class="keywordtype">float</span> val = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;ok);</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                    <span class="keywordflow">if</span> (!ok || (val &lt;= 0.0f || val &gt;= 1.0f)) {</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                                <span class="stringliteral">&quot;Invalid number for Bitmap epsilon must be a &quot;</span></div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                                <span class="stringliteral">&quot;float greater than 0.0 and less than 1.0!!&quot;</span>);</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;                    }</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tBitmap Epsilon : %1&quot;</span>).arg(val));</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tBitmap Epsilon : %1&quot;</span>).arg(val));</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;                    bitmapEpsilonPercentage = val;</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#acbf358e53e0243e30e8ed7adfefda064">SUPPORT_POINTS</a>) {</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: number after &quot;</span></div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                                            <span class="stringliteral">&quot;\&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, <a class="code" href="qRANSAC__SD__Commands_8h.html#acbf358e53e0243e30e8ed7adfefda064">SUPPORT_POINTS</a>));</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                    }</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                    <span class="keywordtype">unsigned</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = cmd.arguments().takeFirst().toUInt(&amp;ok);</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                    <span class="keywordtype">unsigned</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toUInt(&amp;ok);</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                                <span class="stringliteral">&quot;Invalid number of for support points!&quot;</span>);</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;                    }</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tsupport points: %1&quot;</span>).arg(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>));</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tsupport points: %1&quot;</span>).arg(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>));</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.supportPoints = <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>;</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#afe6e79d3b51af749601637e7ced75326">MAX_NORMAL_DEV</a>) {</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: number after &quot;</span></div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                                            <span class="stringliteral">&quot;\&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, <a class="code" href="qRANSAC__SD__Commands_8h.html#afe6e79d3b51af749601637e7ced75326">MAX_NORMAL_DEV</a>));</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                    }</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                    <span class="keywordtype">float</span> val = cmd.arguments().takeFirst().toFloat(&amp;ok);</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                    <span class="keywordtype">float</span> val = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;ok);</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                                <span class="stringliteral">&quot;Invalid number for Max Normal Deviation!&quot;</span>);</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                    }</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tMax Normal Deviation : %1&quot;</span>)</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tMax Normal Deviation : %1&quot;</span>)</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                                      .arg(val));</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.maxNormalDev_deg = val;</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#ad94aac794cab7867bd3ea1f1d0c4bb23">PROBABILITY</a>) {</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: number after &quot;</span></div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                                            <span class="stringliteral">&quot;\&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, <a class="code" href="qRANSAC__SD__Commands_8h.html#ad94aac794cab7867bd3ea1f1d0c4bb23">PROBABILITY</a>));</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                    }</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                    <span class="keywordtype">bool</span> ok;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                    <span class="keywordtype">float</span> val = cmd.arguments().takeFirst().toFloat(&amp;ok);</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                    <span class="keywordtype">float</span> val = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;ok);</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                    <span class="keywordflow">if</span> (!ok) {</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                        <span class="keywordflow">return</span> cmd.error(<span class="stringliteral">&quot;Invalid number for Probability!&quot;</span>);</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(<span class="stringliteral">&quot;Invalid number for Probability!&quot;</span>);</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                    }</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                    cmd.print(QObject::tr(<span class="stringliteral">&quot;\tProbability : %1&quot;</span>).arg(val));</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tProbability : %1&quot;</span>).arg(val));</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.probability = val;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#a3057ceb2e1bc7a8f41c154c70e7a8c1e">OUT_RANDOM_COLOR</a>) {</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.randomColor = <span class="keyword">true</span>;</div>
@@ -324,13 +333,13 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#a73d974e966498d283b0f02bd57be0ec4">OUTPUT_GROUPED</a>) {</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                    outputGrouped = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#a701e11ad9c741b23583cdbdf929973bc">ENABLE_PRIMITIVE</a>) {</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                    <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;Missing parameter: primitive type &quot;</span></div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                                            <span class="stringliteral">&quot;after \&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, <a class="code" href="qRANSAC__SD__Commands_8h.html#a701e11ad9c741b23583cdbdf929973bc">ENABLE_PRIMITIVE</a>));</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                    }</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                    QString prim = cmd.arguments().takeFirst().toUpper();</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                    QString prim = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toUpper();</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    <span class="keywordtype">unsigned</span> primCount = 0;</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                    <span class="keywordflow">while</span> (primitiveNames.contains(prim)) {</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        <span class="keywordflow">if</span> (prim == <a class="code" href="qRANSAC__SD__Commands_8h.html#a52381fac3056cf034afd0b2cf0f46a31">PRIM_PLANE</a>) {</div>
@@ -349,29 +358,29 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_TORUS] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                            primCount++;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                        }</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                        <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                        <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;                            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                        }</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                        prim = cmd.arguments().takeFirst().toUpper();</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                        prim = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toUpper();</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                    }</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                    <span class="keywordflow">if</span> (primCount &gt; 0) {</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                        <span class="keywordflow">if</span> (!primitiveNames.contains(prim)) {</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                            cmd.arguments().push_front(prim);</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                            cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().push_front(prim);</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                        }</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                                QObject::tr(<span class="stringliteral">&quot;No valid parameter: primitive &quot;</span></div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                                            <span class="stringliteral">&quot;type after \&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                                        .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, <a class="code" href="qRANSAC__SD__Commands_8h.html#a701e11ad9c741b23583cdbdf929973bc">ENABLE_PRIMITIVE</a>));</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                    }</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                }</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                }</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                param = cmd.arguments().takeFirst().toUpper();</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                param = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toUpper();</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            }</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;            <span class="keywordflow">if</span> (!paramNames.contains(param)) {</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                cmd.arguments().push_front(param);</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().push_front(param);</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;            }</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        }</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> primCount = 0;</div>
@@ -379,18 +388,18 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            primCount += <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[k]);</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        }</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;        <span class="keywordflow">if</span> (primCount == 0) {</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            cmd.print(QObject::tr(<span class="stringliteral">&quot;\tDefault Shape Search == %1&quot;</span>)</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tDefault Shape Search == %1&quot;</span>)</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                              .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a52381fac3056cf034afd0b2cf0f46a31">PRIM_PLANE</a>));</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_PLANE] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        }</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keywordflow">if</span> (!outputIndividualClouds &amp;&amp; !outputIndividualPrimitives &amp;&amp;</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            !outputGrouped &amp;&amp; !outputIndividualPairs) {</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            cmd.print(</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(</div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                    QObject::tr(<span class="stringliteral">&quot;\tDefault output == %1&quot;</span>).arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a73d974e966498d283b0f02bd57be0ec4">OUTPUT_GROUPED</a>));</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;            outputGrouped = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        }</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keywordflow">for</span> (CLCloudDesc clCloud : cmd.clouds()) {</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keywordflow">for</span> (<a class="code" href="structCLCloudDesc.html">CLCloudDesc</a> clCloud : cmd.<a class="code" href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">clouds</a>()) {</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> bbMin, bbMax;</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;            clCloud.pc-&gt;getBoundingBox(bbMin, bbMax);</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> diff = bbMax - bbMin;</div>
@@ -415,22 +424,22 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;            }</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            <a class="code" href="classccHObject.html">ccHObject</a>* group = qRansacSD::executeRANSAC(clCloud.pc, <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>,</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                                                        cmd.silentMode());</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                                                        cmd.<a class="code" href="classccCommandLineInterface.html#aaa609c127c610a7f6401920e5cc8a861">silentMode</a>());</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;            <span class="keywordflow">if</span> (group) {</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                <span class="keywordflow">if</span> (outputGrouped) {</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                    CLGroupDesc clGroup(group,</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                    <a class="code" href="structCLGroupDesc.html">CLGroupDesc</a> clGroup(group,</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                                        clCloud.basename + <span class="stringliteral">&quot;_&quot;</span> +</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                                                clCloud.pc-&gt;<a class="code" href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">getName</a>() +</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                                                <span class="stringliteral">&quot;_RANSAC_DETECTED_SHAPES&quot;</span>,</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;                                        outputGroupDir != <span class="stringliteral">&quot;&quot;</span> ? outputGroupDir</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                                                             : clCloud.path);</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                    QString errorStr = cmd.exportEntity(</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                    QString errorStr = cmd.<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">exportEntity</a>(</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                            clGroup, QString(), <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                            ccCommandLineInterface::ExportOption::</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                            <a class="code" href="classccCommandLineInterface.html#aba219ed1125f79c2d7ef5018857ea4c4">ccCommandLineInterface::ExportOption</a>::</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                                    ForceHierarchy);</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                    <span class="keywordflow">if</span> (!errorStr.isEmpty()) {</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                        cmd.warning(errorStr);</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                        cmd.<a class="code" href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">warning</a>(errorStr);</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    }</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                }</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;                <span class="keywordflow">if</span> (outputIndividualPrimitives || outputIndividualClouds ||</div>
@@ -477,61 +486,61 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                            <span class="keyword">auto</span> cld = <a class="code" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a>(</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                                    mesh-&gt;getParent());</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                            <span class="keywordflow">if</span> (outputIndividualPairs) {</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;                                CLGroupDesc clPair(</div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;                                <a class="code" href="structCLGroupDesc.html">CLGroupDesc</a> clPair(</div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;                                        cld,</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;                                        clCloud.basename + <span class="stringliteral">&quot;_&quot;</span> +</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;                                                clCloud.pc-&gt;getName() + suffix +</div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;                                                QString(<span class="stringliteral">&quot;_pair&quot;</span>),</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;                                        outputPairDir != <span class="stringliteral">&quot;&quot;</span> ? outputPairDir</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;                                                            : clCloud.path);</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                                QString errorStr = cmd.exportEntity(</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                                QString errorStr = cmd.<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">exportEntity</a>(</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                                        clPair, QString(), <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;                                        ccCommandLineInterface::ExportOption::</div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;                                        <a class="code" href="classccCommandLineInterface.html#aba219ed1125f79c2d7ef5018857ea4c4">ccCommandLineInterface::ExportOption</a>::</div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;                                                ForceHierarchy);</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;                                <span class="keywordflow">if</span> (!errorStr.isEmpty()) {</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;                                    cmd.warning(errorStr);</div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;                                    cmd.<a class="code" href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">warning</a>(errorStr);</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;                                }</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;                            }</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;                            <span class="keywordflow">if</span> (cld) {</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;                                cld-&gt;detachChild(mesh);</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;                            }</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                            CLCloudDesc clCloudp(</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                            <a class="code" href="structCLCloudDesc.html">CLCloudDesc</a> clCloudp(</div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;                                    cld,</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;                                    clCloud.basename + <span class="stringliteral">&quot;_&quot;</span> +</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;                                            clCloud.pc-&gt;getName() + suffix +</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;                                            QString(<span class="stringliteral">&quot;_cloud&quot;</span>),</div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;                                    outputCloudsDir != <span class="stringliteral">&quot;&quot;</span> ? outputCloudsDir</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                                                          : clCloud.path);</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;                            cmd.clouds().push_back(clCloudp);</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;                            CLMeshDesc clMesh(</div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;                            cmd.<a class="code" href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">clouds</a>().push_back(clCloudp);</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;                            <a class="code" href="structCLMeshDesc.html">CLMeshDesc</a> clMesh(</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;                                    mesh,</div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;                                    clCloud.basename + <span class="stringliteral">&quot;_&quot;</span> +</div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;                                            clCloud.pc-&gt;getName() + suffix,</div>
 <div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;                                    outputMeshesDir != <span class="stringliteral">&quot;&quot;</span> ? outputMeshesDir</div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;                                                          : clCloud.path);</div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;                            cmd.meshes().push_back(clMesh);</div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;                            cmd.<a class="code" href="classccCommandLineInterface.html#ab316d9264021cf61d01a21f25c8905b2">meshes</a>().push_back(clMesh);</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;                            <span class="keywordflow">if</span> (outputIndividualClouds) {</div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;                                QString errorStr = cmd.exportEntity(clCloudp);</div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;                                QString errorStr = cmd.<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">exportEntity</a>(clCloudp);</div>
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;                                <span class="keywordflow">if</span> (!errorStr.isEmpty()) {</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;                                    cmd.warning(errorStr);</div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;                                    cmd.<a class="code" href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">warning</a>(errorStr);</div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;                                }</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;                            }</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                            <span class="keywordflow">if</span> (outputIndividualPrimitives) {</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;                                QString errorStr = cmd.exportEntity(clMesh);</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;                                QString errorStr = cmd.<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">exportEntity</a>(clMesh);</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;                                <span class="keywordflow">if</span> (!errorStr.isEmpty()) {</div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;                                    cmd.warning(errorStr);</div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;                                    cmd.<a class="code" href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">warning</a>(errorStr);</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;                                }</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                            }</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;                        }</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;                    }</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;                }</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;            }</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;            <span class="keywordflow">if</span> (cmd.autoSaveMode()) {</div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;            <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a102617beac0bd98b5218dc3f877fc97d">autoSaveMode</a>()) {</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;                QString errorStr =</div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;                        cmd.exportEntity(clCloud);  <span class="comment">// The original cloud may</span></div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;                        cmd.<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">exportEntity</a>(clCloud);  <span class="comment">// The original cloud may</span></div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;                                                    <span class="comment">// have had normals added</span></div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;                <span class="keywordflow">if</span> (!errorStr.isEmpty()) {</div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;                    cmd.warning(errorStr);</div>
+<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">warning</a>(errorStr);</div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;                }</div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;            }</div>
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        }</div>
@@ -539,30 +548,30 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    }</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160; </div>
-<div class="line"><a name="l00452"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html#adc825fba7058b142f80dcc0bb445ea33">  452</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="structCommandRANSAC.html#adc825fba7058b142f80dcc0bb445ea33">makePathIfPossible</a>(ccCommandLineInterface&amp; cmd,</div>
+<div class="line"><a name="l00452"></a><span class="lineno"><a class="line" href="structCommandRANSAC.html#adc825fba7058b142f80dcc0bb445ea33">  452</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="structCommandRANSAC.html#adc825fba7058b142f80dcc0bb445ea33">makePathIfPossible</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>&amp; cmd,</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;                            <span class="keyword">const</span> QString&amp; param,</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;                            QString* outputPath,</div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;                            <span class="keywordtype">bool</span>* performOutput) {</div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;        <span class="keywordflow">if</span> (cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;            <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;        <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;            <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                    QObject::tr(</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;                            <span class="stringliteral">&quot;\nMissing parameter: Directory after \&quot;-%1 %2\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;                            .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>, param));</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        }</div>
-<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;        QString arg = cmd.arguments().takeFirst();</div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;        QString arg = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst();</div>
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;        QDir dir(arg);</div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;        <span class="keywordtype">bool</span> pathExists = dir.exists();</div>
 <div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;        <span class="keywordflow">if</span> (!pathExists) {</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;            cmd.print(</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(</div>
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;                    QObject::tr(<span class="stringliteral">&quot;\n%1 Does not exist\tcreating path&quot;</span>).arg(arg));</div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;            pathExists = dir.mkpath(arg);</div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;        }</div>
 <div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;        <span class="keywordflow">if</span> (pathExists) {</div>
 <div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;            *outputPath = dir.cleanPath(arg);</div>
-<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;            cmd.print(QObject::tr(<span class="stringliteral">&quot;\t%1 : %2&quot;</span>).arg(param, *outputPath));</div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\t%1 : %2&quot;</span>).arg(param, *outputPath));</div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;            *performOutput = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;            cmd.print(QObject::tr(<span class="stringliteral">&quot;\n%1 path could not be created, skipping %2&quot;</span>)</div>
+<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\n%1 path could not be created, skipping %2&quot;</span>)</div>
 <div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;                              .arg(arg, param));</div>
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;        }</div>
 <div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -571,6 +580,17 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a102617beac0bd98b5218dc3f877fc97d"><div class="ttname"><a href="classccCommandLineInterface.html#a102617beac0bd98b5218dc3f877fc97d">ccCommandLineInterface::autoSaveMode</a></div><div class="ttdeci">bool autoSaveMode() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00155">ecvCommandLineInterface.cpp:155</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a3093b9e593b44c94eea9c2b3cb9f907e"><div class="ttname"><a href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">ccCommandLineInterface::arguments</a></div><div class="ttdeci">virtual QStringList &amp; arguments()=0</div><div class="ttdoc">Returns the list of arguments.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a416e079b27ab3d25b128cdb8988dabd4"><div class="ttname"><a href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">ccCommandLineInterface::warning</a></div><div class="ttdeci">virtual void warning(const QString &amp;message) const =0</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a799045461ab3a9f94ef83a0e23c59ba2"><div class="ttname"><a href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">ccCommandLineInterface::print</a></div><div class="ttdeci">virtual void print(const QString &amp;message) const =0</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a9a953ad222bfd53b84b0de847dbd9649"><div class="ttname"><a href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">ccCommandLineInterface::error</a></div><div class="ttdeci">virtual bool error(const QString &amp;message) const =0</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_aaa609c127c610a7f6401920e5cc8a861"><div class="ttname"><a href="classccCommandLineInterface.html#aaa609c127c610a7f6401920e5cc8a861">ccCommandLineInterface::silentMode</a></div><div class="ttdeci">bool silentMode() const</div><div class="ttdoc">Returns the silent mode.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00149">ecvCommandLineInterface.cpp:149</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab21014751ce83f1c0ab59c6cea711212"><div class="ttname"><a href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">ccCommandLineInterface::exportEntity</a></div><div class="ttdeci">virtual QString exportEntity(CLEntityDesc &amp;entityDesc, const QString &amp;suffix=QString(), QString *outputFilename=nullptr, ccCommandLineInterface::ExportOptions options=ExportOption::NoOptions)=0</div><div class="ttdoc">Exports a cloud or a mesh.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab316d9264021cf61d01a21f25c8905b2"><div class="ttname"><a href="classccCommandLineInterface.html#ab316d9264021cf61d01a21f25c8905b2">ccCommandLineInterface::meshes</a></div><div class="ttdeci">virtual std::vector&lt; CLMeshDesc &gt; &amp; meshes()</div><div class="ttdoc">Currently opened meshes and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00139">ecvCommandLineInterface.cpp:139</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_aba219ed1125f79c2d7ef5018857ea4c4"><div class="ttname"><a href="classccCommandLineInterface.html#aba219ed1125f79c2d7ef5018857ea4c4">ccCommandLineInterface::ExportOption</a></div><div class="ttdeci">ExportOption</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00119">ecvCommandLineInterface.h:119</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_aff5c07ec8e7f1e8b40330262ea21fb17"><div class="ttname"><a href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">ccCommandLineInterface::clouds</a></div><div class="ttdeci">virtual std::vector&lt; CLCloudDesc &gt; &amp; clouds()</div><div class="ttdoc">Currently opened point clouds and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00133">ecvCommandLineInterface.cpp:133</a></div></div>
 <div class="ttc" id="aclassccHObjectCaster_html_a00270441cbe35d7592ce95829ccd429f"><div class="ttname"><a href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh</a></div><div class="ttdeci">static ccMesh * ToMesh(ccHObject *obj)</div><div class="ttdoc">Converts current object to ccMesh (if possible)</div></div>
 <div class="ttc" id="aclassccHObjectCaster_html_a2d4a33e040e7e3e654aa5aebadad83a9"><div class="ttname"><a href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a></div><div class="ttdeci">static ccPointCloud * ToPointCloud(ccHObject *obj, bool *isLockedVertices=nullptr)</div><div class="ttdoc">Converts current object to 'equivalent' ccPointCloud.</div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
@@ -578,6 +598,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccObject_html_a51a9dd33f5ee0c27f1d09dbc9c3136e4"><div class="ttname"><a href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">ccObject::getName</a></div><div class="ttdeci">virtual QString getName() const</div><div class="ttdoc">Returns object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00072">ecvObject.h:72</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html"><div class="ttname"><a href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a></div></div>
 <div class="ttc" id="aecvGenericMesh_8h_html"><div class="ttname"><a href="ecvGenericMesh_8h.html">ecvGenericMesh.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a></div><div class="ttdeci">@ MESH</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00105">CVTypes.h:105</a></div></div>
@@ -610,17 +631,22 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="ttc" id="aqRANSAC__SD__Commands_8h_html_addc014785d388f44ec25c91fe8c38f82"><div class="ttname"><a href="qRANSAC__SD__Commands_8h.html#addc014785d388f44ec25c91fe8c38f82">OUTPUT_INDIVIDUAL_SUBCLOUDS</a></div><div class="ttdeci">constexpr char OUTPUT_INDIVIDUAL_SUBCLOUDS[]</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00038">qRANSAC_SD_Commands.h:38</a></div></div>
 <div class="ttc" id="aqRANSAC__SD__Commands_8h_html_af7dce9a9a8bf4124f7dc7804df4a70f3"><div class="ttname"><a href="qRANSAC__SD__Commands_8h.html#af7dce9a9a8bf4124f7dc7804df4a70f3">OUT_MESH_DIR</a></div><div class="ttdeci">constexpr char OUT_MESH_DIR[]</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00033">qRANSAC_SD_Commands.h:33</a></div></div>
 <div class="ttc" id="aqRANSAC__SD__Commands_8h_html_afe6e79d3b51af749601637e7ced75326"><div class="ttname"><a href="qRANSAC__SD__Commands_8h.html#afe6e79d3b51af749601637e7ced75326">MAX_NORMAL_DEV</a></div><div class="ttdeci">constexpr char MAX_NORMAL_DEV[]</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00029">qRANSAC_SD_Commands.h:29</a></div></div>
+<div class="ttc" id="astructCLCloudDesc_html"><div class="ttname"><a href="structCLCloudDesc.html">CLCloudDesc</a></div><div class="ttdoc">Loaded cloud description.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00068">ecvCommandLineInterface.h:68</a></div></div>
+<div class="ttc" id="astructCLGroupDesc_html"><div class="ttname"><a href="structCLGroupDesc.html">CLGroupDesc</a></div><div class="ttdoc">Loaded group description.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00053">ecvCommandLineInterface.h:53</a></div></div>
+<div class="ttc" id="astructCLMeshDesc_html"><div class="ttname"><a href="structCLMeshDesc.html">CLMeshDesc</a></div><div class="ttdoc">Loaded mesh description.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00090">ecvCommandLineInterface.h:90</a></div></div>
 <div class="ttc" id="astructCommandRANSAC_html"><div class="ttname"><a href="structCommandRANSAC.html">CommandRANSAC</a></div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00049">qRANSAC_SD_Commands.h:49</a></div></div>
-<div class="ttc" id="astructCommandRANSAC_html_a2eaab34be8963f072bd324abc3352d0e"><div class="ttname"><a href="structCommandRANSAC.html#a2eaab34be8963f072bd324abc3352d0e">CommandRANSAC::process</a></div><div class="ttdeci">virtual bool process(ccCommandLineInterface &amp;cmd) override</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00054">qRANSAC_SD_Commands.h:54</a></div></div>
+<div class="ttc" id="astructCommandRANSAC_html_a2eaab34be8963f072bd324abc3352d0e"><div class="ttname"><a href="structCommandRANSAC.html#a2eaab34be8963f072bd324abc3352d0e">CommandRANSAC::process</a></div><div class="ttdeci">virtual bool process(ccCommandLineInterface &amp;cmd) override</div><div class="ttdoc">Main process.</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00054">qRANSAC_SD_Commands.h:54</a></div></div>
 <div class="ttc" id="astructCommandRANSAC_html_a5de0a4ab7e9b9ad87a61397ffa59e52a"><div class="ttname"><a href="structCommandRANSAC.html#a5de0a4ab7e9b9ad87a61397ffa59e52a">CommandRANSAC::CommandRANSAC</a></div><div class="ttdeci">CommandRANSAC()</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00050">qRANSAC_SD_Commands.h:50</a></div></div>
 <div class="ttc" id="astructCommandRANSAC_html_adc825fba7058b142f80dcc0bb445ea33"><div class="ttname"><a href="structCommandRANSAC.html#adc825fba7058b142f80dcc0bb445ea33">CommandRANSAC::makePathIfPossible</a></div><div class="ttdeci">bool makePathIfPossible(ccCommandLineInterface &amp;cmd, const QString &amp;param, QString *outputPath, bool *performOutput)</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00452">qRANSAC_SD_Commands.h:452</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></div><div class="ttdoc">Generic command interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00130">ecvCommandLineInterface.h:130</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html_a7a0032026a888378a199ba0d18264e55"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html#a7a0032026a888378a199ba0d18264e55">ccCommandLineInterface::Command::Command</a></div><div class="ttdeci">Command(const QString &amp;name, const QString &amp;keyword)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00225">ecvCommandLineInterface.cpp:225</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_b63d785a9b8f5adc38b5a828fbc08a5c.html">qRANSAC_SD</a></li><li class="navelem"><a class="el" href="dir_cd23edd8092b0208d475635b3e355a9f.html">include</a></li><li class="navelem"><a class="el" href="qRANSAC__SD__Commands_8h.html">qRANSAC_SD_Commands.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -108,7 +117,7 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">// ECV_PLUGINS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;ecvMainAppInterface.h&gt;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">// QT</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;QMainWindow&gt;</span></div>
@@ -192,8 +201,8 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <a class="code" href="classTemplateAlignment.html#a6f748db01c0887bc803cac64328ebe3b">m_scales</a>.clear();</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    {</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="classTemplateAlignment.html#a9daf2f8d1336dfee1a9c5d1dc8e6a0de">m_dialog</a>-&gt;<a class="code" href="classTemplateAlignmentDialog.html#aa2f9d075e4c955c14820fc0355c1ac50">getScales</a>(<a class="code" href="classTemplateAlignment.html#a6f748db01c0887bc803cac64328ebe3b">m_scales</a>)) {</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;dispToConsole(tr(<span class="stringliteral">&quot;Invalid scale parameters!&quot;</span>),</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                 ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(tr(<span class="stringliteral">&quot;Invalid scale parameters!&quot;</span>),</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                 <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        }</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <span class="comment">// make sure values are in descending order!</span></div>
@@ -206,9 +215,9 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    {</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <span class="keywordflow">if</span> (!cloud1 &amp;&amp; !cloud2) {</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>)</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;dispToConsole(tr(<span class="stringliteral">&quot;At least one cloud (class #1 or #2) &quot;</span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                <a class="code" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">dispToConsole</a>(tr(<span class="stringliteral">&quot;At least one cloud (class #1 or #2) &quot;</span></div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                                        <span class="stringliteral">&quot;was not defined!&quot;</span>),</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                                     ecvMainAppInterface::ERR_CONSOLE_MESSAGE);</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                                     <a class="code" href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a>);</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        }</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        assert(cloud1 != cloud2);</div>
@@ -285,7 +294,7 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    }</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; </div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="comment">// Print the alignment fitness score (values less than 0.00002 are good)</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            tr(<span class="stringliteral">&quot;(values less than 0.00002 are good) Best fitness score: %1&quot;</span>)</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                    .arg(best_alignment.fitness_score));</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
@@ -344,9 +353,9 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <span class="comment">// DGM FIXME: we only test the entity own bounding box (and we update its</span></div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <span class="comment">// shift &amp; scale info) but we apply the transformation to all its children?!</span></div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    entity-&gt;<a class="code" href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">applyGLTransformation_recursive</a>();</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(tr(<span class="stringliteral">&quot;[ApplyTransformation] Applied transformation matrix:&quot;</span>));</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(mat.<a class="code" href="classccGLMatrixTpl.html#a07ea47ec8ca3f719e05a157b1922925b">toString</a>(12, <span class="charliteral">&#39; &#39;</span>));  <span class="comment">// full precision</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(tr(<span class="stringliteral">&quot;[ApplyTransformation] Applied transformation matrix:&quot;</span>));</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(mat.<a class="code" href="classccGLMatrixTpl.html#a07ea47ec8ca3f719e05a157b1922925b">toString</a>(12, <span class="charliteral">&#39; &#39;</span>));  <span class="comment">// full precision</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            tr(<span class="stringliteral">&quot;Hint: copy it (CTRL+C) and apply it - or its inverse - on any &quot;</span></div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;               <span class="stringliteral">&quot;entity with the &#39;Edit &gt; Apply transformation&#39; tool&quot;</span>));</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;}</div>
@@ -379,7 +388,7 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="ttc" id="aclassBasePclModule_html_a41999a0ce85cacc2f4acbb0179e7d87c"><div class="ttname"><a href="classBasePclModule.html#a41999a0ce85cacc2f4acbb0179e7d87c">BasePclModule::newEntity</a></div><div class="ttdeci">void newEntity(ccHObject *)</div><div class="ttdoc">Signal emitted when a new entity is created by the filter.</div></div>
 <div class="ttc" id="aclassBasePclModule_html_a7cb9b001d00e054785d3cff0c3126e73"><div class="ttname"><a href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">BasePclModule::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Associated application interface.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00296">BasePclModule.h:296</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a807b1aa6e0abe15ec48fc5c7801b6150"><div class="ttname"><a href="classBasePclModule.html#a807b1aa6e0abe15ec48fc5c7801b6150">BasePclModule::getErrorMessage</a></div><div class="ttdeci">virtual QString getErrorMessage(int errorCode)</div><div class="ttdoc">Returns the error message corresponding to a given error code.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00218">BasePclModule.cpp:218</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassTemplateAlignmentDialog_html"><div class="ttname"><a href="classTemplateAlignmentDialog.html">TemplateAlignmentDialog</a></div><div class="ttdoc">CANUPO plugin's training dialog.</div><div class="ttdef"><b>Definition:</b> <a href="TemplateAlignmentDialog_8h_source.html#l00020">TemplateAlignmentDialog.h:21</a></div></div>
 <div class="ttc" id="aclassTemplateAlignmentDialog_html_a0314cd67506ba043fc995ede68242bf3"><div class="ttname"><a href="classTemplateAlignmentDialog.html#a0314cd67506ba043fc995ede68242bf3">TemplateAlignmentDialog::getMaxCorrespondenceDistance</a></div><div class="ttdeci">float getMaxCorrespondenceDistance() const</div><div class="ttdoc">Returns the Maximum Correspondence Distance.</div><div class="ttdef"><b>Definition:</b> <a href="TemplateAlignmentDialog_8cpp_source.html#l00125">TemplateAlignmentDialog.cpp:125</a></div></div>
 <div class="ttc" id="aclassTemplateAlignmentDialog_html_a304d5409416a897f76412164b41a2212"><div class="ttname"><a href="classTemplateAlignmentDialog.html#a304d5409416a897f76412164b41a2212">TemplateAlignmentDialog::getFeatureRadius</a></div><div class="ttdeci">float getFeatureRadius() const</div><div class="ttdoc">Returns the Feature Radius.</div><div class="ttdef"><b>Definition:</b> <a href="TemplateAlignmentDialog_8cpp_source.html#l00117">TemplateAlignmentDialog.cpp:117</a></div></div>
@@ -434,6 +443,9 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div class="ttc" id="aclassccShiftedObject_html_a9e16ee02507c2e5390fd9e5bb5ad20b7"><div class="ttname"><a href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">ccShiftedObject::setGlobalShift</a></div><div class="ttdeci">virtual void setGlobalShift(double x, double y, double z)</div><div class="ttdoc">Sets shift applied to original coordinates (information storage only)</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00033">ecvShiftedObject.h:33</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_aa69aa4885030aee94471ed4e1211c451"><div class="ttname"><a href="classccShiftedObject.html#aa69aa4885030aee94471ed4e1211c451">ccShiftedObject::getGlobalShift</a></div><div class="ttdeci">virtual const CCVector3d &amp; getGlobalShift() const</div><div class="ttdoc">Returns the shift applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00046">ecvShiftedObject.h:46</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_ac6a17ca5216af799eaf4cac4166d8610"><div class="ttname"><a href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">ccShiftedObject::getGlobalScale</a></div><div class="ttdeci">virtual double getGlobalScale() const</div><div class="ttdoc">Returns the scale applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00053">ecvShiftedObject.h:53</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4"><div class="ttname"><a href="classecvMainAppInterface.html#a3f521908f2dd22b3e756b4f87449fa25a499aaba7ccb89ca6e0f9aa5189d5a4a4">ecvMainAppInterface::ERR_CONSOLE_MESSAGE</a></div><div class="ttdeci">@ ERR_CONSOLE_MESSAGE</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00119">ecvMainAppInterface.h:119</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
+<div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a27b43c4bd0bc121f6e7e02bec3557c4d"><div class="ttname"><a href="namespaceecvColor.html#a27b43c4bd0bc121f6e7e02bec3557c4d">ecvColor::darkBlue</a></div><div class="ttdeci">constexpr Rgb darkBlue(0, 0, MAX/2)</div></div>
@@ -444,7 +456,7 @@ $(document).ready(function(){initNavTree('TemplateAlignment_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_8789de547e3de07cbd19750b27a74cca.html">Recognitions</a></li><li class="navelem"><a class="el" href="TemplateAlignment_8cpp.html">TemplateAlignment.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

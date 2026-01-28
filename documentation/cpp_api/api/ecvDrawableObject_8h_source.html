@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -117,7 +126,7 @@ $(document).ready(function(){initNavTree('ecvDrawableObject_8h_source.html','');
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#aea5ecfefb3099099df4db14387087045">   31</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classccDrawableObject.html#aea5ecfefb3099099df4db14387087045">~ccDrawableObject</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">public</span>:  <span class="comment">// drawing and drawing options</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#ad113b092ba5b4ce31882e189d131bc65">   35</a></span>&#160;<span class="comment"></span>    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccDrawableObject.html#ad113b092ba5b4ce31882e189d131bc65">draw</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) = 0;</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#ad113b092ba5b4ce31882e189d131bc65">   35</a></span>&#160;<span class="comment"></span>    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccDrawableObject.html#ad113b092ba5b4ce31882e189d131bc65">draw</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) = 0;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#a0dbd8385f42800e73bc30c79a09fcce6">   38</a></span>&#160;    <span class="keyword">inline</span> <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classccDrawableObject.html#a0dbd8385f42800e73bc30c79a09fcce6">isVisible</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_visible; }</div>
 <div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">   40</a></span>&#160;    <span class="keyword">inline</span> <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(<span class="keywordtype">bool</span> state) { m_visible = state; }</div>
@@ -236,7 +245,7 @@ $(document).ready(function(){initNavTree('ecvDrawableObject_8h_source.html','');
 <div class="line"><a name="l00223"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#ad47cbd10708138c9c12d955d67574a5a">  223</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classccDrawableObject.html#ad47cbd10708138c9c12d955d67574a5a">addClipPlanes</a>(<span class="keyword">const</span> <a class="code" href="structccClipPlane.html">ccClipPlane</a>&amp; plane);</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160; </div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
-<div class="line"><a name="l00229"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#a5a85b9e7d881d52ed9f8193b4c16a3d0">  229</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccDrawableObject.html#a5a85b9e7d881d52ed9f8193b4c16a3d0">toggleClipPlanes</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="keywordtype">bool</span> enable);</div>
+<div class="line"><a name="l00229"></a><span class="lineno"><a class="line" href="classccDrawableObject.html#a5a85b9e7d881d52ed9f8193b4c16a3d0">  229</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classccDrawableObject.html#a5a85b9e7d881d52ed9f8193b4c16a3d0">toggleClipPlanes</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>, <span class="keywordtype">bool</span> enable);</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160; </div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="keyword">public</span>:  <span class="comment">// push and pop display state</span></div>
 <div class="line"><a name="l00233"></a><span class="lineno"><a class="line" href="structccDrawableObject_1_1DisplayState.html">  233</a></span>&#160;<span class="comment"></span>    <span class="keyword">struct </span><a class="code" href="structccDrawableObject_1_1DisplayState.html">DisplayState</a> {</div>
@@ -294,7 +303,6 @@ $(document).ready(function(){initNavTree('ecvDrawableObject_8h_source.html','');
 <div class="ttc" id="aCVGeom_8h_html"><div class="ttname"><a href="CVGeom_8h.html">CVGeom.h</a></div></div>
 <div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclassTuple4Tpl_html"><div class="ttname"><a href="classTuple4Tpl.html">Tuple4Tpl&lt; double &gt;</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html"><div class="ttname"><a href="classccDrawableObject.html">ccDrawableObject</a></div><div class="ttdoc">Generic interface for (3D) drawable entities.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00024">ecvDrawableObject.h:24</a></div></div>
@@ -374,6 +382,7 @@ $(document).ready(function(){initNavTree('ecvDrawableObject_8h_source.html','');
 <div class="ttc" id="aecvDrawContext_8h_html"><div class="ttname"><a href="ecvDrawContext_8h.html">ecvDrawContext.h</a></div></div>
 <div class="ttc" id="aecvDrawableObject_8h_html_a930da0541a3912c9d6cd9432443a0ecb"><div class="ttname"><a href="ecvDrawableObject_8h.html#a930da0541a3912c9d6cd9432443a0ecb">ccClipPlaneSet</a></div><div class="ttdeci">std::vector&lt; ccClipPlane &gt; ccClipPlaneSet</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00021">ecvDrawableObject.h:21</a></div></div>
 <div class="ttc" id="aecvGLMatrix_8h_html"><div class="ttname"><a href="ecvGLMatrix_8h.html">ecvGLMatrix.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="astructccClipPlane_html"><div class="ttname"><a href="structccClipPlane.html">ccClipPlane</a></div><div class="ttdoc">Simple (clipping) plane equation.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00018">ecvDrawableObject.h:18</a></div></div>
 <div class="ttc" id="astructccClipPlane_html_a60bfade79a4a57953af149017cb51b64"><div class="ttname"><a href="structccClipPlane.html#a60bfade79a4a57953af149017cb51b64">ccClipPlane::equation</a></div><div class="ttdeci">Tuple4Tpl&lt; double &gt; equation</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00019">ecvDrawableObject.h:19</a></div></div>
 <div class="ttc" id="astructccDrawableObject_1_1DisplayState_html"><div class="ttname"><a href="structccDrawableObject_1_1DisplayState.html">ccDrawableObject::DisplayState</a></div><div class="ttdoc">Display state.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00233">ecvDrawableObject.h:233</a></div></div>
@@ -388,7 +397,7 @@ $(document).ready(function(){initNavTree('ecvDrawableObject_8h_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvDrawableObject_8h.html">ecvDrawableObject.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

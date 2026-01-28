@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -114,27 +123,30 @@ $(document).ready(function(){initNavTree('FBXCommand_8h_source.html',''); initRe
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">// #                                                                        #</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">// ##########################################################################</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;ecvCommandLineInterface.h&quot;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a>&quot;</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classFBXCommand.html">   29</a></span>&#160;<span class="keyword">class </span><a class="code" href="classFBXCommand.html">FBXCommand</a> : <span class="keyword">public</span> ccCommandLineInterface::Command {</div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classFBXCommand.html">   29</a></span>&#160;<span class="keyword">class </span><a class="code" href="classFBXCommand.html">FBXCommand</a> : <span class="keyword">public</span> <a class="code" href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a> {</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <a class="code" href="classFBXCommand.html#a2d45b24559a305b5a617dfeae5406595">FBXCommand</a>();</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classFBXCommand.html#a6dd11586b8e20d3c984288baa6a27941">   33</a></span>&#160;    <a class="code" href="classFBXCommand.html#a6dd11586b8e20d3c984288baa6a27941">~FBXCommand</a>() <span class="keyword">override</span> = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classFBXCommand.html#a6a09b1723b8246d66f0f84d8dfc6e54b">process</a>(ccCommandLineInterface&amp; cmd) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classFBXCommand.html#a6a09b1723b8246d66f0f84d8dfc6e54b">process</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>&amp; cmd) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;};</div>
 <div class="ttc" id="aclassFBXCommand_html"><div class="ttname"><a href="classFBXCommand.html">FBXCommand</a></div><div class="ttdef"><b>Definition:</b> <a href="FBXCommand_8h_source.html#l00029">FBXCommand.h:29</a></div></div>
 <div class="ttc" id="aclassFBXCommand_html_a2d45b24559a305b5a617dfeae5406595"><div class="ttname"><a href="classFBXCommand.html#a2d45b24559a305b5a617dfeae5406595">FBXCommand::FBXCommand</a></div><div class="ttdeci">FBXCommand()</div><div class="ttdef"><b>Definition:</b> <a href="FBXCommand_8cpp_source.html#l00015">FBXCommand.cpp:15</a></div></div>
-<div class="ttc" id="aclassFBXCommand_html_a6a09b1723b8246d66f0f84d8dfc6e54b"><div class="ttname"><a href="classFBXCommand.html#a6a09b1723b8246d66f0f84d8dfc6e54b">FBXCommand::process</a></div><div class="ttdeci">bool process(ccCommandLineInterface &amp;cmd) override</div><div class="ttdef"><b>Definition:</b> <a href="FBXCommand_8cpp_source.html#l00017">FBXCommand.cpp:17</a></div></div>
+<div class="ttc" id="aclassFBXCommand_html_a6a09b1723b8246d66f0f84d8dfc6e54b"><div class="ttname"><a href="classFBXCommand.html#a6a09b1723b8246d66f0f84d8dfc6e54b">FBXCommand::process</a></div><div class="ttdeci">bool process(ccCommandLineInterface &amp;cmd) override</div><div class="ttdoc">Main process.</div><div class="ttdef"><b>Definition:</b> <a href="FBXCommand_8cpp_source.html#l00017">FBXCommand.cpp:17</a></div></div>
 <div class="ttc" id="aclassFBXCommand_html_a6dd11586b8e20d3c984288baa6a27941"><div class="ttname"><a href="classFBXCommand.html#a6dd11586b8e20d3c984288baa6a27941">FBXCommand::~FBXCommand</a></div><div class="ttdeci">~FBXCommand() override=default</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aecvCommandLineInterface_8h_html"><div class="ttname"><a href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html">ccCommandLineInterface::Command</a></div><div class="ttdoc">Generic command interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00130">ecvCommandLineInterface.h:130</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_ba78d2b40d836d0b4658cd30e65ca81f.html">qFBXIO</a></li><li class="navelem"><a class="el" href="dir_aea7f2bb1755d784edea120d749d0d6f.html">include</a></li><li class="navelem"><a class="el" href="FBXCommand_8h.html">FBXCommand.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

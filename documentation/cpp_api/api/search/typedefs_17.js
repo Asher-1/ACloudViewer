@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['xb_52266',['Xb',['../classGrainsAsEllipsoids.html#a91d3966457958376765c5ff25dfd99e0',1,'GrainsAsEllipsoids']]]
+  ['xb_59897',['Xb',['../classGrainsAsEllipsoids.html#a91d3966457958376765c5ff25dfd99e0',1,'GrainsAsEllipsoids']]]
 ];

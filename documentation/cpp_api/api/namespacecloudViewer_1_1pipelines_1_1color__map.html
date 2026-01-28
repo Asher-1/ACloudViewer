@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -131,6 +140,12 @@ Functions</h2></td></tr>
 <tr class="separator:a9bf7f92c7bae4d42ca4c54307ccf2e1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2561ed7bfdfc9fd961b877e2a3d6016b"><td class="memItemLeft" align="right" valign="top">std::pair&lt; <a class="el" href="classccMesh.html">ccMesh</a>, <a class="el" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1color__map.html#a2561ed7bfdfc9fd961b877e2a3d6016b">RunRigidOptimizer</a> (const <a class="el" href="classccMesh.html">ccMesh</a> &amp;mesh, const std::vector&lt; <a class="el" href="classcloudViewer_1_1geometry_1_1RGBDImage.html">geometry::RGBDImage</a> &gt; &amp;images_rgbd, const <a class="el" href="classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html">camera::PinholeCameraTrajectory</a> &amp;camera_trajectory, const <a class="el" href="structcloudViewer_1_1pipelines_1_1color__map_1_1RigidOptimizerOption.html">RigidOptimizerOption</a> &amp;option)</td></tr>
 <tr class="separator:a2561ed7bfdfc9fd961b877e2a3d6016b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77c3898ea9d9f04e98b7b2dd74d21ed4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1color__map.html#a77c3898ea9d9f04e98b7b2dd74d21ed4">pybind_color_map_options</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a77c3898ea9d9f04e98b7b2dd74d21ed4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac04c162fce4cdfe61cfd02b5fe6756fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1color__map.html#ac04c162fce4cdfe61cfd02b5fe6756fe">pybind_color_map_classes</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ac04c162fce4cdfe61cfd02b5fe6756fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48cf868af8f4ef055afdc97d56df5f75"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1color__map.html#a48cf868af8f4ef055afdc97d56df5f75">pybind_color_map</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a48cf868af8f4ef055afdc97d56df5f75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="af37e68888f962dd60e19cc4f5ec475d8"></a>
@@ -619,6 +634,78 @@ template&lt;typename VecInTypeDouble , typename VecInTypeInt , typename MatOutTy
 
 </div>
 </div>
+<a id="a48cf868af8f4ef055afdc97d56df5f75"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48cf868af8f4ef055afdc97d56df5f75">&#9670;&nbsp;</a></span>pybind_color_map()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::pipelines::color_map::pybind_color_map </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="color__map_8cpp_source.html#l00180">180</a> of file <a class="el" href="color__map_8cpp_source.html">color_map.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="color__map_8cpp_source.html#l00172">pybind_color_map_classes()</a>, and <a class="el" href="color__map_8cpp_source.html#l00023">pybind_color_map_options()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="pipelines_2pipelines_8cpp_source.html#l00019">cloudViewer::pipelines::pybind_pipelines()</a>.</p>
+
+</div>
+</div>
+<a id="ac04c162fce4cdfe61cfd02b5fe6756fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac04c162fce4cdfe61cfd02b5fe6756fe">&#9670;&nbsp;</a></span>pybind_color_map_classes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::pipelines::color_map::pybind_color_map_classes </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="color__map_8cpp_source.html#l00172">172</a> of file <a class="el" href="color__map_8cpp_source.html">color_map.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00204">RunNonRigidOptimizer()</a>, and <a class="el" href="RigidOptimizer_8cpp_source.html#l00074">RunRigidOptimizer()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="color__map_8cpp_source.html#l00180">pybind_color_map()</a>.</p>
+
+</div>
+</div>
+<a id="a77c3898ea9d9f04e98b7b2dd74d21ed4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77c3898ea9d9f04e98b7b2dd74d21ed4">&#9670;&nbsp;</a></span>pybind_color_map_options()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::pipelines::color_map::pybind_color_map_options </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="color__map_8cpp_source.html#l00023">23</a> of file <a class="el" href="color__map_8cpp_source.html">color_map.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00025">cloudViewer::pipelines::color_map::RigidOptimizerOption::maximum_iteration_</a>, and <a class="el" href="NonRigidOptimizer_8h_source.html#l00028">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::number_of_vertical_anchors_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="color__map_8cpp_source.html#l00180">pybind_color_map()</a>.</p>
+
+</div>
+</div>
 <a id="a899fbe8a22d74a6a08cb3108fec27052"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a899fbe8a22d74a6a08cb3108fec27052">&#9670;&nbsp;</a></span>QueryImageIntensity()</h2>
 
@@ -725,7 +812,9 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00204">204</a> of file <a class="el" href="NonRigidOptimizer_8cpp_source.html">NonRigidOptimizer.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00104">ComputeJacobianAndResidualNonRigid()</a>, <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00057">ComputeJTJandJTrNonRigid()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00104">CreateDepthBoundaryMasks()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00080">CreateUtilImagesFromRGBD()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00121">CreateVertexAndImageVisibility()</a>, <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00034">CreateWarpingFields()</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00082">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::debug_output_dir_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00058">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::depth_threshold_for_discontinuity_check_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00051">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::depth_threshold_for_visibility_check_</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a7b7cdb048dfa77f4da22b9c3bd2578f8">cloudViewer::utility::filesystem::DirectoryExists()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="classccMesh.html#a94bcea81efb85c6f30680788e8dc12d9">ccMesh::getVerticeSize()</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00065">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::half_dilation_kernel_size_for_discontinuity_map_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00072">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::image_boundary_margin_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00077">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::invisible_vertex_color_knn_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">cloudViewer::utility::filesystem::MakeDirectoryHierarchy()</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00045">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::maximum_allowable_depth_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00039">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::maximum_iteration_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00036">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::non_rigid_anchor_point_weight_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00028">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::number_of_vertical_anchors_</a>, <a class="el" href="PinholeCameraTrajectory_8h_source.html#l00035">cloudViewer::camera::PinholeCameraTrajectory::parameters_</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00232">SetGeometryColorAverage()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00188">SetProxyIntensityForVertex()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00130">size</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#a7fcfc22883e4fd3266e9e506b159f81b">cloudViewer::utility::SolveLinearSystemPSD()</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">cloudViewer::utility::TransformVector6dToMatrix4d()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>, <a class="el" href="ImageWarpingFieldIO_8cpp_source.html#l00086">cloudViewer::io::WriteImageWarpingField()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">cloudViewer::io::WritePinholeCameraTrajectory()</a>, and <a class="el" href="io_2TriangleMeshIO_8cpp_source.html#l00255">cloudViewer::io::WriteTriangleMesh()</a>.</p>
+<p class="reference">References <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00104">ComputeJacobianAndResidualNonRigid()</a>, <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00057">ComputeJTJandJTrNonRigid()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00104">CreateDepthBoundaryMasks()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00080">CreateUtilImagesFromRGBD()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00121">CreateVertexAndImageVisibility()</a>, <a class="el" href="NonRigidOptimizer_8cpp_source.html#l00034">CreateWarpingFields()</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00082">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::debug_output_dir_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00058">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::depth_threshold_for_discontinuity_check_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00051">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::depth_threshold_for_visibility_check_</a>, <a class="el" href="FileSystem_8cpp_source.html#l00473">cloudViewer::utility::filesystem::DirectoryExists()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="classccMesh.html#a94bcea81efb85c6f30680788e8dc12d9">ccMesh::getVerticeSize()</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00065">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::half_dilation_kernel_size_for_discontinuity_map_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00072">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::image_boundary_margin_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00077">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::invisible_vertex_color_knn_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00499">cloudViewer::utility::filesystem::MakeDirectoryHierarchy()</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00045">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::maximum_allowable_depth_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00039">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::maximum_iteration_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00036">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::non_rigid_anchor_point_weight_</a>, <a class="el" href="NonRigidOptimizer_8h_source.html#l00028">cloudViewer::pipelines::color_map::NonRigidOptimizerOption::number_of_vertical_anchors_</a>, <a class="el" href="PinholeCameraTrajectory_8h_source.html#l00035">cloudViewer::camera::PinholeCameraTrajectory::parameters_</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00232">SetGeometryColorAverage()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00188">SetProxyIntensityForVertex()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00130">size</a>, <a class="el" href="Eigen_8cpp_source.html#l00021">cloudViewer::utility::SolveLinearSystemPSD()</a>, <a class="el" href="Eigen_8cpp_source.html#l00076">cloudViewer::utility::TransformVector6dToMatrix4d()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>, <a class="el" href="ImageWarpingFieldIO_8cpp_source.html#l00086">cloudViewer::io::WriteImageWarpingField()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">cloudViewer::io::WritePinholeCameraTrajectory()</a>, and <a class="el" href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00255">cloudViewer::io::WriteTriangleMesh()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="color__map_8cpp_source.html#l00172">pybind_color_map_classes()</a>.</p>
 
 </div>
 </div>
@@ -769,7 +858,9 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="RigidOptimizer_8cpp_source.html#l00074">74</a> of file <a class="el" href="RigidOptimizer_8cpp_source.html">RigidOptimizer.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="RigidOptimizer_8cpp_source.html#l00031">ComputeJacobianAndResidualRigid()</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#a30c6d7c5d3ad03947501a6ee04fe2ce7">cloudViewer::utility::ComputeJTJandJTr()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00104">CreateDepthBoundaryMasks()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00080">CreateUtilImagesFromRGBD()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00121">CreateVertexAndImageVisibility()</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00068">cloudViewer::pipelines::color_map::RigidOptimizerOption::debug_output_dir_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00044">cloudViewer::pipelines::color_map::RigidOptimizerOption::depth_threshold_for_discontinuity_check_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00037">cloudViewer::pipelines::color_map::RigidOptimizerOption::depth_threshold_for_visibility_check_</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a7b7cdb048dfa77f4da22b9c3bd2578f8">cloudViewer::utility::filesystem::DirectoryExists()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00051">cloudViewer::pipelines::color_map::RigidOptimizerOption::half_dilation_kernel_size_for_discontinuity_map_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00058">cloudViewer::pipelines::color_map::RigidOptimizerOption::image_boundary_margin_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00063">cloudViewer::pipelines::color_map::RigidOptimizerOption::invisible_vertex_color_knn_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">cloudViewer::utility::filesystem::MakeDirectoryHierarchy()</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00031">cloudViewer::pipelines::color_map::RigidOptimizerOption::maximum_allowable_depth_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00025">cloudViewer::pipelines::color_map::RigidOptimizerOption::maximum_iteration_</a>, <a class="el" href="Optional_8h_source.html#l00136">cloudViewer::utility::nullopt</a>, <a class="el" href="PinholeCameraTrajectory_8h_source.html#l00035">cloudViewer::camera::PinholeCameraTrajectory::parameters_</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00232">SetGeometryColorAverage()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00188">SetProxyIntensityForVertex()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00130">size</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#a080176f2062a7b10a5b4106e9fe3cfdc">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">cloudViewer::io::WritePinholeCameraTrajectory()</a>, and <a class="el" href="io_2TriangleMeshIO_8cpp_source.html#l00255">cloudViewer::io::WriteTriangleMesh()</a>.</p>
+<p class="reference">References <a class="el" href="RigidOptimizer_8cpp_source.html#l00031">ComputeJacobianAndResidualRigid()</a>, <a class="el" href="Eigen_8cpp_source.html#l00148">cloudViewer::utility::ComputeJTJandJTr()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00104">CreateDepthBoundaryMasks()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00080">CreateUtilImagesFromRGBD()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00121">CreateVertexAndImageVisibility()</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00068">cloudViewer::pipelines::color_map::RigidOptimizerOption::debug_output_dir_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00044">cloudViewer::pipelines::color_map::RigidOptimizerOption::depth_threshold_for_discontinuity_check_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00037">cloudViewer::pipelines::color_map::RigidOptimizerOption::depth_threshold_for_visibility_check_</a>, <a class="el" href="FileSystem_8cpp_source.html#l00473">cloudViewer::utility::filesystem::DirectoryExists()</a>, <a class="el" href="FilamentResourceManager_8cpp_source.html#l00181">format</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00051">cloudViewer::pipelines::color_map::RigidOptimizerOption::half_dilation_kernel_size_for_discontinuity_map_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00058">cloudViewer::pipelines::color_map::RigidOptimizerOption::image_boundary_margin_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00063">cloudViewer::pipelines::color_map::RigidOptimizerOption::invisible_vertex_color_knn_</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00090">LogDebug</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="FileSystem_8cpp_source.html#l00499">cloudViewer::utility::filesystem::MakeDirectoryHierarchy()</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00031">cloudViewer::pipelines::color_map::RigidOptimizerOption::maximum_allowable_depth_</a>, <a class="el" href="RigidOptimizer_8h_source.html#l00025">cloudViewer::pipelines::color_map::RigidOptimizerOption::maximum_iteration_</a>, <a class="el" href="Optional_8h_source.html#l00136">cloudViewer::utility::nullopt</a>, <a class="el" href="PinholeCameraTrajectory_8h_source.html#l00035">cloudViewer::camera::PinholeCameraTrajectory::parameters_</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00232">SetGeometryColorAverage()</a>, <a class="el" href="ColorMapUtils_8cpp_source.html#l00188">SetProxyIntensityForVertex()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00130">size</a>, <a class="el" href="Eigen_8cpp_source.html#l00105">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage()</a>, <a class="el" href="namespacecloudViewer_1_1io.html#a73479d14bbbbdb92a665acfa7f73495a">cloudViewer::io::WritePinholeCameraTrajectory()</a>, and <a class="el" href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00255">cloudViewer::io::WriteTriangleMesh()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="color__map_8cpp_source.html#l00172">pybind_color_map_classes()</a>.</p>
 
 </div>
 </div>
@@ -907,7 +998,7 @@ template&lt;typename T &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1pipelines.html">pipelines</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1color__map.html">color_map</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

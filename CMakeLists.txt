@@ -11,10 +11,11 @@
 #   cd build_app && make documentation
 #
 # The 'documentation' target calls make_docs.py which handles:
-#   1. Doxygen: Generate C++ API HTML → _out/html/cpp_api/api/
-#   2. Python API: Generate .rst files from cloudViewer module
-#   3. Jupyter: Copy notebook files to tutorial directories
-#   4. Sphinx: Build HTML docs → _out/html/
+#   1. Template Processing: Generate files from .in templates (Doxyfile, *.in.rst)
+#   2. Doxygen: Generate C++ API HTML → _out/html/cpp_api/api/
+#   3. Python API: Generate .rst files from cloudViewer module
+#   4. Jupyter: Copy notebook files to tutorial directories
+#   5. Sphinx: Build HTML docs → _out/html/
 #
 # Reference: util/ci_utils.sh::build_docs() for the canonical implementation
 #

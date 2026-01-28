@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -86,7 +95,8 @@ $(document).ready(function(){initNavTree('namespacecloudViewer_1_1pipelines_1_1i
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#enum-members">Enumerations</a>  </div>
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">cloudViewer::pipelines::integration Namespace Reference</div>  </div>
 </div><!--header-->
@@ -102,6 +112,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html">UniformTSDFVolume</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html" title="UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996)...">UniformTSDFVolume</a> implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996).  <a href="classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1PyTSDFVolume.html">PyTSDFVolume</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -110,6 +122,15 @@ Enumerations</h2></td></tr>
 , <a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#ae09628a7add6169dae2aaf60fab57786a7f0779c83e549b802dc51d3ee21409fb">Gray32</a> = 2
  }</td></tr>
 <tr class="separator:ae09628a7add6169dae2aaf60fab57786"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a48c43e88c1a3b852894dd04029e88ba2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#a48c43e88c1a3b852894dd04029e88ba2">pybind_integration_classes</a> (py::module &amp;m)</td></tr>
+<tr class="separator:a48c43e88c1a3b852894dd04029e88ba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab52372230eab334425724831cefc9efc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#ab52372230eab334425724831cefc9efc">pybind_integration_methods</a> (py::module &amp;m)</td></tr>
+<tr class="separator:ab52372230eab334425724831cefc9efc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf63239d3d95e27a3a4da8acd4c5366d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#adf63239d3d95e27a3a4da8acd4c5366d">pybind_integration</a> (py::module &amp;m)</td></tr>
+<tr class="separator:adf63239d3d95e27a3a4da8acd4c5366d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="ae09628a7add6169dae2aaf60fab57786"></a>
@@ -145,13 +166,84 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="adf63239d3d95e27a3a4da8acd4c5366d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf63239d3d95e27a3a4da8acd4c5366d">&#9670;&nbsp;</a></span>pybind_integration()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::pipelines::integration::pybind_integration </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="integration_8cpp_source.html#l00200">200</a> of file <a class="el" href="integration_8cpp_source.html">integration.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="integration_8cpp_source.html#l00040">pybind_integration_classes()</a>, and <a class="el" href="integration_8cpp_source.html#l00196">pybind_integration_methods()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="pipelines_2pipelines_8cpp_source.html#l00019">cloudViewer::pipelines::pybind_pipelines()</a>.</p>
+
+</div>
+</div>
+<a id="a48c43e88c1a3b852894dd04029e88ba2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48c43e88c1a3b852894dd04029e88ba2">&#9670;&nbsp;</a></span>pybind_integration_classes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::pipelines::integration::pybind_integration_classes </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="integration_8cpp_source.html#l00040">40</a> of file <a class="el" href="integration_8cpp_source.html">integration.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="TSDFVolume_8h_source.html#l00080">cloudViewer::pipelines::integration::TSDFVolume::color_type_</a>, <a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1TSDFVolume.html#ad84072d1e39e44dd9d2cba5c3f073578">cloudViewer::pipelines::integration::TSDFVolume::ExtractPointCloud()</a>, <a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1TSDFVolume.html#a03f24f38dc9291494ddd84483deb39b3">cloudViewer::pipelines::integration::TSDFVolume::ExtractTriangleMesh()</a>, <a class="el" href="UniformTSDFVolume_8cpp_source.html#l00370">cloudViewer::pipelines::integration::UniformTSDFVolume::ExtractVolumeColor()</a>, <a class="el" href="UniformTSDFVolume_8cpp_source.html#l00344">cloudViewer::pipelines::integration::UniformTSDFVolume::ExtractVolumeTSDF()</a>, <a class="el" href="UniformTSDFVolume_8cpp_source.html#l00296">cloudViewer::pipelines::integration::UniformTSDFVolume::ExtractVoxelGrid()</a>, <a class="el" href="ScalableTSDFVolume_8cpp_source.html#l00390">cloudViewer::pipelines::integration::ScalableTSDFVolume::ExtractVoxelPointCloud()</a>, <a class="el" href="UniformTSDFVolume_8cpp_source.html#l00266">cloudViewer::pipelines::integration::UniformTSDFVolume::ExtractVoxelPointCloud()</a>, <a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#ae09628a7add6169dae2aaf60fab57786a7f0779c83e549b802dc51d3ee21409fb">Gray32</a>, <a class="el" href="UniformTSDFVolume_8cpp_source.html#l00415">cloudViewer::pipelines::integration::UniformTSDFVolume::InjectVolumeColor()</a>, <a class="el" href="UniformTSDFVolume_8cpp_source.html#l00393">cloudViewer::pipelines::integration::UniformTSDFVolume::InjectVolumeTSDF()</a>, <a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1TSDFVolume.html#a1884d798cd9d10510ddcb991764ac677">cloudViewer::pipelines::integration::TSDFVolume::Integrate()</a>, <a class="el" href="cutil__math_8h_source.html#l01162">length()</a>, <a class="el" href="UniformTSDFVolume_8h_source.html#l00090">cloudViewer::pipelines::integration::UniformTSDFVolume::length_</a>, <a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#ae09628a7add6169dae2aaf60fab57786a745ff66e655ea022e59182e15f301c8c">NoColor</a>, <a class="el" href="classcloudViewer_1_1pipelines_1_1integration_1_1TSDFVolume.html#a130e25590b2108df518622d617c0d00d">cloudViewer::pipelines::integration::TSDFVolume::Reset()</a>, <a class="el" href="UniformTSDFVolume_8h_source.html#l00093">cloudViewer::pipelines::integration::UniformTSDFVolume::resolution_</a>, <a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html#ae09628a7add6169dae2aaf60fab57786a165c6379d01617e12de274a3952efa63">RGB8</a>, <a class="el" href="TSDFVolume_8h_source.html#l00078">cloudViewer::pipelines::integration::TSDFVolume::sdf_trunc_</a>, and <a class="el" href="TSDFVolume_8h_source.html#l00076">cloudViewer::pipelines::integration::TSDFVolume::voxel_length_</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="integration_8cpp_source.html#l00200">pybind_integration()</a>.</p>
+
+</div>
+</div>
+<a id="ab52372230eab334425724831cefc9efc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab52372230eab334425724831cefc9efc">&#9670;&nbsp;</a></span>pybind_integration_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void cloudViewer::pipelines::integration::pybind_integration_methods </td>
+          <td>(</td>
+          <td class="paramtype">py::module &amp;&#160;</td>
+          <td class="paramname"><em>m</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="integration_8cpp_source.html#l00196">196</a> of file <a class="el" href="integration_8cpp_source.html">integration.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="integration_8cpp_source.html#l00200">pybind_integration()</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1pipelines.html">pipelines</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1pipelines_1_1integration.html">integration</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

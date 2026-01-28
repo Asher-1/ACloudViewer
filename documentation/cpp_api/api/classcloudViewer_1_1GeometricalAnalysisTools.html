@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -149,53 +158,53 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a3acb733e7c02a5863b2cdafb8e7ae22a"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a3acb733e7c02a5863b2cdafb8e7ae22a">ComputeCharactersitic</a> (<a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#aef5659a08f840f72ed85ef33386f9604">GeomCharacteristic</a> c, int subOption, <a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> kernelRadius, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *roughnessUpDir=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:a3acb733e7c02a5863b2cdafb8e7ae22a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unified way to compute a geometric characteristic.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a3acb733e7c02a5863b2cdafb8e7ae22a">More...</a><br /></td></tr>
-<tr class="separator:a3acb733e7c02a5863b2cdafb8e7ae22a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba2959effc3fb8492d0194c341edc869"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#aba2959effc3fb8492d0194c341edc869">ComputeLocalDensityApprox</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a6b5de9f5799c24d9000ea29559f3a426">Density</a> densityType, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:aba2959effc3fb8492d0194c341edc869"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the local density (approximate)  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#aba2959effc3fb8492d0194c341edc869">More...</a><br /></td></tr>
-<tr class="separator:aba2959effc3fb8492d0194c341edc869"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7567e9cb6c028c94e252e04a71481d2d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a7567e9cb6c028c94e252e04a71481d2d">ComputeGravityCenter</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
-<tr class="memdesc:a7567e9cb6c028c94e252e04a71481d2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the gravity center of a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a7567e9cb6c028c94e252e04a71481d2d">More...</a><br /></td></tr>
-<tr class="separator:a7567e9cb6c028c94e252e04a71481d2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a3a2a1d560ce75ca90021aad4f81ab9"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a3a3a2a1d560ce75ca90021aad4f81ab9">ComputeWeightedGravityCenter</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, <a class="el" href="classcloudViewer_1_1ScalarField.html">ScalarField</a> *weights)</td></tr>
-<tr class="memdesc:a3a3a2a1d560ce75ca90021aad4f81ab9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the weighted gravity center of a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a3a3a2a1d560ce75ca90021aad4f81ab9">More...</a><br /></td></tr>
-<tr class="separator:a3a3a2a1d560ce75ca90021aad4f81ab9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c0a9b045c3c2a0c197ca03736050595"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a1c0a9b045c3c2a0c197ca03736050595">ComputeCrossCovarianceMatrix</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *P, <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *Q, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;pGravityCenter, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;qGravityCenter)</td></tr>
-<tr class="memdesc:a1c0a9b045c3c2a0c197ca03736050595"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the cross covariance matrix between two clouds (same size)  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a1c0a9b045c3c2a0c197ca03736050595">More...</a><br /></td></tr>
-<tr class="separator:a1c0a9b045c3c2a0c197ca03736050595"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73260f0af25d2c4e13cb5a6fc41699bd"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a73260f0af25d2c4e13cb5a6fc41699bd">ComputeWeightedCrossCovarianceMatrix</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *P, <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *Q, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;pGravityCenter, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;qGravityCenter, <a class="el" href="classcloudViewer_1_1ScalarField.html">ScalarField</a> *coupleWeights=nullptr)</td></tr>
-<tr class="separator:a73260f0af25d2c4e13cb5a6fc41699bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d666798c286e034f98ce2d39c79d3ee"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a7d666798c286e034f98ce2d39c79d3ee">ComputeCovarianceMatrix</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *_gravityCenter=nullptr)</td></tr>
-<tr class="memdesc:a7d666798c286e034f98ce2d39c79d3ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the covariance matrix of a clouds.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a7d666798c286e034f98ce2d39c79d3ee">More...</a><br /></td></tr>
-<tr class="separator:a7d666798c286e034f98ce2d39c79d3ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c4d9761004f01acf8956f6ea7c320b4"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a0c4d9761004f01acf8956f6ea7c320b4">FlagDuplicatePoints</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, double minDistanceBetweenPoints=std::numeric_limits&lt; double &gt;::epsilon(), <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
-<tr class="memdesc:a0c4d9761004f01acf8956f6ea7c320b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag duplicate points.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a0c4d9761004f01acf8956f6ea7c320b4">More...</a><br /></td></tr>
-<tr class="separator:a0c4d9761004f01acf8956f6ea7c320b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a25a349a82b1498cc4fa95c14e18bc670"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a25a349a82b1498cc4fa95c14e18bc670">DetectSphereRobust</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, double outliersRatio, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius, double &amp;rms, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, double confidence=0.99, unsigned seed=0)</td></tr>
-<tr class="memdesc:a25a349a82b1498cc4fa95c14e18bc670"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to detect a sphere in a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a25a349a82b1498cc4fa95c14e18bc670">More...</a><br /></td></tr>
-<tr class="separator:a25a349a82b1498cc4fa95c14e18bc670"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7b2b2cd53dc0ab44fba2225d69fc0986"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a7b2b2cd53dc0ab44fba2225d69fc0986">ComputeSphereFrom4</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;A, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;B, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;C, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;D, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius)</td></tr>
-<tr class="memdesc:a7b2b2cd53dc0ab44fba2225d69fc0986"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the center and radius of a sphere passing through 4 points.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a7b2b2cd53dc0ab44fba2225d69fc0986">More...</a><br /></td></tr>
-<tr class="separator:a7b2b2cd53dc0ab44fba2225d69fc0986"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:affe86917f0fd8a2c55a836d2cbe3b82e"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#affe86917f0fd8a2c55a836d2cbe3b82e">DetectCircle</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;<a class="el" href="FileIOFactory_8cpp.html#a09ab306cdab1aa39bb9e04096e50f6b1">normal</a>, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius, double &amp;rms, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
-<tr class="memdesc:affe86917f0fd8a2c55a836d2cbe3b82e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detects a circle from a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#affe86917f0fd8a2c55a836d2cbe3b82e">More...</a><br /></td></tr>
-<tr class="separator:affe86917f0fd8a2c55a836d2cbe3b82e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a980b230e3303d50101ccab612a42700b"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a980b230e3303d50101ccab612a42700b">ComputeCharactersitic</a> (<a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#aef5659a08f840f72ed85ef33386f9604">GeomCharacteristic</a> c, int subOption, <a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> kernelRadius, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> *roughnessUpDir=nullptr, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:a980b230e3303d50101ccab612a42700b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unified way to compute a geometric characteristic.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a980b230e3303d50101ccab612a42700b">More...</a><br /></td></tr>
+<tr class="separator:a980b230e3303d50101ccab612a42700b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb1d6ec571f543c51dae61e72af1986f"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#acb1d6ec571f543c51dae61e72af1986f">ComputeLocalDensityApprox</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a6b5de9f5799c24d9000ea29559f3a426">Density</a> densityType, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:acb1d6ec571f543c51dae61e72af1986f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the local density (approximate)  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#acb1d6ec571f543c51dae61e72af1986f">More...</a><br /></td></tr>
+<tr class="separator:acb1d6ec571f543c51dae61e72af1986f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed52e1daa9e8f3a66b66416848f1a582"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#aed52e1daa9e8f3a66b66416848f1a582">ComputeGravityCenter</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud)</td></tr>
+<tr class="memdesc:aed52e1daa9e8f3a66b66416848f1a582"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the gravity center of a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#aed52e1daa9e8f3a66b66416848f1a582">More...</a><br /></td></tr>
+<tr class="separator:aed52e1daa9e8f3a66b66416848f1a582"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef06355cfdc9fa827467f467c93d5617"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#aef06355cfdc9fa827467f467c93d5617">ComputeWeightedGravityCenter</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, <a class="el" href="classcloudViewer_1_1ScalarField.html">ScalarField</a> *weights)</td></tr>
+<tr class="memdesc:aef06355cfdc9fa827467f467c93d5617"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the weighted gravity center of a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#aef06355cfdc9fa827467f467c93d5617">More...</a><br /></td></tr>
+<tr class="separator:aef06355cfdc9fa827467f467c93d5617"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af916968560d5c1eb05e3b53f23e7a46d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#af916968560d5c1eb05e3b53f23e7a46d">ComputeCrossCovarianceMatrix</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *P, <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *Q, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;pGravityCenter, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;qGravityCenter)</td></tr>
+<tr class="memdesc:af916968560d5c1eb05e3b53f23e7a46d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the cross covariance matrix between two clouds (same size)  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#af916968560d5c1eb05e3b53f23e7a46d">More...</a><br /></td></tr>
+<tr class="separator:af916968560d5c1eb05e3b53f23e7a46d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ac2dda08fa8fb4fa72eaa6af0956b9d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a1ac2dda08fa8fb4fa72eaa6af0956b9d">ComputeWeightedCrossCovarianceMatrix</a> (<a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *P, <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *Q, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;pGravityCenter, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;qGravityCenter, <a class="el" href="classcloudViewer_1_1ScalarField.html">ScalarField</a> *coupleWeights=nullptr)</td></tr>
+<tr class="separator:a1ac2dda08fa8fb4fa72eaa6af0956b9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ef3e15f22ff6e9ad07a72e5441e5b8f"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a3ef3e15f22ff6e9ad07a72e5441e5b8f">ComputeCovarianceMatrix</a> (const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *theCloud, const <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *_gravityCenter=nullptr)</td></tr>
+<tr class="memdesc:a3ef3e15f22ff6e9ad07a72e5441e5b8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the covariance matrix of a clouds.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a3ef3e15f22ff6e9ad07a72e5441e5b8f">More...</a><br /></td></tr>
+<tr class="separator:a3ef3e15f22ff6e9ad07a72e5441e5b8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a629fa1f8f0834d5118f4fdeb70139212"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a629fa1f8f0834d5118f4fdeb70139212">FlagDuplicatePoints</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *theCloud, double minDistanceBetweenPoints=std::numeric_limits&lt; double &gt;::epsilon(), <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, <a class="el" href="classcloudViewer_1_1DgmOctree.html">DgmOctree</a> *inputOctree=nullptr)</td></tr>
+<tr class="memdesc:a629fa1f8f0834d5118f4fdeb70139212"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag duplicate points.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a629fa1f8f0834d5118f4fdeb70139212">More...</a><br /></td></tr>
+<tr class="separator:a629fa1f8f0834d5118f4fdeb70139212"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a007408392e46d7a432091d594cd09868"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a007408392e46d7a432091d594cd09868">DetectSphereRobust</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, double outliersRatio, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius, double &amp;rms, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr, double confidence=0.99, unsigned seed=0)</td></tr>
+<tr class="memdesc:a007408392e46d7a432091d594cd09868"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to detect a sphere in a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a007408392e46d7a432091d594cd09868">More...</a><br /></td></tr>
+<tr class="separator:a007408392e46d7a432091d594cd09868"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a616c5fa70e9d1a5ef63f2a325be4eb96"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a616c5fa70e9d1a5ef63f2a325be4eb96">ComputeSphereFrom4</a> (const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;A, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;B, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;C, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;D, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius)</td></tr>
+<tr class="memdesc:a616c5fa70e9d1a5ef63f2a325be4eb96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the center and radius of a sphere passing through 4 points.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a616c5fa70e9d1a5ef63f2a325be4eb96">More...</a><br /></td></tr>
+<tr class="separator:a616c5fa70e9d1a5ef63f2a325be4eb96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1931ca5b1cc21bd82dfc971a1bcfb2cd"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a1931ca5b1cc21bd82dfc971a1bcfb2cd">DetectCircle</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;<a class="el" href="FileIOFactory_8cpp.html#a09ab306cdab1aa39bb9e04096e50f6b1">normal</a>, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius, double &amp;rms, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a> *progressCb=nullptr)</td></tr>
+<tr class="memdesc:a1931ca5b1cc21bd82dfc971a1bcfb2cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detects a circle from a point cloud.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a1931ca5b1cc21bd82dfc971a1bcfb2cd">More...</a><br /></td></tr>
+<tr class="separator:a1931ca5b1cc21bd82dfc971a1bcfb2cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-methods"></a>
 Static Protected Member Functions</h2></td></tr>
-<tr class="memitem:ad1d0143b28dd9384370844115760e00b"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#ad1d0143b28dd9384370844115760e00b">ComputeGeomCharacteristicAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="memdesc:ad1d0143b28dd9384370844115760e00b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes geom characteristic inside a cell.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#ad1d0143b28dd9384370844115760e00b">More...</a><br /></td></tr>
-<tr class="separator:ad1d0143b28dd9384370844115760e00b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6987ffd766b627a624a17a1b45028e4c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a6987ffd766b627a624a17a1b45028e4c">ComputeApproxPointsDensityInACellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="memdesc:a6987ffd766b627a624a17a1b45028e4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes approximate point density inside a cell.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a6987ffd766b627a624a17a1b45028e4c">More...</a><br /></td></tr>
-<tr class="separator:a6987ffd766b627a624a17a1b45028e4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4363f674db3b840b836399d768bd3201"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a4363f674db3b840b836399d768bd3201">FlagDuplicatePointsInACellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
-<tr class="memdesc:a4363f674db3b840b836399d768bd3201"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flags duplicate points inside a cell.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a4363f674db3b840b836399d768bd3201">More...</a><br /></td></tr>
-<tr class="separator:a4363f674db3b840b836399d768bd3201"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28325e953db67ac5b81d7810be1d895a"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a28325e953db67ac5b81d7810be1d895a">RefineSphereLS</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius, double minReltaiveCenterShift=1.0e-3)</td></tr>
-<tr class="memdesc:a28325e953db67ac5b81d7810be1d895a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Refines the estimation of a sphere by (iterative) least-squares.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a28325e953db67ac5b81d7810be1d895a">More...</a><br /></td></tr>
-<tr class="separator:a28325e953db67ac5b81d7810be1d895a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addfae97eba030be9be20a5368e6f67d3"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#addfae97eba030be9be20a5368e6f67d3">ComputeGeomCharacteristicAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="memdesc:addfae97eba030be9be20a5368e6f67d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes geom characteristic inside a cell.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#addfae97eba030be9be20a5368e6f67d3">More...</a><br /></td></tr>
+<tr class="separator:addfae97eba030be9be20a5368e6f67d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9215164611f1ca105db8058693e8fbe2"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a9215164611f1ca105db8058693e8fbe2">ComputeApproxPointsDensityInACellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="memdesc:a9215164611f1ca105db8058693e8fbe2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes approximate point density inside a cell.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a9215164611f1ca105db8058693e8fbe2">More...</a><br /></td></tr>
+<tr class="separator:a9215164611f1ca105db8058693e8fbe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8efb66d9982294d197ac15578e745b44"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#a8efb66d9982294d197ac15578e745b44">FlagDuplicatePointsInACellAtLevel</a> (const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;cell, void **additionalParameters, <a class="el" href="classcloudViewer_1_1NormalizedProgress.html">NormalizedProgress</a> *<a class="el" href="qM3C2Tools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>=nullptr)</td></tr>
+<tr class="memdesc:a8efb66d9982294d197ac15578e745b44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flags duplicate points inside a cell.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#a8efb66d9982294d197ac15578e745b44">More...</a><br /></td></tr>
+<tr class="separator:a8efb66d9982294d197ac15578e745b44"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1c7e90f416175634c1ef7bc6fc18a1c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#ae1c7e90f416175634c1ef7bc6fc18a1c">RefineSphereLS</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *cloud, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;center, <a class="el" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> &amp;radius, double minReltaiveCenterShift=1.0e-3)</td></tr>
+<tr class="memdesc:ae1c7e90f416175634c1ef7bc6fc18a1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Refines the estimation of a sphere by (iterative) least-squares.  <a href="classcloudViewer_1_1GeometricalAnalysisTools.html#ae1c7e90f416175634c1ef7bc6fc18a1c">More...</a><br /></td></tr>
+<tr class="separator:ae1c7e90f416175634c1ef7bc6fc18a1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Several algorithms to compute point-clouds geometric characteristics (curvature, density, etc.) </p>
@@ -285,8 +294,8 @@ Static Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a6987ffd766b627a624a17a1b45028e4c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6987ffd766b627a624a17a1b45028e4c">&#9670;&nbsp;</a></span>ComputeApproxPointsDensityInACellAtLevel()</h2>
+<a id="a9215164611f1ca105db8058693e8fbe2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9215164611f1ca105db8058693e8fbe2">&#9670;&nbsp;</a></span>ComputeApproxPointsDensityInACellAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -295,7 +304,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::GeometricalAnalysisTools::ComputeApproxPointsDensityInACellAtLevel </td>
+          <td class="memname">bool GeometricalAnalysisTools::ComputeApproxPointsDensityInACellAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -335,10 +344,16 @@ Static Protected Member Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00456">456</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="DgmOctree_8h_source.html#l00225">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::alreadyVisitedNeighbourhoodSize</a>, <a class="el" href="DgmOctree_8h_source.html#l00189">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellCenter</a>, <a class="el" href="DgmOctree_8h_source.html#l00184">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellPos</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00039">DENSITY_2D</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00042">DENSITY_3D</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00037">DENSITY_KNN</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l01655">cloudViewer::DgmOctree::findNearestNeighborsStartingFromCell()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="CVMath_8h_source.html#l00037">cloudViewer::GreaterThanEpsilon()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="CVConst_8h_source.html#l00019">M_PI</a>, <a class="el" href="DgmOctree_8h_source.html#l00177">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::minNumberOfNeighbors</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="DgmOctree_8h_source.html#l00215">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::pointsInNeighbourhood</a>, <a class="el" href="DgmOctree_8h_source.html#l00167">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::queryPoint</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00026">s_UnitSphereVolume</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00066">cloudViewer::ReferenceCloud::setPointScalarValue()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00409">ComputeLocalDensityApprox()</a>.</p>
+
 </div>
 </div>
-<a id="a3acb733e7c02a5863b2cdafb8e7ae22a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3acb733e7c02a5863b2cdafb8e7ae22a">&#9670;&nbsp;</a></span>ComputeCharactersitic()</h2>
+<a id="a980b230e3303d50101ccab612a42700b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a980b230e3303d50101ccab612a42700b">&#9670;&nbsp;</a></span>ComputeCharactersitic()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -347,7 +362,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a> cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">GeometricalAnalysisTools::ErrorCode</a> GeometricalAnalysisTools::ComputeCharactersitic </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#aef5659a08f840f72ed85ef33386f9604">GeomCharacteristic</a>&#160;</td>
           <td class="paramname"><em>c</em>, </td>
@@ -416,12 +431,16 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>succes </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="ccTrace_8cpp_source.html#l00754">ccTrace::buildCurvatureCost()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00029">29</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00029">ApproxLocalDensity</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00154">ComputeGeomCharacteristicAtLevel()</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00409">ComputeLocalDensityApprox()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00026">Curvature</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00039">DENSITY_2D</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00042">DENSITY_3D</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00037">DENSITY_KNN</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a1721a624f9694430f84ce9c98d954ed3">cloudViewer::GenericCloud::enableScalarField()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00025">Feature</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02664">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">cloudViewer::GenericCloud::getPointScalarValue()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00048">InvalidInput</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00027">LocalDensity</a>, <a class="el" href="CVConst_8h_source.html#l00019">M_PI</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00032">MomentOrder1</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00047">NoError</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00049">NotEnoughPoints</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00037">octree</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00050">OctreeComputationFailed</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00051">ProcessFailed</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00031">Roughness</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00026">s_UnitSphereVolume</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aef2261d89fae22ce9a5a5ee06ccb4c37">cloudViewer::GenericCloud::setPointScalarValue()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, and <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00052">UnhandledCharacteristic</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ccTrace_8cpp_source.html#l00754">ccTrace::buildCurvatureCost()</a>, and <a class="el" href="ecvLibAlgorithms_8cpp_source.html#l00146">ccLibAlgorithms::ComputeGeomCharacteristic()</a>.</p>
 
 </div>
 </div>
-<a id="a7d666798c286e034f98ce2d39c79d3ee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7d666798c286e034f98ce2d39c79d3ee">&#9670;&nbsp;</a></span>ComputeCovarianceMatrix()</h2>
+<a id="a3ef3e15f22ff6e9ad07a72e5441e5b8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ef3e15f22ff6e9ad07a72e5441e5b8f">&#9670;&nbsp;</a></span>ComputeCovarianceMatrix()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -430,7 +449,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a> cloudViewer::GeometricalAnalysisTools::ComputeCovarianceMatrix </td>
+          <td class="memname"><a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a> GeometricalAnalysisTools::ComputeCovarianceMatrix </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -465,10 +484,14 @@ Static Protected Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>covariance matrix </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00562">562</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SquareMatrix_8h_source.html#l00319">cloudViewer::SquareMatrixTpl&lt; Scalar &gt;::clear()</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00517">ComputeGravityCenter()</a>, <a class="el" href="SquareMatrix_8h_source.html#l00157">cloudViewer::SquareMatrixTpl&lt; Scalar &gt;::m_values</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00144">points</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
 </div>
 </div>
-<a id="a1c0a9b045c3c2a0c197ca03736050595"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1c0a9b045c3c2a0c197ca03736050595">&#9670;&nbsp;</a></span>ComputeCrossCovarianceMatrix()</h2>
+<a id="af916968560d5c1eb05e3b53f23e7a46d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af916968560d5c1eb05e3b53f23e7a46d">&#9670;&nbsp;</a></span>ComputeCrossCovarianceMatrix()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -477,7 +500,7 @@ Static Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">SquareMatrixd</a> cloudViewer::GeometricalAnalysisTools::ComputeCrossCovarianceMatrix </td>
+          <td class="memname"><a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a> GeometricalAnalysisTools::ComputeCrossCovarianceMatrix </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>P</em>, </td>
@@ -527,10 +550,16 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>cross covariance matrix </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00611">611</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a92fb0560290d58171c67563d84e6a278">cloudViewer::GenericCloud::getNextPoint()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a2f05e939821a2ef1d333715127e6fcb7">cloudViewer::GenericCloud::placeIteratorAtBeginning()</a>, <a class="el" href="SquareMatrix_8h_source.html#l00160">cloudViewer::SquareMatrixTpl&lt; Scalar &gt;::row()</a>, <a class="el" href="SquareMatrix_8h_source.html#l00459">cloudViewer::SquareMatrixTpl&lt; Scalar &gt;::scale()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2RegistrationTools_8cpp_source.html#l00849">cloudViewer::RegistrationTools::RegistrationProcedure()</a>.</p>
+
 </div>
 </div>
-<a id="ad1d0143b28dd9384370844115760e00b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1d0143b28dd9384370844115760e00b">&#9670;&nbsp;</a></span>ComputeGeomCharacteristicAtLevel()</h2>
+<a id="addfae97eba030be9be20a5368e6f67d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#addfae97eba030be9be20a5368e6f67d3">&#9670;&nbsp;</a></span>ComputeGeomCharacteristicAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -539,7 +568,7 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::GeometricalAnalysisTools::ComputeGeomCharacteristicAtLevel </td>
+          <td class="memname">bool GeometricalAnalysisTools::ComputeGeomCharacteristicAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -579,10 +608,16 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00154">154</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="DgmOctree_8h_source.html#l00225">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::alreadyVisitedNeighbourhoodSize</a>, <a class="el" href="DgmOctree_8h_source.html#l00189">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellCenter</a>, <a class="el" href="DgmOctree_8h_source.html#l00184">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellPos</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00906">cloudViewer::Neighbourhood::computeCurvature()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00796">cloudViewer::Neighbourhood::computeFeature()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00760">cloudViewer::Neighbourhood::computeMomentOrder1()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00886">cloudViewer::Neighbourhood::computeRoughness()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00026">Curvature</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00025">Feature</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02479">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="DgmOctree_8h_source.html#l00494">cloudViewer::DgmOctree::getCellSize()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00093">cloudViewer::ReferenceCloud::getPointPersistentPtr()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00027">LocalDensity</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00032">MomentOrder1</a>, <a class="el" href="CVConst_8h_source.html#l00076">NAN_VALUE</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="DgmOctree_8h_source.html#l00215">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::pointsInNeighbourhood</a>, <a class="el" href="DgmOctree_8h_source.html#l00270">cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct::prepare()</a>, <a class="el" href="DgmOctree_8h_source.html#l00167">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::queryPoint</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00031">Roughness</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00066">cloudViewer::ReferenceCloud::setPointScalarValue()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="SmallVector_8h_source.html#l01370">std::swap()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00029">ComputeCharactersitic()</a>.</p>
+
 </div>
 </div>
-<a id="a7567e9cb6c028c94e252e04a71481d2d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7567e9cb6c028c94e252e04a71481d2d">&#9670;&nbsp;</a></span>ComputeGravityCenter()</h2>
+<a id="aed52e1daa9e8f3a66b66416848f1a582"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed52e1daa9e8f3a66b66416848f1a582">&#9670;&nbsp;</a></span>ComputeGravityCenter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -591,7 +626,7 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> cloudViewer::GeometricalAnalysisTools::ComputeGravityCenter </td>
+          <td class="memname"><a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> GeometricalAnalysisTools::ComputeGravityCenter </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em></td><td>)</td>
@@ -615,10 +650,16 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>gravity center </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00517">517</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, and <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00562">ComputeCovarianceMatrix()</a>, and <a class="el" href="core_2src_2RegistrationTools_8cpp_source.html#l00849">cloudViewer::RegistrationTools::RegistrationProcedure()</a>.</p>
+
 </div>
 </div>
-<a id="aba2959effc3fb8492d0194c341edc869"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aba2959effc3fb8492d0194c341edc869">&#9670;&nbsp;</a></span>ComputeLocalDensityApprox()</h2>
+<a id="acb1d6ec571f543c51dae61e72af1986f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb1d6ec571f543c51dae61e72af1986f">&#9670;&nbsp;</a></span>ComputeLocalDensityApprox()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -627,7 +668,7 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a> cloudViewer::GeometricalAnalysisTools::ComputeLocalDensityApprox </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">GeometricalAnalysisTools::ErrorCode</a> GeometricalAnalysisTools::ComputeLocalDensityApprox </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -678,10 +719,16 @@ This method assumes the input scalar field is different from the output one.</dd
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success (0) or error code (&lt;0) </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00409">409</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00456">ComputeApproxPointsDensityInACellAtLevel()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a1721a624f9694430f84ce9c98d954ed3">cloudViewer::GenericCloud::enableScalarField()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02737">cloudViewer::DgmOctree::findBestLevelForAGivenPopulationPerCell()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00048">InvalidInput</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00047">NoError</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00049">NotEnoughPoints</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00050">OctreeComputationFailed</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00051">ProcessFailed</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, and <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00029">ComputeCharactersitic()</a>, and <a class="el" href="ecvAlignDlg_8cpp_source.html#l00332">ccAlignDlg::estimateDelta()</a>.</p>
+
 </div>
 </div>
-<a id="a7b2b2cd53dc0ab44fba2225d69fc0986"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7b2b2cd53dc0ab44fba2225d69fc0986">&#9670;&nbsp;</a></span>ComputeSphereFrom4()</h2>
+<a id="a616c5fa70e9d1a5ef63f2a325be4eb96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a616c5fa70e9d1a5ef63f2a325be4eb96">&#9670;&nbsp;</a></span>ComputeSphereFrom4()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -690,7 +737,7 @@ This method assumes the input scalar field is different from the output one.</dd
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a> cloudViewer::GeometricalAnalysisTools::ComputeSphereFrom4 </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">GeometricalAnalysisTools::ErrorCode</a> GeometricalAnalysisTools::ComputeSphereFrom4 </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td>
           <td class="paramname"><em>A</em>, </td>
@@ -752,10 +799,16 @@ This method assumes the input scalar field is different from the output one.</dd
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l01228">1228</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l01184">dmat_solve()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00047">NoError</a>, <a class="el" href="CVGeom_8h_source.html#l00424">Vector3Tpl&lt; Type &gt;::norm()</a>, <a class="el" href="CVGeom_8h_source.html#l00419">Vector3Tpl&lt; Type &gt;::norm2d()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00051">ProcessFailed</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00769">DetectSphereRobust()</a>.</p>
+
 </div>
 </div>
-<a id="a73260f0af25d2c4e13cb5a6fc41699bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73260f0af25d2c4e13cb5a6fc41699bd">&#9670;&nbsp;</a></span>ComputeWeightedCrossCovarianceMatrix()</h2>
+<a id="a1ac2dda08fa8fb4fa72eaa6af0956b9d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ac2dda08fa8fb4fa72eaa6af0956b9d">&#9670;&nbsp;</a></span>ComputeWeightedCrossCovarianceMatrix()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -764,7 +817,7 @@ This method assumes the input scalar field is different from the output one.</dd
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">SquareMatrixd</a> cloudViewer::GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMatrix </td>
+          <td class="memname"><a class="el" href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a> GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMatrix </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>P</em>, </td>
@@ -819,10 +872,16 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>weighted cross covariance matrix </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00650">650</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l01267">abs()</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="ScalarField_8h_source.html#l00100">cloudViewer::ScalarField::currentSize()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a92fb0560290d58171c67563d84e6a278">cloudViewer::GenericCloud::getNextPoint()</a>, <a class="el" href="ScalarField_8h_source.html#l00092">cloudViewer::ScalarField::getValue()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a2f05e939821a2ef1d333715127e6fcb7">cloudViewer::GenericCloud::placeIteratorAtBeginning()</a>, <a class="el" href="SquareMatrix_8h_source.html#l00160">cloudViewer::SquareMatrixTpl&lt; Scalar &gt;::row()</a>, <a class="el" href="SquareMatrix_8h_source.html#l00459">cloudViewer::SquareMatrixTpl&lt; Scalar &gt;::scale()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="ScalarField_8h_source.html#l00061">cloudViewer::ScalarField::ValidValue()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2RegistrationTools_8cpp_source.html#l00849">cloudViewer::RegistrationTools::RegistrationProcedure()</a>.</p>
+
 </div>
 </div>
-<a id="a3a3a2a1d560ce75ca90021aad4f81ab9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3a3a2a1d560ce75ca90021aad4f81ab9">&#9670;&nbsp;</a></span>ComputeWeightedGravityCenter()</h2>
+<a id="aef06355cfdc9fa827467f467c93d5617"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aef06355cfdc9fa827467f467c93d5617">&#9670;&nbsp;</a></span>ComputeWeightedGravityCenter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -831,7 +890,7 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> cloudViewer::GeometricalAnalysisTools::ComputeWeightedGravityCenter </td>
+          <td class="memname"><a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> GeometricalAnalysisTools::ComputeWeightedGravityCenter </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -866,10 +925,16 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>gravity center </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00537">537</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="ScalarField_8h_source.html#l00100">cloudViewer::ScalarField::currentSize()</a>, and <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2RegistrationTools_8cpp_source.html#l00849">cloudViewer::RegistrationTools::RegistrationProcedure()</a>.</p>
+
 </div>
 </div>
-<a id="affe86917f0fd8a2c55a836d2cbe3b82e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#affe86917f0fd8a2c55a836d2cbe3b82e">&#9670;&nbsp;</a></span>DetectCircle()</h2>
+<a id="a1931ca5b1cc21bd82dfc971a1bcfb2cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1931ca5b1cc21bd82dfc971a1bcfb2cd">&#9670;&nbsp;</a></span>DetectCircle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -878,7 +943,7 @@ Points Set" determined from the reference cloud. </p><dl class="section warning"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a> cloudViewer::GeometricalAnalysisTools::DetectCircle </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">GeometricalAnalysisTools::ErrorCode</a> GeometricalAnalysisTools::DetectCircle </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -941,10 +1006,14 @@ and Its radius" by S. Thomas and Y. Chan</p><dl class="params"><dt>Parameters</d
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00975">975</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CVGeom_8h_source.html#l00412">Vector3Tpl&lt; Type &gt;::cross()</a>, <a class="el" href="CVGeom_8h_source.html#l00408">Vector3Tpl&lt; Type &gt;::dot()</a>, <a class="el" href="lsd_8c_source.html#l00159">error()</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00058">cloudViewer::Neighbourhood::getGravityCenter()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00069">cloudViewer::Neighbourhood::getLSPlane()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00102">cloudViewer::Neighbourhood::getLSPlaneNormal()</a>, <a class="el" href="Neighbourhood_8cpp_source.html#l00088">cloudViewer::Neighbourhood::getLSPlaneX()</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00048">InvalidInput</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00934">Landau_Smith()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00047">NoError</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00053">normal</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00053">NotEnoughMemory</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00049">NotEnoughPoints</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="CVGeom_8h_source.html#l00433">Vector3Tpl&lt; Type &gt;::orthogonal()</a>, <a class="el" href="CVConst_8h_source.html#l00067">PC_ONE</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00054">ProcessCancelledByUser</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00051">ProcessFailed</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">cloudViewer::GenericProgressCallback::start()</a>, <a class="el" href="GenericProgressCallback_8h_source.html#l00070">cloudViewer::GenericProgressCallback::textCanBeEdited()</a>, <a class="el" href="CVGeom_8h_source.html#l00139">Tuple3Tpl&lt; Type &gt;::u</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#aa5fd646271a5367bf5761e1262e92466">cloudViewer::GenericProgressCallback::update()</a>, <a class="el" href="CVGeom_8h_source.html#l00036">Vector2Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00036">Vector2Tpl&lt; Type &gt;::y</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
 </div>
 </div>
-<a id="a25a349a82b1498cc4fa95c14e18bc670"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a25a349a82b1498cc4fa95c14e18bc670">&#9670;&nbsp;</a></span>DetectSphereRobust()</h2>
+<a id="a007408392e46d7a432091d594cd09868"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a007408392e46d7a432091d594cd09868">&#9670;&nbsp;</a></span>DetectSphereRobust()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -953,7 +1022,7 @@ and Its radius" by S. Thomas and Y. Chan</p><dl class="params"><dt>Parameters</d
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a> cloudViewer::GeometricalAnalysisTools::DetectSphereRobust </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">GeometricalAnalysisTools::ErrorCode</a> GeometricalAnalysisTools::DetectSphereRobust </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -1030,10 +1099,16 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00769">769</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">cloudViewer::ReferenceCloud::addPointIndex()</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l01228">ComputeSphereFrom4()</a>, <a class="el" href="lsd_8c_source.html#l00207">dist()</a>, <a class="el" href="lsd_8c_source.html#l00159">error()</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00048">InvalidInput</a>, <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00047">NoError</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00053">NotEnoughMemory</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00049">NotEnoughPoints</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00054">ProcessCancelledByUser</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00051">ProcessFailed</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00710">RefineSphereLS()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00051">cloudViewer::ReferenceCloud::reserve()</a>, <a class="el" href="core_2src_2ReferenceCloud_8cpp_source.html#l00064">cloudViewer::ReferenceCloud::resize()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a1c67882a37c7d2caef21f34544b6f582">cloudViewer::GenericProgressCallback::setInfo()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a469bb7b24628181241c020c0c9041a91">cloudViewer::GenericProgressCallback::setMethodTitle()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#a820ea5b650d3c548f2d6f066181dd976">cloudViewer::GenericProgressCallback::start()</a>, <a class="el" href="GenericProgressCallback_8h_source.html#l00070">cloudViewer::GenericProgressCallback::textCanBeEdited()</a>, and <a class="el" href="classcloudViewer_1_1GenericProgressCallback.html#aa5fd646271a5367bf5761e1262e92466">cloudViewer::GenericProgressCallback::update()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvPointPairRegistrationDlg_8cpp_source.html#l00496">ccPointPairRegistrationDlg::convertToSphereCenter()</a>.</p>
+
 </div>
 </div>
-<a id="a0c4d9761004f01acf8956f6ea7c320b4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0c4d9761004f01acf8956f6ea7c320b4">&#9670;&nbsp;</a></span>FlagDuplicatePoints()</h2>
+<a id="a629fa1f8f0834d5118f4fdeb70139212"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a629fa1f8f0834d5118f4fdeb70139212">&#9670;&nbsp;</a></span>FlagDuplicatePoints()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1042,7 +1117,7 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">ErrorCode</a> cloudViewer::GeometricalAnalysisTools::FlagDuplicatePoints </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8">GeometricalAnalysisTools::ErrorCode</a> GeometricalAnalysisTools::FlagDuplicatePoints </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>theCloud</em>, </td>
@@ -1051,7 +1126,7 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>minDistanceBetweenPoints</em> = <code>std::numeric_limits&lt;&#160;double&#160;&gt;::epsilon()</code>, </td>
+          <td class="paramname"><em>minDistanceBetweenPoints</em> = <code>std::numeric_limits&lt;double&gt;::epsilon()</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1090,10 +1165,14 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success (0) or error code (&lt;0) </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00300">300</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00196">cloudViewer::DgmOctree::build()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a1721a624f9694430f84ce9c98d954ed3">cloudViewer::GenericCloud::enableScalarField()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l03573">cloudViewer::DgmOctree::executeFunctionForAllCellsAtLevel()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02664">cloudViewer::DgmOctree::findBestLevelForAGivenNeighbourhoodSizeExtraction()</a>, <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00353">FlagDuplicatePointsInACellAtLevel()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#a2dd6b87950958670a02ff605a45844cc">cloudViewer::GenericCloud::forEach()</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00048">InvalidInput</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00047">NoError</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00049">NotEnoughPoints</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00050">OctreeComputationFailed</a>, <a class="el" href="GeometricalAnalysisTools_8h_source.html#l00051">ProcessFailed</a>, <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>, <a class="el" href="core_2src_2ScalarFieldTools_8cpp_source.html#l00027">cloudViewer::ScalarFieldTools::SetScalarValueToZero()</a>, and <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>.</p>
+
 </div>
 </div>
-<a id="a4363f674db3b840b836399d768bd3201"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4363f674db3b840b836399d768bd3201">&#9670;&nbsp;</a></span>FlagDuplicatePointsInACellAtLevel()</h2>
+<a id="a8efb66d9982294d197ac15578e745b44"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8efb66d9982294d197ac15578e745b44">&#9670;&nbsp;</a></span>FlagDuplicatePointsInACellAtLevel()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1102,7 +1181,7 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::GeometricalAnalysisTools::FlagDuplicatePointsInACellAtLevel </td>
+          <td class="memname">bool GeometricalAnalysisTools::FlagDuplicatePointsInACellAtLevel </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html">DgmOctree::octreeCell</a> &amp;&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -1142,10 +1221,16 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00353">353</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="DgmOctree_8h_source.html#l00189">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellCenter</a>, <a class="el" href="DgmOctree_8h_source.html#l00184">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::cellPos</a>, <a class="el" href="DgmOctree_8h_source.html#l00862">cloudViewer::DgmOctree::computeCellCenter()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l02479">cloudViewer::DgmOctree::findNeighborsInASphereStartingFromCell()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00206">cloudViewer::ReferenceCloud::getAssociatedCloud()</a>, <a class="el" href="core_2src_2DgmOctree_8cpp_source.html#l00498">cloudViewer::DgmOctree::getCellPos()</a>, <a class="el" href="DgmOctree_8h_source.html#l00494">cloudViewer::DgmOctree::getCellSize()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00079">cloudViewer::ReferenceCloud::getPoint()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00103">cloudViewer::ReferenceCloud::getPointGlobalIndex()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00072">cloudViewer::ReferenceCloud::getPointScalarValue()</a>, <a class="el" href="DgmOctree_8h_source.html#l00171">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::level</a>, <a class="el" href="DgmOctree_8h_source.html#l00367">cloudViewer::DgmOctree::octreeCell::level</a>, <a class="el" href="qCanupoTools_8cpp_source.html#l00042">nProgress</a>, <a class="el" href="NormalizedProgress_8cpp_source.html#l00099">cloudViewer::NormalizedProgress::oneStep()</a>, <a class="el" href="DgmOctree_8h_source.html#l00359">cloudViewer::DgmOctree::octreeCell::parentOctree</a>, <a class="el" href="DgmOctree_8h_source.html#l00365">cloudViewer::DgmOctree::octreeCell::points</a>, <a class="el" href="DgmOctree_8h_source.html#l00215">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::pointsInNeighbourhood</a>, <a class="el" href="DgmOctree_8h_source.html#l00270">cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct::prepare()</a>, <a class="el" href="DgmOctree_8h_source.html#l00167">cloudViewer::DgmOctree::NearestNeighboursSearchStruct::queryPoint</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aef2261d89fae22ce9a5a5ee06ccb4c37">cloudViewer::GenericCloud::setPointScalarValue()</a>, <a class="el" href="ReferenceCloud_8h_source.html#l00041">cloudViewer::ReferenceCloud::size()</a>, and <a class="el" href="DgmOctree_8h_source.html#l00361">cloudViewer::DgmOctree::octreeCell::truncatedCode</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00300">FlagDuplicatePoints()</a>.</p>
+
 </div>
 </div>
-<a id="a28325e953db67ac5b81d7810be1d895a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a28325e953db67ac5b81d7810be1d895a">&#9670;&nbsp;</a></span>RefineSphereLS()</h2>
+<a id="ae1c7e90f416175634c1ef7bc6fc18a1c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae1c7e90f416175634c1ef7bc6fc18a1c">&#9670;&nbsp;</a></span>RefineSphereLS()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1154,7 +1239,7 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static bool cloudViewer::GeometricalAnalysisTools::RefineSphereLS </td>
+          <td class="memname">bool GeometricalAnalysisTools::RefineSphereLS </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a> *&#160;</td>
           <td class="paramname"><em>cloud</em>, </td>
@@ -1192,10 +1277,17 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
 
 <p>Refines the estimation of a sphere by (iterative) least-squares. </p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00710">710</a> of file <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="CVGeom_8h_source.html#l00268">Vector3Tpl&lt; double &gt;::fromArray()</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="CVGeom_8h_source.html#l00424">Vector3Tpl&lt; Type &gt;::norm()</a>, <a class="el" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00139">Tuple3Tpl&lt; Type &gt;::u</a>, and <a class="el" href="CVConst_8h_source.html#l00049">ZERO_TOLERANCE_D</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00769">DetectSphereRobust()</a>.</p>
+
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/include/<a class="el" href="GeometricalAnalysisTools_8h_source.html">GeometricalAnalysisTools.h</a></li>
+<li>/root/ACloudViewer/core/src/<a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp_source.html">GeometricalAnalysisTools.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1203,7 +1295,7 @@ Application to Conic Fitting" by Zhengyou Zhang (Inria Technical Report 2676). M
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1GeometricalAnalysisTools.html">GeometricalAnalysisTools</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

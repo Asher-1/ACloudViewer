@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -220,7 +229,7 @@ $(document).ready(function(){initNavTree('PeerConnectionManager_8h_source.html',
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        : <span class="keyword">public</span> webrtc::RTCStatsCollectorCallback {</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        PeerConnectionStatsCollectorCallback() {}</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <span class="keywordtype">void</span> clearReport() { report_.clear(); }</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <span class="keywordtype">void</span> clearReport() { report_.<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>(); }</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        Json::Value getReport() { <span class="keywordflow">return</span> report_; }</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keyword">protected</span>:</div>
@@ -560,6 +569,7 @@ $(document).ready(function(){initNavTree('PeerConnectionManager_8h_source.html',
 <div class="ttc" id="aHttpServerRequestHandler_8h_html"><div class="ttname"><a href="HttpServerRequestHandler_8h.html">HttpServerRequestHandler.h</a></div></div>
 <div class="ttc" id="aMacro_8h_html_ab3eed3b6293041c7e23282e4f356da68"><div class="ttname"><a href="Macro_8h.html#ab3eed3b6293041c7e23282e4f356da68">CLOUDVIEWER_FUNCTION</a></div><div class="ttdeci">#define CLOUDVIEWER_FUNCTION</div><div class="ttdef"><b>Definition:</b> <a href="Macro_8h_source.html#l00043">Macro.h:43</a></div></div>
 <div class="ttc" id="aWebRTCWindowSystem_8h_html"><div class="ttname"><a href="WebRTCWindowSystem_8h.html">WebRTCWindowSystem.h</a></div></div>
+<div class="ttc" id="aclassccPointCloud_html_ab23cb35f60f315b989214ddd08c6debc"><div class="ttname"><a href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">ccPointCloud::clear</a></div><div class="ttdeci">void clear() override</div><div class="ttdoc">Clears the entity from all its points and features.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1webrtc__server_1_1PeerConnectionManager_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1webrtc__server_1_1PeerConnectionManager.html">cloudViewer::visualization::webrtc_server::PeerConnectionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="PeerConnectionManager_8h_source.html#l00075">PeerConnectionManager.h:75</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1webrtc__server_1_1PeerConnectionManager_html_a01cfef56f7fec40688ba6c4662b03446"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1webrtc__server_1_1PeerConnectionManager.html#a01cfef56f7fec40688ba6c4662b03446">cloudViewer::visualization::webrtc_server::PeerConnectionManager::window_uid_to_track_source_mutex_</a></div><div class="ttdeci">std::mutex window_uid_to_track_source_mutex_</div><div class="ttdef"><b>Definition:</b> <a href="PeerConnectionManager_8h_source.html#l00443">PeerConnectionManager.h:443</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1webrtc__server_1_1PeerConnectionManager_html_a0cdb2cee88d33d665938796a5d16fd4d"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1webrtc__server_1_1PeerConnectionManager.html#a0cdb2cee88d33d665938796a5d16fd4d">cloudViewer::visualization::webrtc_server::PeerConnectionManager::publish_filter_</a></div><div class="ttdeci">const std::regex publish_filter_</div><div class="ttdef"><b>Definition:</b> <a href="PeerConnectionManager_8h_source.html#l00454">PeerConnectionManager.h:454</a></div></div>
@@ -600,8 +610,8 @@ $(document).ready(function(){initNavTree('PeerConnectionManager_8h_source.html',
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
-<div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00678">DLPack.h:678</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8h_source.html#l00086">IJsonConvertible.h:86</a></div></div>
 <div class="ttc" id="astructfmt_1_1formatter_3_01webrtc_1_1PeerConnectionInterface_1_1SignalingState_01_4_html_a50d27faa5baccd27abc07c7e8b9881cb"><div class="ttname"><a href="structfmt_1_1formatter_3_01webrtc_1_1PeerConnectionInterface_1_1SignalingState_01_4.html#a50d27faa5baccd27abc07c7e8b9881cb">fmt::formatter&lt; webrtc::PeerConnectionInterface::SignalingState &gt;::parse</a></div><div class="ttdeci">constexpr auto parse(ParseContext &amp;ctx) -&gt; decltype(ctx.begin())</div><div class="ttdef"><b>Definition:</b> <a href="PeerConnectionManager_8h_source.html#l00498">PeerConnectionManager.h:498</a></div></div>
 <div class="ttc" id="astructfmt_1_1formatter_3_01webrtc_1_1PeerConnectionInterface_1_1SignalingState_01_4_html_a525be6f433db57771e99c9c3636ec434"><div class="ttname"><a href="structfmt_1_1formatter_3_01webrtc_1_1PeerConnectionInterface_1_1SignalingState_01_4.html#a525be6f433db57771e99c9c3636ec434">fmt::formatter&lt; webrtc::PeerConnectionInterface::SignalingState &gt;::format</a></div><div class="ttdeci">auto format(const webrtc::PeerConnectionInterface::SignalingState &amp;state, FormatContext &amp;ctx) const -&gt; decltype(ctx.out())</div><div class="ttdef"><b>Definition:</b> <a href="PeerConnectionManager_8h_source.html#l00468">PeerConnectionManager.h:468</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -610,7 +620,7 @@ $(document).ready(function(){initNavTree('PeerConnectionManager_8h_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_85b4313cac92fcb54bf5e11dd5a0b5df.html">webrtc_server</a></li><li class="navelem"><a class="el" href="PeerConnectionManager_8h.html">PeerConnectionManager.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

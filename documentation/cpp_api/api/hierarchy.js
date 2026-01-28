@@ -35,9 +35,15 @@ var hierarchy =
     [ "Ui::AnimationDialog", null, [
       [ "qAnimationDlg", "classqAnimationDlg.html", null ]
     ] ],
+    [ "Ui::AnnotationsDlg", null, [
+      [ "ecvAnnotationsTool", "classecvAnnotationsTool.html", null ]
+    ] ],
     [ "flann::any", "classflann_1_1any.html", null ],
     [ "ApndFile", "structApndFile.html", null ],
     [ "cloudViewer::visualization::gui::Application", "classcloudViewer_1_1visualization_1_1gui_1_1Application.html", null ],
+    [ "Ui::ApplyTransformationDialog", null, [
+      [ "ccApplyTransformationDlg", "classccApplyTransformationDlg.html", null ]
+    ] ],
     [ "flann::serialization::ArchiveBase", "classflann_1_1serialization_1_1ArchiveBase.html", [
       [ "flann::serialization::InputArchive< LoadArchive >", "classflann_1_1serialization_1_1InputArchive.html", [
         [ "flann::serialization::LoadArchive", "classflann_1_1serialization_1_1LoadArchive.html", null ]
@@ -53,12 +59,26 @@ var hierarchy =
     ] ],
     [ "cloudViewer::core::FunctionTraits< ReturnType(Args...)>::arg< i >", "structcloudViewer_1_1core_1_1FunctionTraits_3_01ReturnType_07Args_8_8_8_08_4_1_1arg.html", null ],
     [ "PythonPluginCommand::Args", "structPythonPluginCommand_1_1Args.html", null ],
+    [ "cloudViewer::docstring::ArgumentDoc", "classcloudViewer_1_1docstring_1_1ArgumentDoc.html", null ],
     [ "cloudViewer::io::rpc::messages::Array", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html", null ],
     [ "cloudViewer::io::ArrayAdapter< T >", "structcloudViewer_1_1io_1_1ArrayAdapter.html", null ],
     [ "AsciiHeaderColumns", "classAsciiHeaderColumns.html", null ],
+    [ "Ui::AskDoubleIntegerValuesDialog", null, [
+      [ "ecvAskDoubleIntegerValuesDlg", "classecvAskDoubleIntegerValuesDlg.html", null ]
+    ] ],
+    [ "Ui::AskThreeDoubleValuesDialog", null, [
+      [ "ccAskThreeDoubleValuesDlg", "classccAskThreeDoubleValuesDlg.html", null ]
+    ] ],
+    [ "Ui::AskTwoDoubleValuesDialog", null, [
+      [ "ccAskTwoDoubleValuesDlg", "classccAskTwoDoubleValuesDlg.html", null ]
+    ] ],
     [ "ccAsprsModel::AsprsItem", "structccAsprsModel_1_1AsprsItem.html", null ],
+    [ "AtomicCounter", "classAtomicCounter.html", null ],
     [ "AuthContext", "structAuthContext.html", null ],
     [ "AutoincInfo", "structAutoincInfo.html", null ],
+    [ "colmap::AutomaticReconstructionController", null, [
+      [ "cloudViewer::AutomaticReconstructionController", "classcloudViewer_1_1AutomaticReconstructionController.html", null ]
+    ] ],
     [ "AuxData", "structAuxData.html", null ],
     [ "pba::avec< Float >", "classpba_1_1avec.html", null ],
     [ "cloudViewer::geometry::AvgColorVoxel", "classcloudViewer_1_1geometry_1_1AvgColorVoxel.html", null ],
@@ -74,6 +94,10 @@ var hierarchy =
       [ "cloudViewer::TrueKdTree::Leaf", "classcloudViewer_1_1TrueKdTree_1_1Leaf.html", null ],
       [ "cloudViewer::TrueKdTree::Node", "classcloudViewer_1_1TrueKdTree_1_1Node.html", null ]
     ] ],
+    [ "std::basic_streambuf", null, [
+      [ "cloudViewer::StandardOutputRedirector< char, std::char_traits< char > >", "classcloudViewer_1_1StandardOutputRedirector.html", null ],
+      [ "cloudViewer::StandardOutputRedirector< Elem, Tr >", "classcloudViewer_1_1StandardOutputRedirector.html", null ]
+    ] ],
     [ "BenignMallocHooks", "structBenignMallocHooks.html", null ],
     [ "ccOctree::BestRadiusParams", "structccOctree_1_1BestRadiusParams.html", null ],
     [ "flann::serialization::binary_object", "structflann_1_1serialization_1_1binary__object.html", null ],
@@ -83,6 +107,7 @@ var hierarchy =
       [ "E57FileInputStream", "classE57FileInputStream.html", null ]
     ] ],
     [ "knncpp::HammingDistance< Scalar >::BitCount", "structknncpp_1_1HammingDistance_1_1BitCount.html", null ],
+    [ "BitShiftValues", "structBitShiftValues.html", null ],
     [ "Bitvec", "structBitvec.html", null ],
     [ "cloudViewer::core::Blob", "classcloudViewer_1_1core_1_1Blob.html", null ],
     [ "BlobNode", "classBlobNode.html", null ],
@@ -91,6 +116,9 @@ var hierarchy =
     [ "flann::serialization::bool_< C_ >", "structflann_1_1serialization_1_1bool__.html", null ],
     [ "BoolOpParameters", "structBoolOpParameters.html", null ],
     [ "flann::BoundedHeap< T >", "classflann_1_1BoundedHeap.html", null ],
+    [ "Ui::BoundingBoxEditorDialog", null, [
+      [ "ccBoundingBoxEditorDlg", "classccBoundingBoxEditorDlg.html", null ]
+    ] ],
     [ "cloudViewer::BoundingBoxTpl< T >", "classcloudViewer_1_1BoundingBoxTpl.html", null ],
     [ "cloudViewer::BoundingBoxTpl< PointCoordinateType >", "classcloudViewer_1_1BoundingBoxTpl.html", [
       [ "ccBBox", "classccBBox.html", null ]
@@ -138,6 +166,9 @@ var hierarchy =
       ] ]
     ] ],
     [ "pba::CameraT_< FT >", "structpba_1_1CameraT__.html", null ],
+    [ "Ui::CamSensorProjectDialog", null, [
+      [ "ccCamSensorProjectionDlg", "classccCamSensorProjectionDlg.html", null ]
+    ] ],
     [ "Candidate", "structCandidate.html", null ],
     [ "Ui::Canupo2DViewDialog", null, [
       [ "qCanupo2DViewDialog", "classqCanupo2DViewDialog.html", null ]
@@ -151,18 +182,35 @@ var hierarchy =
     [ "fgr::CApp", "classfgr_1_1CApp.html", null ],
     [ "ecvDisplayTools::CaptureModeOptions", "structecvDisplayTools_1_1CaptureModeOptions.html", null ],
     [ "e57::CartesianBounds", "structe57_1_1CartesianBounds.html", null ],
+    [ "cc2Point5DimEditor", "classcc2Point5DimEditor.html", [
+      [ "ccRasterizeTool", "classccRasterizeTool.html", null ],
+      [ "ccVolumeCalcTool", "classccVolumeCalcTool.html", null ]
+    ] ],
     [ "ccChunk", "classccChunk.html", null ],
+    [ "ccClipBoxParams", "structccClipBoxParams.html", null ],
     [ "ccClipPlane", "structccClipPlane.html", null ],
     [ "Ui::ccCloudLayersDlg", null, [
       [ "ccCloudLayersDlg", "classccCloudLayersDlg.html", null ]
     ] ],
     [ "ccCloudLayersHelper", "classccCloudLayersHelper.html", null ],
-    [ "ccColorScaleElement", "classccColorScaleElement.html", null ],
+    [ "ccColorScaleElement", "classccColorScaleElement.html", [
+      [ "ColorScaleElementSlider", "classColorScaleElementSlider.html", null ]
+    ] ],
     [ "ccColorScalesManager", "classccColorScalesManager.html", null ],
+    [ "ccCommandLineInterface", "classccCommandLineInterface.html", [
+      [ "ccCommandLineParser", "classccCommandLineParser.html", null ]
+    ] ],
     [ "ccConsoleOutput", "classccConsoleOutput.html", null ],
+    [ "ccContourExtractor", "classccContourExtractor.html", null ],
+    [ "ccCropTool", "classccCropTool.html", null ],
+    [ "ccDefaultPluginData", "classccDefaultPluginData.html", null ],
     [ "ccDepthBuffer", "classccDepthBuffer.html", null ],
     [ "ccDrawableObject", "classccDrawableObject.html", [
+      [ "PyDrawableObjectBase< DrawableObjectBase >", "classPyDrawableObjectBase.html", null ],
       [ "ccHObject", "classccHObject.html", [
+        [ "PyObjectBase< ccHObject >", "classPyObjectBase.html", [
+          [ "PyGeometry< GeometryBase >", "classPyGeometry.html", null ]
+        ] ],
         [ "ccArray< CompressedNormType, 1, CompressedNormType >", "classccArray.html", [
           [ "NormsIndexesTableType", "classNormsIndexesTableType.html", null ]
         ] ],
@@ -206,6 +254,7 @@ var hierarchy =
           [ "ccGenericMesh", "classccGenericMesh.html", [
             [ "ccMesh", "classccMesh.html", [
               [ "ccGenericPrimitive", "classccGenericPrimitive.html", [
+                [ "PyGenericPrimitive< GenericPrimitive >", "classPyGenericPrimitive.html", null ],
                 [ "ccBox", "classccBox.html", null ],
                 [ "ccCone", "classccCone.html", [
                   [ "ccCylinder", "classccCylinder.html", null ]
@@ -268,25 +317,11 @@ var hierarchy =
     [ "ccGriddedTools", "classccGriddedTools.html", null ],
     [ "ccGuiPythonInstance", "classccGuiPythonInstance.html", null ],
     [ "ccHObjectCaster", "classccHObjectCaster.html", null ],
+    [ "ecvMainAppInterface::ccHObjectContext", "structecvMainAppInterface_1_1ccHObjectContext.html", null ],
+    [ "ccInnerRect2DFinder", "classccInnerRect2DFinder.html", null ],
     [ "ccInteractor", "classccInteractor.html", [
       [ "cc2DLabel", "classcc2DLabel.html", null ],
       [ "ccClipBox", "classccClipBox.html", null ]
-    ] ],
-    [ "ccIOPluginInterface", null, [
-      [ "LasPlugin", "classLasPlugin.html", null ],
-      [ "qAdditionalIO", "classqAdditionalIO.html", null ],
-      [ "qCSVMatrixIO", "classqCSVMatrixIO.html", null ],
-      [ "qCoreIO", "classqCoreIO.html", null ],
-      [ "qDracoIO", "classqDracoIO.html", null ],
-      [ "qE57IO", "classqE57IO.html", null ],
-      [ "qFBXIO", "classqFBXIO.html", null ],
-      [ "qLASFWFIO", "classqLASFWFIO.html", null ],
-      [ "qMeshIO", "classqMeshIO.html", null ],
-      [ "qPDALIO", "classqPDALIO.html", null ],
-      [ "qPclIO", "classqPclIO.html", null ],
-      [ "qPhotoscanIO", "classqPhotoscanIO.html", null ],
-      [ "qRDBIO", "classqRDBIO.html", null ],
-      [ "qStepCADImport", "classqStepCADImport.html", null ]
     ] ],
     [ "ccKdTreeForFacetExtraction", "classccKdTreeForFacetExtraction.html", null ],
     [ "ccLogger< level >", "classccLogger.html", [
@@ -305,30 +340,84 @@ var hierarchy =
     [ "ccNormalCompressor", "classccNormalCompressor.html", null ],
     [ "ccNormalVectors", "classccNormalVectors.html", null ],
     [ "ccOctreeFrustumIntersector", "classccOctreeFrustumIntersector.html", null ],
-    [ "ccOverlayDialog", null, [
-      [ "ccCloudLayersDlg", "classccCloudLayersDlg.html", null ],
-      [ "ccCompassDlg", "classccCompassDlg.html", null ],
-      [ "ccMPlaneDlg", "classccMPlaneDlg.html", null ],
-      [ "ccMapDlg", "classccMapDlg.html", null ]
-    ] ],
-    [ "ccPclPluginInterface", null, [
-      [ "qPCL", "classqPCL.html", null ]
-    ] ],
-    [ "ccPickingListener", null, [
+    [ "ccPickingListener", "classccPickingListener.html", [
       [ "HSVDialog", "classHSVDialog.html", null ],
+      [ "MainWindow", "classMainWindow.html", null ],
       [ "RgbDialog", "classRgbDialog.html", null ],
       [ "ScalarDialog", "classScalarDialog.html", null ],
       [ "ccCompass", "classccCompass.html", null ],
-      [ "ccMPlaneDlgController", "classccMPlaneDlgController.html", null ]
+      [ "ccMPlaneDlgController", "classccMPlaneDlgController.html", null ],
+      [ "ccPlaneEditDlg", "classccPlaneEditDlg.html", null ],
+      [ "ccPointPairRegistrationDlg", "classccPointPairRegistrationDlg.html", null ],
+      [ "ccPointPickingGenericInterface", "classccPointPickingGenericInterface.html", [
+        [ "ccPointListPickingDlg", "classccPointListPickingDlg.html", null ],
+        [ "ccPointPropertiesDlg", "classccPointPropertiesDlg.html", null ]
+      ] ],
+      [ "ccTracePolylineTool", "classccTracePolylineTool.html", null ],
+      [ "ccWaveDialog", "classccWaveDialog.html", null ],
+      [ "ecvAnimationParamDlg", "classecvAnimationParamDlg.html", null ],
+      [ "ecvCameraParamEditDlg", "classecvCameraParamEditDlg.html", null ],
+      [ "ecvMeasurementTool", "classecvMeasurementTool.html", null ]
     ] ],
     [ "ccPlanarEntityInterface", "classccPlanarEntityInterface.html", [
+      [ "PyPlanarEntityInterface< GenericPlanarEntityInterface >", "classPyPlanarEntityInterface.html", null ],
       [ "ccFacet", "classccFacet.html", null ],
       [ "ccPlane", "classccPlane.html", null ]
     ] ],
+    [ "ccPluginInterface", "classccPluginInterface.html", [
+      [ "ccDefaultPluginInterface", "classccDefaultPluginInterface.html", [
+        [ "ccIOPluginInterface", "classccIOPluginInterface.html", [
+          [ "LasPlugin", "classLasPlugin.html", null ],
+          [ "qAdditionalIO", "classqAdditionalIO.html", null ],
+          [ "qCSVMatrixIO", "classqCSVMatrixIO.html", null ],
+          [ "qCoreIO", "classqCoreIO.html", null ],
+          [ "qDracoIO", "classqDracoIO.html", null ],
+          [ "qE57IO", "classqE57IO.html", null ],
+          [ "qFBXIO", "classqFBXIO.html", null ],
+          [ "qLASFWFIO", "classqLASFWFIO.html", null ],
+          [ "qMeshIO", "classqMeshIO.html", null ],
+          [ "qPDALIO", "classqPDALIO.html", null ],
+          [ "qPclIO", "classqPclIO.html", null ],
+          [ "qPhotoscanIO", "classqPhotoscanIO.html", null ],
+          [ "qRDBIO", "classqRDBIO.html", null ],
+          [ "qStepCADImport", "classqStepCADImport.html", null ]
+        ] ],
+        [ "ccPclPluginInterface", "classccPclPluginInterface.html", [
+          [ "qPCL", "classqPCL.html", null ]
+        ] ],
+        [ "ccStdPluginInterface", "classccStdPluginInterface.html", [
+          [ "ColorimetricSegmenter", "classColorimetricSegmenter.html", null ],
+          [ "G3PointPlugin", "classG3PointPlugin.html", null ],
+          [ "JsonRPCPlugin", "classJsonRPCPlugin.html", null ],
+          [ "PythonPlugin", "classPythonPlugin.html", null ],
+          [ "ccAutoSeg", "classccAutoSeg.html", null ],
+          [ "ccCompass", "classccCompass.html", null ],
+          [ "ccManualSeg", "classccManualSeg.html", null ],
+          [ "q3DMASCPlugin", "classq3DMASCPlugin.html", null ],
+          [ "qAnimation", "classqAnimation.html", null ],
+          [ "qCSF", "classqCSF.html", null ],
+          [ "qCanupoPlugin", "classqCanupoPlugin.html", null ],
+          [ "qCloudLayers", "classqCloudLayers.html", null ],
+          [ "qCork", "classqCork.html", null ],
+          [ "qFacets", "classqFacets.html", null ],
+          [ "qHoughNormals", "classqHoughNormals.html", null ],
+          [ "qM3C2Plugin", "classqM3C2Plugin.html", null ],
+          [ "qMPlane", "classqMPlane.html", null ],
+          [ "qPCV", "classqPCV.html", null ],
+          [ "qPoissonRecon", "classqPoissonRecon.html", null ],
+          [ "qRansacSD", "classqRansacSD.html", null ],
+          [ "qSRA", "classqSRA.html", null ],
+          [ "qTreeIso", "classqTreeIso.html", null ],
+          [ "qVoxFall", "classqVoxFall.html", null ]
+        ] ]
+      ] ]
+    ] ],
     [ "ccPointCloudInterpolator", "classccPointCloudInterpolator.html", null ],
     [ "ccPointCloudLOD", "classccPointCloudLOD.html", null ],
+    [ "ccQtHelpers", "classccQtHelpers.html", null ],
     [ "ccRasterCell", "structccRasterCell.html", null ],
     [ "ccRasterGrid", "structccRasterGrid.html", null ],
+    [ "ccRegistrationTools", "classccRegistrationTools.html", null ],
     [ "ccRenderingTools", "classccRenderingTools.html", null ],
     [ "ccSerializableObject", "classccSerializableObject.html", [
       [ "ccGLMatrixTpl< double >", "classccGLMatrixTpl.html", [
@@ -344,6 +433,14 @@ var hierarchy =
       [ "ccGLMatrixTpl< T >", "classccGLMatrixTpl.html", null ],
       [ "ccMaterial", "classccMaterial.html", null ],
       [ "ccObject", "classccObject.html", [
+        [ "PyObjectBase< ObjectBase >", "classPyObjectBase.html", [
+          [ "PyGeometry< ccGenericMesh >", "classPyGeometry.html", [
+            [ "PyGenericTriangleMesh< GenericTriangleMesh >", "classPyGenericTriangleMesh.html", null ]
+          ] ],
+          [ "PyGeometry< ccGenericPointCloud >", "classPyGeometry.html", [
+            [ "PyGenericPointCloud< GenericPointCloudBase >", "classPyGenericPointCloud.html", null ]
+          ] ]
+        ] ],
         [ "ccHObject", "classccHObject.html", null ]
       ] ],
       [ "ccPointCloud::Grid", "structccPointCloud_1_1Grid.html", null ],
@@ -365,31 +462,6 @@ var hierarchy =
       ] ]
     ] ],
     [ "CCShareableHolder< T >", "classCCShareableHolder.html", null ],
-    [ "ccStdPluginInterface", null, [
-      [ "ColorimetricSegmenter", "classColorimetricSegmenter.html", null ],
-      [ "G3PointPlugin", "classG3PointPlugin.html", null ],
-      [ "JsonRPCPlugin", "classJsonRPCPlugin.html", null ],
-      [ "PythonPlugin", "classPythonPlugin.html", null ],
-      [ "ccAutoSeg", "classccAutoSeg.html", null ],
-      [ "ccCompass", "classccCompass.html", null ],
-      [ "ccManualSeg", "classccManualSeg.html", null ],
-      [ "q3DMASCPlugin", "classq3DMASCPlugin.html", null ],
-      [ "qAnimation", "classqAnimation.html", null ],
-      [ "qCSF", "classqCSF.html", null ],
-      [ "qCanupoPlugin", "classqCanupoPlugin.html", null ],
-      [ "qCloudLayers", "classqCloudLayers.html", null ],
-      [ "qCork", "classqCork.html", null ],
-      [ "qFacets", "classqFacets.html", null ],
-      [ "qHoughNormals", "classqHoughNormals.html", null ],
-      [ "qM3C2Plugin", "classqM3C2Plugin.html", null ],
-      [ "qMPlane", "classqMPlane.html", null ],
-      [ "qPCV", "classqPCV.html", null ],
-      [ "qPoissonRecon", "classqPoissonRecon.html", null ],
-      [ "qRansacSD", "classqRansacSD.html", null ],
-      [ "qSRA", "classqSRA.html", null ],
-      [ "qTreeIso", "classqTreeIso.html", null ],
-      [ "qVoxFall", "classqVoxFall.html", null ]
-    ] ],
     [ "ccTool", "classccTool.html", [
       [ "ccFitPlaneTool", "classccFitPlaneTool.html", null ],
       [ "ccLineationTool", "classccLineationTool.html", null ],
@@ -412,6 +484,7 @@ var hierarchy =
     [ "Ui::CellsFusionDlg", null, [
       [ "CellsFusionDlg", "classCellsFusionDlg.html", null ]
     ] ],
+    [ "CellToTest", "structCellToTest.html", null ],
     [ "cloudViewer::Grid3D< Type >::CellToTest", "structcloudViewer_1_1Grid3D_1_1CellToTest.html", null ],
     [ "flann::CenterChooser< Distance >", "classflann_1_1CenterChooser.html", [
       [ "flann::GonzalesCenterChooser< Distance >", "classflann_1_1GonzalesCenterChooser.html", null ],
@@ -426,6 +499,7 @@ var hierarchy =
     [ "cloudViewer::t::io::CharVector", "classcloudViewer_1_1t_1_1io_1_1CharVector.html", null ],
     [ "knncpp::ChebyshevDistance< Scalar >", "structknncpp_1_1ChebyshevDistance.html", null ],
     [ "e57::CheckedFile", "classe57_1_1CheckedFile.html", null ],
+    [ "Chi2Class", "structChi2Class.html", null ],
     [ "Chi2Helper", "classChi2Helper.html", null ],
     [ "BSplineEvaluationData< Degree >::CenterEvaluator::ChildEvaluator", "structBSplineEvaluationData_1_1CenterEvaluator_1_1ChildEvaluator.html", null ],
     [ "BSplineEvaluationData< Degree >::ChildEvaluator", "structBSplineEvaluationData_1_1ChildEvaluator.html", null ],
@@ -469,8 +543,16 @@ var hierarchy =
       [ "ClassifyDisclaimerDialog", "classClassifyDisclaimerDialog.html", null ]
     ] ],
     [ "qCanupoProcess::ClassifyParams", "structqCanupoProcess_1_1ClassifyParams.html", null ],
+    [ "CLEntityDesc", "structCLEntityDesc.html", [
+      [ "CLCloudDesc", "structCLCloudDesc.html", null ],
+      [ "CLGroupDesc", "structCLGroupDesc.html", null ],
+      [ "CLMeshDesc", "structCLMeshDesc.html", null ]
+    ] ],
     [ "ecvDisplayTools::ClickableItem", "structecvDisplayTools_1_1ClickableItem.html", null ],
     [ "flann::mpi::Client", "classflann_1_1mpi_1_1Client.html", null ],
+    [ "Ui::ClippingBoxRepeatDlg", null, [
+      [ "ccClippingBoxRepeatDlg", "classccClippingBoxRepeatDlg.html", null ]
+    ] ],
     [ "ClockTimer", "classClockTimer.html", null ],
     [ "Cloth", "classCloth.html", null ],
     [ "Cloud2CloudDist", "classCloud2CloudDist.html", null ],
@@ -478,6 +560,10 @@ var hierarchy =
     [ "cloudViewer::DistanceComputationTools::Cloud2MeshDistancesComputationParams", "structcloudViewer_1_1DistanceComputationTools_1_1Cloud2MeshDistancesComputationParams.html", null ],
     [ "G3Point::G3PointAction::CloudAdaptor", "structG3Point_1_1G3PointAction_1_1CloudAdaptor.html", null ],
     [ "CloudDesc", "structCloudDesc.html", null ],
+    [ "pybind11::detail::cloudViewer_optional_caster< T >", "structpybind11_1_1detail_1_1cloudViewer__optional__caster.html", null ],
+    [ "pybind11::detail::cloudViewer_optional_caster< cloudViewer::utility::optional< T > >", "structpybind11_1_1detail_1_1cloudViewer__optional__caster.html", [
+      [ "pybind11::detail::type_caster< cloudViewer::utility::optional< T > >", "structpybind11_1_1detail_1_1type__caster_3_01cloudViewer_1_1utility_1_1optional_3_01T_01_4_01_4.html", null ]
+    ] ],
     [ "cloudViewer::visualization::rendering::CloudViewerScene", "classcloudViewer_1_1visualization_1_1rendering_1_1CloudViewerScene.html", null ],
     [ "cmdLineReadable", "classcmdLineReadable.html", [
       [ "cmdLineFloat", "classcmdLineFloat.html", null ],
@@ -490,7 +576,13 @@ var hierarchy =
     ] ],
     [ "CollSeq", "structCollSeq.html", null ],
     [ "cloudViewer::visualization::gui::Color", "classcloudViewer_1_1visualization_1_1gui_1_1Color.html", null ],
+    [ "Ui::ColorGradientDialog", null, [
+      [ "ccColorGradientDlg", "classccColorGradientDlg.html", null ]
+    ] ],
     [ "cloudViewer::visualization::rendering::ColorGradingParams", "classcloudViewer_1_1visualization_1_1rendering_1_1ColorGradingParams.html", null ],
+    [ "Ui::ColorLevelsDialog", null, [
+      [ "ccColorLevelsDlg", "classccColorLevelsDlg.html", null ]
+    ] ],
     [ "ColorLimits", "classColorLimits.html", null ],
     [ "e57::ColorLimits", "structe57_1_1ColorLimits.html", null ],
     [ "cloudViewer::visualization::ColorMap", "classcloudViewer_1_1visualization_1_1ColorMap.html", [
@@ -502,16 +594,88 @@ var hierarchy =
     ] ],
     [ "ColorScheme", "classColorScheme.html", null ],
     [ "Column", "structColumn.html", null ],
-    [ "ccCommandLineInterface::Command", null, [
+    [ "ccCommandLineInterface::Command", "structccCommandLineInterface_1_1Command.html", [
       [ "BundlerCommand", "classBundlerCommand.html", null ],
       [ "Command3DMASCClassif", "structCommand3DMASCClassif.html", null ],
+      [ "CommandApplyTransformation", "structCommandApplyTransformation.html", null ],
+      [ "CommandApproxDensity", "structCommandApproxDensity.html", null ],
+      [ "CommandAutoSave", "structCommandAutoSave.html", null ],
+      [ "CommandCPS", "structCommandCPS.html", null ],
       [ "CommandCSF", "structCommandCSF.html", null ],
       [ "CommandCanupoClassif", "structCommandCanupoClassif.html", null ],
+      [ "CommandChangeOutputFormat", "structCommandChangeOutputFormat.html", [
+        [ "CommandChangeCloudOutputFormat", "structCommandChangeCloudOutputFormat.html", null ],
+        [ "CommandChangeHierarchyOutputFormat", "structCommandChangeHierarchyOutputFormat.html", null ],
+        [ "CommandChangeMeshOutputFormat", "structCommandChangeMeshOutputFormat.html", null ]
+      ] ],
+      [ "CommandChangePLYExportFormat", "structCommandChangePLYExportFormat.html", null ],
+      [ "CommandClear", "structCommandClear.html", null ],
+      [ "CommandClearClouds", "structCommandClearClouds.html", null ],
+      [ "CommandClearMeshes", "structCommandClearMeshes.html", null ],
+      [ "CommandClearNormals", "structCommandClearNormals.html", null ],
+      [ "CommandColorBanding", "structCommandColorBanding.html", null ],
+      [ "CommandComputeMeshVolume", "structCommandComputeMeshVolume.html", null ],
+      [ "CommandConvertNormalsToDipAndDipDir", "structCommandConvertNormalsToDipAndDipDir.html", null ],
+      [ "CommandConvertNormalsToSFs", "structCommandConvertNormalsToSFs.html", null ],
+      [ "CommandCoordToSF", "structCommandCoordToSF.html", null ],
+      [ "CommandCrop", "structCommandCrop.html", null ],
+      [ "CommandCrop2D", "structCommandCrop2D.html", null ],
+      [ "CommandCrossSection", "structCommandCrossSection.html", null ],
+      [ "CommandCurvature", "structCommandCurvature.html", null ],
+      [ "CommandDelaunayTri", "structCommandDelaunayTri.html", null ],
+      [ "CommandDensity", "structCommandDensity.html", null ],
+      [ "CommandDist", "structCommandDist.html", [
+        [ "CommandC2CDist", "structCommandC2CDist.html", null ],
+        [ "CommandC2MDist", "structCommandC2MDist.html", null ]
+      ] ],
+      [ "CommandDropGlobalShift", "structCommandDropGlobalShift.html", null ],
+      [ "CommandExtractCCs", "structCommandExtractCCs.html", null ],
+      [ "CommandExtractVertices", "structCommandExtractVertices.html", null ],
+      [ "CommandFeature", "structCommandFeature.html", null ],
+      [ "CommandFilterBySFValue", "structCommandFilterBySFValue.html", null ],
+      [ "CommandForceNormalsComputation", "structCommandForceNormalsComputation.html", null ],
+      [ "CommandICP", "structCommandICP.html", null ],
+      [ "CommandInvertNormal", "structCommandInvertNormal.html", null ],
+      [ "CommandLoad", "structCommandLoad.html", null ],
       [ "CommandLoadLASFWF", "structCommandLoadLASFWF.html", null ],
+      [ "CommandLogFile", "structCommandLogFile.html", null ],
       [ "CommandM3C2", "structCommandM3C2.html", null ],
+      [ "CommandMatchBBCenters", "structCommandMatchBBCenters.html", null ],
+      [ "CommandMatchBestFitPlane", "structCommandMatchBestFitPlane.html", null ],
+      [ "CommandMergeClouds", "structCommandMergeClouds.html", null ],
+      [ "CommandMergeMeshes", "structCommandMergeMeshes.html", null ],
+      [ "CommandMoment", "structCommandMoment.html", null ],
+      [ "CommandOctreeNormal", "structCommandOctreeNormal.html", null ],
+      [ "CommandOrientNormalsMST", "structCommandOrientNormalsMST.html", null ],
+      [ "CommandPopClouds", "structCommandPopClouds.html", null ],
+      [ "CommandPopMeshes", "structCommandPopMeshes.html", null ],
       [ "CommandRANSAC", "structCommandRANSAC.html", null ],
+      [ "CommandRasterize", "structCommandRasterize.html", null ],
+      [ "CommandRemoveAllSFs", "structCommandRemoveAllSFs.html", null ],
+      [ "CommandRemoveNormals", "structCommandRemoveNormals.html", null ],
+      [ "CommandRemoveRGB", "structCommandRemoveRGB.html", null ],
+      [ "CommandRemoveSF", "structCommandRemoveSF.html", null ],
+      [ "CommandRemoveScanGrids", "structCommandRemoveScanGrids.html", null ],
+      [ "CommandRoughness", "structCommandRoughness.html", null ],
+      [ "CommandSFArithmetic", "structCommandSFArithmetic.html", null ],
+      [ "CommandSFColorScale", "structCommandSFColorScale.html", null ],
+      [ "CommandSFConvertToRGB", "structCommandSFConvertToRGB.html", null ],
+      [ "CommandSFGradient", "structCommandSFGradient.html", null ],
+      [ "CommandSFOperation", "structCommandSFOperation.html", null ],
+      [ "CommandSFRename", "structCommandSFRename.html", null ],
+      [ "CommandSORFilter", "structCommandSORFilter.html", null ],
+      [ "CommandSampleMesh", "structCommandSampleMesh.html", null ],
+      [ "CommandSave", "structCommandSave.html", [
+        [ "CommandSaveClouds", "structCommandSaveClouds.html", null ],
+        [ "CommandSaveMeshes", "structCommandSaveMeshes.html", null ]
+      ] ],
       [ "CommandSaveLASFWF", "structCommandSaveLASFWF.html", null ],
+      [ "CommandSetActiveSF", "structCommandSetActiveSF.html", null ],
+      [ "CommandSetNoTimestamp", "structCommandSetNoTimestamp.html", null ],
+      [ "CommandStatTest", "structCommandStatTest.html", null ],
+      [ "CommandSubsample", "structCommandSubsample.html", null ],
       [ "CommandTreeIso", "structCommandTreeIso.html", null ],
+      [ "CommandVolume25D", "structCommandVolume25D.html", null ],
       [ "FBXCommand", "classFBXCommand.html", null ],
       [ "PCDCommand", "classPCDCommand.html", null ],
       [ "PCVCommand", "classPCVCommand.html", null ],
@@ -532,12 +696,16 @@ var hierarchy =
     ] ],
     [ "compareInfo", "structcompareInfo.html", null ],
     [ "flann::Heap< T >::CompareT", "structflann_1_1Heap_1_1CompareT.html", null ],
+    [ "Ui::ComparisonDialog", null, [
+      [ "ccComparisonDlg", "classccComparisonDlg.html", null ]
+    ] ],
     [ "Ui::compassDlg", null, [
       [ "ccCompassDlg", "classccCompassDlg.html", null ]
     ] ],
     [ "cloudViewer::utility::CompilerInfo", "classcloudViewer_1_1utility_1_1CompilerInfo.html", null ],
     [ "completion_cursor", "structcompletion__cursor.html", null ],
     [ "completion_vtab", "structcompletion__vtab.html", null ],
+    [ "ComponentIndexAndSize", "structComponentIndexAndSize.html", null ],
     [ "ComponentsFusion< T >", "structComponentsFusion.html", null ],
     [ "CompressedVectorNode", "classCompressedVectorNode.html", null ],
     [ "e57::CompressedVectorNode", "classe57_1_1CompressedVectorNode.html", null ],
@@ -564,6 +732,9 @@ var hierarchy =
     [ "pba::ProgramCPU::ComputeJX__STRUCT< Float >", "structpba_1_1ProgramCPU_1_1ComputeJX____STRUCT.html", null ],
     [ "pba::ProgramCPU::ComputeJX_FUNCTOR< Float >", "structpba_1_1ProgramCPU_1_1ComputeJX__FUNCTOR.html", null ],
     [ "pba::ProgramCPU::ComputeJX_STRUCT< Float >", "structpba_1_1ProgramCPU_1_1ComputeJX__STRUCT.html", null ],
+    [ "Ui::ComputeOctreeDialog", null, [
+      [ "ccComputeOctreeDlg", "classccComputeOctreeDlg.html", null ]
+    ] ],
     [ "pba::ProgramCPU::ComputeProjection_FUNCTOR< Float >", "structpba_1_1ProgramCPU_1_1ComputeProjection__FUNCTOR.html", null ],
     [ "pba::ProgramCPU::ComputeProjection_STRUCT< Float >", "structpba_1_1ProgramCPU_1_1ComputeProjection__STRUCT.html", null ],
     [ "pba::ProgramCPU::ComputeProjectionX_FUNCTOR< Float >", "structpba_1_1ProgramCPU_1_1ComputeProjectionX__FUNCTOR.html", null ],
@@ -594,7 +765,11 @@ var hierarchy =
     [ "OctNode< NodeData >::ConstNeighbors< Width >", "structOctNode_1_1ConstNeighbors.html", null ],
     [ "ConstraintDual< Dim, Real >", "structConstraintDual.html", null ],
     [ "cloudViewer::visualization::gui::Widget::Constraints", "structcloudViewer_1_1visualization_1_1gui_1_1Widget_1_1Constraints.html", null ],
+    [ "ccPluginInterface::Contact", "structccPluginInterface_1_1Contact.html", null ],
     [ "ccExternalFactory::Container", "classccExternalFactory_1_1Container.html", null ],
+    [ "Ui::ContourExtractorDlg", null, [
+      [ "ccContourExtractorDlg", "classccContourExtractorDlg.html", null ]
+    ] ],
     [ "controldef", "structcontroldef.html", null ],
     [ "cloudViewer::t::pipelines::slac::ControlGrid", "classcloudViewer_1_1t_1_1pipelines_1_1slac_1_1ControlGrid.html", null ],
     [ "ecvColor::Convert", "classecvColor_1_1Convert.html", null ],
@@ -620,7 +795,8 @@ var hierarchy =
     [ "cloudViewer::pipelines::registration::CorrespondenceChecker", "classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceChecker.html", [
       [ "cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnDistance", "classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnDistance.html", null ],
       [ "cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength", "classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnEdgeLength.html", null ],
-      [ "cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnNormal", "classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnNormal.html", null ]
+      [ "cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnNormal", "classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceCheckerBasedOnNormal.html", null ],
+      [ "cloudViewer::pipelines::registration::PyCorrespondenceChecker< CorrespondenceCheckerBase >", "classcloudViewer_1_1pipelines_1_1registration_1_1PyCorrespondenceChecker.html", null ]
     ] ],
     [ "Ui::CorrespondenceMatchingDialog", null, [
       [ "CorrespondenceMatchingDialog", "classCorrespondenceMatchingDialog.html", null ]
@@ -662,7 +838,8 @@ var hierarchy =
       [ "CP::CutPursuit_SPG< T >", "structCP_1_1CutPursuit__SPG.html", null ]
     ] ],
     [ "CVLog", "classCVLog.html", [
-      [ "PyPrintLogger", "classPyPrintLogger.html", null ]
+      [ "PyPrintLogger", "classPyPrintLogger.html", null ],
+      [ "ecvConsole", "classecvConsole.html", null ]
     ] ],
     [ "cloudViewer::CVToolbox", "classcloudViewer_1_1CVToolbox.html", [
       [ "cloudViewer::AutoSegmentationTools", "classcloudViewer_1_1AutoSegmentationTools.html", null ],
@@ -692,11 +869,15 @@ var hierarchy =
     [ "e57::Data3D", "structe57_1_1Data3D.html", null ],
     [ "e57::Data3DPointsData_t< COORDTYPE >", "structe57_1_1Data3DPointsData__t.html", null ],
     [ "cloudViewer::core::nns::NanoFlannIndexHolder< METRIC, TReal, TIndex >::DataAdaptor", "structcloudViewer_1_1core_1_1nns_1_1NanoFlannIndexHolder_1_1DataAdaptor.html", null ],
+    [ "DataCloud", "structDataCloud.html", null ],
     [ "cloudViewer::data::DataDescriptor", "structcloudViewer_1_1data_1_1DataDescriptor.html", null ],
     [ "e57::DataPacket", "classe57_1_1DataPacket.html", null ],
     [ "e57::DataPacketHeader", "classe57_1_1DataPacketHeader.html", null ],
     [ "cloudViewer::data::Dataset", "classcloudViewer_1_1data_1_1Dataset.html", [
       [ "cloudViewer::data::DownloadDataset", "classcloudViewer_1_1data_1_1DownloadDataset.html", [
+        [ "cloudViewer::data::PyDataset< DownloadDataset >", "classcloudViewer_1_1data_1_1PyDataset.html", [
+          [ "cloudViewer::data::PyDownloadDataset< DownloadDatasetBase >", "classcloudViewer_1_1data_1_1PyDownloadDataset.html", null ]
+        ] ],
         [ "cloudViewer::data::ArmadilloMesh", "classcloudViewer_1_1data_1_1ArmadilloMesh.html", null ],
         [ "cloudViewer::data::AvocadoModel", "classcloudViewer_1_1data_1_1AvocadoModel.html", null ],
         [ "cloudViewer::data::BalusterVase", "classcloudViewer_1_1data_1_1BalusterVase.html", null ],
@@ -742,13 +923,16 @@ var hierarchy =
         [ "cloudViewer::data::TilesTexture", "classcloudViewer_1_1data_1_1TilesTexture.html", null ],
         [ "cloudViewer::data::WoodFloorTexture", "classcloudViewer_1_1data_1_1WoodFloorTexture.html", null ],
         [ "cloudViewer::data::WoodTexture", "classcloudViewer_1_1data_1_1WoodTexture.html", null ]
-      ] ]
+      ] ],
+      [ "cloudViewer::data::PyDataset< DatasetBase >", "classcloudViewer_1_1data_1_1PyDataset.html", null ]
     ] ],
     [ "DateTime", "structDateTime.html", null ],
     [ "e57::DateTime", "structe57_1_1DateTime.html", null ],
     [ "Db", "structDb.html", null ],
     [ "DbFixer", "structDbFixer.html", null ],
     [ "DblquoteStr", "structDblquoteStr.html", null ],
+    [ "DBRootIcons", "classDBRootIcons.html", null ],
+    [ "dbTreeSelectionInfo", "structdbTreeSelectionInfo.html", null ],
     [ "e57::DecodeChannel", "structe57_1_1DecodeChannel.html", null ],
     [ "e57::Decoder", "classe57_1_1Decoder.html", [
       [ "e57::BitpackDecoder", "classe57_1_1BitpackDecoder.html", [
@@ -777,6 +961,9 @@ var hierarchy =
     [ "cloudViewer::ml::op_util::DimXMultiply", "structcloudViewer_1_1ml_1_1op__util_1_1DimXMultiply.html", null ],
     [ "cloudViewer::ml::op_util::DimXOr", "structcloudViewer_1_1ml_1_1op__util_1_1DimXOr.html", null ],
     [ "cloudViewer::ml::op_util::DimXPlus", "structcloudViewer_1_1ml_1_1op__util_1_1DimXPlus.html", null ],
+    [ "Ui::DipDirTransformationDialog", null, [
+      [ "DipDirTransformationDialog", "classDipDirTransformationDialog.html", null ]
+    ] ],
     [ "cloudViewer::visualization::gui::DirEntry", "classcloudViewer_1_1visualization_1_1gui_1_1DirEntry.html", null ],
     [ "flann::disable_if< bool, T >", "structflann_1_1disable__if.html", null ],
     [ "flann::disable_if< true, T >", "structflann_1_1disable__if_3_01true_00_01T_01_4.html", null ],
@@ -827,10 +1014,15 @@ var hierarchy =
     [ "E57ScanHeader", "structE57ScanHeader.html", null ],
     [ "ecvGlobalShiftManager", "classecvGlobalShiftManager.html", null ],
     [ "ecvGui", "classecvGui.html", null ],
+    [ "ecvMainAppInterface", "classecvMainAppInterface.html", [
+      [ "MainWindow", "classMainWindow.html", null ]
+    ] ],
+    [ "ecvOptions", "classecvOptions.html", null ],
+    [ "ecvPS", "classecvPS.html", null ],
     [ "ecvSingleton< T >", "structecvSingleton.html", null ],
     [ "ecvTextParam", "structecvTextParam.html", null ],
     [ "edegreedef", "structedegreedef.html", null ],
-    [ "Edge", "classEdge.html", null ],
+    [ "Edge", "structEdge.html", null ],
     [ "CP::EdgeAttribute< T >", "structCP_1_1EdgeAttribute.html", null ],
     [ "cloudViewer::MeshSamplingTools::EdgeConnectivityStats", "structcloudViewer_1_1MeshSamplingTools_1_1EdgeConnectivityStats.html", null ],
     [ "EdgeIndex", "classEdgeIndex.html", null ],
@@ -867,7 +1059,10 @@ var hierarchy =
     ] ],
     [ "endian_test_type", "unionendian__test__type.html", null ],
     [ "cloudViewer::visualization::rendering::EngineInstance", "classcloudViewer_1_1visualization_1_1rendering_1_1EngineInstance.html", null ],
-    [ "cloudViewer::visualization::gui::Application::EnvUnlocker", "classcloudViewer_1_1visualization_1_1gui_1_1Application_1_1EnvUnlocker.html", null ],
+    [ "ccPointPairRegistrationDlg::EntityContext", "structccPointPairRegistrationDlg_1_1EntityContext.html", null ],
+    [ "cloudViewer::visualization::gui::Application::EnvUnlocker", "classcloudViewer_1_1visualization_1_1gui_1_1Application_1_1EnvUnlocker.html", [
+      [ "cloudViewer::visualization::gui::PythonUnlocker", "classcloudViewer_1_1visualization_1_1gui_1_1PythonUnlocker.html", null ]
+    ] ],
     [ "EQPGraph", "structEQPGraph.html", null ],
     [ "EQPGraphRow", "structEQPGraphRow.html", null ],
     [ "et_info", "structet__info.html", null ],
@@ -886,6 +1081,10 @@ var hierarchy =
     [ "ExpertCsr", "structExpertCsr.html", null ],
     [ "ExpertInfo", "structExpertInfo.html", null ],
     [ "ExpertVtab", "structExpertVtab.html", null ],
+    [ "ccRasterizeTool::ExportBands", "structccRasterizeTool_1_1ExportBands.html", null ],
+    [ "Ui::ExportCoordToSFDlg", null, [
+      [ "ccExportCoordToSFDlg", "classccExportCoordToSFDlg.html", null ]
+    ] ],
     [ "Expr", "structExpr.html", null ],
     [ "ExprList", "structExprList.html", null ],
     [ "ExprList::ExprList_item", "structExprList_1_1ExprList__item.html", null ],
@@ -971,9 +1170,21 @@ var hierarchy =
       [ "VTKFilter", "classVTKFilter.html", null ]
     ] ],
     [ "FilePoint", "structFilePoint.html", null ],
+    [ "Ui::FilterByLabelDialog", null, [
+      [ "ecvFilterByLabelDlg", "classecvFilterByLabelDlg.html", null ]
+    ] ],
+    [ "Ui::FilterByValueDialog", null, [
+      [ "ccFilterByValueDlg", "classccFilterByValueDlg.html", null ]
+    ] ],
     [ "FileIOFilter::FilterInfo", "structFileIOFilter_1_1FilterInfo.html", null ],
     [ "FilterProgram", "classFilterProgram.html", [
       [ "FilterGLSL", "classFilterGLSL.html", null ]
+    ] ],
+    [ "Ui::FilterToolDlg", null, [
+      [ "ecvFilterTool", "classecvFilterTool.html", null ]
+    ] ],
+    [ "benchmark::Fixture", null, [
+      [ "cloudViewer::benchmarks::SamplePointsFixture", "classcloudViewer_1_1benchmarks_1_1SamplePointsFixture.html", null ]
     ] ],
     [ "FKey", "structFKey.html", null ],
     [ "flann::flann_datatype_type< datatype >", "structflann_1_1flann__datatype__type.html", null ],
@@ -1021,6 +1232,7 @@ var hierarchy =
     [ "FuncDefHash", "structFuncDefHash.html", null ],
     [ "FuncDestructor", "structFuncDestructor.html", null ],
     [ "FunctionData< Degree, Real >", "classFunctionData.html", null ],
+    [ "cloudViewer::docstring::FunctionDoc", "classcloudViewer_1_1docstring_1_1FunctionDoc.html", null ],
     [ "BSplineIntegrationData< Degree1, Degree2 >::FunctionIntegrator", "structBSplineIntegrationData_1_1FunctionIntegrator.html", null ],
     [ "cloudViewer::core::FunctionTraits< T >", "structcloudViewer_1_1core_1_1FunctionTraits.html", [
       [ "cloudViewer::core::FunctionTraits< T & >", "structcloudViewer_1_1core_1_1FunctionTraits_3_01T_01_6_01_4.html", null ],
@@ -1031,12 +1243,30 @@ var hierarchy =
       [ "cloudViewer::core::FunctionTraits< ReturnType(ClassType::*)(Args...) const >", "structcloudViewer_1_1core_1_1FunctionTraits_3_01ReturnType_07ClassType_1_1_5_08_07Args_8_8_8_08_01const_01_4.html", null ]
     ] ],
     [ "Garbage< C >", "classGarbage.html", null ],
+    [ "Ui::GBLSensorProjectDialog", null, [
+      [ "ccGBLSensorProjectionDlg", "classccGBLSensorProjectionDlg.html", null ]
+    ] ],
     [ "Ui::GeneralFiltersDlg", null, [
       [ "GeneralFiltersDlg", "classGeneralFiltersDlg.html", null ]
     ] ],
     [ "ecvColor::Generator", "classecvColor_1_1Generator.html", null ],
     [ "cloudViewer::GenericCloud", "classcloudViewer_1_1GenericCloud.html", [
+      [ "PyGenericCloud< GenericCloudBase >", "classPyGenericCloud.html", [
+        [ "PyGenericIndexedCloud< cloudViewer::GenericIndexedCloudPersist >", "classPyGenericIndexedCloud.html", [
+          [ "PyGenericIndexedCloudPersist< GenericIndexedCloudPersistBase >", "classPyGenericIndexedCloudPersist.html", null ]
+        ] ]
+      ] ],
       [ "cloudViewer::GenericIndexedCloud", "classcloudViewer_1_1GenericIndexedCloud.html", [
+        [ "PyGenericCloud< cloudViewer::GenericIndexedCloud >", "classPyGenericCloud.html", [
+          [ "PyGenericIndexedCloud< GenericIndexedCloudBase >", "classPyGenericIndexedCloud.html", [
+            [ "PyGenericIndexedCloudPersist< cloudViewer::ReferenceCloud >", "classPyGenericIndexedCloudPersist.html", [
+              [ "PyGenericReferenceCloud< GenericReferenceCloud >", "classPyGenericReferenceCloud.html", null ]
+            ] ],
+            [ "PyGenericIndexedCloudPersist< ccGenericPointCloud >", "classPyGenericIndexedCloudPersist.html", [
+              [ "PyGenericPointCloud< GenericPointCloudBase >", "classPyGenericPointCloud.html", null ]
+            ] ]
+          ] ]
+        ] ],
         [ "NumpyCloud", "classNumpyCloud.html", null ],
         [ "cloudViewer::GenericIndexedCloudPersist", "classcloudViewer_1_1GenericIndexedCloudPersist.html", [
           [ "cloudViewer::PointCloudTpl< GenericIndexedCloudPersist >", "classcloudViewer_1_1PointCloudTpl.html", [
@@ -1075,7 +1305,15 @@ var hierarchy =
       [ "PdmsTools::PdmsObjects::GroupElement", "classPdmsTools_1_1PdmsObjects_1_1GroupElement.html", null ]
     ] ],
     [ "cloudViewer::GenericMesh", "classcloudViewer_1_1GenericMesh.html", [
+      [ "PyGenericMesh< GenericMeshBase >", "classPyGenericMesh.html", [
+        [ "PyGenericIndexedMesh< ccGenericMesh >", "classPyGenericIndexedMesh.html", [
+          [ "PyGenericTriangleMesh< GenericTriangleMesh >", "classPyGenericTriangleMesh.html", null ]
+        ] ]
+      ] ],
       [ "cloudViewer::GenericIndexedMesh", "classcloudViewer_1_1GenericIndexedMesh.html", [
+        [ "PyGenericMesh< cloudViewer::GenericIndexedMesh >", "classPyGenericMesh.html", [
+          [ "PyGenericIndexedMesh< GenericIndexedMeshBase >", "classPyGenericIndexedMesh.html", null ]
+        ] ],
         [ "ccGenericMesh", "classccGenericMesh.html", null ],
         [ "cloudViewer::Delaunay2dMesh", "classcloudViewer_1_1Delaunay2dMesh.html", null ],
         [ "cloudViewer::SimpleMesh", "classcloudViewer_1_1SimpleMesh.html", null ]
@@ -1095,6 +1333,9 @@ var hierarchy =
       [ "cloudViewer::SimpleRefTriangle", "classcloudViewer_1_1SimpleRefTriangle.html", null ],
       [ "cloudViewer::SimpleTriangle", "classcloudViewer_1_1SimpleTriangle.html", null ]
     ] ],
+    [ "ccLibAlgorithms::GeomCharacteristic", "structccLibAlgorithms_1_1GeomCharacteristic.html", [
+      [ "ccGeomFeaturesDlg::Option", "structccGeomFeaturesDlg_1_1Option.html", null ]
+    ] ],
     [ "cloudViewer::visualization::rendering::GeometryBuffersBuilder", "classcloudViewer_1_1visualization_1_1rendering_1_1GeometryBuffersBuilder.html", [
       [ "cloudViewer::visualization::rendering::LineSetBuffersBuilder", "classcloudViewer_1_1visualization_1_1rendering_1_1LineSetBuffersBuilder.html", [
         [ "cloudViewer::visualization::rendering::TemporaryLineSetBuilder", "classcloudViewer_1_1visualization_1_1rendering_1_1TemporaryLineSetBuilder.html", null ]
@@ -1109,7 +1350,11 @@ var hierarchy =
         [ "cloudViewer::visualization::rendering::TemporaryMeshBuilder", "classcloudViewer_1_1visualization_1_1rendering_1_1TemporaryMeshBuilder.html", null ]
       ] ]
     ] ],
+    [ "Ui::GeomFeaturesDialog", null, [
+      [ "ccGeomFeaturesDlg", "classccGeomFeaturesDlg.html", null ]
+    ] ],
     [ "callbacks::GeomPrimID", "structcallbacks_1_1GeomPrimID.html", null ],
+    [ "GetLeavesVisitor", "classGetLeavesVisitor.html", null ],
     [ "cloudViewer::io::rpc::messages::GetMeshData", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1GetMeshData.html", null ],
     [ "glDrawParams", "structglDrawParams.html", null ],
     [ "cloudViewer::visualization::GLFWContext", "classcloudViewer_1_1visualization_1_1GLFWContext.html", null ],
@@ -1117,7 +1362,8 @@ var hierarchy =
     [ "cloudViewer::pipelines::registration::GlobalOptimizationConvergenceCriteria", "classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationConvergenceCriteria.html", null ],
     [ "cloudViewer::pipelines::registration::GlobalOptimizationMethod", "classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationMethod.html", [
       [ "cloudViewer::pipelines::registration::GlobalOptimizationGaussNewton", "classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationGaussNewton.html", null ],
-      [ "cloudViewer::pipelines::registration::GlobalOptimizationLevenbergMarquardt", "classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationLevenbergMarquardt.html", null ]
+      [ "cloudViewer::pipelines::registration::GlobalOptimizationLevenbergMarquardt", "classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationLevenbergMarquardt.html", null ],
+      [ "cloudViewer::pipelines::registration::PyGlobalOptimizationMethod< GlobalOptimizationMethodBase >", "classcloudViewer_1_1pipelines_1_1registration_1_1PyGlobalOptimizationMethod.html", null ]
     ] ],
     [ "cloudViewer::pipelines::registration::GlobalOptimizationOption", "classcloudViewer_1_1pipelines_1_1registration_1_1GlobalOptimizationOption.html", null ],
     [ "GlobalParam", "classGlobalParam.html", [
@@ -1134,13 +1380,24 @@ var hierarchy =
         ] ]
       ] ]
     ] ],
+    [ "ccCommandLineInterface::GlobalShiftOptions", "structccCommandLineInterface_1_1GlobalShiftOptions.html", null ],
     [ "cloudViewer::visualization::rendering::Gradient", "classcloudViewer_1_1visualization_1_1rendering_1_1Gradient.html", null ],
     [ "graphdef", "structgraphdef.html", null ],
+    [ "Ui::GraphicalSegmentationDlg", null, [
+      [ "ccGraphicalSegmentationTool", "classccGraphicalSegmentationTool.html", null ]
+    ] ],
+    [ "Ui::GraphicalSegmentationOptionsDlg", null, [
+      [ "ccGraphicalSegmentationOptionsDlg", "classccGraphicalSegmentationOptionsDlg.html", null ]
+    ] ],
+    [ "Ui::GraphicalTransformationDlg", null, [
+      [ "ccGraphicalTransformationTool", "classccGraphicalTransformationTool.html", null ]
+    ] ],
     [ "flann::cuda::GreaterThan< DistanceType >", "structflann_1_1cuda_1_1GreaterThan.html", null ],
     [ "Ui::GreedyTriangulationDlg", null, [
       [ "GreedyTriangulationDlg", "classGreedyTriangulationDlg.html", null ]
     ] ],
     [ "cloudViewer::Grid3D< Type >", "classcloudViewer_1_1Grid3D.html", null ],
+    [ "cloudViewer::Grid3D< cloudViewer::TriangleList * >", "classcloudViewer_1_1Grid3D.html", null ],
     [ "cloudViewer::Grid3D< unsigned >", "classcloudViewer_1_1Grid3D.html", [
       [ "cloudViewer::SaitoSquaredDistanceTransform", "classcloudViewer_1_1SaitoSquaredDistanceTransform.html", null ]
     ] ],
@@ -1166,6 +1423,7 @@ var hierarchy =
     [ "cloudViewer::utility::hash_tuple< TT >", "structcloudViewer_1_1utility_1_1hash__tuple.html", null ],
     [ "cloudViewer::utility::hash_tuple< std::tuple< TT... > >", "structcloudViewer_1_1utility_1_1hash__tuple_3_01std_1_1tuple_3_01TT_8_8_8_01_4_01_4.html", null ],
     [ "cloudViewer::core::HashBackendBuffer", "classcloudViewer_1_1core_1_1HashBackendBuffer.html", null ],
+    [ "cloudViewer::core::HashData< K, V >", "classcloudViewer_1_1core_1_1HashData.html", null ],
     [ "HashElem", "structHashElem.html", null ],
     [ "flann::Heap< T >", "classflann_1_1Heap.html", null ],
     [ "cloudViewer::core::HashBackendBuffer::HeapTop", "structcloudViewer_1_1core_1_1HashBackendBuffer_1_1HeapTop.html", null ],
@@ -1202,16 +1460,21 @@ var hierarchy =
     [ "IdxTable", "structIdxTable.html", null ],
     [ "IdxWrite", "structIdxWrite.html", null ],
     [ "cloudViewer::utility::IJsonConvertible", "classcloudViewer_1_1utility_1_1IJsonConvertible.html", [
+      [ "cloudViewer::AlignmentSession", "classcloudViewer_1_1AlignmentSession.html", null ],
       [ "cloudViewer::camera::PinholeCameraIntrinsic", "classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html", null ],
       [ "cloudViewer::camera::PinholeCameraParameters", "classcloudViewer_1_1camera_1_1PinholeCameraParameters.html", null ],
       [ "cloudViewer::camera::PinholeCameraTrajectory", "classcloudViewer_1_1camera_1_1PinholeCameraTrajectory.html", null ],
       [ "cloudViewer::geometry::Octree", "classcloudViewer_1_1geometry_1_1Octree.html", null ],
       [ "cloudViewer::geometry::OctreeNode", "classcloudViewer_1_1geometry_1_1OctreeNode.html", [
         [ "cloudViewer::geometry::OctreeLeafNode", "classcloudViewer_1_1geometry_1_1OctreeLeafNode.html", [
+          [ "cloudViewer::geometry::PyOctreeNode< OctreeLeafNode >", "classcloudViewer_1_1geometry_1_1PyOctreeNode.html", [
+            [ "cloudViewer::geometry::PyOctreeLeafNode< OctreeLeafNodeBase >", "classcloudViewer_1_1geometry_1_1PyOctreeLeafNode.html", null ]
+          ] ],
           [ "cloudViewer::geometry::OctreeColorLeafNode", "classcloudViewer_1_1geometry_1_1OctreeColorLeafNode.html", [
             [ "cloudViewer::geometry::OctreePointColorLeafNode", "classcloudViewer_1_1geometry_1_1OctreePointColorLeafNode.html", null ]
           ] ]
-        ] ]
+        ] ],
+        [ "cloudViewer::geometry::PyOctreeNode< OctreeNodeBase >", "classcloudViewer_1_1geometry_1_1PyOctreeNode.html", null ]
       ] ],
       [ "cloudViewer::io::MKVMetadata", "classcloudViewer_1_1io_1_1MKVMetadata.html", null ],
       [ "cloudViewer::io::RGBDSensorConfig", "classcloudViewer_1_1io_1_1RGBDSensorConfig.html", [
@@ -1304,6 +1567,7 @@ var hierarchy =
     [ "flann::mpi::Index< Distance >", "classflann_1_1mpi_1_1Index.html", null ],
     [ "Index", "structIndex.html", null ],
     [ "cloudViewer::DgmOctree::IndexAndCode", "structcloudViewer_1_1DgmOctree_1_1IndexAndCode.html", null ],
+    [ "IndexAndCodeExt", "structIndexAndCodeExt.html", null ],
     [ "flann::IndexBase", "classflann_1_1IndexBase.html", [
       [ "flann::NNIndex< Distance >", "classflann_1_1NNIndex.html", [
         [ "flann::AutotunedIndex< Distance >", "classflann_1_1AutotunedIndex.html", null ],
@@ -1349,6 +1613,8 @@ var hierarchy =
     [ "InputSource", null, [
       [ "e57::E57XmlFileInputSource", "classe57_1_1E57XmlFileInputSource.html", null ]
     ] ],
+    [ "InsideOutsideIndexes", "structInsideOutsideIndexes.html", null ],
+    [ "cloudViewer::core::Int3", "classcloudViewer_1_1core_1_1Int3.html", null ],
     [ "cloudViewer::io::IntArrayBase", "structcloudViewer_1_1io_1_1IntArrayBase.html", [
       [ "cloudViewer::io::IntArray< T >", "structcloudViewer_1_1io_1_1IntArray.html", null ]
     ] ],
@@ -1359,6 +1625,9 @@ var hierarchy =
     [ "e57::IntensityLimits", "structe57_1_1IntensityLimits.html", null ],
     [ "IntensityLimits", "classIntensityLimits.html", null ],
     [ "cloudViewer::visualization::gui::Interactors", "classcloudViewer_1_1visualization_1_1gui_1_1Interactors.html", null ],
+    [ "Ui::InterpolationDlg", null, [
+      [ "ccInterpolationDlg", "classccInterpolationDlg.html", null ]
+    ] ],
     [ "cloudViewer::ml::impl::InterpolationVec< T, VECSIZE, INTERPOLATION >", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec.html", null ],
     [ "cloudViewer::ml::impl::InterpolationVec< T, VECSIZE, InterpolationMode::LINEAR >", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1LINEAR_01_4.html", null ],
     [ "cloudViewer::ml::impl::InterpolationVec< T, VECSIZE, InterpolationMode::LINEAR_BORDER >", "structcloudViewer_1_1ml_1_1impl_1_1InterpolationVec_3_01T_00_01VECSIZE_00_01InterpolationMode_1_1LINEAR__BORDER_01_4.html", null ],
@@ -1390,13 +1659,18 @@ var hierarchy =
         [ "cloudViewer::t::geometry::LineSet", "classcloudViewer_1_1t_1_1geometry_1_1LineSet.html", null ],
         [ "cloudViewer::t::geometry::OrientedBoundingBox", "classcloudViewer_1_1t_1_1geometry_1_1OrientedBoundingBox.html", null ],
         [ "cloudViewer::t::geometry::PointCloud", "classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html", null ],
+        [ "cloudViewer::t::geometry::PyGeometry< GeometryBase >", "classcloudViewer_1_1t_1_1geometry_1_1PyGeometry.html", null ],
         [ "cloudViewer::t::geometry::RGBDImage", "classcloudViewer_1_1t_1_1geometry_1_1RGBDImage.html", null ],
         [ "cloudViewer::t::geometry::TriangleMesh", "classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html", null ]
       ] ]
     ] ],
     [ "flann::cuda::kd_tree_builder_detail::IsEven", "structflann_1_1cuda_1_1kd__tree__builder__detail_1_1IsEven.html", null ],
     [ "Octree< Real >::IsoEdge", "structOctree_1_1IsoEdge.html", null ],
+    [ "Isolines< T >", "classIsolines.html", null ],
     [ "cloudViewer::visualization::gui::TreeView::Impl::Item", "structcloudViewer_1_1visualization_1_1gui_1_1TreeView_1_1Impl_1_1Item.html", null ],
+    [ "Ui::ItemSelectionDlg", null, [
+      [ "ccItemSelectionDlg", "classccItemSelectionDlg.html", null ]
+    ] ],
     [ "cloudViewer::core::IndexerIterator::Iterator", "structcloudViewer_1_1core_1_1IndexerIterator_1_1Iterator.html", null ],
     [ "cloudViewer::core::Tensor::Iterator", "structcloudViewer_1_1core_1_1Tensor_1_1Iterator.html", null ],
     [ "cloudViewer::core::iterator_range< IteratorT >", "classcloudViewer_1_1core_1_1iterator__range.html", null ],
@@ -1433,6 +1707,9 @@ var hierarchy =
     [ "cc2DLabel::LabelInfo1", "structcc2DLabel_1_1LabelInfo1.html", null ],
     [ "cc2DLabel::LabelInfo2", "structcc2DLabel_1_1LabelInfo2.html", null ],
     [ "cc2DLabel::LabelInfo3", "structcc2DLabel_1_1LabelInfo3.html", null ],
+    [ "Ui::LabelingDialog", null, [
+      [ "ccLabelingDlg", "classccLabelingDlg.html", null ]
+    ] ],
     [ "LasCloudChunk", "structLasCloudChunk.html", null ],
     [ "LasExtraScalarField", "classLasExtraScalarField.html", null ],
     [ "LasField", "structLasField.html", [
@@ -1479,8 +1756,14 @@ var hierarchy =
     [ "ListWidgetConsole", "classListWidgetConsole.html", null ],
     [ "LiteWindow", "classLiteWindow.html", null ],
     [ "cloudViewer::visualization::GuiSettingsModel::LitMaterial", "structcloudViewer_1_1visualization_1_1GuiSettingsModel_1_1LitMaterial.html", null ],
-    [ "FileIOFilter::LoadParameters", "structFileIOFilter_1_1LoadParameters.html", null ],
-    [ "cloudViewer::LocalModel", "classcloudViewer_1_1LocalModel.html", null ],
+    [ "FileIOFilter::LoadParameters", "structFileIOFilter_1_1LoadParameters.html", [
+      [ "ccCommandLineInterface::CLLoadParameters", "structccCommandLineInterface_1_1CLLoadParameters.html", null ]
+    ] ],
+    [ "cloudViewer::LocalModel", "classcloudViewer_1_1LocalModel.html", [
+      [ "DelaunayLocalModel", "classDelaunayLocalModel.html", null ],
+      [ "LSLocalModel", "classLSLocalModel.html", null ],
+      [ "QuadricLocalModel", "classQuadricLocalModel.html", null ]
+    ] ],
     [ "LODLevelDesc", "structLODLevelDesc.html", null ],
     [ "cloudViewer::utility::Logger", "classcloudViewer_1_1utility_1_1Logger.html", null ],
     [ "flann::Logger", "classflann_1_1Logger.html", null ],
@@ -1513,6 +1796,9 @@ var hierarchy =
     [ "MarchingCubes", "classMarchingCubes.html", null ],
     [ "MarchingSquares", "classMarchingSquares.html", null ],
     [ "cloudViewer::visualization::gui::Margins", "structcloudViewer_1_1visualization_1_1gui_1_1Margins.html", null ],
+    [ "Ui::MatchScalesDialog", null, [
+      [ "ccMatchScalesDlg", "classccMatchScalesDlg.html", null ]
+    ] ],
     [ "ccMesh::Material", "structccMesh_1_1Material.html", null ],
     [ "cloudViewer::visualization::rendering::Material", "classcloudViewer_1_1visualization_1_1rendering_1_1Material.html", null ],
     [ "cloudViewer::visualization::rendering::MaterialModifier", "classcloudViewer_1_1visualization_1_1rendering_1_1MaterialModifier.html", [
@@ -1535,6 +1821,9 @@ var hierarchy =
       [ "flann::Matrix< ElementType >", "classflann_1_1Matrix.html", null ],
       [ "flann::Matrix< T >", "classflann_1_1Matrix.html", null ]
     ] ],
+    [ "Ui::MatrixDisplayDlg", null, [
+      [ "MatrixDisplayDlg", "classMatrixDisplayDlg.html", null ]
+    ] ],
     [ "MatrixEntry< T >", "structMatrixEntry.html", null ],
     [ "cloudViewer::visualization::rendering::MatrixInteractorLogic", "classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html", [
       [ "cloudViewer::visualization::rendering::IBLRotationInteractorLogic", "classcloudViewer_1_1visualization_1_1rendering_1_1IBLRotationInteractorLogic.html", null ],
@@ -1547,6 +1836,9 @@ var hierarchy =
       ] ]
     ] ],
     [ "flann::MaxDistance< T >", "structflann_1_1MaxDistance.html", null ],
+    [ "Ui::MeasurementToolDlg", null, [
+      [ "ecvMeasurementTool", "classecvMeasurementTool.html", null ]
+    ] ],
     [ "DistanceMapGenerationTool::Measures", "structDistanceMapGenerationTool_1_1Measures.html", null ],
     [ "Mem0Global", "structMem0Global.html", null ],
     [ "MemJournal", "structMemJournal.html", null ],
@@ -1574,6 +1866,7 @@ var hierarchy =
     [ "cloudViewer::io::rpc::messages::MeshData", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1MeshData.html", null ],
     [ "MeshDesc", "structMeshDesc.html", null ],
     [ "cloudViewer::visualization::rendering::TriangleMeshModel::MeshInfo", "structcloudViewer_1_1visualization_1_1rendering_1_1TriangleMeshModel_1_1MeshInfo.html", null ],
+    [ "Message", "structMessage.html", null ],
     [ "cloudViewer::io::rpc::MessageProcessorBase", "classcloudViewer_1_1io_1_1rpc_1_1MessageProcessorBase.html", [
       [ "cloudViewer::io::rpc::DummyMessageProcessor", "classcloudViewer_1_1io_1_1rpc_1_1DummyMessageProcessor.html", null ],
       [ "cloudViewer::visualization::MessageProcessor", "classcloudViewer_1_1visualization_1_1MessageProcessor.html", null ]
@@ -1596,7 +1889,9 @@ var hierarchy =
       [ "MLSDialog", "classMLSDialog.html", null ]
     ] ],
     [ "cloudViewer::t::pipelines::slam::Model", "classcloudViewer_1_1t_1_1pipelines_1_1slam_1_1Model.html", null ],
+    [ "ModelCloud", "structModelCloud.html", null ],
     [ "Module", "structModule.html", null ],
+    [ "MonoDimensionalCellCodes", "structMonoDimensionalCellCodes.html", null ],
     [ "cloudViewer::visualization::Visualizer::MouseControl", "structcloudViewer_1_1visualization_1_1Visualizer_1_1MouseControl.html", null ],
     [ "cloudViewer::visualization::gui::MouseEvent", "structcloudViewer_1_1visualization_1_1gui_1_1MouseEvent.html", null ],
     [ "cloudViewer::visualization::gui::SceneWidget::MouseInteractor", "classcloudViewer_1_1visualization_1_1gui_1_1SceneWidget_1_1MouseInteractor.html", [
@@ -1652,7 +1947,13 @@ var hierarchy =
     [ "ccPointCloudLOD::Node", "structccPointCloudLOD_1_1Node.html", null ],
     [ "e57::Node", "classe57_1_1Node.html", null ],
     [ "Node", "classNode.html", null ],
+    [ "Ui::NoiseFilterDialog", null, [
+      [ "ecvNoiseFilterDlg", "classecvNoiseFilterDlg.html", null ]
+    ] ],
     [ "cloudViewer::pipelines::color_map::NonRigidOptimizerOption", "structcloudViewer_1_1pipelines_1_1color__map_1_1NonRigidOptimizerOption.html", null ],
+    [ "Ui::NormalComputationDlg", null, [
+      [ "ccNormalComputationDlg", "classccNormalComputationDlg.html", null ]
+    ] ],
     [ "Ui::NormalEstimationDialog", null, [
       [ "NormalEstimationDialog", "classNormalEstimationDialog.html", null ]
     ] ],
@@ -1682,6 +1983,7 @@ var hierarchy =
     [ "OctNode< NodeData >", "classOctNode.html", null ],
     [ "OctNode< TreeNodeData >", "classOctNode.html", null ],
     [ "Octree< Real >", "classOctree.html", null ],
+    [ "cloudViewer::OctreeAndMeshIntersection", "structcloudViewer_1_1OctreeAndMeshIntersection.html", null ],
     [ "cloudViewer::DgmOctree::octreeCell", "structcloudViewer_1_1DgmOctree_1_1octreeCell.html", null ],
     [ "cloudViewer::geometry::OctreeNodeInfo", "classcloudViewer_1_1geometry_1_1OctreeNodeInfo.html", null ],
     [ "cloudViewer::DgmOctree::octreeTopDownScanStruct", "structcloudViewer_1_1DgmOctree_1_1octreeTopDownScanStruct.html", null ],
@@ -1701,7 +2003,27 @@ var hierarchy =
       [ "cloudViewer::utility::optional< int64_t >", "classcloudViewer_1_1utility_1_1optional.html", null ],
       [ "cloudViewer::utility::optional< T >", "classcloudViewer_1_1utility_1_1optional.html", null ]
     ] ],
+    [ "colmap::AutomaticReconstructionController::Options", null, [
+      [ "cloudViewer::AutomaticReconstructionController::Options", "structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html", null ]
+    ] ],
+    [ "colmap::OptionsWidget", null, [
+      [ "cloudViewer::AutomaticReconstructionWidget", "classcloudViewer_1_1AutomaticReconstructionWidget.html", null ],
+      [ "cloudViewer::BundleAdjustmentWidget", "classcloudViewer_1_1BundleAdjustmentWidget.html", null ],
+      [ "cloudViewer::ExtractionWidget", "classcloudViewer_1_1ExtractionWidget.html", [
+        [ "cloudViewer::ImportFeaturesWidget", "classcloudViewer_1_1ImportFeaturesWidget.html", null ],
+        [ "cloudViewer::SIFTExtractionWidget", "classcloudViewer_1_1SIFTExtractionWidget.html", null ]
+      ] ],
+      [ "cloudViewer::MapperBundleAdjustmentOptionsWidget", "classcloudViewer_1_1MapperBundleAdjustmentOptionsWidget.html", null ],
+      [ "cloudViewer::MapperFilteringOptionsWidget", "classcloudViewer_1_1MapperFilteringOptionsWidget.html", null ],
+      [ "cloudViewer::MapperGeneralOptionsWidget", "classcloudViewer_1_1MapperGeneralOptionsWidget.html", null ],
+      [ "cloudViewer::MapperInitializationOptionsWidget", "classcloudViewer_1_1MapperInitializationOptionsWidget.html", null ],
+      [ "cloudViewer::MapperRegistrationOptionsWidget", "classcloudViewer_1_1MapperRegistrationOptionsWidget.html", null ],
+      [ "cloudViewer::MapperTriangulationOptionsWidget", "classcloudViewer_1_1MapperTriangulationOptionsWidget.html", null ],
+      [ "cloudViewer::RenderOptionsWidget", "classcloudViewer_1_1RenderOptionsWidget.html", null ],
+      [ "cloudViewer::UndistortionWidget", "classcloudViewer_1_1UndistortionWidget.html", null ]
+    ] ],
     [ "cloudViewer::OrientedBoundingBox", "classcloudViewer_1_1OrientedBoundingBox.html", [
+      [ "PyOrientedBBoxBase< OrientedBBoxBase >", "classPyOrientedBBoxBase.html", null ],
       [ "ecvOrientedBBox", "classecvOrientedBBox.html", null ]
     ] ],
     [ "OrientedPoint3D< Real >", "structOrientedPoint3D.html", null ],
@@ -1718,9 +2040,13 @@ var hierarchy =
       [ "PLYOrientedPointStream< Real >", "classPLYOrientedPointStream.html", null ]
     ] ],
     [ "ORImageInfo", "structORImageInfo.html", null ],
+    [ "Ui::OrthoSectionGenerationDlg", null, [
+      [ "ccOrthoSectionGenerationDlg", "classccOrthoSectionGenerationDlg.html", null ]
+    ] ],
     [ "OtherData", "structOtherData.html", null ],
     [ "OtherElem", "structOtherElem.html", null ],
     [ "QVideoEncoder::OutputFormat", "structQVideoEncoder_1_1OutputFormat.html", null ],
+    [ "cloudViewer::docstring::FunctionDoc::OverloadDocs", "structcloudViewer_1_1docstring_1_1FunctionDoc_1_1OverloadDocs.html", null ],
     [ "cloudViewer::utility::Overloaded< Ts >", "structcloudViewer_1_1utility_1_1Overloaded.html", null ],
     [ "cloudViewer::utility::Overloaded< Ts... >", "structcloudViewer_1_1utility_1_1Overloaded.html", [
       [ "cloudViewer::utility::Overloaded< T1, Ts... >", "structcloudViewer_1_1utility_1_1Overloaded_3_01T1_00_01Ts_8_8_8_01_4.html", null ]
@@ -1742,6 +2068,7 @@ var hierarchy =
     [ "CSF::Parameters", "structCSF_1_1Parameters.html", null ],
     [ "DxfProfilesExporter::Parameters", "structDxfProfilesExporter_1_1Parameters.html", null ],
     [ "LasSaver::Parameters", "structLasSaver_1_1Parameters.html", null ],
+    [ "Parameters", "structParameters.html", null ],
     [ "PoissonReconLib::Parameters", "structPoissonReconLib_1_1Parameters.html", null ],
     [ "qHoughNormalsDialog::Parameters", "structqHoughNormalsDialog_1_1Parameters.html", null ],
     [ "Eigen::ParametrizedLine", null, [
@@ -1753,6 +2080,10 @@ var hierarchy =
     [ "ecvGui::ParamStruct", "structecvGui_1_1ParamStruct.html", null ],
     [ "Parse", "structParse.html", null ],
     [ "Particle", "classParticle.html", null ],
+    [ "pybind11::detail::path_caster< T >", "structpybind11_1_1detail_1_1path__caster.html", null ],
+    [ "pybind11::detail::path_caster< fs::path >", "structpybind11_1_1detail_1_1path__caster.html", [
+      [ "pybind11::detail::type_caster< fs::path >", "structpybind11_1_1detail_1_1type__caster_3_01fs_1_1path_01_4.html", null ]
+    ] ],
     [ "PCache", "structPCache.html", null ],
     [ "PCache1", "structPCache1.html", null ],
     [ "PCacheGlobal", "structPCacheGlobal.html", null ],
@@ -1778,15 +2109,19 @@ var hierarchy =
     [ "PgHdr1", "structPgHdr1.html", null ],
     [ "PGroup", "structPGroup.html", null ],
     [ "cloudViewer::visualization::gui::SceneWidget::PickableGeometry", "structcloudViewer_1_1visualization_1_1gui_1_1SceneWidget_1_1PickableGeometry.html", null ],
+    [ "ccPickingListener::PickedItem", "structccPickingListener_1_1PickedItem.html", null ],
     [ "cc2DLabel::PickedPoint", "structcc2DLabel_1_1PickedPoint.html", null ],
     [ "cloudViewer::visualization::VisualizerWithVertexSelection::PickedPoint", "structcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection_1_1PickedPoint.html", null ],
     [ "ecvDisplayTools::PickingParameters", "structecvDisplayTools_1_1PickingParameters.html", null ],
     [ "e57::PinholeRepresentation", "structe57_1_1PinholeRepresentation.html", null ],
     [ "Plane", "classPlane.html", null ],
+    [ "Ui::PlaneEditDlg", null, [
+      [ "ccPlaneEditDlg", "classccPlaneEditDlg.html", null ]
+    ] ],
     [ "PlyColorAndValueVertex< Real >", "classPlyColorAndValueVertex.html", null ],
     [ "PlyColorVertex< Real >", "classPlyColorVertex.html", null ],
-    [ "PlyElement", "structPlyElement.html", null ],
     [ "plyElement", "structplyElement.html", null ],
+    [ "PlyElement", "structPlyElement.html", null ],
     [ "PlyFace", "structPlyFace.html", null ],
     [ "PlyFile", "structPlyFile.html", null ],
     [ "Ui::PlyOpenDlg", null, [
@@ -1818,13 +2153,26 @@ var hierarchy =
     [ "cloudViewer::DgmOctree::PointDescriptor", "structcloudViewer_1_1DgmOctree_1_1PointDescriptor.html", null ],
     [ "cloudViewer::core::PointerOrder< Block >", "structcloudViewer_1_1core_1_1PointerOrder.html", null ],
     [ "e57::PointGroupingSchemes", "structe57_1_1PointGroupingSchemes.html", null ],
+    [ "Ui::PointListPickingDlg", null, [
+      [ "ccPointListPickingDlg", "classccPointListPickingDlg.html", null ]
+    ] ],
+    [ "Ui::pointPairRegistrationDlg", null, [
+      [ "ccPointPairRegistrationDlg", "classccPointPairRegistrationDlg.html", null ]
+    ] ],
+    [ "Ui::PointPropertiesDlg", null, [
+      [ "ccPointPropertiesDlg", "classccPointPropertiesDlg.html", null ]
+    ] ],
+    [ "Ui::PointsSamplingDialog", null, [
+      [ "ccPtsSamplingDlg", "classccPtsSamplingDlg.html", null ]
+    ] ],
     [ "e57::PointStandardizedFieldsAvailable", "structe57_1_1PointStandardizedFieldsAvailable.html", null ],
     [ "PointStandardizedFieldsAvailable", "classPointStandardizedFieldsAvailable.html", null ],
     [ "cloudViewer::ml::contrib::PointXYZ", "classcloudViewer_1_1ml_1_1contrib_1_1PointXYZ.html", null ],
     [ "flann::cuda::kd_tree_builder_detail::pointxyz_to_px_py_pz", "structflann_1_1cuda_1_1kd__tree__builder__detail_1_1pointxyz__to__px__py__pz.html", null ],
     [ "PoissonReconLib", "classPoissonReconLib.html", null ],
     [ "Ui::PoissonReconParamDialog", null, [
-      [ "PoissonReconParamDlg", "classPoissonReconParamDlg.html", null ]
+      [ "PoissonReconParamDlg", "classPoissonReconParamDlg.html", null ],
+      [ "ecvPoissonReconDlg", "classecvPoissonReconDlg.html", null ]
     ] ],
     [ "Ui::PoissonReconstructionDlg", null, [
       [ "PoissonReconstructionDlg", "classPoissonReconstructionDlg.html", null ]
@@ -1842,6 +2190,12 @@ var hierarchy =
     [ "PragmaVtabCursor", "structPragmaVtabCursor.html", null ],
     [ "PrecisionMaps", "structPrecisionMaps.html", null ],
     [ "PreUpdate", "structPreUpdate.html", null ],
+    [ "Ui::primitiveDistanceDlg", null, [
+      [ "ecvPrimitiveDistanceDlg", "classecvPrimitiveDistanceDlg.html", null ]
+    ] ],
+    [ "Ui::PrimitiveFactoryDlg", null, [
+      [ "ecvPrimitiveFactoryDlg", "classecvPrimitiveFactoryDlg.html", null ]
+    ] ],
     [ "PrintfArguments", "structPrintfArguments.html", null ],
     [ "Ui::ProfileImportDlg", null, [
       [ "ProfileImportDlg", "classProfileImportDlg.html", null ],
@@ -1860,6 +2214,7 @@ var hierarchy =
     [ "ecvDisplayTools::ProjectionMetrics", "structecvDisplayTools_1_1ProjectionMetrics.html", null ],
     [ "Octree< Real >::ProjectiveData< V >", "structOctree_1_1ProjectiveData.html", null ],
     [ "PROPERTY_PARAM", "structPROPERTY__PARAM.html", null ],
+    [ "cloudViewer::visualization::rendering::PyOffscreenRenderer", "classcloudViewer_1_1visualization_1_1rendering_1_1PyOffscreenRenderer.html", null ],
     [ "PyStdErrOutStreamRedirect", "classPyStdErrOutStreamRedirect.html", null ],
     [ "PythonConfig", "classPythonConfig.html", null ],
     [ "PythonConfigPaths", "classPythonConfigPaths.html", null ],
@@ -1873,20 +2228,44 @@ var hierarchy =
     [ "PyThreadStateGuard", "classPyThreadStateGuard.html", null ],
     [ "PyThreadStateReleaser", "structPyThreadStateReleaser.html", null ],
     [ "PyVenvCfg", "structPyVenvCfg.html", null ],
+    [ "QAbstractItemModel", null, [
+      [ "ccDBRoot", "classccDBRoot.html", null ]
+    ] ],
     [ "QAbstractListModel", null, [
       [ "PluginListModel", "classPluginListModel.html", null ]
     ] ],
     [ "QAbstractTableModel", null, [
       [ "ccAsprsModel", "classccAsprsModel.html", null ]
     ] ],
+    [ "QApplication", null, [
+      [ "ecvApplicationBase", "classecvApplicationBase.html", [
+        [ "ecvApplication", "classecvApplication.html", null ]
+      ] ]
+    ] ],
     [ "qCanupoProcess", "classqCanupoProcess.html", null ],
     [ "qCanupoTools", "classqCanupoTools.html", null ],
+    [ "QComboBox", null, [
+      [ "cloudViewer::ReconstructionManagerWidget", "classcloudViewer_1_1ReconstructionManagerWidget.html", null ]
+    ] ],
+    [ "QCPAbstractPlottable", null, [
+      [ "QCPSelectableCursor", "classQCPSelectableCursor.html", [
+        [ "QCPArrow", "classQCPArrow.html", null ],
+        [ "QCPHiddenArea", "classQCPHiddenArea.html", null ]
+      ] ]
+    ] ],
     [ "QCPBars", null, [
-      [ "QCPBarsWithText", "classQCPBarsWithText.html", null ]
+      [ "QCPBarsWithText", "classQCPBarsWithText.html", null ],
+      [ "QCPBarsWithText", "classQCPBarsWithText.html", null ],
+      [ "QCPColoredBars", "classQCPColoredBars.html", null ]
+    ] ],
+    [ "QCPBarsData", null, [
+      [ "QCPColoredBars::QCPColoredBarData", "classQCPColoredBars_1_1QCPColoredBarData.html", null ]
     ] ],
     [ "QCustomPlot", null, [
       [ "AnglesCustomPlot", "classAnglesCustomPlot.html", null ],
-      [ "WolmanCustomPlot", "classWolmanCustomPlot.html", null ]
+      [ "WolmanCustomPlot", "classWolmanCustomPlot.html", null ],
+      [ "ccHistogramWindow", "classccHistogramWindow.html", null ],
+      [ "ccWaveWidget", "classccWaveWidget.html", null ]
     ] ],
     [ "QDialog", null, [
       [ "AboutDialog", "classAboutDialog.html", null ],
@@ -1903,6 +2282,7 @@ var hierarchy =
       [ "ConvexConcaveHullDlg", "classConvexConcaveHullDlg.html", null ],
       [ "CorrespondenceMatchingDialog", "classCorrespondenceMatchingDialog.html", null ],
       [ "DONSegmentationDlg", "classDONSegmentationDlg.html", null ],
+      [ "DipDirTransformationDialog", "classDipDirTransformationDialog.html", null ],
       [ "DisclaimerDialog", "classDisclaimerDialog.html", null ],
       [ "DisclaimerDialog", "classDisclaimerDialog.html", null ],
       [ "DisclaimerDialog", "classDisclaimerDialog.html", null ],
@@ -1941,6 +2321,9 @@ var hierarchy =
       [ "ProfileImportDlg", "classProfileImportDlg.html", null ],
       [ "ProjectionFilterDlg", "classProjectionFilterDlg.html", null ],
       [ "PythonRuntimeSettings", "classPythonRuntimeSettings.html", null ],
+      [ "QUIInputBox", "classQUIInputBox.html", null ],
+      [ "QUIMessageBox", "classQUIMessageBox.html", null ],
+      [ "QUIWidget", "classQUIWidget.html", null ],
       [ "QuantiDialog", "classQuantiDialog.html", null ],
       [ "RDBOpenDialog", "classRDBOpenDialog.html", null ],
       [ "RegionGrowingSegmentationDlg", "classRegionGrowingSegmentationDlg.html", null ],
@@ -1958,14 +2341,92 @@ var hierarchy =
       [ "Train3DMASCDialog", "classTrain3DMASCDialog.html", null ],
       [ "TrainDisclaimerDialog", "classTrainDisclaimerDialog.html", null ],
       [ "TrainDisclaimerDialog", "classTrainDisclaimerDialog.html", null ],
+      [ "ccAlignDlg", "classccAlignDlg.html", null ],
+      [ "ccApplyTransformationDlg", "classccApplyTransformationDlg.html", null ],
+      [ "ccAskThreeDoubleValuesDlg", "classccAskThreeDoubleValuesDlg.html", null ],
+      [ "ccAskTwoDoubleValuesDlg", "classccAskTwoDoubleValuesDlg.html", null ],
+      [ "ccBoundingBoxEditorDlg", "classccBoundingBoxEditorDlg.html", null ],
       [ "ccCSFDlg", "classccCSFDlg.html", null ],
+      [ "ccCamSensorProjectionDlg", "classccCamSensorProjectionDlg.html", null ],
+      [ "ccClippingBoxRepeatDlg", "classccClippingBoxRepeatDlg.html", null ],
+      [ "ccColorFromScalarDlg", "classccColorFromScalarDlg.html", null ],
+      [ "ccColorGradientDlg", "classccColorGradientDlg.html", null ],
+      [ "ccColorLevelsDlg", "classccColorLevelsDlg.html", null ],
+      [ "ccColorScaleEditorDialog", "classccColorScaleEditorDialog.html", null ],
+      [ "ccComparisonDlg", "classccComparisonDlg.html", null ],
       [ "ccCompassInfo", "classccCompassInfo.html", null ],
+      [ "ccComputeOctreeDlg", "classccComputeOctreeDlg.html", null ],
+      [ "ccContourExtractorDlg", "classccContourExtractorDlg.html", null ],
       [ "ccCorkDlg", "classccCorkDlg.html", null ],
+      [ "ccDisplayOptionsDlg", "classccDisplayOptionsDlg.html", null ],
+      [ "ccExportCoordToSFDlg", "classccExportCoordToSFDlg.html", null ],
+      [ "ccFilterByValueDlg", "classccFilterByValueDlg.html", null ],
+      [ "ccGBLSensorProjectionDlg", "classccGBLSensorProjectionDlg.html", null ],
+      [ "ccGeomFeaturesDlg", "classccGeomFeaturesDlg.html", null ],
+      [ "ccGraphicalSegmentationOptionsDlg", "classccGraphicalSegmentationOptionsDlg.html", null ],
+      [ "ccHistogramWindowDlg", "classccHistogramWindowDlg.html", null ],
+      [ "ccInterpolationDlg", "classccInterpolationDlg.html", null ],
+      [ "ccItemSelectionDlg", "classccItemSelectionDlg.html", null ],
+      [ "ccLabelingDlg", "classccLabelingDlg.html", null ],
+      [ "ccMatchScalesDlg", "classccMatchScalesDlg.html", null ],
+      [ "ccNormalComputationDlg", "classccNormalComputationDlg.html", null ],
+      [ "ccOrderChoiceDlg", "classccOrderChoiceDlg.html", null ],
+      [ "ccOrthoSectionGenerationDlg", "classccOrthoSectionGenerationDlg.html", null ],
+      [ "ccOverlayDialog", "classccOverlayDialog.html", [
+        [ "ccCloudLayersDlg", "classccCloudLayersDlg.html", null ],
+        [ "ccCompassDlg", "classccCompassDlg.html", null ],
+        [ "ccGraphicalSegmentationTool", "classccGraphicalSegmentationTool.html", null ],
+        [ "ccGraphicalTransformationTool", "classccGraphicalTransformationTool.html", null ],
+        [ "ccMPlaneDlg", "classccMPlaneDlg.html", null ],
+        [ "ccMapDlg", "classccMapDlg.html", null ],
+        [ "ccPointPairRegistrationDlg", "classccPointPairRegistrationDlg.html", null ],
+        [ "ccPointPickingGenericInterface", "classccPointPickingGenericInterface.html", null ],
+        [ "ccTracePolylineTool", "classccTracePolylineTool.html", null ],
+        [ "ecvAnimationParamDlg", "classecvAnimationParamDlg.html", null ],
+        [ "ecvAnnotationsTool", "classecvAnnotationsTool.html", null ],
+        [ "ecvCameraParamEditDlg", "classecvCameraParamEditDlg.html", null ],
+        [ "ecvFilterByLabelDlg", "classecvFilterByLabelDlg.html", null ],
+        [ "ecvFilterTool", "classecvFilterTool.html", null ],
+        [ "ecvMeasurementTool", "classecvMeasurementTool.html", null ]
+      ] ],
       [ "ccPCDFileOutputForamtDialog", "classccPCDFileOutputForamtDialog.html", null ],
       [ "ccPcvDlg", "classccPcvDlg.html", null ],
+      [ "ccPickOneElementDlg", "classccPickOneElementDlg.html", null ],
+      [ "ccPlaneEditDlg", "classccPlaneEditDlg.html", null ],
+      [ "ccPluginInfoDlg", "classccPluginInfoDlg.html", null ],
+      [ "ccPtsSamplingDlg", "classccPtsSamplingDlg.html", null ],
       [ "ccRansacSDDlg", "classccRansacSDDlg.html", null ],
+      [ "ccRasterizeTool", "classccRasterizeTool.html", null ],
+      [ "ccRegistrationDlg", "classccRegistrationDlg.html", null ],
+      [ "ccRenderToFileDlg", "classccRenderToFileDlg.html", null ],
+      [ "ccScalarFieldArithmeticsDlg", "classccScalarFieldArithmeticsDlg.html", null ],
+      [ "ccScalarFieldFromColorDlg", "classccScalarFieldFromColorDlg.html", null ],
+      [ "ccScaleDlg", "classccScaleDlg.html", null ],
+      [ "ccSelectChildrenDlg", "classccSelectChildrenDlg.html", null ],
+      [ "ccSensorComputeDistancesDlg", "classccSensorComputeDistancesDlg.html", null ],
+      [ "ccSensorComputeScatteringAnglesDlg", "classccSensorComputeScatteringAnglesDlg.html", null ],
+      [ "ccSmoothPolylineDialog", "classccSmoothPolylineDialog.html", null ],
+      [ "ccStatisticalTestDlg", "classccStatisticalTestDlg.html", null ],
+      [ "ccSubsamplingDlg", "classccSubsamplingDlg.html", null ],
       [ "ccTreeIsoDlg", "classccTreeIsoDlg.html", null ],
+      [ "ccUnrollDlg", "classccUnrollDlg.html", null ],
+      [ "ccVolumeCalcTool", "classccVolumeCalcTool.html", null ],
+      [ "ccWaveDialog", "classccWaveDialog.html", null ],
+      [ "ecvAboutDialog", "classecvAboutDialog.html", null ],
+      [ "ecvAskDoubleIntegerValuesDlg", "classecvAskDoubleIntegerValuesDlg.html", null ],
+      [ "ecvAxesGridDialog", "classecvAxesGridDialog.html", null ],
+      [ "ecvCustomViewpointButtonDlg", "classecvCustomViewpointButtonDlg.html", null ],
+      [ "ecvEntitySelectionDialog", "classecvEntitySelectionDialog.html", null ],
+      [ "ecvNoiseFilterDlg", "classecvNoiseFilterDlg.html", null ],
+      [ "ecvPoissonReconDlg", "classecvPoissonReconDlg.html", null ],
+      [ "ecvPrimitiveDistanceDlg", "classecvPrimitiveDistanceDlg.html", null ],
+      [ "ecvPrimitiveFactoryDlg", "classecvPrimitiveFactoryDlg.html", null ],
+      [ "ecvRansacSegmentationDlg", "classecvRansacSegmentationDlg.html", null ],
+      [ "ecvSORFilterDlg", "classecvSORFilterDlg.html", null ],
       [ "ecvShiftAndScaleCloudDlg", "classecvShiftAndScaleCloudDlg.html", null ],
+      [ "ecvShortcutDialog", "classecvShortcutDialog.html", null ],
+      [ "ecvShortcutEditDialog", "classecvShortcutEditDialog.html", null ],
+      [ "ecvUpdateDlg", "classecvUpdateDlg.html", null ],
       [ "qAnimationDlg", "classqAnimationDlg.html", null ],
       [ "qCanupo2DViewDialog", "classqCanupo2DViewDialog.html", null ],
       [ "qCanupoClassifDialog", "classqCanupoClassifDialog.html", null ],
@@ -1977,6 +2438,13 @@ var hierarchy =
     [ "QException", null, [
       [ "ThreadException", "classThreadException.html", null ]
     ] ],
+    [ "QFrame", null, [
+      [ "ccColorScaleSelector", "classccColorScaleSelector.html", null ],
+      [ "ecvTextureFileSelector", "classecvTextureFileSelector.html", null ]
+    ] ],
+    [ "QGraphicsScene", null, [
+      [ "cloudViewer::ImageViewerGraphicsScene", "classcloudViewer_1_1ImageViewerGraphicsScene.html", null ]
+    ] ],
     [ "cloudViewer::geometry::Qhull", "classcloudViewer_1_1geometry_1_1Qhull.html", null ],
     [ "QIODevice", null, [
       [ "QuaGzipFile", "classQuaGzipFile.html", null ],
@@ -1986,12 +2454,24 @@ var hierarchy =
     [ "QLabel", null, [
       [ "StereogramWidget", "classStereogramWidget.html", null ]
     ] ],
+    [ "QList", null, [
+      [ "ColorScaleElementSliders", "classColorScaleElementSliders.html", null ]
+    ] ],
+    [ "QListWidget", null, [
+      [ "ecvCustomQListWidget", "classecvCustomQListWidget.html", null ]
+    ] ],
     [ "qM3C2Normals", "classqM3C2Normals.html", null ],
     [ "qM3C2Process", "classqM3C2Process.html", null ],
     [ "qM3C2Tools", "classqM3C2Tools.html", null ],
     [ "QMainWindow", null, [
+      [ "MainWindow", "classMainWindow.html", null ],
       [ "PythonEditor", "classPythonEditor.html", null ],
-      [ "PythonRepl", "classPythonRepl.html", null ]
+      [ "PythonRepl", "classPythonRepl.html", null ],
+      [ "Window", "structWindow.html", null ]
+    ] ],
+    [ "QMap", null, [
+      [ "FileVersionToVersion", "structFileVersionToVersion.html", null ],
+      [ "ccPointPairRegistrationDlg::EntityContexts", "structccPointPairRegistrationDlg_1_1EntityContexts.html", null ]
     ] ],
     [ "QMenu", null, [
       [ "ProjectViewContextMenu", "classProjectViewContextMenu.html", null ]
@@ -2023,12 +2503,15 @@ var hierarchy =
       [ "G3Point::G3PointAction", "classG3Point_1_1G3PointAction.html", null ],
       [ "G3PointPlugin", "classG3PointPlugin.html", null ],
       [ "GrainsAsEllipsoids", "classGrainsAsEllipsoids.html", null ],
+      [ "IconHelper", "classIconHelper.html", null ],
       [ "JsonRPCPlugin", "classJsonRPCPlugin.html", null ],
       [ "JsonRPCServer", "classJsonRPCServer.html", null ],
       [ "KeyPressEater", "classKeyPressEater.html", null ],
       [ "LasPlugin", "classLasPlugin.html", null ],
       [ "PythonInterpreter", "classPythonInterpreter.html", null ],
       [ "PythonPlugin", "classPythonPlugin.html", null ],
+      [ "QSimpleUpdater", "classQSimpleUpdater.html", null ],
+      [ "Updater", "classUpdater.html", null ],
       [ "ccAutoSeg", "classccAutoSeg.html", null ],
       [ "ccClipBox", "classccClipBox.html", null ],
       [ "ccCompass", "classccCompass.html", null ],
@@ -2037,6 +2520,11 @@ var hierarchy =
       [ "ccMouseCircle", "classccMouseCircle.html", null ],
       [ "ccMouseCircle", "classccMouseCircle.html", null ],
       [ "ccOctree", "classccOctree.html", null ],
+      [ "ccPickingHub", "classccPickingHub.html", null ],
+      [ "ccPluginManager", "classccPluginManager.html", null ],
+      [ "ccPluginUIManager", "classccPluginUIManager.html", null ],
+      [ "ccTranslationManager", "classccTranslationManager.html", null ],
+      [ "ecvConsole", "classecvConsole.html", null ],
       [ "ecvDisplayTools", "classecvDisplayTools.html", null ],
       [ "ecvGenericAnnotationTool", "classecvGenericAnnotationTool.html", null ],
       [ "ecvGenericCameraTool", "classecvGenericCameraTool.html", null ],
@@ -2048,7 +2536,9 @@ var hierarchy =
         [ "ecvGenericVisualizer3D", "classecvGenericVisualizer3D.html", null ]
       ] ],
       [ "ecvKeySequences", "classecvKeySequences.html", null ],
+      [ "ecvLayoutManager", "classecvLayoutManager.html", null ],
       [ "ecvModalShortcut", "classecvModalShortcut.html", null ],
+      [ "ecvRecentFiles", "classecvRecentFiles.html", null ],
       [ "ecvShortcutDecorator", "classecvShortcutDecorator.html", null ],
       [ "q3DMASCPlugin", "classq3DMASCPlugin.html", null ],
       [ "qAdditionalIO", "classqAdditionalIO.html", null ],
@@ -2090,11 +2580,15 @@ var hierarchy =
     [ "QProgressDialog", null, [
       [ "ecvProgressDialog", "classecvProgressDialog.html", null ]
     ] ],
+    [ "QSettings", null, [
+      [ "ecvSettingManager", "classecvSettingManager.html", null ]
+    ] ],
     [ "QSpinBox", null, [
       [ "ccOctreeSpinBox", "classccOctreeSpinBox.html", null ]
     ] ],
     [ "QStyledItemDelegate", null, [
-      [ "ccColorStyledDelegate", "classccColorStyledDelegate.html", null ]
+      [ "ccColorStyledDelegate", "classccColorStyledDelegate.html", null ],
+      [ "ccPropertiesTreeDelegate", "classccPropertiesTreeDelegate.html", null ]
     ] ],
     [ "QSyntaxHighlighter", null, [
       [ "PythonHighlighter", "classPythonHighlighter.html", null ]
@@ -2102,8 +2596,12 @@ var hierarchy =
     [ "QtCompatRegExpWrapper", "classQtCompatRegExpWrapper.html", null ],
     [ "QtCompatTextCodec", "classQtCompatTextCodec.html", null ],
     [ "QTextCodec", "classQTextCodec.html", null ],
+    [ "QToolBar", null, [
+      [ "ecvCustomViewpointsToolbar", "classecvCustomViewpointsToolbar.html", null ]
+    ] ],
     [ "QTreeView", null, [
-      [ "ProjectView", "classProjectView.html", null ]
+      [ "ProjectView", "classProjectView.html", null ],
+      [ "ccCustomQTreeView", "classccCustomQTreeView.html", null ]
     ] ],
     [ "QuaChecksum32", "classQuaChecksum32.html", [
       [ "QuaAdler32", "classQuaAdler32.html", null ],
@@ -2119,21 +2617,71 @@ var hierarchy =
     [ "QuaZipFileInfo64", "structQuaZipFileInfo64.html", null ],
     [ "QuaZipNewInfo", "structQuaZipNewInfo.html", null ],
     [ "knncpp::QueryHeap< Scalar >", "classknncpp_1_1QueryHeap.html", null ],
+    [ "QUIConfig", "classQUIConfig.html", null ],
+    [ "QValidator", null, [
+      [ "ccCustomDoubleValidator", "classccCustomDoubleValidator.html", null ]
+    ] ],
     [ "QVideoEncoder", "classQVideoEncoder.html", null ],
     [ "qVoxFallProcess", "classqVoxFallProcess.html", null ],
     [ "qVoxFallTools", "classqVoxFallTools.html", null ],
     [ "qVoxFallTransform", "classqVoxFallTransform.html", null ],
     [ "QWidget", null, [
+      [ "ColorScaleEditorBaseWidget", "classColorScaleEditorBaseWidget.html", [
+        [ "ColorBarWidget", "classColorBarWidget.html", null ],
+        [ "SliderLabelWidget", "classSliderLabelWidget.html", null ],
+        [ "SlidersWidget", "classSlidersWidget.html", null ],
+        [ "ccColorScaleEditorWidget", "classccColorScaleEditorWidget.html", null ]
+      ] ],
+      [ "ColorScaleElementSlider", "classColorScaleElementSlider.html", null ],
       [ "ConfusionMatrix", "classConfusionMatrix.html", null ],
+      [ "Downloader", "classDownloader.html", null ],
       [ "G3PointPlots", "classG3PointPlots.html", null ],
       [ "LasExtraScalarFieldCard", "classLasExtraScalarFieldCard.html", null ],
       [ "LineNumberArea", "classLineNumberArea.html", null ],
       [ "MappingLabel", "classMappingLabel.html", null ],
+      [ "MatrixDisplayDlg", "classMatrixDisplayDlg.html", null ],
       [ "PackageManager", "classPackageManager.html", null ],
       [ "PythonActionLauncher", "classPythonActionLauncher.html", null ],
       [ "WaitingSpinnerWidget", "classWaitingSpinnerWidget.html", null ],
       [ "ccMapWindow", "classccMapWindow.html", null ],
-      [ "ecvFontPropertyWidget", "classecvFontPropertyWidget.html", null ]
+      [ "cloudViewer::CameraTab", "classcloudViewer_1_1CameraTab.html", null ],
+      [ "cloudViewer::DatabaseManagementWidget", "classcloudViewer_1_1DatabaseManagementWidget.html", null ],
+      [ "cloudViewer::DenseReconstructionOptionsWidget", "classcloudViewer_1_1DenseReconstructionOptionsWidget.html", null ],
+      [ "cloudViewer::DenseReconstructionWidget", "classcloudViewer_1_1DenseReconstructionWidget.html", null ],
+      [ "cloudViewer::FeatureExtractionWidget", "classcloudViewer_1_1FeatureExtractionWidget.html", null ],
+      [ "cloudViewer::FeatureMatchingTab", "classcloudViewer_1_1FeatureMatchingTab.html", [
+        [ "cloudViewer::CustomMatchingTab", "classcloudViewer_1_1CustomMatchingTab.html", null ],
+        [ "cloudViewer::ExhaustiveMatchingTab", "classcloudViewer_1_1ExhaustiveMatchingTab.html", null ],
+        [ "cloudViewer::SequentialMatchingTab", "classcloudViewer_1_1SequentialMatchingTab.html", null ],
+        [ "cloudViewer::SpatialMatchingTab", "classcloudViewer_1_1SpatialMatchingTab.html", null ],
+        [ "cloudViewer::TransitiveMatchingTab", "classcloudViewer_1_1TransitiveMatchingTab.html", null ],
+        [ "cloudViewer::VocabTreeMatchingTab", "classcloudViewer_1_1VocabTreeMatchingTab.html", null ]
+      ] ],
+      [ "cloudViewer::FeatureMatchingWidget", "classcloudViewer_1_1FeatureMatchingWidget.html", null ],
+      [ "cloudViewer::ImageTab", "classcloudViewer_1_1ImageTab.html", null ],
+      [ "cloudViewer::ImageViewerWidget", "classcloudViewer_1_1ImageViewerWidget.html", [
+        [ "cloudViewer::FeatureImageViewerWidget", "classcloudViewer_1_1FeatureImageViewerWidget.html", [
+          [ "cloudViewer::DatabaseImageViewerWidget", "classcloudViewer_1_1DatabaseImageViewerWidget.html", null ]
+        ] ],
+        [ "cloudViewer::MatchMatrixWidget", "classcloudViewer_1_1MatchMatrixWidget.html", null ]
+      ] ],
+      [ "cloudViewer::LogWidget", "classcloudViewer_1_1LogWidget.html", null ],
+      [ "cloudViewer::ModelViewerWidget", "classcloudViewer_1_1ModelViewerWidget.html", null ],
+      [ "cloudViewer::MovieGrabberWidget", "classcloudViewer_1_1MovieGrabberWidget.html", null ],
+      [ "cloudViewer::OverlappingImagesWidget", "classcloudViewer_1_1OverlappingImagesWidget.html", null ],
+      [ "cloudViewer::PointViewerWidget", "classcloudViewer_1_1PointViewerWidget.html", null ],
+      [ "cloudViewer::ProjectWidget", "classcloudViewer_1_1ProjectWidget.html", null ],
+      [ "cloudViewer::ReconstructionOptionsWidget", "classcloudViewer_1_1ReconstructionOptionsWidget.html", null ],
+      [ "cloudViewer::ReconstructionStatsWidget", "classcloudViewer_1_1ReconstructionStatsWidget.html", null ],
+      [ "cloudViewer::ReconstructionWidget", "classcloudViewer_1_1ReconstructionWidget.html", null ],
+      [ "cloudViewer::ThreadControlWidget", "classcloudViewer_1_1ThreadControlWidget.html", null ],
+      [ "cloudViewer::TwoViewInfoTab", "classcloudViewer_1_1TwoViewInfoTab.html", [
+        [ "cloudViewer::MatchesTab", "classcloudViewer_1_1MatchesTab.html", null ],
+        [ "cloudViewer::TwoViewGeometriesTab", "classcloudViewer_1_1TwoViewGeometriesTab.html", null ]
+      ] ],
+      [ "ecvCustomLabelsWidget", "classecvCustomLabelsWidget.html", null ],
+      [ "ecvFontPropertyWidget", "classecvFontPropertyWidget.html", null ],
+      [ "sfEditDlg", "classsfEditDlg.html", null ]
     ] ],
     [ "flann::cuda::RadiusKnnResultSet< DistanceType, useHeap >", "structflann_1_1cuda_1_1RadiusKnnResultSet.html", null ],
     [ "flann::cuda::RadiusResultSet< DistanceType >", "structflann_1_1cuda_1_1RadiusResultSet.html", null ],
@@ -2146,7 +2694,13 @@ var hierarchy =
     [ "Ui::RansacSDDialog", null, [
       [ "ccRansacSDDlg", "classccRansacSDDlg.html", null ]
     ] ],
+    [ "Ui::RansacSegmentationDlg", null, [
+      [ "ecvRansacSegmentationDlg", "classecvRansacSegmentationDlg.html", null ]
+    ] ],
     [ "Rasterization", "classRasterization.html", null ],
+    [ "Ui::RasterizeToolDialog", null, [
+      [ "ccRasterizeTool", "classccRasterizeTool.html", null ]
+    ] ],
     [ "Ray< T >", "structRay.html", null ],
     [ "cloudViewer::t::geometry::RaycastingScene", "classcloudViewer_1_1t_1_1geometry_1_1RaycastingScene.html", null ],
     [ "Ui::RDBOpenDlg", null, [
@@ -2160,13 +2714,18 @@ var hierarchy =
     [ "cloudViewer::io::ReadTriangleModelOptions", "structcloudViewer_1_1io_1_1ReadTriangleModelOptions.html", null ],
     [ "cloudViewer::core::RealBlock", "structcloudViewer_1_1core_1_1RealBlock.html", null ],
     [ "cloudViewer::t::io::RealSenseValidConfigs", "structcloudViewer_1_1t_1_1io_1_1RealSenseValidConfigs.html", null ],
+    [ "ccInnerRect2DFinder::Rect", "structccInnerRect2DFinder_1_1Rect.html", null ],
     [ "cloudViewer::visualization::gui::Rect", "structcloudViewer_1_1visualization_1_1gui_1_1Rect.html", null ],
     [ "rect", "structrect.html", null ],
     [ "rect_iter", "structrect__iter.html", null ],
+    [ "ccPluginInterface::Reference", "structccPluginInterface_1_1Reference.html", null ],
     [ "Ui::RegionGrowingSegmentationDlg", null, [
       [ "RegionGrowingSegmentationDlg", "classRegionGrowingSegmentationDlg.html", null ]
     ] ],
     [ "Runtime::RegisteredPlugin", "structRuntime_1_1RegisteredPlugin.html", null ],
+    [ "Ui::RegistrationDialog", null, [
+      [ "ccRegistrationDlg", "classccRegistrationDlg.html", null ]
+    ] ],
     [ "cloudViewer::pipelines::registration::RegistrationResult", "classcloudViewer_1_1pipelines_1_1registration_1_1RegistrationResult.html", null ],
     [ "cloudViewer::t::pipelines::registration::RegistrationResult", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1RegistrationResult.html", null ],
     [ "cloudViewer::visualization::rendering::REHandle_abstract", "structcloudViewer_1_1visualization_1_1rendering_1_1REHandle__abstract.html", [
@@ -2194,6 +2753,7 @@ var hierarchy =
       [ "cloudViewer::visualization::rendering::FilamentRenderToBuffer", "classcloudViewer_1_1visualization_1_1rendering_1_1FilamentRenderToBuffer.html", null ]
     ] ],
     [ "cloudViewer::io::rpc::messages::Reply", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Reply.html", null ],
+    [ "ccVolumeCalcTool::ReportInfo", "structccVolumeCalcTool_1_1ReportInfo.html", null ],
     [ "cloudViewer::io::rpc::messages::Request", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Request.html", null ],
     [ "flann::Request< T >", "structflann_1_1Request.html", null ],
     [ "cloudViewer::visualization::rendering::ResourceLoadRequest", "classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html", null ],
@@ -2219,6 +2779,7 @@ var hierarchy =
       [ "RgbDialog", "classRgbDialog.html", null ]
     ] ],
     [ "cloudViewer::pipelines::odometry::RGBDOdometryJacobian", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobian.html", [
+      [ "cloudViewer::pipelines::odometry::PyRGBDOdometryJacobian< RGBDOdometryJacobianBase >", "classcloudViewer_1_1pipelines_1_1odometry_1_1PyRGBDOdometryJacobian.html", null ],
       [ "cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromColorTerm", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromColorTerm.html", null ],
       [ "cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromHybridTerm", "classcloudViewer_1_1pipelines_1_1odometry_1_1RGBDOdometryJacobianFromHybridTerm.html", null ]
     ] ],
@@ -2245,6 +2806,7 @@ var hierarchy =
       [ "cloudViewer::pipelines::registration::HuberLoss", "classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html", null ],
       [ "cloudViewer::pipelines::registration::L1Loss", "classcloudViewer_1_1pipelines_1_1registration_1_1L1Loss.html", null ],
       [ "cloudViewer::pipelines::registration::L2Loss", "classcloudViewer_1_1pipelines_1_1registration_1_1L2Loss.html", null ],
+      [ "cloudViewer::pipelines::registration::PyRobustKernelT< RobustKernelBase >", "classcloudViewer_1_1pipelines_1_1registration_1_1PyRobustKernelT.html", null ],
       [ "cloudViewer::pipelines::registration::TukeyLoss", "classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html", null ]
     ] ],
     [ "cloudViewer::t::pipelines::registration::RobustKernel", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1RobustKernel.html", null ],
@@ -2283,7 +2845,13 @@ var hierarchy =
     [ "Ui::ScalarDialog", null, [
       [ "ScalarDialog", "classScalarDialog.html", null ]
     ] ],
+    [ "Ui::scalarFieldFromColorDlg", null, [
+      [ "ccScalarFieldFromColorDlg", "classccScalarFieldFromColorDlg.html", null ]
+    ] ],
     [ "ScalarFieldView", "classScalarFieldView.html", null ],
+    [ "Ui::ScaleDialog", null, [
+      [ "ccScaleDlg", "classccScaleDlg.html", null ]
+    ] ],
     [ "e57::ScaledIntegerNode", "classe57_1_1ScaledIntegerNode.html", null ],
     [ "ScaledIntegerNode", "classScaledIntegerNode.html", null ],
     [ "ScaleParamsComputer", "classScaleParamsComputer.html", [
@@ -2300,6 +2868,7 @@ var hierarchy =
     [ "flann::SearchParams", "structflann_1_1SearchParams.html", null ],
     [ "flann::mpi::SearchResults< DistanceType >", "structflann_1_1mpi_1_1SearchResults.html", null ],
     [ "flann::cuda::kd_tree_builder_detail::SecondElementIsEven", "structflann_1_1cuda_1_1kd__tree__builder__detail_1_1SecondElementIsEven.html", null ],
+    [ "ccTracePolylineTool::SegmentGLParams", "structccTracePolylineTool_1_1SegmentGLParams.html", null ],
     [ "Select", "structSelect.html", null ],
     [ "SelectDest", "structSelectDest.html", null ],
     [ "cloudViewer::visualization::visualizer::O3DVisualizerSelections::SelectedIndex", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizerSelections_1_1SelectedIndex.html", null ],
@@ -2310,6 +2879,12 @@ var hierarchy =
     [ "cloudViewer::ml::impl::SelectNanoflannAdaptor< L1, T >", "structcloudViewer_1_1ml_1_1impl_1_1SelectNanoflannAdaptor_3_01L1_00_01T_01_4.html", null ],
     [ "cloudViewer::core::nns::NanoFlannIndexHolder< METRIC, TReal, TIndex >::SelectNanoflannAdaptor< L2, fake >", "structcloudViewer_1_1core_1_1nns_1_1NanoFlannIndexHolder_1_1SelectNanoflannAdaptor_3_01L2_00_01fake_01_4.html", null ],
     [ "cloudViewer::ml::impl::SelectNanoflannAdaptor< L2, T >", "structcloudViewer_1_1ml_1_1impl_1_1SelectNanoflannAdaptor_3_01L2_00_01T_01_4.html", null ],
+    [ "Ui::sensorComputeDistancesDlg", null, [
+      [ "ccSensorComputeDistancesDlg", "classccSensorComputeDistancesDlg.html", null ]
+    ] ],
+    [ "Ui::sensorComputeScatteringAnglesDlg", null, [
+      [ "ccSensorComputeScatteringAnglesDlg", "classccSensorComputeScatteringAnglesDlg.html", null ]
+    ] ],
     [ "AsciiOpenDlg::SequenceItem", "structAsciiOpenDlg_1_1SequenceItem.html", null ],
     [ "flann::serialization::Serializer< T >", "structflann_1_1serialization_1_1Serializer.html", null ],
     [ "flann::serialization::Serializer< binary_object >", "structflann_1_1serialization_1_1Serializer_3_01binary__object_01_4.html", null ],
@@ -2339,6 +2914,10 @@ var hierarchy =
     [ "cloudViewer::io::rpc::messages::SetProperties", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1SetProperties.html", null ],
     [ "cloudViewer::io::rpc::messages::SetTime", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1SetTime.html", null ],
     [ "cloudViewer::visualization::GuiVisualizer::Impl::Settings", "structcloudViewer_1_1visualization_1_1GuiVisualizer_1_1Impl_1_1Settings.html", null ],
+    [ "ccScalarFieldArithmeticsDlg::SF2", "structccScalarFieldArithmeticsDlg_1_1SF2.html", null ],
+    [ "Ui::SFArithmeticsDlg", null, [
+      [ "ccScalarFieldArithmeticsDlg", "classccScalarFieldArithmeticsDlg.html", null ]
+    ] ],
     [ "SFCollector", "classSFCollector.html", null ],
     [ "SFCollector::SFDesc", "structSFCollector_1_1SFDesc.html", null ],
     [ "SFDescriptor", "structSFDescriptor.html", null ],
@@ -2406,6 +2985,9 @@ var hierarchy =
     [ "cloudViewer::core::SmallVectorStorage< T, 0 >", "structcloudViewer_1_1core_1_1SmallVectorStorage_3_01T_00_010_01_4.html", null ],
     [ "cloudViewer::core::SmallVectorStorage< T, CalculateSmallVectorDefaultInlinedElements< T >::value >", "structcloudViewer_1_1core_1_1SmallVectorStorage.html", [
       [ "cloudViewer::core::SmallVector< T, N >", "classcloudViewer_1_1core_1_1SmallVector.html", null ]
+    ] ],
+    [ "Ui::SorFilterDialog", null, [
+      [ "ecvSORFilterDlg", "classecvSORFilterDlg.html", null ]
     ] ],
     [ "e57::SortByBytestreamNumber", "structe57_1_1SortByBytestreamNumber.html", null ],
     [ "SortCtx", "structSortCtx.html", null ],
@@ -2476,6 +3058,9 @@ var hierarchy =
     [ "Ui::StatisticalOutliersRemoverDlg", null, [
       [ "SORDialog", "classSORDialog.html", null ]
     ] ],
+    [ "Ui::StatisticalTestDialog", null, [
+      [ "ccStatisticalTestDlg", "classccStatisticalTestDlg.html", null ]
+    ] ],
     [ "StatSample", "structStatSample.html", null ],
     [ "cloudViewer::io::rpc::messages::Status", "structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Status.html", null ],
     [ "cloudViewer::core::StdAllocator< T >", "classcloudViewer_1_1core_1_1StdAllocator.html", null ],
@@ -2496,6 +3081,9 @@ var hierarchy =
     [ "e57::StructureNode", "classe57_1_1StructureNode.html", null ],
     [ "StructureNode", "classStructureNode.html", null ],
     [ "SubProgram", "structSubProgram.html", null ],
+    [ "Ui::SubsamplingDialog", null, [
+      [ "ccSubsamplingDlg", "classccSubsamplingDlg.html", null ]
+    ] ],
     [ "SubstContext", "structSubstContext.html", null ],
     [ "SumCtx", "structSumCtx.html", null ],
     [ "cloudViewer::core::sy::SYCLContext", "classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html", null ],
@@ -2523,6 +3111,7 @@ var hierarchy =
     [ "cloudViewer::core::TensorKey", "classcloudViewer_1_1core_1_1TensorKey.html", null ],
     [ "cloudViewer::core::TensorList", "classcloudViewer_1_1core_1_1TensorList.html", null ],
     [ "cloudViewer::core::TensorRef", "structcloudViewer_1_1core_1_1TensorRef.html", null ],
+    [ "cloudViewer::benchmarks::TestKDTreeLine0", "classcloudViewer_1_1benchmarks_1_1TestKDTreeLine0.html", null ],
     [ "TexCoords2D", "structTexCoords2D.html", null ],
     [ "cloudViewer::visualization::gui::TextInputEvent", "structcloudViewer_1_1visualization_1_1gui_1_1TextInputEvent.html", null ],
     [ "cloudViewer::io::TextureImages", "structcloudViewer_1_1io_1_1TextureImages.html", null ],
@@ -2540,6 +3129,9 @@ var hierarchy =
     [ "tm_zip_s", "structtm__zip__s.html", null ],
     [ "Token", "structToken.html", null ],
     [ "masc::Tools", "classmasc_1_1Tools.html", null ],
+    [ "Ui::TracePolyLineDlg", null, [
+      [ "ccTracePolylineTool", "classccTracePolylineTool.html", null ]
+    ] ],
     [ "Ui::Train3DMASCDialog", null, [
       [ "Train3DMASCDialog", "classTrain3DMASCDialog.html", null ]
     ] ],
@@ -2550,12 +3142,14 @@ var hierarchy =
     [ "masc::TrainParameters", "structmasc_1_1TrainParameters.html", null ],
     [ "cloudViewer::PointProjectionTools::Transformation", "structcloudViewer_1_1PointProjectionTools_1_1Transformation.html", null ],
     [ "cloudViewer::pipelines::registration::TransformationEstimation", "classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimation.html", [
+      [ "cloudViewer::pipelines::registration::PyTransformationEstimation< TransformationEstimationBase >", "classcloudViewer_1_1pipelines_1_1registration_1_1PyTransformationEstimation.html", null ],
       [ "cloudViewer::pipelines::registration::TransformationEstimationForColoredICP", "classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationForColoredICP.html", null ],
       [ "cloudViewer::pipelines::registration::TransformationEstimationForGeneralizedICP", "classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationForGeneralizedICP.html", null ],
       [ "cloudViewer::pipelines::registration::TransformationEstimationPointToPlane", "classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPlane.html", null ],
       [ "cloudViewer::pipelines::registration::TransformationEstimationPointToPoint", "classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPoint.html", null ]
     ] ],
     [ "cloudViewer::t::pipelines::registration::TransformationEstimation", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1TransformationEstimation.html", [
+      [ "cloudViewer::t::pipelines::registration::PyTransformationEstimation< TransformationEstimationBase >", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1PyTransformationEstimation.html", null ],
       [ "cloudViewer::t::pipelines::registration::TransformationEstimationForColoredICP", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1TransformationEstimationForColoredICP.html", null ],
       [ "cloudViewer::t::pipelines::registration::TransformationEstimationForDopplerICP", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1TransformationEstimationForDopplerICP.html", null ],
       [ "cloudViewer::t::pipelines::registration::TransformationEstimationPointToPlane", "classcloudViewer_1_1t_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPlane.html", null ],
@@ -2571,7 +3165,9 @@ var hierarchy =
     [ "TreeNodeData", "classTreeNodeData.html", null ],
     [ "Triangle", "classTriangle.html", null ],
     [ "TriangleIndex", "classTriangleIndex.html", null ],
+    [ "cloudViewer::TriangleList", "structcloudViewer_1_1TriangleList.html", null ],
     [ "cloudViewer::visualization::rendering::TriangleMeshModel", "structcloudViewer_1_1visualization_1_1rendering_1_1TriangleMeshModel.html", null ],
+    [ "TrianglesToTest", "structTrianglesToTest.html", null ],
     [ "Triangulation< Real >", "classTriangulation.html", null ],
     [ "TriangulationEdge", "classTriangulationEdge.html", null ],
     [ "TriangulationTriangle", "classTriangulationTriangle.html", null ],
@@ -2587,6 +3183,7 @@ var hierarchy =
       [ "ccKdTree", "classccKdTree.html", null ]
     ] ],
     [ "cloudViewer::pipelines::integration::TSDFVolume", "classcloudViewer_1_1pipelines_1_1integration_1_1TSDFVolume.html", [
+      [ "cloudViewer::pipelines::integration::PyTSDFVolume< TSDFVolumeBase >", "classcloudViewer_1_1pipelines_1_1integration_1_1PyTSDFVolume.html", null ],
       [ "cloudViewer::pipelines::integration::ScalableTSDFVolume", "classcloudViewer_1_1pipelines_1_1integration_1_1ScalableTSDFVolume.html", null ],
       [ "cloudViewer::pipelines::integration::UniformTSDFVolume", "classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html", null ]
     ] ],
@@ -2605,6 +3202,9 @@ var hierarchy =
     [ "pybind11::detail::type_caster< QByteArray >", "structpybind11_1_1detail_1_1type__caster_3_01QByteArray_01_4.html", null ],
     [ "pybind11::detail::type_caster< QString >", "structpybind11_1_1detail_1_1type__caster_3_01QString_01_4.html", null ],
     [ "pybind11::detail::type_caster< QVariant >", "structpybind11_1_1detail_1_1type__caster_3_01QVariant_01_4.html", null ],
+    [ "type_caster_base", null, [
+      [ "pybind11::detail::type_caster< cloudViewer::core::Tensor >", "structpybind11_1_1detail_1_1type__caster_3_01cloudViewer_1_1core_1_1Tensor_01_4.html", null ]
+    ] ],
     [ "cloudViewer::visualization::gui::UIImage", "classcloudViewer_1_1visualization_1_1gui_1_1UIImage.html", null ],
     [ "cloudViewer::visualization::visualizer::O3DVisualizer::UIState", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html", null ],
     [ "cloudViewer::core::linalg::kernel::un< scalar_t >", "unioncloudViewer_1_1core_1_1linalg_1_1kernel_1_1un.html", null ],
@@ -2626,10 +3226,14 @@ var hierarchy =
     [ "std::unordered_map", null, [
       [ "cloudViewer::t::geometry::TensorMap", "classcloudViewer_1_1t_1_1geometry_1_1TensorMap.html", null ]
     ] ],
+    [ "UnownedPointer< T >", "classUnownedPointer.html", null ],
     [ "UnpackedRecord", "structUnpackedRecord.html", null ],
     [ "ccPointCloud::UnrollBaseParams", "structccPointCloud_1_1UnrollBaseParams.html", [
       [ "ccPointCloud::UnrollConeParams", "structccPointCloud_1_1UnrollConeParams.html", null ],
       [ "ccPointCloud::UnrollCylinderParams", "structccPointCloud_1_1UnrollCylinderParams.html", null ]
+    ] ],
+    [ "Ui::UnrollDialog", null, [
+      [ "ccUnrollDlg", "classccUnrollDlg.html", null ]
     ] ],
     [ "unz64_file_pos_s", "structunz64__file__pos__s.html", null ],
     [ "unz64_s", "structunz64__s.html", null ],
@@ -2712,18 +3316,29 @@ var hierarchy =
       [ "cloudViewer::visualization::rendering::FilamentView", "classcloudViewer_1_1visualization_1_1rendering_1_1FilamentView.html", null ]
     ] ],
     [ "cloudViewer::visualization::ViewControl", "classcloudViewer_1_1visualization_1_1ViewControl.html", [
+      [ "PyViewControl< ViewControlBase >", "classPyViewControl.html", null ],
       [ "cloudViewer::visualization::ViewControlWithCustomAnimation", "classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html", null ],
       [ "cloudViewer::visualization::ViewControlWithEditing", "classcloudViewer_1_1visualization_1_1ViewControlWithEditing.html", null ]
     ] ],
+    [ "cloudViewer::MovieGrabberWidget::ViewData", "structcloudViewer_1_1MovieGrabberWidget_1_1ViewData.html", null ],
+    [ "cloudViewer::ViewInterpolate", "classcloudViewer_1_1ViewInterpolate.html", null ],
     [ "ViewInterpolate", "classViewInterpolate.html", null ],
     [ "cloudViewer::core::VirtualBlock", "structcloudViewer_1_1core_1_1VirtualBlock.html", null ],
     [ "cloudViewer::visualization::Visualizer", "classcloudViewer_1_1visualization_1_1Visualizer.html", [
+      [ "PyVisualizer< VisualizerBase >", "classPyVisualizer.html", null ],
+      [ "cloudViewer::VisualizerForAlignment", "classcloudViewer_1_1VisualizerForAlignment.html", null ],
       [ "cloudViewer::visualization::VisualizerWithCustomAnimation", "classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html", null ],
       [ "cloudViewer::visualization::VisualizerWithEditing", "classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html", null ],
       [ "cloudViewer::visualization::VisualizerWithKeyCallback", "classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html", null ],
       [ "cloudViewer::visualization::VisualizerWithVertexSelection", "classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html", null ]
     ] ],
     [ "e57::VisualReferenceRepresentation", "structe57_1_1VisualReferenceRepresentation.html", null ],
+    [ "void_caster", null, [
+      [ "pybind11::detail::type_caster< cloudViewer::utility::nullopt_t >", "structpybind11_1_1detail_1_1type__caster_3_01cloudViewer_1_1utility_1_1nullopt__t_01_4.html", null ]
+    ] ],
+    [ "Ui::VolumeCalcDialog", null, [
+      [ "ccVolumeCalcTool", "classccVolumeCalcTool.html", null ]
+    ] ],
     [ "cloudViewer::pipelines::integration::ScalableTSDFVolume::VolumeUnit", "structcloudViewer_1_1pipelines_1_1integration_1_1ScalableTSDFVolume_1_1VolumeUnit.html", null ],
     [ "cloudViewer::geometry::Voxel", "classcloudViewer_1_1geometry_1_1Voxel.html", [
       [ "cloudViewer::geometry::TSDFVoxel", "classcloudViewer_1_1geometry_1_1TSDFVoxel.html", null ]
@@ -2777,7 +3392,9 @@ var hierarchy =
       [ "cloudViewer::visualization::gui::Dialog", "classcloudViewer_1_1visualization_1_1gui_1_1Dialog.html", [
         [ "cloudViewer::visualization::gui::FileDialog", "classcloudViewer_1_1visualization_1_1gui_1_1FileDialog.html", null ]
       ] ],
-      [ "cloudViewer::visualization::gui::ImageWidget", "classcloudViewer_1_1visualization_1_1gui_1_1ImageWidget.html", null ],
+      [ "cloudViewer::visualization::gui::ImageWidget", "classcloudViewer_1_1visualization_1_1gui_1_1ImageWidget.html", [
+        [ "cloudViewer::visualization::gui::PyImageWidget", "classcloudViewer_1_1visualization_1_1gui_1_1PyImageWidget.html", null ]
+      ] ],
       [ "cloudViewer::visualization::gui::LUTTreeCell", "classcloudViewer_1_1visualization_1_1gui_1_1LUTTreeCell.html", null ],
       [ "cloudViewer::visualization::gui::Label", "classcloudViewer_1_1visualization_1_1gui_1_1Label.html", null ],
       [ "cloudViewer::visualization::gui::Layout1D", "classcloudViewer_1_1visualization_1_1gui_1_1Layout1D.html", [
@@ -2794,7 +3411,9 @@ var hierarchy =
       [ "cloudViewer::visualization::gui::NumberEdit", "classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html", null ],
       [ "cloudViewer::visualization::gui::ProgressBar", "classcloudViewer_1_1visualization_1_1gui_1_1ProgressBar.html", null ],
       [ "cloudViewer::visualization::gui::RadioButton", "classcloudViewer_1_1visualization_1_1gui_1_1RadioButton.html", null ],
-      [ "cloudViewer::visualization::gui::SceneWidget", "classcloudViewer_1_1visualization_1_1gui_1_1SceneWidget.html", null ],
+      [ "cloudViewer::visualization::gui::SceneWidget", "classcloudViewer_1_1visualization_1_1gui_1_1SceneWidget.html", [
+        [ "cloudViewer::visualization::gui::PySceneWidget", "classcloudViewer_1_1visualization_1_1gui_1_1PySceneWidget.html", null ]
+      ] ],
       [ "cloudViewer::visualization::gui::Slider", "classcloudViewer_1_1visualization_1_1gui_1_1Slider.html", null ],
       [ "cloudViewer::visualization::gui::StackedWidget", "classcloudViewer_1_1visualization_1_1gui_1_1StackedWidget.html", null ],
       [ "cloudViewer::visualization::gui::TabControl", "classcloudViewer_1_1visualization_1_1gui_1_1TabControl.html", null ],
@@ -2810,9 +3429,9 @@ var hierarchy =
     [ "WIDGETS_PARAMETER", "structWIDGETS__PARAMETER.html", null ],
     [ "cloudViewer::visualization::gui::Window", "classcloudViewer_1_1visualization_1_1gui_1_1Window.html", [
       [ "cloudViewer::visualization::GuiVisualizer", "classcloudViewer_1_1visualization_1_1GuiVisualizer.html", null ],
+      [ "cloudViewer::visualization::gui::PyWindow", "classcloudViewer_1_1visualization_1_1gui_1_1PyWindow.html", null ],
       [ "cloudViewer::visualization::visualizer::O3DVisualizer", "classcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer.html", null ]
     ] ],
-    [ "Window", "structWindow.html", null ],
     [ "WindowCodeArg", "structWindowCodeArg.html", null ],
     [ "WindowCsrAndReg", "structWindowCsrAndReg.html", null ],
     [ "WindowRewrite", "structWindowRewrite.html", null ],

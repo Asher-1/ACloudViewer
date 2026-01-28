@@ -1,8 +1,12 @@
 <map id="StereogramDialog" name="StereogramDialog">
-<area shape="rect" id="node1" title="Dialog for displaying the angular repartition of facets (qFacets plugin)" alt="" coords="115,184,255,211"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,95,80,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="104,95,267,121"/>
-<area shape="rect" id="node4" href="$classStereogramWidget.html" title="Orientation&#45;based classification widget." alt="" coords="291,95,435,121"/>
-<area shape="rect" id="node5" title=" " alt="" coords="267,5,333,32"/>
-<area shape="rect" id="node6" href="$classFacetDensityGrid.html" title="Density grid." alt="" coords="357,5,491,32"/>
+<area shape="rect" id="node1" title="Dialog for displaying the angular repartition of facets (qFacets plugin)" alt="" coords="679,107,819,133"/>
+<area shape="rect" id="node2" title=" " alt="" coords="367,5,441,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="323,56,485,83"/>
+<area shape="rect" id="node4" href="$classccColorScaleSelector.html" title="Advanced editor for color scales." alt="" coords="325,107,483,133"/>
+<area shape="rect" id="node5" title=" " alt="" coords="53,68,127,95"/>
+<area shape="rect" id="node6" href="$classccColorScalesManager.html" title="Color scales manager/container." alt="" coords="5,119,175,145"/>
+<area shape="rect" id="node7" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="324,157,484,184"/>
+<area shape="rect" id="node8" href="$classStereogramWidget.html" title="Orientation&#45;based classification widget." alt="" coords="332,208,476,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="57,195,123,221"/>
+<area shape="rect" id="node10" href="$classFacetDensityGrid.html" title="Density grid." alt="" coords="23,245,157,272"/>
 </map>

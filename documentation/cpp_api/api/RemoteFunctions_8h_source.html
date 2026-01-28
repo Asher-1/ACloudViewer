@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -122,28 +131,28 @@ $(document).ready(function(){initNavTree('RemoteFunctions_8h_source.html',''); i
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;}</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#a500e2ace7671713133d7a20dc9e97ed0">SetPointCloud</a>(<span class="keyword">const</span> <a class="code" href="classccPointCloud.html">ccPointCloud</a>&amp; pcd,</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                   <span class="keyword">const</span> std::string&amp; path = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                   <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                   <span class="keywordtype">int</span> time = 0,</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                   <span class="keyword">const</span> std::string&amp; layer = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                   std::shared_ptr&lt;ConnectionBase&gt; connection =</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                           std::shared_ptr&lt;ConnectionBase&gt;());</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#a36a49f6c8ec3170aaf2589180e38499e">SetTriangleMesh</a>(<span class="keyword">const</span> <a class="code" href="classccMesh.html">ccMesh</a>&amp; mesh,</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                     <span class="keyword">const</span> std::string&amp; path = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                     <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                     <span class="keywordtype">int</span> time = 0,</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                     <span class="keyword">const</span> std::string&amp; layer = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                     std::shared_ptr&lt;ConnectionBase&gt; connection =</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                             std::shared_ptr&lt;ConnectionBase&gt;());</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#a36a49f6c8ec3170aaf2589180e38499e">SetTriangleMesh</a>(<span class="keyword">const</span> <a class="code" href="namespacecloudViewer_1_1geometry.html#a489adbc8a7e0672574853a19deb01076">t::geometry::TriangleMesh</a>&amp; mesh,</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                     <span class="keyword">const</span> std::string&amp; path = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                     <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                     <span class="keywordtype">int</span> time = 0,</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                     <span class="keyword">const</span> std::string&amp; layer = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                     std::shared_ptr&lt;ConnectionBase&gt; connection =</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                             std::shared_ptr&lt;ConnectionBase&gt;());</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#adfdc4ede0d032eb6d35a20dea315d477">SetMeshData</a>(</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keyword">const</span> std::string&amp; path = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordtype">int</span> time = 0,</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keyword">const</span> std::string&amp; layer = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <span class="keyword">const</span> core::Tensor&amp; vertices = core::Tensor({0}, <a class="code" href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">core::Float32</a>),</div>
@@ -168,7 +177,7 @@ $(document).ready(function(){initNavTree('RemoteFunctions_8h_source.html',''); i
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                std::shared_ptr&lt;ConnectionBase&gt;());</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#adfa22d8cce1bca72ee4c376c830cdb9a">SetLegacyCamera</a>(<span class="keyword">const</span> camera::PinholeCameraParameters&amp; camera,</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                     <span class="keyword">const</span> std::string&amp; path = <span class="stringliteral">&quot;&quot;</span>,</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                     <span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a> = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                     <span class="keywordtype">int</span> time = 0,</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                     <span class="keyword">const</span> std::string&amp; layer = <span class="stringliteral">&quot;&quot;</span>,</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                     std::shared_ptr&lt;ConnectionBase&gt; connection =</div>
@@ -178,7 +187,7 @@ $(document).ready(function(){initNavTree('RemoteFunctions_8h_source.html',''); i
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;             std::shared_ptr&lt;ConnectionBase&gt; connection =</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                     std::shared_ptr&lt;ConnectionBase&gt;());</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#a94ca00169becf8561048c52fc7bea386">SetActiveCamera</a>(<span class="keyword">const</span> std::string&amp; path,</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1io_1_1rpc.html#a94ca00169becf8561048c52fc7bea386">SetActiveCamera</a>(<span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>,</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                     std::shared_ptr&lt;ConnectionBase&gt; connection =</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                             std::shared_ptr&lt;ConnectionBase&gt;());</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
@@ -202,7 +211,8 @@ $(document).ready(function(){initNavTree('RemoteFunctions_8h_source.html',''); i
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_html_adfa22d8cce1bca72ee4c376c830cdb9a"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc.html#adfa22d8cce1bca72ee4c376c830cdb9a">cloudViewer::io::rpc::SetLegacyCamera</a></div><div class="ttdeci">bool SetLegacyCamera(const camera::PinholeCameraParameters &amp;camera, const std::string &amp;path, int time, const std::string &amp;layer, std::shared_ptr&lt; ConnectionBase &gt; connection)</div><div class="ttdef"><b>Definition:</b> <a href="RemoteFunctions_8cpp_source.html#l00353">RemoteFunctions.cpp:353</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_html_adfdc4ede0d032eb6d35a20dea315d477"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc.html#adfdc4ede0d032eb6d35a20dea315d477">cloudViewer::io::rpc::SetMeshData</a></div><div class="ttdeci">bool SetMeshData(const std::string &amp;path, int time, const std::string &amp;layer, const core::Tensor &amp;vertices, const std::map&lt; std::string, core::Tensor &gt; &amp;vertex_attributes, const core::Tensor &amp;faces, const std::map&lt; std::string, core::Tensor &gt; &amp;face_attributes, const core::Tensor &amp;lines, const std::map&lt; std::string, core::Tensor &gt; &amp;line_attributes, const std::string &amp;material, const std::map&lt; std::string, float &gt; &amp;material_scalar_attributes, const std::map&lt; std::string, std::array&lt; float, 4 &gt;&gt; &amp;material_vector_attributes, const std::map&lt; std::string, t::geometry::Image &gt; &amp;texture_maps, const std::string &amp;o3d_type, std::shared_ptr&lt; ConnectionBase &gt; connection)</div><div class="ttdef"><b>Definition:</b> <a href="RemoteFunctions_8cpp_source.html#l00202">RemoteFunctions.cpp:202</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_html_aecfb61d30b2e951731ed86f4e270485b"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc.html#aecfb61d30b2e951731ed86f4e270485b">cloudViewer::io::rpc::SetTime</a></div><div class="ttdeci">bool SetTime(int time, std::shared_ptr&lt; ConnectionBase &gt; connection)</div><div class="ttdef"><b>Definition:</b> <a href="RemoteFunctions_8cpp_source.html#l00410">RemoteFunctions.cpp:410</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="anamespacezmq_html"><div class="ttname"><a href="namespacezmq.html">zmq</a></div><div class="ttdef"><b>Definition:</b> <a href="ConnectionBase_8h_source.html#l00012">ConnectionBase.h:12</a></div></div>
 <div class="ttc" id="at_2geometry_2TriangleMesh_8h_html"><div class="ttname"><a href="t_2geometry_2TriangleMesh_8h.html">TriangleMesh.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -211,7 +221,7 @@ $(document).ready(function(){initNavTree('RemoteFunctions_8h_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_1289b311b7a3197348dd9698cec970c0.html">io</a></li><li class="navelem"><a class="el" href="dir_7e40b8d96613604dd45c533531c5d6a5.html">rpc</a></li><li class="navelem"><a class="el" href="RemoteFunctions_8h.html">RemoteFunctions.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:20 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

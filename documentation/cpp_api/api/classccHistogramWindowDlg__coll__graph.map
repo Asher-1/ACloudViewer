@@ -1,0 +1,21 @@
+<map id="ccHistogramWindowDlg" name="ccHistogramWindowDlg">
+<area shape="rect" id="node1" title="Encapsulating dialog for ccHistogramWindow." alt="" coords="1171,107,1349,133"/>
+<area shape="rect" id="node2" title=" " alt="" coords="959,81,1034,108"/>
+<area shape="rect" id="node3" href="$classccHistogramWindow.html" title="Histogram widget." alt="" coords="919,132,1075,159"/>
+<area shape="rect" id="node4" title=" " alt="" coords="639,5,746,32"/>
+<area shape="rect" id="node5" href="$classQCPColoredBars.html" title="QCustomPlot: colored histogram." alt="" coords="629,56,757,83"/>
+<area shape="rect" id="node6" title=" " alt="" coords="297,107,376,133"/>
+<area shape="rect" id="node18" href="$classQCPBarsWithText.html" title="QCustomPlot: vertical bar with text along side." alt="" coords="625,107,760,133"/>
+<area shape="rect" id="node7" href="$classQCPArrow.html" title="QCustomPlot: small arrows at the bottom." alt="" coords="649,163,736,189"/>
+<area shape="rect" id="node8" href="$classQCPSelectableCursor.html" title="QCustomPlot: selectable cursor interface." alt="" coords="257,164,416,191"/>
+<area shape="rect" id="node19" href="$classQCPHiddenArea.html" title="QCustomPlot: greyed areas." alt="" coords="630,215,755,241"/>
+<area shape="rect" id="node9" title=" " alt="" coords="21,164,181,191"/>
+<area shape="rect" id="node10" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="639,267,746,293"/>
+<area shape="rect" id="node11" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="246,215,427,241"/>
+<area shape="rect" id="node12" title=" " alt="" coords="5,215,196,241"/>
+<area shape="rect" id="node13" href="$classCCShareable.html" title=" " alt="" coords="48,265,153,292"/>
+<area shape="rect" id="node14" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="259,265,414,292"/>
+<area shape="rect" id="node15" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="245,316,428,343"/>
+<area shape="rect" id="node16" title=" " alt="" coords="11,316,191,343"/>
+<area shape="rect" id="node17" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="259,375,415,401"/>
+</map>

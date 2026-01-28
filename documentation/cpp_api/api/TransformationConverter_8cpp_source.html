@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('TransformationConverter_8cpp_source.ht
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="TransformationConverter_8h.html">cloudViewer/t/pipelines/kernel/TransformationConverter.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;cmath&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
@@ -306,8 +315,8 @@ $(document).ready(function(){initNavTree('TransformationConverter_8cpp_source.ht
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ac87c47027f8f16da95e12093da57b95c"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">cloudViewer::core::Tensor::Empty</a></div><div class="ttdeci">static Tensor Empty(const SizeVector &amp;shape, Dtype dtype, const Device &amp;device=Device(&quot;CPU:0&quot;))</div><div class="ttdoc">Create a tensor with uninitialized values.</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00400">Tensor.cpp:400</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ad88628d3b318962f355571b25fed1568"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ad88628d3b318962f355571b25fed1568">cloudViewer::core::Tensor::Fill</a></div><div class="ttdeci">void Fill(S v)</div><div class="ttdoc">Fill the whole Tensor with a scalar value, the scalar will be casted to the Tensor's Dtype.</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01400">Tensor.h:1400</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aefba3173ede176f74574d8372f5dfc2e"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">cloudViewer::core::Tensor::To</a></div><div class="ttdeci">Tensor To(Dtype dtype, bool copy=false) const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00739">Tensor.cpp:739</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ac3cffb00a043ee494bd2887c4a6fba78"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ac3cffb00a043ee494bd2887c4a6fba78">cloudViewer::core::Float64</a></div><div class="ttdeci">const Dtype Float64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00043">Dtype.cpp:43</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1kernel_html_a36b3ff57af197e6ebcea09664ed67ca1"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1kernel.html#a36b3ff57af197e6ebcea09664ed67ca1">cloudViewer::t::pipelines::kernel::RtToTransformation</a></div><div class="ttdeci">core::Tensor RtToTransformation(const core::Tensor &amp;R, const core::Tensor &amp;t)</div><div class="ttdoc">Convert rotation and translation to the transformation matrix.</div><div class="ttdef"><b>Definition:</b> <a href="TransformationConverter_8cpp_source.html#l00025">TransformationConverter.cpp:25</a></div></div>
@@ -316,14 +325,14 @@ $(document).ready(function(){initNavTree('TransformationConverter_8cpp_source.ht
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1kernel_html_acf0a899b1b85e594db483bab42ee405e"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1kernel.html#acf0a899b1b85e594db483bab42ee405e">cloudViewer::t::pipelines::kernel::TransformationToPose</a></div><div class="ttdeci">core::Tensor TransformationToPose(const core::Tensor &amp;transformation)</div><div class="ttdoc">Convert transformation matrix to pose.</div><div class="ttdef"><b>Definition:</b> <a href="TransformationConverter_8cpp_source.html#l00119">TransformationConverter.cpp:119</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1kernel_html_adadabb406df36c5f5de7c42c6c4324b6"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1kernel.html#adadabb406df36c5f5de7c42c6c4324b6">cloudViewer::t::pipelines::kernel::PoseToTransformationDevice</a></div><div class="ttdeci">static void PoseToTransformationDevice(core::Tensor &amp;transformation, const core::Tensor &amp;pose, const core::Device::DeviceType &amp;device_type)</div><div class="ttdef"><b>Definition:</b> <a href="TransformationConverter_8cpp_source.html#l00052">TransformationConverter.cpp:52</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1kernel_html_aefd638840fb241d789490f8410aae286"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1kernel.html#aefd638840fb241d789490f8410aae286">cloudViewer::t::pipelines::kernel::PoseToTransformation</a></div><div class="ttdeci">core::Tensor PoseToTransformation(const core::Tensor &amp;pose)</div><div class="ttdoc">Convert pose to the transformation matrix.</div><div class="ttdef"><b>Definition:</b> <a href="TransformationConverter_8cpp_source.html#l00073">TransformationConverter.cpp:73</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0da8f8fbf693040b7dc37f26c330e75d.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_87854a73da7d2c61b77749bd286f64d0.html">kernel</a></li><li class="navelem"><a class="el" href="TransformationConverter_8cpp.html">TransformationConverter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

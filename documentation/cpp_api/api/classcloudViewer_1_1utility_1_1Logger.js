@@ -2,8 +2,8 @@ var classcloudViewer_1_1utility_1_1Logger =
 [
     [ "Impl", "structcloudViewer_1_1utility_1_1Logger_1_1Impl.html", "structcloudViewer_1_1utility_1_1Logger_1_1Impl" ],
     [ "Logger", "classcloudViewer_1_1utility_1_1Logger.html#a974548d1524473723d89477fc4531622", null ],
-    [ "GetInstance", "classcloudViewer_1_1utility_1_1Logger.html#acc81e40a92aeb86a688d12f9a2c9be6e", null ],
-    [ "GetPrintFunction", "classcloudViewer_1_1utility_1_1Logger.html#a2fbefe1f543f1c38a547f7c564dd314c", null ],
+    [ "GetInstance", "classcloudViewer_1_1utility_1_1Logger.html#af5fadbb1e86d87dd473087e30069ac8a", null ],
+    [ "GetPrintFunction", "classcloudViewer_1_1utility_1_1Logger.html#aa5d66f785d03c79bb9b362da8c182569", null ],
     [ "GetVerbosityLevel", "classcloudViewer_1_1utility_1_1Logger.html#afbdc316c474f01d502c06c37ade8efec", null ],
     [ "LogDebug_", "classcloudViewer_1_1utility_1_1Logger.html#a857e3734cd45939323daf48bc60fad57", null ],
     [ "LogError_", "classcloudViewer_1_1utility_1_1Logger.html#a5c98ee6180b825ac16b8a18cbbfc14de", null ],

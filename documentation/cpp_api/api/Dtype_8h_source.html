@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('Dtype_8h_source.html',''); initResizab
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;cstring&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
@@ -152,9 +161,9 @@ $(document).ready(function(){initNavTree('Dtype_8h_source.html',''); initResizab
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1core_1_1Dtype.html#a103aeb6e755cf533d03ee1ea713cebc8">   65</a></span>&#160;    std::string <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html#a103aeb6e755cf533d03ee1ea713cebc8">ToString</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="FilePLY_8cpp.html#a4d739cc5d335052eb9f5b2ca559b81d1">name_</a>; }</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">Dtype</a> &amp;other) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">Dtype</a> &amp;other) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">Dtype</a> &amp;other) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">Dtype</a> &amp;other) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">static</span> constexpr <span class="keywordtype">size_t</span> max_name_len_ = 16;</div>
@@ -258,8 +267,8 @@ $(document).ready(function(){initNavTree('Dtype_8h_source.html',''); initResizab
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Dtype_html_ae0351e025bb01c47c3bdf45920a3e0e3"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Dtype.html#ae0351e025bb01c47c3bdf45920a3e0e3">cloudViewer::core::Dtype::Int64</a></div><div class="ttdeci">static const Dtype Int64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8h_source.html#l00029">Dtype.h:29</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Dtype_html_af01ecebadfe96f1b653d78b6c4d56692"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Dtype.html#af01ecebadfe96f1b653d78b6c4d56692">cloudViewer::core::Dtype::GetDtypeCode</a></div><div class="ttdeci">DtypeCode GetDtypeCode() const</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8h_source.html#l00061">Dtype.h:61</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Dtype_html_af647773d3df789fecea66348e34b1dc4"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Dtype.html#af647773d3df789fecea66348e34b1dc4">cloudViewer::core::Dtype::Bool</a></div><div class="ttdeci">static const Dtype Bool</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8h_source.html#l00034">Dtype.h:34</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a1ede84e6af3f5cb81af67e84ca784ec1"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a1ede84e6af3f5cb81af67e84ca784ec1">cloudViewer::core::Undefined</a></div><div class="ttdeci">const Dtype Undefined</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00041">Dtype.cpp:41</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a45404f3849773436ba3c4d990f420c07"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a45404f3849773436ba3c4d990f420c07">cloudViewer::core::Int8</a></div><div class="ttdeci">const Dtype Int8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00044">Dtype.cpp:44</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a4e1d953f2457acb806f3714c4696f4cd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a4e1d953f2457acb806f3714c4696f4cd">cloudViewer::core::Bool</a></div><div class="ttdeci">const Dtype Bool</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00052">Dtype.cpp:52</a></div></div>
@@ -272,16 +281,16 @@ $(document).ready(function(){initNavTree('Dtype_8h_source.html',''); initResizab
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ada08d037ef6e333e2a2ad1d636219433"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ada08d037ef6e333e2a2ad1d636219433">cloudViewer::core::UInt16</a></div><div class="ttdeci">const Dtype UInt16</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00049">Dtype.cpp:49</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aedaeda1b0a61b8b67540bb735bd48bbb"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aedaeda1b0a61b8b67540bb735bd48bbb">cloudViewer::core::Int32</a></div><div class="ttdeci">const Dtype Int32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00046">Dtype.cpp:46</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1ml_1_1contrib_html_a316e251ba53455adb251fefdc79baf23"><div class="ttname"><a href="namespacecloudViewer_1_1ml_1_1contrib.html#a316e251ba53455adb251fefdc79baf23">cloudViewer::ml::contrib::operator==</a></div><div class="ttdeci">bool operator==(const PointXYZ A, const PointXYZ B)</div><div class="ttdef"><b>Definition:</b> <a href="Cloud_8h_source.html#l00116">Cloud.h:116</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a959d489eaede13ea64ad2bf7bf4e6d8a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a959d489eaede13ea64ad2bf7bf4e6d8a">cloudViewer::utility::operator!=</a></div><div class="ttdeci">MiniVec&lt; bool, N &gt; operator!=(const MiniVec&lt; T, N &gt; &amp;a, const MiniVec&lt; T, N &gt; &amp;b)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00184">MiniVec.h:184</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_ad6dc9b6b533094ad312fc0a398a30333"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">cloudViewer::utility::operator!=</a></div><div class="ttdeci">constexpr bool operator!=(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00620">Optional.h:620</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_afdf4d48647db5d5512ba844470381384"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">cloudViewer::utility::operator==</a></div><div class="ttdeci">constexpr bool operator==(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00615">Optional.h:615</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="Dtype_8h.html">Dtype.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

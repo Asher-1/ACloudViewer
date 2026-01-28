@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="t_2geometry_2kernel_2PointCloud_8h.html">cloudViewer/t/geometry/kernel/PointCloud.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
@@ -115,13 +124,13 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;               <a class="code" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt;std::reference_wrapper&lt;const core::Tensor&gt;&gt;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                       image_colors,</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;               <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>,</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;               <a class="code" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt;std::reference_wrapper&lt;core::Tensor&gt;&gt; <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;               <a class="code" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt;std::reference_wrapper&lt;core::Tensor&gt;&gt; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;               <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; intrinsics,</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;               <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsics,</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;               <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;               <span class="keywordtype">float</span> depth_max,</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;               int64_t <a class="code" href="TriangleMeshBuffers_8cpp.html#a3f19cd85df5258a38e4618a89bd5ff46">stride</a>) {</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">if</span> (image_colors.has_value() != <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.has_value()) {</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">if</span> (image_colors.has_value() != <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.has_value()) {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                <span class="stringliteral">&quot;Both or none of image_colors and colors must have values.&quot;</span>);</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    }</div>
@@ -140,10 +149,10 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    }</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordflow">if</span> (depth.<a class="code" href="classcloudViewer_1_1core_1_1IsDevice.html#a83fe57e7bb897d0c312c4a8fca89da98">IsCPU</a>()) {</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#aa6491d4b9c5d59e5d0301736c2b0e0eb">UnprojectCPU</a>(depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>, intrinsics_d,</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#aa6491d4b9c5d59e5d0301736c2b0e0eb">UnprojectCPU</a>(depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>, intrinsics_d,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                     extrinsics_d, depth_scale, depth_max, <a class="code" href="TriangleMeshBuffers_8cpp.html#a3f19cd85df5258a38e4618a89bd5ff46">stride</a>);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (depth.<a class="code" href="classcloudViewer_1_1core_1_1IsDevice.html#a76401c0f48705f41ab9821bc7baa73ee">IsCUDA</a>()) {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <a class="code" href="CUDAUtils_8h.html#a24479079997eee1211cdc51eaf6eee0f">CUDA_CALL</a>(UnprojectCUDA, depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <a class="code" href="CUDAUtils_8h.html#a24479079997eee1211cdc51eaf6eee0f">CUDA_CALL</a>(UnprojectCUDA, depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                  intrinsics_d, extrinsics_d, depth_scale, depth_max, <a class="code" href="TriangleMeshBuffers_8cpp.html#a3f19cd85df5258a38e4618a89bd5ff46">stride</a>);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Unimplemented device&quot;</span>);</div>
@@ -154,12 +163,12 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; depth,</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt;std::reference_wrapper&lt;core::Tensor&gt;&gt; image_colors,</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt;std::reference_wrapper&lt;const core::Tensor&gt;&gt; <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt;std::reference_wrapper&lt;const core::Tensor&gt;&gt; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; intrinsics,</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsics,</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordtype">float</span> depth_max) {</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">if</span> (image_colors.has_value() != <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.has_value()) {</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">if</span> (image_colors.has_value() != <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>.has_value()) {</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                <span class="stringliteral">&quot;Both or none of image_colors and colors must have values.&quot;</span>);</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    }</div>
@@ -178,10 +187,10 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    }</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keywordflow">if</span> (depth.<a class="code" href="classcloudViewer_1_1core_1_1IsDevice.html#a83fe57e7bb897d0c312c4a8fca89da98">IsCPU</a>()) {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#a8251a82e91a4aed4dd915c88412c51fb">ProjectCPU</a>(depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>, intrinsics_d,</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#a8251a82e91a4aed4dd915c88412c51fb">ProjectCPU</a>(depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>, intrinsics_d,</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                   extrinsics_d, depth_scale, depth_max);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (depth.<a class="code" href="classcloudViewer_1_1core_1_1IsDevice.html#a76401c0f48705f41ab9821bc7baa73ee">IsCUDA</a>()) {</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <a class="code" href="CUDAUtils_8h.html#a24479079997eee1211cdc51eaf6eee0f">CUDA_CALL</a>(ProjectCUDA, depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <a class="code" href="CUDAUtils_8h.html#a24479079997eee1211cdc51eaf6eee0f">CUDA_CALL</a>(ProjectCUDA, depth, image_colors, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                  intrinsics_d, extrinsics_d, depth_scale, depth_max);</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Unimplemented device&quot;</span>);</div>
@@ -260,9 +269,9 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aab2f7c39ea6aef5e733bfe1dcd1c9d7b"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aab2f7c39ea6aef5e733bfe1dcd1c9d7b">cloudViewer::core::Tensor::GetDevice</a></div><div class="ttdeci">Device GetDevice() const override</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l01435">Tensor.cpp:1435</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aefba3173ede176f74574d8372f5dfc2e"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">cloudViewer::core::Tensor::To</a></div><div class="ttdeci">Tensor To(Dtype dtype, bool copy=false) const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00739">Tensor.cpp:739</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1optional_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a></div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00244">Optional.h:244</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a567da34081d0e17107546aa55edd6c04"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a></div><div class="ttdeci">double colors[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00053">TriangleMeshIO.cpp:53</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="aio_2TriangleMeshIO_8cpp_html_a567da34081d0e17107546aa55edd6c04"><div class="ttname"><a href="io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a></div><div class="ttdeci">double colors[3]</div><div class="ttdef"><b>Definition:</b> <a href="io_2TriangleMeshIO_8cpp_source.html#l00053">TriangleMeshIO.cpp:53</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a4e1d953f2457acb806f3714c4696f4cd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a4e1d953f2457acb806f3714c4696f4cd">cloudViewer::core::Bool</a></div><div class="ttdeci">const Dtype Bool</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00052">Dtype.cpp:52</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ac3cffb00a043ee494bd2887c4a6fba78"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ac3cffb00a043ee494bd2887c4a6fba78">cloudViewer::core::Float64</a></div><div class="ttdeci">const Dtype Float64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00043">Dtype.cpp:43</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud_html_a4d74341920b428ad199b1ae4e586b2fa"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#a4d74341920b428ad199b1ae4e586b2fa">cloudViewer::t::geometry::kernel::pointcloud::Project</a></div><div class="ttdeci">void Project(core::Tensor &amp;depth, utility::optional&lt; std::reference_wrapper&lt; core::Tensor &gt;&gt; image_colors, const core::Tensor &amp;points, utility::optional&lt; std::reference_wrapper&lt; const core::Tensor &gt;&gt; colors, const core::Tensor &amp;intrinsics, const core::Tensor &amp;extrinsics, float depth_scale, float depth_max)</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2t_2geometry_2kernel_2PointCloud_8cpp_source.html#l00063">PointCloud.cpp:63</a></div></div>
@@ -273,7 +282,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud_html_aa7be77433753bcc2a0aeaf691c466394"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#aa7be77433753bcc2a0aeaf691c466394">cloudViewer::t::geometry::kernel::pointcloud::GetPointMaskWithinOBB</a></div><div class="ttdeci">void GetPointMaskWithinOBB(const core::Tensor &amp;points, const core::Tensor &amp;center, const core::Tensor &amp;rotation, const core::Tensor &amp;extent, core::Tensor &amp;mask)</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2t_2geometry_2kernel_2PointCloud_8cpp_source.html#l00126">PointCloud.cpp:126</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud_html_aab86e7016e8d035c3dbcb3520184e5da"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#aab86e7016e8d035c3dbcb3520184e5da">cloudViewer::t::geometry::kernel::pointcloud::Unproject</a></div><div class="ttdeci">void Unproject(const core::Tensor &amp;depth, utility::optional&lt; std::reference_wrapper&lt; const core::Tensor &gt;&gt; image_colors, core::Tensor &amp;points, utility::optional&lt; std::reference_wrapper&lt; core::Tensor &gt;&gt; colors, const core::Tensor &amp;intrinsics, const core::Tensor &amp;extrinsics, float depth_scale, float depth_max, int64_t stride)</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2t_2geometry_2kernel_2PointCloud_8cpp_source.html#l00024">PointCloud.cpp:24</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud_html_ae8fc23caf0448adeaae9a3868b5ad90d"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1pointcloud.html#ae8fc23caf0448adeaae9a3868b5ad90d">cloudViewer::t::geometry::kernel::pointcloud::GetPointMaskWithinAABBCPU</a></div><div class="ttdeci">void GetPointMaskWithinAABBCPU(const core::Tensor &amp;points, const core::Tensor &amp;min_bound, const core::Tensor &amp;max_bound, core::Tensor &amp;mask)</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudImpl_8h_source.html#l00143">PointCloudImpl.h:145</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 <div class="ttc" id="at_2geometry_2kernel_2PointCloud_8h_html"><div class="ttname"><a href="t_2geometry_2kernel_2PointCloud_8h.html">PointCloud.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -281,7 +290,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2t_2geometry_2kernel
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="libs_2cloudViewer_2t_2geometry_2kernel_2PointCloud_8cpp.html">PointCloud.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

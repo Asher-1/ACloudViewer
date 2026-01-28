@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -200,7 +209,7 @@ $(document).ready(function(){initNavTree('CompressedVectorReaderImpl_8cpp_source
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160; </div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;         <span class="keyword">auto</span> dpkt = <span class="keyword">reinterpret_cast&lt;</span><a class="code" href="classe57_1_1DataPacket.html">DataPacket</a> *<span class="keyword">&gt;</span>( anyPacket );</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;         <span class="keywordflow">if</span> ( dpkt-&gt;header.packetType != <a class="code" href="namespacee57.html#aafeef8832a794fd011c5d5d30e400386a0323661165ed65819c03371d7a0cc827">DATA_PACKET</a> )</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;         <span class="keywordflow">if</span> ( dpkt-&gt;header.packetType != <a class="code" href="namespacee57.html#a9525299c33237149134a9bd998144de4a0323661165ed65819c03371d7a0cc827">DATA_PACKET</a> )</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;         {</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;            <span class="keywordflow">throw</span> <a class="code" href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h.html#a538dd43df33481a93594640f7c26bd4d">E57_EXCEPTION2</a>( <a class="code" href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4a7693a77a246e119e073bd7a07c66a2c9">E57_ERROR_BAD_CV_PACKET</a>, <span class="stringliteral">&quot;packetType=&quot;</span> + <a class="code" href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">toString</a>( dpkt-&gt;header.packetType ) );</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;         }</div>
@@ -380,7 +389,7 @@ $(document).ready(function(){initNavTree('CompressedVectorReaderImpl_8cpp_source
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;      <span class="comment">// Double check that have a data packet.  Should have already determined</span></div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      <span class="comment">// this.</span></div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;      <span class="keywordflow">if</span> ( dpkt-&gt;header.packetType != <a class="code" href="namespacee57.html#aafeef8832a794fd011c5d5d30e400386a0323661165ed65819c03371d7a0cc827">DATA_PACKET</a> )</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;      <span class="keywordflow">if</span> ( dpkt-&gt;header.packetType != <a class="code" href="namespacee57.html#a9525299c33237149134a9bd998144de4a0323661165ed65819c03371d7a0cc827">DATA_PACKET</a> )</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;      {</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;         <span class="keywordflow">throw</span> <a class="code" href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h.html#a538dd43df33481a93594640f7c26bd4d">E57_EXCEPTION2</a>( <a class="code" href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4a2f49dbf9fc7f598d8d9b87c8de95de12">E57_ERROR_INTERNAL</a>, <span class="stringliteral">&quot;packetType=&quot;</span> + <a class="code" href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">toString</a>( dpkt-&gt;header.packetType ) );</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;      }</div>
@@ -535,7 +544,7 @@ $(document).ready(function(){initNavTree('CompressedVectorReaderImpl_8cpp_source
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160; </div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;         <span class="keyword">auto</span> dpkt = <span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span>DataPacket *<span class="keyword">&gt;</span>( anyPacket );</div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160; </div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;         <span class="keywordflow">if</span> ( dpkt-&gt;header.packetType == <a class="code" href="namespacee57.html#aafeef8832a794fd011c5d5d30e400386a0323661165ed65819c03371d7a0cc827">DATA_PACKET</a> )</div>
+<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;         <span class="keywordflow">if</span> ( dpkt-&gt;header.packetType == <a class="code" href="namespacee57.html#a9525299c33237149134a9bd998144de4a0323661165ed65819c03371d7a0cc827">DATA_PACKET</a> )</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;         {</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;<span class="preprocessor">#ifdef E57_MAX_VERBOSE</span></div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;            std::cout &lt;&lt; <span class="stringliteral">&quot;  Found next data packet at nextPacketLogicalOffset=&quot;</span> &lt;&lt; nextPacketLogicalOffset &lt;&lt; <a class="code" href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">std::endl</a>;</div>
@@ -665,8 +674,8 @@ $(document).ready(function(){initNavTree('CompressedVectorReaderImpl_8cpp_source
 <div class="ttc" id="anamespacee57_html_a77d3e5c151623b81b466776db16d94e4a7693a77a246e119e073bd7a07c66a2c9"><div class="ttname"><a href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4a7693a77a246e119e073bd7a07c66a2c9">e57::E57_ERROR_BAD_CV_PACKET</a></div><div class="ttdeci">@ E57_ERROR_BAD_CV_PACKET</div><div class="ttdoc">a CompressedVector binary packet was bad</div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00045">E57Exception.h:45</a></div></div>
 <div class="ttc" id="anamespacee57_html_a77d3e5c151623b81b466776db16d94e4a879e491e7e754a08866b7c52051b8916"><div class="ttname"><a href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4a879e491e7e754a08866b7c52051b8916">e57::E57_ERROR_NOT_IMPLEMENTED</a></div><div class="ttdeci">@ E57_ERROR_NOT_IMPLEMENTED</div><div class="ttdoc">functionality not implemented</div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00084">E57Exception.h:84</a></div></div>
 <div class="ttc" id="anamespacee57_html_a77d3e5c151623b81b466776db16d94e4abda7853fd179fd73d55198092395880c"><div class="ttname"><a href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4abda7853fd179fd73d55198092395880c">e57::E57_ERROR_READER_NOT_OPEN</a></div><div class="ttdeci">@ E57_ERROR_READER_NOT_OPEN</div><div class="ttdoc">CompressedVectorReader is no longer open.</div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00087">E57Exception.h:87</a></div></div>
+<div class="ttc" id="anamespacee57_html_a9525299c33237149134a9bd998144de4a0323661165ed65819c03371d7a0cc827"><div class="ttname"><a href="namespacee57.html#a9525299c33237149134a9bd998144de4a0323661165ed65819c03371d7a0cc827">e57::DATA_PACKET</a></div><div class="ttdeci">@ DATA_PACKET</div><div class="ttdef"><b>Definition:</b> <a href="Packet_8h_source.html#l00044">Packet.h:44</a></div></div>
 <div class="ttc" id="anamespacee57_html_aa52d9c7d60546840767b2484ed33f0de"><div class="ttname"><a href="namespacee57.html#aa52d9c7d60546840767b2484ed33f0de">e57::ustring</a></div><div class="ttdeci">std::string ustring</div><div class="ttdoc">UTF-8 encodeded Unicode string.</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00054">E57Format.h:54</a></div></div>
-<div class="ttc" id="anamespacee57_html_aafeef8832a794fd011c5d5d30e400386a0323661165ed65819c03371d7a0cc827"><div class="ttname"><a href="namespacee57.html#aafeef8832a794fd011c5d5d30e400386a0323661165ed65819c03371d7a0cc827">e57::DATA_PACKET</a></div><div class="ttdeci">@ DATA_PACKET</div><div class="ttdef"><b>Definition:</b> <a href="Packet_8h_source.html#l00044">Packet.h:44</a></div></div>
 <div class="ttc" id="anamespacee57_html_ac51cd6698affda7bd6180e4ff19e2c99"><div class="ttname"><a href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">e57::toString</a></div><div class="ttdeci">std::string toString(T x)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00080">Common.h:80</a></div></div>
 <div class="ttc" id="anamespacee57_html_af084d6ee79fc44eb0bf7777241211930"><div class="ttname"><a href="namespacee57.html#af084d6ee79fc44eb0bf7777241211930">e57::space</a></div><div class="ttdeci">std::string space(size_t n)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00073">Common.h:73</a></div></div>
 <div class="ttc" id="astructe57_1_1CompressedVectorSectionHeader_html"><div class="ttname"><a href="structe57_1_1CompressedVectorSectionHeader.html">e57::CompressedVectorSectionHeader</a></div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00051">SectionHeaders.h:52</a></div></div>
@@ -684,7 +693,7 @@ $(document).ready(function(){initNavTree('CompressedVectorReaderImpl_8cpp_source
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d5815e19ad8e9536ffb8de8e09ded2ce.html">src</a></li><li class="navelem"><a class="el" href="CompressedVectorReaderImpl_8cpp.html">CompressedVectorReaderImpl.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

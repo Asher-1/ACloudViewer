@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -619,7 +628,7 @@ $(document).ready(function(){initNavTree('ecvDrawContext_8h_source.html',''); in
 <div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    <span class="comment">// Default constructor</span></div>
 <div class="line"><a name="l00573"></a><span class="lineno"><a class="line" href="structWIDGETS__PARAMETER.html#a983565931e091de46bedc5a36f8f7876">  573</a></span>&#160;    <a class="code" href="structWIDGETS__PARAMETER.html#a983565931e091de46bedc5a36f8f7876">WIDGETS_PARAMETER</a>(<a class="code" href="ecvDrawContext_8h.html#abca886ac10c016d9c2308e84f7fe8ad8">WIDGETS_TYPE</a> t, QString <span class="keywordtype">id</span> = <span class="stringliteral">&quot;id&quot;</span>, <span class="keywordtype">int</span> port = 0)</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;        : <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>(t), viewID(id), viewport(port) {</div>
-<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;        <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.viewID = viewID;</div>
+<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;        <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.viewID = viewID;</div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;    }</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160; </div>
 <div class="line"><a name="l00578"></a><span class="lineno"><a class="line" href="structWIDGETS__PARAMETER.html#a4b664ea800ca2f1cd571b1302cffb325">  578</a></span>&#160;    <a class="code" href="structWIDGETS__PARAMETER.html#a4b664ea800ca2f1cd571b1302cffb325">WIDGETS_PARAMETER</a>(<a class="code" href="classccHObject.html">ccHObject</a>* obj,</div>
@@ -627,7 +636,7 @@ $(document).ready(function(){initNavTree('ecvDrawContext_8h_source.html',''); in
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;                      QString <span class="keywordtype">id</span> = <span class="stringliteral">&quot;id&quot;</span>,</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;                      <span class="keywordtype">int</span> port = 0)</div>
 <div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;        : entity(obj), <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>(t), viewID(id), viewport(port) {</div>
-<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;        <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.viewID = viewID;</div>
+<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;        <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.viewID = viewID;</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;    }</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160; </div>
 <div class="line"><a name="l00586"></a><span class="lineno"><a class="line" href="structWIDGETS__PARAMETER.html#ae8ba4b069be0a127186ad58560df9154">  586</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="structWIDGETS__PARAMETER.html#ae8ba4b069be0a127186ad58560df9154">setLineWidget</a>(<span class="keyword">const</span> <a class="code" href="structLineWidget.html">LineWidget</a>&amp; line) { lineWidget = line; }</div>
@@ -641,7 +650,6 @@ $(document).ready(function(){initNavTree('ecvDrawContext_8h_source.html',''); in
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_ad0325471d482a632d8854fcc0614b217"><div class="ttname"><a href="LineSetBuffers_8cpp.html#ad0325471d482a632d8854fcc0614b217">position</a></div><div class="ttdeci">math::float3 position</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00044">LineSetBuffers.cpp:44</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_a84442d2b18e1d644350a4336ba889dbe"><div class="ttname"><a href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">Tuple3Tpl::u</a></div><div class="ttdeci">Type u[3]</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00139">CVGeom.h:139</a></div></div>
 <div class="ttc" id="aclassVector2Tpl_html"><div class="ttname"><a href="classVector2Tpl.html">Vector2Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
@@ -731,6 +739,7 @@ $(document).ready(function(){initNavTree('ecvDrawContext_8h_source.html',''); in
 <div class="ttc" id="aecvDrawContext_8h_html_ae77b60a45c24e9b33b12b657e46c518fafb21e80486fc2ce26e40a9b32a6546a2"><div class="ttname"><a href="ecvDrawContext_8h.html#ae77b60a45c24e9b33b12b657e46c518fafb21e80486fc2ce26e40a9b32a6546a2">ECV_POINT_CLOUD</a></div><div class="ttdeci">@ ECV_POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00052">ecvDrawContext.h:52</a></div></div>
 <div class="ttc" id="aecvGLMatrix_8h_html"><div class="ttname"><a href="ecvGLMatrix_8h.html">ecvGLMatrix.h</a></div></div>
 <div class="ttc" id="aecvMaterial_8h_html"><div class="ttname"><a href="ecvMaterial_8h.html">ecvMaterial.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a367777efc10c85e627658ee2ca1fa402"><div class="ttname"><a href="namespacecloudViewer.html#a367777efc10c85e627658ee2ca1fa402">cloudViewer::RadiansToDegrees</a></div><div class="ttdeci">float RadiansToDegrees(int radians)</div><div class="ttdoc">Convert radians to degrees.</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00071">CVMath.h:71</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html"><div class="ttname"><a href="namespaceecvColor.html">ecvColor</a></div><div class="ttdoc">Colors namespace.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00032">ecvColorTypes.h:32</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a03818140cf906d39872f4095dfa3ee4a"><div class="ttname"><a href="namespaceecvColor.html#a03818140cf906d39872f4095dfa3ee4a">ecvColor::defaultColor</a></div><div class="ttdeci">constexpr Rgbub defaultColor(MAX, MAX, MAX)</div></div>
@@ -884,7 +893,7 @@ $(document).ready(function(){initNavTree('ecvDrawContext_8h_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvDrawContext_8h.html">ecvDrawContext.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

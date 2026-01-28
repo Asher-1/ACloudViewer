@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -98,7 +107,7 @@ $(document).ready(function(){initNavTree('Renderer_8cpp_source.html',''); initRe
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Renderer_8h.html">visualization/rendering/Renderer.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CV__db_2include_2Image_8h.html">Image.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Material_8h.html">visualization/rendering/Material.h</a>&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RenderToBuffer_8h.html">visualization/rendering/RenderToBuffer.h</a>&quot;</span></div>
@@ -134,10 +143,10 @@ $(document).ready(function(){initNavTree('Renderer_8cpp_source.html',''); initRe
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;      path_(<span class="stringliteral">&quot;&quot;</span>),</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;      error_callback_(<a class="code" href="namespacecloudViewer_1_1visualization_1_1rendering.html#a4b05c4d5cfdbeb8d646de02adb334c9d">kDefaultErrorHandler</a>) {}</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad788ee77fac0292d2711f55f464d1ea6">   47</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad1239a90cec89f2a3deb7a2452ba67d2">ResourceLoadRequest::ResourceLoadRequest</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* path)</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad788ee77fac0292d2711f55f464d1ea6">   47</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad1239a90cec89f2a3deb7a2452ba67d2">ResourceLoadRequest::ResourceLoadRequest</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>)</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    : data_(nullptr),</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;      data_size_(0u),</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      path_(path),</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      path_(<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>),</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      error_callback_(<a class="code" href="namespacecloudViewer_1_1visualization_1_1rendering.html#a4b05c4d5cfdbeb8d646de02adb334c9d">kDefaultErrorHandler</a>) {}</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#a8892c233a079113b49668b27667681b0">   53</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad1239a90cec89f2a3deb7a2452ba67d2">ResourceLoadRequest::ResourceLoadRequest</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>* data,</div>
@@ -148,11 +157,11 @@ $(document).ready(function(){initNavTree('Renderer_8cpp_source.html',''); initRe
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;      path_(<span class="stringliteral">&quot;&quot;</span>),</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;      error_callback_(<a class="code" href="namespacestd.html">std</a>::move(error_callback)) {}</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad02deca1aa11746d74ba3e3788f26331">   61</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad1239a90cec89f2a3deb7a2452ba67d2">ResourceLoadRequest::ResourceLoadRequest</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* path,</div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad02deca1aa11746d74ba3e3788f26331">   61</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#ad1239a90cec89f2a3deb7a2452ba67d2">ResourceLoadRequest::ResourceLoadRequest</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                         <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1ResourceLoadRequest.html#a4847b46e0e5326a162adb5e76bdf41e8">ErrorCallback</a> error_callback)</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    : data_(nullptr),</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;      data_size_(0u),</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;      path_(path),</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;      path_(<a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>),</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;      error_callback_(<a class="code" href="namespacestd.html">std</a>::move(error_callback)) {}</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1Renderer.html#a5785726da7295d3b4db990f811e0ed48">   68</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1Renderer.html#a5785726da7295d3b4db990f811e0ed48">Renderer::RenderToImage</a>(</div>
@@ -260,12 +269,13 @@ $(document).ready(function(){initNavTree('Renderer_8cpp_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1View_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1View.html">cloudViewer::visualization::rendering::View</a></div><div class="ttdef"><b>Definition:</b> <a href="View_8h_source.html#l00024">View.h:24</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1View_html_a35c571a5244aa71f29840b64a17b43b2"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1View.html#a35c571a5244aa71f29840b64a17b43b2">cloudViewer::visualization::rendering::View::GetCamera</a></div><div class="ttdeci">virtual Camera * GetCamera() const =0</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1View_html_ad3ba30ec2351f12ee28f4ed98a62ece1"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1View.html#ad3ba30ec2351f12ee28f4ed98a62ece1">cloudViewer::visualization::rendering::View::GetViewport</a></div><div class="ttdeci">virtual std::array&lt; int, 4 &gt; GetViewport() const =0</div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acuda_2result__set_8h_html_a3b2ee75223537478bf82a4f7a9c89910"><div class="ttname"><a href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">infinity</a></div><div class="ttdeci">__device__ __forceinline__ float infinity()</div><div class="ttdef"><b>Definition:</b> <a href="cuda_2result__set_8h_source.html#l00036">result_set.h:36</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1rendering_html_a4b05c4d5cfdbeb8d646de02adb334c9d"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1rendering.html#a4b05c4d5cfdbeb8d646de02adb334c9d">cloudViewer::visualization::rendering::kDefaultErrorHandler</a></div><div class="ttdeci">static const ResourceLoadRequest::ErrorCallback kDefaultErrorHandler</div><div class="ttdef"><b>Definition:</b> <a href="Renderer_8cpp_source.html#l00022">Renderer.cpp:22</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1rendering_1_1RenderToBuffer_1_1Buffer_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1rendering_1_1RenderToBuffer_1_1Buffer.html">cloudViewer::visualization::rendering::RenderToBuffer::Buffer</a></div><div class="ttdef"><b>Definition:</b> <a href="RenderToBuffer_8h_source.html#l00023">RenderToBuffer.h:23</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1rendering_1_1RenderToBuffer_1_1Buffer_html_a6da48f4da1f18191267edecd4fea090a"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1rendering_1_1RenderToBuffer_1_1Buffer.html#a6da48f4da1f18191267edecd4fea090a">cloudViewer::visualization::rendering::RenderToBuffer::Buffer::bytes</a></div><div class="ttdeci">const std::uint8_t * bytes</div><div class="ttdef"><b>Definition:</b> <a href="RenderToBuffer_8h_source.html#l00027">RenderToBuffer.h:27</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1rendering_1_1RenderToBuffer_1_1Buffer_html_a7c45fa6e51de57f9386a9592700c25c7"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1rendering_1_1RenderToBuffer_1_1Buffer.html#a7c45fa6e51de57f9386a9592700c25c7">cloudViewer::visualization::rendering::RenderToBuffer::Buffer::size</a></div><div class="ttdeci">std::size_t size</div><div class="ttdef"><b>Definition:</b> <a href="RenderToBuffer_8h_source.html#l00028">RenderToBuffer.h:28</a></div></div>
@@ -277,7 +287,7 @@ $(document).ready(function(){initNavTree('Renderer_8cpp_source.html',''); initRe
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_b499a281afeca67f84e0ab4cbebb6d96.html">rendering</a></li><li class="navelem"><a class="el" href="Renderer_8cpp.html">Renderer.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

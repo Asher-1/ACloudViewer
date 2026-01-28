@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -149,7 +158,7 @@ $(document).ready(function(){initNavTree('ccTopologyRelation_8cpp_source.html','
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    assert(c);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="comment">// clear points, both in cloud and in our underlying polyline</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <a class="code" href="classcloudViewer_1_1Polyline.html#a35d952ca2caf3fcc87a559cca60531a9">clear</a>();</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <a class="code" href="classcloudViewer_1_1Polyline.html#a9f199c853f176651d5adbde63f2a9742">clear</a>();</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    c-&gt;<a class="code" href="classccPointCloud.html#ab23cb35f60f315b989214ddd08c6debc">clear</a>();</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    c-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    c-&gt;<a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(<span class="keyword">false</span>);  <span class="comment">// should be hidden</span></div>
@@ -169,8 +178,8 @@ $(document).ready(function(){initNavTree('ccTopologyRelation_8cpp_source.html','
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="comment">// add polyline points (these will then cause the underlying points in the</span></div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="comment">// cloud to be drawn)</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(1);  <span class="comment">// arrow points to older object</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">addPointIndex</a>(0);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(1);  <span class="comment">// arrow points to older object</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0);</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="comment">// set name</span></div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordflow">switch</span> (m_type) {</div>
@@ -285,8 +294,8 @@ $(document).ready(function(){initNavTree('ccTopologyRelation_8cpp_source.html','
 <div class="ttc" id="aclassccTopologyRelation_html_af6f8726ed3d80b6dc152117235484ef6"><div class="ttname"><a href="classccTopologyRelation.html#af6f8726ed3d80b6dc152117235484ef6">ccTopologyRelation::setType</a></div><div class="ttdeci">void setType(int topologyType)</div><div class="ttdef"><b>Definition:</b> <a href="ccTopologyRelation_8cpp_source.html#l00127">ccTopologyRelation.cpp:127</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_a3b4197a19a89e56536d7780c7fb14cbd"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#a3b4197a19a89e56536d7780c7fb14cbd">cloudViewer::BoundingBoxTpl::getCenter</a></div><div class="ttdeci">Vector3Tpl&lt; T &gt; getCenter() const</div><div class="ttdoc">Returns center.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00164">BoundingBox.h:164</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1Polyline_html_a35d952ca2caf3fcc87a559cca60531a9"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#a35d952ca2caf3fcc87a559cca60531a9">cloudViewer::Polyline::clear</a></div><div class="ttdeci">void clear(bool unusedParam=true) override</div><div class="ttdoc">Clears the cloud.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a2763a3b796ec3de57b12982d5714cd5d"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a2763a3b796ec3de57b12982d5714cd5d">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1Polyline_html_a9f199c853f176651d5adbde63f2a9742"><div class="ttname"><a href="classcloudViewer_1_1Polyline.html#a9f199c853f176651d5adbde63f2a9742">cloudViewer::Polyline::clear</a></div><div class="ttdeci">void clear(bool unusedParam=true) override</div><div class="ttdoc">Clears the cloud.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2Polyline_8cpp_source.html#l00015">Polyline.cpp:15</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a23676f2ac9ec66989f6e10928b1732d9"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">cloudViewer::ReferenceCloud::addPointIndex</a></div><div class="ttdeci">virtual bool addPointIndex(unsigned globalIndex)</div><div class="ttdoc">Point global index insertion mechanism.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ReferenceCloud_8cpp_source.html#l00084">ReferenceCloud.cpp:84</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a4fb7c768e38a003e56d51ac12e1d5869"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a4fb7c768e38a003e56d51ac12e1d5869">cloudViewer::ReferenceCloud::getAssociatedCloud</a></div><div class="ttdeci">virtual GenericIndexedCloudPersist * getAssociatedCloud()</div><div class="ttdoc">Returns the associated (source) cloud.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00206">ReferenceCloud.h:206</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -294,7 +303,7 @@ $(document).ready(function(){initNavTree('ccTopologyRelation_8cpp_source.html','
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccTopologyRelation_8cpp.html">ccTopologyRelation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

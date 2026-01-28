@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -187,23 +196,23 @@ $(document).ready(function(){initNavTree('TrueKdTree_8h_source.html',''); initRe
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
 <div class="line"><a name="l00105"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#a9c4cc9d02a1edb83aee74bf88afd9114">  105</a></span>&#160;    <span class="keyword">using</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html#a9c4cc9d02a1edb83aee74bf88afd9114">LeafVector</a> = std::vector&lt;Leaf*&gt;;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#ad934e2a4986d247e5a836791b25ba966">  108</a></span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html#ad934e2a4986d247e5a836791b25ba966">TrueKdTree</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* cloud);</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html">TrueKdTree</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* cloud);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00111"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#abff868fe545dca860781262002722700">  111</a></span>&#160;    <a class="code" href="classcloudViewer_1_1TrueKdTree.html#abff868fe545dca860781262002722700">~TrueKdTree</a>();</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    ~<a class="code" href="classcloudViewer_1_1TrueKdTree.html">TrueKdTree</a>();</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
 <div class="line"><a name="l00114"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#aa5c21b254d63e70c17ae4a6892f4bd1b">  114</a></span>&#160;    <span class="keyword">inline</span> <a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">GenericIndexedCloudPersist</a>* <a class="code" href="classcloudViewer_1_1TrueKdTree.html#aa5c21b254d63e70c17ae4a6892f4bd1b">associatedCloud</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keywordflow">return</span> m_associatedCloud;</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    }</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
-<div class="line"><a name="l00127"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#aa4ff32ce29706e457e87ce0128b151d9">  127</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html#aa4ff32ce29706e457e87ce0128b151d9">build</a>(<span class="keywordtype">double</span> maxError,</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordtype">bool</span> build(<span class="keywordtype">double</span> maxError,</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;               <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#aeb345066500e4c2c74929b1cc49a6374">DistanceComputationTools::ERROR_MEASURES</a> errorMeasure =</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                       <a class="code" href="classcloudViewer_1_1DistanceComputationTools.html#aeb345066500e4c2c74929b1cc49a6374ab3342dc00577a095a6bb6e520abff01e">DistanceComputationTools::RMS</a>,</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;               <span class="keywordtype">unsigned</span> minPointCountPerCell = 3,</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;               <span class="keywordtype">unsigned</span> maxPointCountPerCell = 0,</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;               <a class="code" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a>* progressCb = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
-<div class="line"><a name="l00135"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#a2c8749ed9682c696455fd02bf4d897f3">  135</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html#a2c8749ed9682c696455fd02bf4d897f3">clear</a>();</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordtype">void</span> clear();</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
 <div class="line"><a name="l00138"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#ab4a7e9cf4c94050c16daa64b8cfe796a">  138</a></span>&#160;    <span class="keyword">inline</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html#ab4a7e9cf4c94050c16daa64b8cfe796a">getMaxError</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_maxError; }</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
@@ -211,10 +220,10 @@ $(document).ready(function(){initNavTree('TrueKdTree_8h_source.html',''); initRe
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        <span class="keywordflow">return</span> m_errorMeasure;</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    }</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
-<div class="line"><a name="l00146"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#ad5acd78de130c6205bb22690e8d5afa6">  146</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1TrueKdTree.html#ad5acd78de130c6205bb22690e8d5afa6">getLeaves</a>(<a class="code" href="classcloudViewer_1_1TrueKdTree.html#a9c4cc9d02a1edb83aee74bf88afd9114">LeafVector</a>&amp; leaves) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keywordtype">bool</span> getLeaves(LeafVector&amp; leaves) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00150"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#aea3a7e25dd97be0af8c89e17a6400fcb">  150</a></span>&#160;    <a class="code" href="classcloudViewer_1_1TrueKdTree_1_1BaseNode.html">BaseNode</a>* <a class="code" href="classcloudViewer_1_1TrueKdTree.html#aea3a7e25dd97be0af8c89e17a6400fcb">split</a>(<a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* subset);</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    BaseNode* split(<a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* subset);</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
 <div class="line"><a name="l00153"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1TrueKdTree.html#a10974ef0d7eda872061fc3e2dc1d4b7e">  153</a></span>&#160;    <a class="code" href="classcloudViewer_1_1TrueKdTree_1_1BaseNode.html">BaseNode</a>* <a class="code" href="classcloudViewer_1_1TrueKdTree.html#a10974ef0d7eda872061fc3e2dc1d4b7e">m_root</a>;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160; </div>
@@ -267,28 +276,22 @@ $(document).ready(function(){initNavTree('TrueKdTree_8h_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a0203e73d1ef6dcffc5df61ddd9a9a851"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a0203e73d1ef6dcffc5df61ddd9a9a851">cloudViewer::TrueKdTree::m_maxError</a></div><div class="ttdeci">double m_maxError</div><div class="ttdoc">Max error for planarity-based split strategy (see m_errorMeasure)</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00159">TrueKdTree.h:159</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a05cd7cc5b9b8a16bfd7287edcfe657b2"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a05cd7cc5b9b8a16bfd7287edcfe657b2">cloudViewer::TrueKdTree::m_maxPointCountPerCell</a></div><div class="ttdeci">unsigned m_maxPointCountPerCell</div><div class="ttdoc">Max number of points per cell (speed-up)</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00172">TrueKdTree.h:172</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a10974ef0d7eda872061fc3e2dc1d4b7e"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a10974ef0d7eda872061fc3e2dc1d4b7e">cloudViewer::TrueKdTree::m_root</a></div><div class="ttdeci">BaseNode * m_root</div><div class="ttdoc">Root node.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00153">TrueKdTree.h:153</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a2c8749ed9682c696455fd02bf4d897f3"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a2c8749ed9682c696455fd02bf4d897f3">cloudViewer::TrueKdTree::clear</a></div><div class="ttdeci">void clear()</div><div class="ttdoc">Clears structure.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a8320af1bf6b1d0166f08891f989e8051"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a8320af1bf6b1d0166f08891f989e8051">cloudViewer::TrueKdTree::m_errorMeasure</a></div><div class="ttdeci">DistanceComputationTools::ERROR_MEASURES m_errorMeasure</div><div class="ttdoc">Error measurement.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00162">TrueKdTree.h:162</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a94626462cf9906998cc93e1b2bca8a68"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a94626462cf9906998cc93e1b2bca8a68">cloudViewer::TrueKdTree::m_minPointCountPerCell</a></div><div class="ttdeci">unsigned m_minPointCountPerCell</div><div class="ttdoc">Min number of points per cell (speed-up)</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00167">TrueKdTree.h:167</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_a9c4cc9d02a1edb83aee74bf88afd9114"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#a9c4cc9d02a1edb83aee74bf88afd9114">cloudViewer::TrueKdTree::LeafVector</a></div><div class="ttdeci">std::vector&lt; Leaf * &gt; LeafVector</div><div class="ttdoc">A vector of leaves.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00105">TrueKdTree.h:105</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_aa4ff32ce29706e457e87ce0128b151d9"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#aa4ff32ce29706e457e87ce0128b151d9">cloudViewer::TrueKdTree::build</a></div><div class="ttdeci">bool build(double maxError, DistanceComputationTools::ERROR_MEASURES errorMeasure=DistanceComputationTools::RMS, unsigned minPointCountPerCell=3, unsigned maxPointCountPerCell=0, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Builds KD-tree.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_aa5c21b254d63e70c17ae4a6892f4bd1b"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#aa5c21b254d63e70c17ae4a6892f4bd1b">cloudViewer::TrueKdTree::associatedCloud</a></div><div class="ttdeci">GenericIndexedCloudPersist * associatedCloud() const</div><div class="ttdoc">Returns the associated cloud.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00114">TrueKdTree.h:114</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_ab4a7e9cf4c94050c16daa64b8cfe796a"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#ab4a7e9cf4c94050c16daa64b8cfe796a">cloudViewer::TrueKdTree::getMaxError</a></div><div class="ttdeci">double getMaxError() const</div><div class="ttdoc">Returns max error threshold used for planarity-based split strategy.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00138">TrueKdTree.h:138</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_abff868fe545dca860781262002722700"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#abff868fe545dca860781262002722700">cloudViewer::TrueKdTree::~TrueKdTree</a></div><div class="ttdeci">~TrueKdTree()</div><div class="ttdoc">Destructor.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_ad1213426049f58b9751ad78ae34c3e6b"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#ad1213426049f58b9751ad78ae34c3e6b">cloudViewer::TrueKdTree::getMaxErrorType</a></div><div class="ttdeci">DistanceComputationTools::ERROR_MEASURES getMaxErrorType() const</div><div class="ttdoc">Returns max error estimator used for planarity-based split strategy.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00141">TrueKdTree.h:141</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_ad5acd78de130c6205bb22690e8d5afa6"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#ad5acd78de130c6205bb22690e8d5afa6">cloudViewer::TrueKdTree::getLeaves</a></div><div class="ttdeci">bool getLeaves(LeafVector &amp;leaves) const</div><div class="ttdoc">Returns all leaf nodes.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_ad934e2a4986d247e5a836791b25ba966"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#ad934e2a4986d247e5a836791b25ba966">cloudViewer::TrueKdTree::TrueKdTree</a></div><div class="ttdeci">TrueKdTree(GenericIndexedCloudPersist *cloud)</div><div class="ttdoc">Default constructor.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_ad9bb81b97948d02d1b8dbd13596be0c7"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#ad9bb81b97948d02d1b8dbd13596be0c7">cloudViewer::TrueKdTree::m_associatedCloud</a></div><div class="ttdeci">GenericIndexedCloudPersist * m_associatedCloud</div><div class="ttdoc">Associated cloud.</div><div class="ttdef"><b>Definition:</b> <a href="TrueKdTree_8h_source.html#l00156">TrueKdTree.h:156</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1TrueKdTree_html_aea3a7e25dd97be0af8c89e17a6400fcb"><div class="ttname"><a href="classcloudViewer_1_1TrueKdTree.html#aea3a7e25dd97be0af8c89e17a6400fcb">cloudViewer::TrueKdTree::split</a></div><div class="ttdeci">BaseNode * split(ReferenceCloud *subset)</div><div class="ttdoc">Recursive split process.</div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="TrueKdTree_8h.html">TrueKdTree.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

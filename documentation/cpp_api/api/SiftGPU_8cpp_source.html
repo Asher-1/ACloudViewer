@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -1243,11 +1252,11 @@ $(document).ready(function(){initNavTree('SiftGPU_8cpp_source.html',''); initRes
 <div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;}</div>
 <div class="line"><a name="l01163"></a><span class="lineno"><a class="line" href="classSiftGPU.html#ac472deb43ce033962849273b22d4a90b"> 1163</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classSiftGPU.html#ac472deb43ce033962849273b22d4a90b">SiftGPU:: LoadImageList</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *imlist)</div>
 <div class="line"><a name="l01164"></a><span class="lineno"> 1164</span>&#160;{</div>
-<div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;    <span class="keywordtype">char</span> filename[<a class="code" href="SiftGPU_8cpp.html#a865dced746336a2d6ae9141287c4ebf4">_MAX_PATH</a>];</div>
+<div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;    <span class="keywordtype">char</span> <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>[<a class="code" href="SiftGPU_8cpp.html#a865dced746336a2d6ae9141287c4ebf4">_MAX_PATH</a>];</div>
 <div class="line"><a name="l01166"></a><span class="lineno"> 1166</span>&#160;    ifstream in(imlist);</div>
-<div class="line"><a name="l01167"></a><span class="lineno"> 1167</span>&#160;    <span class="keywordflow">while</span>(in&gt;&gt;filename)</div>
+<div class="line"><a name="l01167"></a><span class="lineno"> 1167</span>&#160;    <span class="keywordflow">while</span>(in&gt;&gt;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)</div>
 <div class="line"><a name="l01168"></a><span class="lineno"> 1168</span>&#160;    {</div>
-<div class="line"><a name="l01169"></a><span class="lineno"> 1169</span>&#160;        _list-&gt;push_back(filename);</div>
+<div class="line"><a name="l01169"></a><span class="lineno"> 1169</span>&#160;        _list-&gt;push_back(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l01170"></a><span class="lineno"> 1170</span>&#160;    }</div>
 <div class="line"><a name="l01171"></a><span class="lineno"> 1171</span>&#160;    in.close();</div>
 <div class="line"><a name="l01172"></a><span class="lineno"> 1172</span>&#160; </div>
@@ -1255,13 +1264,13 @@ $(document).ready(function(){initNavTree('SiftGPU_8cpp_source.html',''); initRes
 <div class="line"><a name="l01174"></a><span class="lineno"> 1174</span>&#160;    <span class="keywordflow">if</span>(_list-&gt;size()&gt;0)</div>
 <div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160;    {</div>
 <div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;        strcpy(_imgpath, _list-&gt;at(0).data());</div>
-<div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;        strcpy(filename, imlist);</div>
-<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;        <span class="keywordtype">char</span> * slash = strrchr(filename, <span class="charliteral">&#39;\\&#39;</span>);</div>
-<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;        <span class="keywordflow">if</span>(slash == 0) slash = strrchr(filename, <span class="charliteral">&#39;/&#39;</span>);</div>
+<div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;        strcpy(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, imlist);</div>
+<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;        <span class="keywordtype">char</span> * slash = strrchr(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="charliteral">&#39;\\&#39;</span>);</div>
+<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;        <span class="keywordflow">if</span>(slash == 0) slash = strrchr(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="charliteral">&#39;/&#39;</span>);</div>
 <div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;        <span class="keywordflow">if</span>(slash )</div>
 <div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;        {</div>
 <div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;            slash[1] = 0;</div>
-<div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;            chdir(filename);</div>
+<div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;            chdir(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l01184"></a><span class="lineno"> 1184</span>&#160;        }</div>
 <div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;    }</div>
 <div class="line"><a name="l01186"></a><span class="lineno"> 1186</span>&#160;    _image_loaded = 0;</div>
@@ -1513,6 +1522,7 @@ $(document).ready(function(){initNavTree('SiftGPU_8cpp_source.html',''); initRes
 <div class="line"><a name="l01435"></a><span class="lineno"> 1435</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">new</span> <a class="code" href="classComboSiftGPU.html">ComboSiftGPU</a>();</div>
 <div class="line"><a name="l01436"></a><span class="lineno"> 1436</span>&#160;}</div>
 <div class="line"><a name="l01437"></a><span class="lineno"> 1437</span>&#160; </div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad12fc34ce789bce6c8a05d8a17138534"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a></div><div class="ttdeci">int height</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00143">FileIOFactory.cpp:143</a></div></div>
 <div class="ttc" id="aFrameBufferObject_8h_html"><div class="ttname"><a href="FrameBufferObject_8h.html">FrameBufferObject.h</a></div></div>
@@ -1658,7 +1668,7 @@ $(document).ready(function(){initNavTree('SiftGPU_8cpp_source.html',''); initRes
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00111">Device.h:111</a></div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a79d353ab08a42449ce0aa5f95810f2fc"><div class="ttname"><a href="qCanupoTools_8cpp.html#a79d353ab08a42449ce0aa5f95810f2fc">descriptors</a></div><div class="ttdeci">CorePointDescSet * descriptors</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00039">qCanupoTools.cpp:39</a></div></div>
 <div class="ttc" id="astructSiftGPU_1_1SiftKeypoint_html"><div class="ttname"><a href="structSiftGPU_1_1SiftKeypoint.html">SiftGPU::SiftKeypoint</a></div><div class="ttdef"><b>Definition:</b> <a href="SiftGPU_8h_source.html#l00124">SiftGPU.h:125</a></div></div>
 <div class="ttc" id="astruct_8h_html_aae821c36bb7e6918e1414484f939c3d4"><div class="ttname"><a href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a></div><div class="ttdeci">double timer</div><div class="ttdef"><b>Definition:</b> <a href="struct_8h_source.html#l00215">struct.h:215</a></div></div>
@@ -1668,7 +1678,7 @@ $(document).ready(function(){initNavTree('SiftGPU_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_73745d1eab9af7d0334a3c60034e8cb1.html">SiftGPU</a></li><li class="navelem"><a class="el" href="SiftGPU_8cpp.html">SiftGPU.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

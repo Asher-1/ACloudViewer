@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -105,29 +114,29 @@ $(document).ready(function(){initNavTree('CVMiscTools_8h_source.html',''); initR
 <div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html">   16</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVCoreLibWin_8h.html#a1dafbf7307681e0ae43ca1905b2d2e5c">CV_CORE_LIB_API</a> <a class="code" href="classcloudViewer_1_1CCMiscTools.html">CCMiscTools</a> : <span class="keyword">public</span> <a class="code" href="classcloudViewer_1_1CVToolbox.html">CVToolbox</a> {</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html#aba7e6b96306c37a4b59fca4b2cd47d3c">   23</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1CCMiscTools.html#aba7e6b96306c37a4b59fca4b2cd47d3c">EnlargeBox</a>(<a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMin, <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMax, <span class="keywordtype">double</span> coef);</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> EnlargeBox(<a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMin, <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMax, <span class="keywordtype">double</span> coef);</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html#a9afe78309196b614687ddf26b740cdc7">   32</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1CCMiscTools.html#a9afe78309196b614687ddf26b740cdc7">MakeMinAndMaxCubical</a>(<a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMin,</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> MakeMinAndMaxCubical(<a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMin,</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                                     <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; dimMax,</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                                     <span class="keywordtype">double</span> enlargeFactor = 0.01);</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html#a65ec7d05c97ddfa46e9e77a6daa7e177">   43</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1CCMiscTools.html#a65ec7d05c97ddfa46e9e77a6daa7e177">ComputeBaseVectors</a>(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; N,</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> ComputeBaseVectors(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; N,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                                   <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; <a class="code" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>,</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                                   <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; Y);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html#ad1ffca6d82fc665cb4f6077a9b600913">   53</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1CCMiscTools.html#ad1ffca6d82fc665cb4f6077a9b600913">ComputeBaseVectors</a>(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; N,</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> ComputeBaseVectors(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; N,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                   <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; <a class="code" href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a>,</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                                   <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; Y);</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html#af35910b28b867a080df3efafae2865ce">   63</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1CCMiscTools.html#af35910b28b867a080df3efafae2865ce">TriBoxOverlap</a>(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; boxcenter,</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> TriBoxOverlap(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; boxcenter,</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                              <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>&amp; boxhalfsize,</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                              <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* triverts[3]);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1CCMiscTools.html#ae7c40d280470a933f78218997b1d66bc">   73</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1CCMiscTools.html#ae7c40d280470a933f78218997b1d66bc">TriBoxOverlapd</a>(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; boxcenter,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> TriBoxOverlapd(<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; boxcenter,</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                               <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; boxhalfsize,</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                               <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a> triverts[3]);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;};</div>
@@ -139,21 +148,15 @@ $(document).ready(function(){initNavTree('CVMiscTools_8h_source.html',''); initR
 <div class="ttc" id="aSmallVector_8cpp_html_ab385e5bea03d0c55b5efca299f25532e"><div class="ttname"><a href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a></div><div class="ttdeci">void * X</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00045">SmallVector.cpp:45</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html">cloudViewer::CCMiscTools</a></div><div class="ttdoc">Miscellaneous useful functions (geometrical elements handling)</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8h_source.html#l00016">CVMiscTools.h:16</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_a65ec7d05c97ddfa46e9e77a6daa7e177"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#a65ec7d05c97ddfa46e9e77a6daa7e177">cloudViewer::CCMiscTools::ComputeBaseVectors</a></div><div class="ttdeci">static void ComputeBaseVectors(const CCVector3 &amp;N, CCVector3 &amp;X, CCVector3 &amp;Y)</div><div class="ttdoc">Computes base vectors for a given 3D plane.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_a9afe78309196b614687ddf26b740cdc7"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#a9afe78309196b614687ddf26b740cdc7">cloudViewer::CCMiscTools::MakeMinAndMaxCubical</a></div><div class="ttdeci">static void MakeMinAndMaxCubical(CCVector3 &amp;dimMin, CCVector3 &amp;dimMax, double enlargeFactor=0.01)</div><div class="ttdoc">Transforms a 3D box into a 3D cube.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_aba7e6b96306c37a4b59fca4b2cd47d3c"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#aba7e6b96306c37a4b59fca4b2cd47d3c">cloudViewer::CCMiscTools::EnlargeBox</a></div><div class="ttdeci">static void EnlargeBox(CCVector3 &amp;dimMin, CCVector3 &amp;dimMax, double coef)</div><div class="ttdoc">Proportionally enlarges a 3D box.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_ad1ffca6d82fc665cb4f6077a9b600913"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#ad1ffca6d82fc665cb4f6077a9b600913">cloudViewer::CCMiscTools::ComputeBaseVectors</a></div><div class="ttdeci">static void ComputeBaseVectors(const CCVector3d &amp;N, CCVector3d &amp;X, CCVector3d &amp;Y)</div><div class="ttdoc">Computes base vectors for a given 3D plane - double version.</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_ae7c40d280470a933f78218997b1d66bc"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#ae7c40d280470a933f78218997b1d66bc">cloudViewer::CCMiscTools::TriBoxOverlapd</a></div><div class="ttdeci">static bool TriBoxOverlapd(const CCVector3d &amp;boxcenter, const CCVector3d &amp;boxhalfsize, const CCVector3d triverts[3])</div><div class="ttdoc">Ovelap test between a 3D box and a triangle (double version)</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_af35910b28b867a080df3efafae2865ce"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#af35910b28b867a080df3efafae2865ce">cloudViewer::CCMiscTools::TriBoxOverlap</a></div><div class="ttdeci">static bool TriBoxOverlap(const CCVector3 &amp;boxcenter, const CCVector3 &amp;boxhalfsize, const CCVector3 *triverts[3])</div><div class="ttdoc">Ovelap test between a 3D box and a triangle.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CVToolbox_html"><div class="ttname"><a href="classcloudViewer_1_1CVToolbox.html">cloudViewer::CVToolbox</a></div><div class="ttdoc">Empty class - for classification purpose only.</div><div class="ttdef"><b>Definition:</b> <a href="CVToolbox_8h_source.html#l00015">CVToolbox.h:15</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="CVMiscTools_8h.html">CVMiscTools.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

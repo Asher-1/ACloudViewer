@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -114,7 +123,7 @@ $(document).ready(function(){initNavTree('KdTree_8cpp_source.html',''); initResi
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    py::bind_vector&lt;std::vector&lt;unsigned&gt;&gt;(a, <span class="stringliteral">&quot;IndicesVector&quot;</span>, py::module_local(<span class="keyword">true</span>));</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    a.def(py::init&lt;&gt;())</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        .def(<span class="stringliteral">&quot;buildFromCloud&quot;</span>, &amp;<a class="code" href="classcloudViewer_1_1KDTree.html#a5e0dc8dc865f5baa7ea3be3f10785117">cloudViewer::KDTree::buildFromCloud</a>, <span class="stringliteral">&quot;cloud&quot;</span>_a, <span class="stringliteral">&quot;progressCb&quot;</span>_a = <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        .def(<span class="stringliteral">&quot;buildFromCloud&quot;</span>, &amp;<a class="code" href="classcloudViewer_1_1KDTree.html#ad15fa5552447d0fa374fd0d5866dd346">cloudViewer::KDTree::buildFromCloud</a>, <span class="stringliteral">&quot;cloud&quot;</span>_a, <span class="stringliteral">&quot;progressCb&quot;</span>_a = <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        .def(<span class="stringliteral">&quot;getAssociatedCloud&quot;</span>,</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;             &amp;<a class="code" href="classcloudViewer_1_1KDTree.html#ab87ea867bbca625899afb74ffadb2826">cloudViewer::KDTree::getAssociatedCloud</a>,</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;             py::return_value_policy::reference)</div>
@@ -175,9 +184,9 @@ $(document).ready(function(){initNavTree('KdTree_8cpp_source.html',''); initResi
 <div class="ttc" id="aKdTree_8cpp_html_a2e5989c922f27df63c08f11576caa3a5"><div class="ttname"><a href="KdTree_8cpp.html#a2e5989c922f27df63c08f11576caa3a5">define_KdTree</a></div><div class="ttdeci">void define_KdTree(py::module &amp;cccorelib)</div><div class="ttdef"><b>Definition:</b> <a href="KdTree_8cpp_source.html#l00020">KdTree.cpp:20</a></div></div>
 <div class="ttc" id="acccorelib_8h_html"><div class="ttname"><a href="cccorelib_8h.html">cccorelib.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1KDTree_html"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html">cloudViewer::KDTree</a></div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00020">CVKdTree.h:20</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1KDTree_html_a5e0dc8dc865f5baa7ea3be3f10785117"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html#a5e0dc8dc865f5baa7ea3be3f10785117">cloudViewer::KDTree::buildFromCloud</a></div><div class="ttdeci">bool buildFromCloud(GenericIndexedCloud *cloud, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Builds the KD-tree.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1KDTree_html_ab87ea867bbca625899afb74ffadb2826"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html#ab87ea867bbca625899afb74ffadb2826">cloudViewer::KDTree::getAssociatedCloud</a></div><div class="ttdeci">GenericIndexedCloud * getAssociatedCloud() const</div><div class="ttdoc">Gets the point cloud from which the tree has been build.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00040">CVKdTree.h:40</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1KDTree_html_ad15fa5552447d0fa374fd0d5866dd346"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html#ad15fa5552447d0fa374fd0d5866dd346">cloudViewer::KDTree::buildFromCloud</a></div><div class="ttdeci">bool buildFromCloud(GenericIndexedCloud *cloud, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Builds the KD-tree.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8cpp_source.html#l00023">CVKdTree.cpp:23</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
 <div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -185,7 +194,7 @@ $(document).ready(function(){initNavTree('KdTree_8cpp_source.html',''); initResi
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_932acd6304591f5a356d6890e438ae73.html">cccorelib</a></li><li class="navelem"><a class="el" href="dir_c17cf8b2e440d80463baea1f1e29a48d.html">src</a></li><li class="navelem"><a class="el" href="KdTree_8cpp.html">KdTree.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

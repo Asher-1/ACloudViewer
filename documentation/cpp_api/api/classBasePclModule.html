@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -134,9 +143,11 @@ Collaboration diagram for BasePclModule:</div>
 <div class="dyncontent">
 <div class="center"><img src="classBasePclModule__coll__graph.png" border="0" usemap="#aBasePclModule_coll__map" alt="Collaboration graph"/></div>
 <map name="aBasePclModule_coll__map" id="aBasePclModule_coll__map">
-<area shape="rect" title="Base abstract class for each implemented PCL filter." alt="" coords="53,95,174,121"/>
+<area shape="rect" title="Base abstract class for each implemented PCL filter." alt="" coords="211,95,333,121"/>
 <area shape="rect" title=" " alt="" coords="5,5,80,32"/>
 <area shape="rect" href="structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
+<area shape="rect" href="classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="291,5,426,32"/>
+<area shape="rect" href="classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="451,5,611,32"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -154,7 +165,7 @@ Signals</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa0a5208072dd87dc9d3bf4a9898c9898"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#aa0a5208072dd87dc9d3bf4a9898c9898">BasePclModule</a> (<a class="el" href="structPclModuleDescription.html">PclModuleDescription</a> desc=<a class="el" href="structPclModuleDescription.html">PclModuleDescription</a>(), ccPluginInterface *parent_plugin=0)</td></tr>
+<tr class="memitem:aa0a5208072dd87dc9d3bf4a9898c9898"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#aa0a5208072dd87dc9d3bf4a9898c9898">BasePclModule</a> (<a class="el" href="structPclModuleDescription.html">PclModuleDescription</a> desc=<a class="el" href="structPclModuleDescription.html">PclModuleDescription</a>(), <a class="el" href="classccPluginInterface.html">ccPluginInterface</a> *parent_plugin=0)</td></tr>
 <tr class="memdesc:aa0a5208072dd87dc9d3bf4a9898c9898"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="classBasePclModule.html#aa0a5208072dd87dc9d3bf4a9898c9898">More...</a><br /></td></tr>
 <tr class="separator:aa0a5208072dd87dc9d3bf4a9898c9898"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a215ccc79146cf33816d66627f81ffb90"><td class="memItemLeft" align="right" valign="top">QAction *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a215ccc79146cf33816d66627f81ffb90">getAction</a> ()</td></tr>
@@ -216,12 +227,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8d78eb9f9cccee12828215c09eeba4a6"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a8d78eb9f9cccee12828215c09eeba4a6">compute</a> ()=0</td></tr>
 <tr class="memdesc:a8d78eb9f9cccee12828215c09eeba4a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs the actual filter job.  <a href="classBasePclModule.html#a8d78eb9f9cccee12828215c09eeba4a6">More...</a><br /></td></tr>
 <tr class="separator:a8d78eb9f9cccee12828215c09eeba4a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb5ef066e2e1785852dfbca9dac54ee4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#adb5ef066e2e1785852dfbca9dac54ee4">setMainAppInterface</a> (ecvMainAppInterface *app)</td></tr>
+<tr class="memitem:adb5ef066e2e1785852dfbca9dac54ee4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#adb5ef066e2e1785852dfbca9dac54ee4">setMainAppInterface</a> (<a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *app)</td></tr>
 <tr class="memdesc:adb5ef066e2e1785852dfbca9dac54ee4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets associated CC application interface (to access DB)  <a href="classBasePclModule.html#adb5ef066e2e1785852dfbca9dac54ee4">More...</a><br /></td></tr>
 <tr class="separator:adb5ef066e2e1785852dfbca9dac54ee4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a335853c78b4946007f1c74aa23dd8268"><td class="memItemLeft" align="right" valign="top">ecvMainAppInterface *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a335853c78b4946007f1c74aa23dd8268">getMainAppInterface</a> ()</td></tr>
+<tr class="memitem:a335853c78b4946007f1c74aa23dd8268"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a335853c78b4946007f1c74aa23dd8268">getMainAppInterface</a> ()</td></tr>
 <tr class="separator:a335853c78b4946007f1c74aa23dd8268"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac6c4052d82690bbb9fb016b2bd13f70a"><td class="memItemLeft" align="right" valign="top">ccPluginInterface *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#ac6c4052d82690bbb9fb016b2bd13f70a">getParentPlugin</a> () const</td></tr>
+<tr class="memitem:ac6c4052d82690bbb9fb016b2bd13f70a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccPluginInterface.html">ccPluginInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#ac6c4052d82690bbb9fb016b2bd13f70a">getParentPlugin</a> () const</td></tr>
 <tr class="memdesc:ac6c4052d82690bbb9fb016b2bd13f70a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the associated parent plugin interface.  <a href="classBasePclModule.html#ac6c4052d82690bbb9fb016b2bd13f70a">More...</a><br /></td></tr>
 <tr class="separator:ac6c4052d82690bbb9fb016b2bd13f70a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -265,10 +276,10 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a3ce8c8ef4736e42af13424622b09c0fb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structPclModuleDescription.html">PclModuleDescription</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a3ce8c8ef4736e42af13424622b09c0fb">m_desc</a></td></tr>
 <tr class="memdesc:a3ce8c8ef4736e42af13424622b09c0fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associated dialog.  <a href="classBasePclModule.html#a3ce8c8ef4736e42af13424622b09c0fb">More...</a><br /></td></tr>
 <tr class="separator:a3ce8c8ef4736e42af13424622b09c0fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7cb9b001d00e054785d3cff0c3126e73"><td class="memItemLeft" align="right" valign="top">ecvMainAppInterface *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a></td></tr>
+<tr class="memitem:a7cb9b001d00e054785d3cff0c3126e73"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">m_app</a></td></tr>
 <tr class="memdesc:a7cb9b001d00e054785d3cff0c3126e73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associated application interface.  <a href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">More...</a><br /></td></tr>
 <tr class="separator:a7cb9b001d00e054785d3cff0c3126e73"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0779b1b6b2b69d0630b949fba0c64b4b"><td class="memItemLeft" align="right" valign="top">ccPluginInterface *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a0779b1b6b2b69d0630b949fba0c64b4b">m_parent_plugin</a></td></tr>
+<tr class="memitem:a0779b1b6b2b69d0630b949fba0c64b4b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccPluginInterface.html">ccPluginInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#a0779b1b6b2b69d0630b949fba0c64b4b">m_parent_plugin</a></td></tr>
 <tr class="memdesc:a0779b1b6b2b69d0630b949fba0c64b4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">associated parent plugin of the filter  <a href="classBasePclModule.html#a0779b1b6b2b69d0630b949fba0c64b4b">More...</a><br /></td></tr>
 <tr class="separator:a0779b1b6b2b69d0630b949fba0c64b4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab27cf4857ca2d070594610400e28aa4f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBasePclModule.html#ab27cf4857ca2d070594610400e28aa4f">m_show_progress</a></td></tr>
@@ -297,7 +308,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">ccPluginInterface *&#160;</td>
+          <td class="paramtype"><a class="el" href="classccPluginInterface.html">ccPluginInterface</a> *&#160;</td>
           <td class="paramname"><em>parent_plugin</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
@@ -509,7 +520,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="BasePclModule_8cpp_source.html#l00285">285</a> of file <a class="el" href="BasePclModule_8cpp_source.html">BasePclModule.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="BasePclModule_8h_source.html#l00296">m_app</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00131">type</a>.</p>
+<p class="reference">References <a class="el" href="classecvMainAppInterface.html#a0a3377f12cac27db6c5720c082dde4a8">ecvMainAppInterface::dbRootObject()</a>, <a class="el" href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">ccHObject::filterChildren()</a>, <a class="el" href="BasePclModule_8h_source.html#l00296">m_app</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00131">type</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="BasePclModule_8cpp_source.html#l00292">getAllEntitiesThatHaveMetaData()</a>.</p>
 
@@ -646,7 +657,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ecvMainAppInterface* BasePclModule::getMainAppInterface </td>
+          <td class="memname"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* BasePclModule::getMainAppInterface </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -735,7 +746,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ccPluginInterface* BasePclModule::getParentPlugin </td>
+          <td class="memname"><a class="el" href="classccPluginInterface.html">ccPluginInterface</a>* BasePclModule::getParentPlugin </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -1219,7 +1230,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="BasePclModule_8cpp_source.html#l00068">68</a> of file <a class="el" href="BasePclModule_8cpp_source.html">BasePclModule.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">ccHObject::applyGLTransformation_recursive()</a>, <a class="el" href="BasePclModule_8h_source.html#l00239">checkParameters()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00139">checkSelected()</a>, <a class="el" href="BasePclModule_8h_source.html#l00231">getParametersFromDialog()</a>, <a class="el" href="ecvHObject_8h_source.html#l00225">ccHObject::getViewId()</a>, <a class="el" href="BasePclModule_8h_source.html#l00296">m_app</a>, <a class="el" href="BasePclModule_8h_source.html#l00281">m_selected</a>, <a class="el" href="BasePclModule_8h_source.html#l00215">openInputDialog()</a>, <a class="el" href="BasePclModule_8h_source.html#l00225">openOutputDialog()</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="classecvDisplayTools.html#afa498d2f484a7a5b752d9541574d2fc4">ecvDisplayTools::RedrawDisplay()</a>, <a class="el" href="classecvDisplayTools.html#ab2cb3ae336d6b510600493c4c3fc1877">ecvDisplayTools::RemoveBB()</a>, <a class="el" href="classccHObject.html#a8c328da68923d50bfdcfa030f6b07fbe">ccHObject::setRedrawFlagRecursive()</a>, <a class="el" href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00162">start()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00053">throwError()</a>, and <a class="el" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud()</a>.</p>
+<p class="reference">References <a class="el" href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">ccHObject::applyGLTransformation_recursive()</a>, <a class="el" href="BasePclModule_8h_source.html#l00239">checkParameters()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00139">checkSelected()</a>, <a class="el" href="BasePclModule_8h_source.html#l00231">getParametersFromDialog()</a>, <a class="el" href="ecvHObject_8h_source.html#l00225">ccHObject::getViewId()</a>, <a class="el" href="BasePclModule_8h_source.html#l00296">m_app</a>, <a class="el" href="BasePclModule_8h_source.html#l00281">m_selected</a>, <a class="el" href="BasePclModule_8h_source.html#l00215">openInputDialog()</a>, <a class="el" href="BasePclModule_8h_source.html#l00225">openOutputDialog()</a>, <a class="el" href="CVTypes_8h_source.html#l00104">CV_TYPES::POINT_CLOUD</a>, <a class="el" href="classecvMainAppInterface.html#a9b58c1443265f0ab72ef2144bf9eb123">ecvMainAppInterface::putObjectBackIntoDBTree()</a>, <a class="el" href="classecvDisplayTools.html#afa498d2f484a7a5b752d9541574d2fc4">ecvDisplayTools::RedrawDisplay()</a>, <a class="el" href="classecvDisplayTools.html#ab2cb3ae336d6b510600493c4c3fc1877">ecvDisplayTools::RemoveBB()</a>, <a class="el" href="classecvMainAppInterface.html#ad540741410f99006f9aa9241fd8be4d4">ecvMainAppInterface::removeObjectTemporarilyFromDBTree()</a>, <a class="el" href="classccHObject.html#a8c328da68923d50bfdcfa030f6b07fbe">ccHObject::setRedrawFlagRecursive()</a>, <a class="el" href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00162">start()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00053">throwError()</a>, and <a class="el" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="BasePclModule_8cpp_source.html#l00044">initAction()</a>.</p>
 
@@ -1237,7 +1248,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">void BasePclModule::setMainAppInterface </td>
           <td>(</td>
-          <td class="paramtype">ecvMainAppInterface *&#160;</td>
+          <td class="paramtype"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a> *&#160;</td>
           <td class="paramname"><em>app</em></td><td>)</td>
           <td></td>
         </tr>
@@ -1319,7 +1330,7 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="BasePclModule_8cpp_source.html#l00162">162</a> of file <a class="el" href="BasePclModule_8cpp_source.html">BasePclModule.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="BasePclModule_8cpp_source.html#l00153">doCompute()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00208">getModuleName()</a>, <a class="el" href="BasePclModule_8h_source.html#l00302">m_show_progress</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00151">s_computeStatus</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00152">s_computing</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00150">s_module</a>, <a class="el" href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">cloudViewer::utility::Sleep()</a>, and <a class="el" href="BasePclModule_8cpp_source.html#l00053">throwError()</a>.</p>
+<p class="reference">References <a class="el" href="BasePclModule_8cpp_source.html#l00153">doCompute()</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00208">getModuleName()</a>, <a class="el" href="BasePclModule_8h_source.html#l00302">m_show_progress</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00151">s_computeStatus</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00152">s_computing</a>, <a class="el" href="BasePclModule_8cpp_source.html#l00150">s_module</a>, <a class="el" href="Helper_8cpp_source.html#l00278">cloudViewer::utility::Sleep()</a>, and <a class="el" href="BasePclModule_8cpp_source.html#l00053">throwError()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="BasePclModule_8cpp_source.html#l00068">performAction()</a>.</p>
 
@@ -1436,7 +1447,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ecvMainAppInterface* BasePclModule::m_app</td>
+          <td class="memname"><a class="el" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* BasePclModule::m_app</td>
         </tr>
       </table>
   </td>
@@ -1493,7 +1504,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">ccPluginInterface* BasePclModule::m_parent_plugin</td>
+          <td class="memname"><a class="el" href="classccPluginInterface.html">ccPluginInterface</a>* BasePclModule::m_parent_plugin</td>
         </tr>
       </table>
   </td>
@@ -1578,7 +1589,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classBasePclModule.html">BasePclModule</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:33 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

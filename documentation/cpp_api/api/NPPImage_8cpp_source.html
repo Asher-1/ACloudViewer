@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -97,7 +106,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NPPImage_8h.html">cloudViewer/t/geometry/kernel/NPPImage.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="core_2include_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;npp.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CUDAUtils_8h.html">cloudViewer/core/CUDAUtils.h</a>&quot;</span></div>
@@ -112,30 +121,30 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html">   22</a></span>&#160;<span class="keyword">namespace </span>npp {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">   24</a></span>&#160;<span class="keyword">static</span> NppStreamContext <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>() {</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    NppStreamContext <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>;</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.hStream = core::cuda::GetStream();</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nCudaDeviceId = core::cuda::GetDevice();</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    NppStreamContext <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.hStream = core::cuda::GetStream();</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nCudaDeviceId = core::cuda::GetDevice();</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    cudaDeviceProp device_prop;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <a class="code" href="CUDAUtils_8h.html#a92be5b237fefbcefb6e22c4452bc1b62">CLOUDVIEWER_CUDA_CHECK</a>(</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;            cudaGetDeviceProperties(&amp;device_prop, core::cuda::GetDevice()));</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nMultiProcessorCount = device_prop.multiProcessorCount;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nMaxThreadsPerMultiProcessor =</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nMultiProcessorCount = device_prop.multiProcessorCount;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nMaxThreadsPerMultiProcessor =</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;            device_prop.maxThreadsPerMultiProcessor;</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nSharedMemPerBlock = device_prop.sharedMemPerBlock;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nSharedMemPerBlock = device_prop.sharedMemPerBlock;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">int</span> cc_major;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <a class="code" href="CUDAUtils_8h.html#a92be5b237fefbcefb6e22c4452bc1b62">CLOUDVIEWER_CUDA_CHECK</a>(</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;            cudaDeviceGetAttribute(&amp;cc_major, cudaDevAttrComputeCapabilityMajor,</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                                   core::cuda::GetDevice()));</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nCudaDevAttrComputeCapabilityMajor = cc_major;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nCudaDevAttrComputeCapabilityMajor = cc_major;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">int</span> cc_minor;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <a class="code" href="CUDAUtils_8h.html#a92be5b237fefbcefb6e22c4452bc1b62">CLOUDVIEWER_CUDA_CHECK</a>(</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;            cudaDeviceGetAttribute(&amp;cc_minor, cudaDevAttrComputeCapabilityMinor,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                   core::cuda::GetDevice()));</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nCudaDevAttrComputeCapabilityMinor = cc_minor;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nCudaDevAttrComputeCapabilityMinor = cc_minor;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">// The NPP documentation incorrectly states that nStreamFlags becomes available</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">// in NPP 10.2 (CUDA 10.2). Instead, NPP 11.1 (CUDA 11.0) is the first release</span></div>
@@ -144,10 +153,10 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> stream_flags;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <a class="code" href="CUDAUtils_8h.html#a92be5b237fefbcefb6e22c4452bc1b62">CLOUDVIEWER_CUDA_CHECK</a>(</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            cudaStreamGetFlags(core::cuda::GetStream(), &amp;stream_flags));</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nStreamFlags = stream_flags;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.nStreamFlags = stream_flags;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;}</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a546b6e82e5bb0d55e359055fe92723b1">   63</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a546b6e82e5bb0d55e359055fe92723b1">RGBToGray</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;src_im, <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;dst_im) {</div>
@@ -162,7 +171,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                         <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(dst_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ad70864269871ee67c753328bc1a6082b">GetShape</a>(0))};</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keyword">auto</span> dtype = src_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">GetDtype</a>();</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">auto</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">auto</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor">#define NPP_ARGS                                           \</span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="preprocessor">    static_cast&lt;const npp_dtype *&gt;(src_im.GetDataPtr()),   \</span></div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">            src_im.GetStride(0) * dtype.ByteSize(),        \</span></div>
@@ -223,7 +232,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    }</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keyword">auto</span> dtype = src_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">GetDtype</a>();</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="keyword">auto</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="keyword">auto</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="preprocessor">#define NPP_ARGS                                                       \</span></div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="preprocessor">    static_cast&lt;const npp_dtype *&gt;(src_im.GetDataPtr()),               \</span></div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="preprocessor">            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_roi, \</span></div>
@@ -291,7 +300,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    NppiPoint anchor = {kernel_size / 2, kernel_size / 2};</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160; </div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    <span class="keyword">auto</span> dtype = src_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">GetDtype</a>();</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keyword">auto</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keyword">auto</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="preprocessor">#define NPP_ARGS                                                          \</span></div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="preprocessor">    static_cast&lt;const npp_dtype *&gt;(src_im.GetDataPtr()),                  \</span></div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="preprocessor">            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \</span></div>
@@ -365,7 +374,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            <span class="keyword">static_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">float</span> *<span class="keyword">&gt;</span>(kernel_flipped.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">GetDataPtr</a>());</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <span class="keyword">auto</span> dtype = src_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">GetDtype</a>();</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <span class="keyword">auto</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <span class="keyword">auto</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#define NPP_ARGS                                                          \</span></div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="preprocessor">    static_cast&lt;const npp_dtype *&gt;(src_im.GetDataPtr()),                  \</span></div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="preprocessor">            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \</span></div>
@@ -429,7 +438,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                         <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(dst_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ad70864269871ee67c753328bc1a6082b">GetShape</a>(0))};</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160; </div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    <span class="keyword">auto</span> dtype = src_im.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">GetDtype</a>();</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keyword">auto</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keyword">auto</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="preprocessor">#define NPP_ARGS                                                               \</span></div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="preprocessor">    static_cast&lt;const npp_dtype *&gt;(src_im.GetDataPtr()),                       \</span></div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;<span class="preprocessor">            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,      \</span></div>
@@ -529,7 +538,7 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160; </div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    <span class="comment">// Counterintuitive conventions: dy: Horizontal,  dx: Vertical.</span></div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    <span class="comment">// Probable reason: dy detects horizontal edges, dx detects vertical edges.</span></div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    <span class="keyword">auto</span> <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
+<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    <span class="keyword">auto</span> <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a> = <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a1204eec20aed874d74715feec577ffb6">MakeNPPContext</a>();</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;<span class="preprocessor">#define NPP_ARGS_DX                                                       \</span></div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;<span class="preprocessor">    static_cast&lt;const npp_src_dtype *&gt;(src_im.GetDataPtr()),              \</span></div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;<span class="preprocessor">            src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \</span></div>
@@ -583,7 +592,6 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="ttc" id="aNPPImage_8h_html"><div class="ttname"><a href="NPPImage_8h.html">NPPImage.h</a></div></div>
 <div class="ttc" id="aShapeUtil_8h_html"><div class="ttname"><a href="ShapeUtil_8h.html">ShapeUtil.h</a></div></div>
 <div class="ttc" id="aTensor_8h_html"><div class="ttname"><a href="Tensor_8h.html">Tensor.h</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1CUDAScopedDevice_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1CUDAScopedDevice.html">cloudViewer::core::CUDAScopedDevice</a></div><div class="ttdoc">When CUDA is not enabled, this is a dummy class.</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8h_source.html#l00214">CUDAUtils.h:214</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html_a937a2d57a5621b1d5f33f0d1a44f829a"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html#a937a2d57a5621b1d5f33f0d1a44f829a">cloudViewer::core::Device::ToString</a></div><div class="ttdeci">std::string ToString() const</div><div class="ttdoc">Returns string representation of device, e.g. &quot;CPU:0&quot;, &quot;CUDA:0&quot;.</div><div class="ttdef"><b>Definition:</b> <a href="Device_8cpp_source.html#l00089">Device.cpp:89</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1SizeVector_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1SizeVector.html">cloudViewer::core::SizeVector</a></div><div class="ttdef"><b>Definition:</b> <a href="SizeVector_8h_source.html#l00070">SizeVector.h:70</a></div></div>
@@ -608,8 +616,9 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1Image_html_a0ca5d0ee6178d97362fd87b7027db455a60494f02d440f316319dd0fad40ad007"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1Image.html#a0ca5d0ee6178d97362fd87b7027db455a60494f02d440f316319dd0fad40ad007">cloudViewer::t::geometry::Image::InterpType::Nearest</a></div><div class="ttdeci">@ Nearest</div><div class="ttdoc">Nearest neighbors interpolation.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1Image_html_a0ca5d0ee6178d97362fd87b7027db455aec6b5414eb175379ff9efc9b3eef5814"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1Image.html#a0ca5d0ee6178d97362fd87b7027db455aec6b5414eb175379ff9efc9b3eef5814">cloudViewer::t::geometry::Image::InterpType::Cubic</a></div><div class="ttdeci">@ Cubic</div><div class="ttdoc">Bicubic interpolation.</div></div>
 <div class="ttc" id="acloudViewer_2t_2geometry_2Image_8h_html"><div class="ttname"><a href="cloudViewer_2t_2geometry_2Image_8h.html">Image.h</a></div></div>
-<div class="ttc" id="acore_2include_2Logging_8h_html"><div class="ttname"><a href="core_2include_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a4e1d953f2457acb806f3714c4696f4cd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a4e1d953f2457acb806f3714c4696f4cd">cloudViewer::core::Bool</a></div><div class="ttdeci">const Dtype Bool</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00052">Dtype.cpp:52</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a67a7a5bd403bf14004573511c1e75165"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a67a7a5bd403bf14004573511c1e75165">cloudViewer::core::UInt8</a></div><div class="ttdeci">const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00048">Dtype.cpp:48</a></div></div>
@@ -623,14 +632,14 @@ $(document).ready(function(){initNavTree('NPPImage_8cpp_source.html',''); initRe
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1npp_html_a546b6e82e5bb0d55e359055fe92723b1"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#a546b6e82e5bb0d55e359055fe92723b1">cloudViewer::t::geometry::npp::RGBToGray</a></div><div class="ttdeci">void RGBToGray(const core::Tensor &amp;src_im, core::Tensor &amp;dst_im)</div><div class="ttdef"><b>Definition:</b> <a href="NPPImage_8cpp_source.html#l00063">NPPImage.cpp:63</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1npp_html_ac9036332adc119566ed299901eb3dfa9"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#ac9036332adc119566ed299901eb3dfa9">cloudViewer::t::geometry::npp::Filter</a></div><div class="ttdeci">void Filter(const cloudViewer::core::Tensor &amp;src_im, cloudViewer::core::Tensor &amp;dst_im, const cloudViewer::core::Tensor &amp;kernel)</div><div class="ttdef"><b>Definition:</b> <a href="NPPImage_8cpp_source.html#l00246">NPPImage.cpp:246</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1npp_html_ae615f4f1b3ad3cd1aad692f3d43e3555"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1npp.html#ae615f4f1b3ad3cd1aad692f3d43e3555">cloudViewer::t::geometry::npp::FilterBilateral</a></div><div class="ttdeci">void FilterBilateral(const core::Tensor &amp;src_im, core::Tensor &amp;dst_im, int kernel_size, float value_sigma, float distance_sigma)</div><div class="ttdef"><b>Definition:</b> <a href="NPPImage_8cpp_source.html#l00319">NPPImage.cpp:319</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="NPPImage_8cpp.html">NPPImage.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

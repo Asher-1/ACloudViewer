@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -107,18 +116,18 @@ $(document).ready(function(){initNavTree('BundlerCommand_8cpp_source.html',''); 
 <div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="BundlerCommand_8cpp.html#a8ebedb1a916a2d611258351d3ef21616">   17</a></span>&#160;<span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">char</span> <a class="code" href="BundlerCommand_8cpp.html#a8ebedb1a916a2d611258351d3ef21616">COMMAND_BUNDLER_COLOR_DTM</a>[] = <span class="stringliteral">&quot;COLOR_DTM&quot;</span>;</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classBundlerCommand.html#a9d9213b95e061de86fe1e32cae62d575">   19</a></span>&#160;<a class="code" href="classBundlerCommand.html#a9d9213b95e061de86fe1e32cae62d575">BundlerCommand::BundlerCommand</a>()</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    : ccCommandLineInterface::Command(<span class="stringliteral">&quot;Bundler&quot;</span>, <a class="code" href="BundlerCommand_8cpp.html#a988d1322db958ddda002481d6162b654">COMMAND_BUNDLER</a>) {}</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    : <a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>::Command(<span class="stringliteral">&quot;Bundler&quot;</span>, <a class="code" href="BundlerCommand_8cpp.html#a988d1322db958ddda002481d6162b654">COMMAND_BUNDLER</a>) {}</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classBundlerCommand.html#a9f9d616a43f4ab44f44e0d73d8217aec">   22</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classBundlerCommand.html#a9f9d616a43f4ab44f44e0d73d8217aec">BundlerCommand::process</a>(ccCommandLineInterface &amp;cmd) {</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    cmd.print(<span class="stringliteral">&quot;[BUNDLER]&quot;</span>);</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordflow">if</span> (cmd.arguments().empty())</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classBundlerCommand.html#a9f9d616a43f4ab44f44e0d73d8217aec">   22</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classBundlerCommand.html#a9f9d616a43f4ab44f44e0d73d8217aec">BundlerCommand::process</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> &amp;cmd) {</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(<span class="stringliteral">&quot;[BUNDLER]&quot;</span>);</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty())</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                QObject::tr(<span class="stringliteral">&quot;Missing parameter: filename after \&quot;-%1\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                        .arg(<a class="code" href="BundlerCommand_8cpp.html#a988d1322db958ddda002481d6162b654">COMMAND_BUNDLER</a>));</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="comment">// open specified file</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    QString bundlerFilename(cmd.arguments().takeFirst());</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    cmd.print(QObject::tr(<span class="stringliteral">&quot;Importing Bundler file: &#39;%1&#39;&quot;</span>).arg(bundlerFilename));</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    QString bundlerFilename(cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst());</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;Importing Bundler file: &#39;%1&#39;&quot;</span>).arg(bundlerFilename));</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    QString altKeypointsFilename;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordtype">bool</span> undistortImages = <span class="keyword">false</span>;</div>
@@ -127,53 +136,53 @@ $(document).ready(function(){initNavTree('BundlerCommand_8cpp_source.html',''); 
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keywordtype">float</span> scaleFactor = 1.0f;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="comment">// inner loop for Bundler import options</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordflow">while</span> (!cmd.arguments().empty()) {</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        QString argument = cmd.arguments().front();</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="keywordflow">if</span> (ccCommandLineInterface::IsCommand(argument,</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordflow">while</span> (!cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        QString argument = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().front();</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classccCommandLineInterface.html#a9dedc469d2be32bf7a1a06182e085a1e">ccCommandLineInterface::IsCommand</a>(argument,</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                                              <a class="code" href="BundlerCommand_8cpp.html#a3d6148eb43ccfb8e54955a789f23e0fc">COMMAND_BUNDLER_ALT_KEYPOINTS</a>)) {</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;            <span class="comment">// local option confirmed, we can move on</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;            cmd.arguments().pop_front();</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().pop_front();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;            <span class="keywordflow">if</span> (cmd.arguments().empty())</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;            <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty())</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                        QObject::tr(<span class="stringliteral">&quot;Missing parameter: filename after \&quot;-%1\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                .arg(<a class="code" href="BundlerCommand_8cpp.html#a3d6148eb43ccfb8e54955a789f23e0fc">COMMAND_BUNDLER_ALT_KEYPOINTS</a>));</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;            altKeypointsFilename = cmd.arguments().takeFirst();</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ccCommandLineInterface::IsCommand(</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;            altKeypointsFilename = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst();</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="classccCommandLineInterface.html#a9dedc469d2be32bf7a1a06182e085a1e">ccCommandLineInterface::IsCommand</a>(</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                           argument, <a class="code" href="BundlerCommand_8cpp.html#ab2a9dedca9e30a51cea2875b7cf5aae4">COMMAND_BUNDLER_SCALE_FACTOR</a>)) {</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="comment">// local option confirmed, we can move on</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            cmd.arguments().pop_front();</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().pop_front();</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keywordflow">if</span> (cmd.arguments().empty())</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty())</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                        QObject::tr(<span class="stringliteral">&quot;Missing parameter: value after \&quot;-%1\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                .arg(<a class="code" href="BundlerCommand_8cpp.html#ab2a9dedca9e30a51cea2875b7cf5aae4">COMMAND_BUNDLER_SCALE_FACTOR</a>));</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            <span class="keywordtype">bool</span> conversionOk = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            scaleFactor = cmd.arguments().takeFirst().toFloat(&amp;conversionOk);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            scaleFactor = cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toFloat(&amp;conversionOk);</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <span class="keywordflow">if</span> (!conversionOk)</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                <span class="keywordflow">return</span> cmd.error(</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                        QObject::tr(<span class="stringliteral">&quot;Invalid parameter: value after \&quot;-%1\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                .arg(<a class="code" href="BundlerCommand_8cpp.html#ab2a9dedca9e30a51cea2875b7cf5aae4">COMMAND_BUNDLER_SCALE_FACTOR</a>));</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ccCommandLineInterface::IsCommand(</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="classccCommandLineInterface.html#a9dedc469d2be32bf7a1a06182e085a1e">ccCommandLineInterface::IsCommand</a>(</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                           argument, <a class="code" href="BundlerCommand_8cpp.html#ab96e110093e7d92943663e1ffcda9b31">COMMAND_BUNDLER_UNDISTORT</a>)) {</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;            <span class="comment">// local option confirmed, we can move on</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            cmd.arguments().pop_front();</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().pop_front();</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            undistortImages = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ccCommandLineInterface::IsCommand(</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="classccCommandLineInterface.html#a9dedc469d2be32bf7a1a06182e085a1e">ccCommandLineInterface::IsCommand</a>(</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                           argument, <a class="code" href="BundlerCommand_8cpp.html#a8ebedb1a916a2d611258351d3ef21616">COMMAND_BUNDLER_COLOR_DTM</a>)) {</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;            <span class="comment">// local option confirmed, we can move on</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            cmd.arguments().pop_front();</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().pop_front();</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;            <span class="keywordflow">if</span> (cmd.arguments().empty())</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                <span class="keywordflow">return</span> cmd.error(QObject::tr(<span class="stringliteral">&quot;Missing parameter: vertices &quot;</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;            <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty())</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(QObject::tr(<span class="stringliteral">&quot;Missing parameter: vertices &quot;</span></div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                                             <span class="stringliteral">&quot;count after \&quot;-%1\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                                         .arg(<a class="code" href="BundlerCommand_8cpp.html#a8ebedb1a916a2d611258351d3ef21616">COMMAND_BUNDLER_COLOR_DTM</a>));</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            <span class="keywordtype">bool</span> conversionOk = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            coloredDTMVerticesCount =</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                    cmd.arguments().takeFirst().toUInt(&amp;conversionOk);</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().takeFirst().toUInt(&amp;conversionOk);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            <span class="keywordflow">if</span> (!conversionOk)</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                <span class="keywordflow">return</span> cmd.error(QObject::tr(<span class="stringliteral">&quot;Invalid parameter: vertices &quot;</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(QObject::tr(<span class="stringliteral">&quot;Invalid parameter: vertices &quot;</span></div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                                             <span class="stringliteral">&quot;count after \&quot;-%1\&quot;&quot;</span>)</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                                         .arg(<a class="code" href="BundlerCommand_8cpp.html#a8ebedb1a916a2d611258351d3ef21616">COMMAND_BUNDLER_COLOR_DTM</a>));</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;            generateColoredDTM = <span class="keyword">true</span>;</div>
@@ -200,9 +209,14 @@ $(document).ready(function(){initNavTree('BundlerCommand_8cpp_source.html',''); 
 <div class="ttc" id="aBundlerCommand_8h_html"><div class="ttname"><a href="BundlerCommand_8h.html">BundlerCommand.h</a></div></div>
 <div class="ttc" id="aBundlerFilter_8h_html"><div class="ttname"><a href="BundlerFilter_8h.html">BundlerFilter.h</a></div></div>
 <div class="ttc" id="aclassBundlerCommand_html_a9d9213b95e061de86fe1e32cae62d575"><div class="ttname"><a href="classBundlerCommand.html#a9d9213b95e061de86fe1e32cae62d575">BundlerCommand::BundlerCommand</a></div><div class="ttdeci">BundlerCommand()</div><div class="ttdef"><b>Definition:</b> <a href="BundlerCommand_8cpp_source.html#l00019">BundlerCommand.cpp:19</a></div></div>
-<div class="ttc" id="aclassBundlerCommand_html_a9f9d616a43f4ab44f44e0d73d8217aec"><div class="ttname"><a href="classBundlerCommand.html#a9f9d616a43f4ab44f44e0d73d8217aec">BundlerCommand::process</a></div><div class="ttdeci">virtual bool process(ccCommandLineInterface &amp;cmd) override</div><div class="ttdef"><b>Definition:</b> <a href="BundlerCommand_8cpp_source.html#l00022">BundlerCommand.cpp:22</a></div></div>
+<div class="ttc" id="aclassBundlerCommand_html_a9f9d616a43f4ab44f44e0d73d8217aec"><div class="ttname"><a href="classBundlerCommand.html#a9f9d616a43f4ab44f44e0d73d8217aec">BundlerCommand::process</a></div><div class="ttdeci">virtual bool process(ccCommandLineInterface &amp;cmd) override</div><div class="ttdoc">Main process.</div><div class="ttdef"><b>Definition:</b> <a href="BundlerCommand_8cpp_source.html#l00022">BundlerCommand.cpp:22</a></div></div>
 <div class="ttc" id="aclassBundlerFilter_html"><div class="ttname"><a href="classBundlerFilter.html">BundlerFilter</a></div><div class="ttdoc">Noah Snavely's Bundler output file filter.</div><div class="ttdef"><b>Definition:</b> <a href="BundlerFilter_8h_source.html#l00015">BundlerFilter.h:15</a></div></div>
 <div class="ttc" id="aclassBundlerFilter_html_a00d2b0bb78a6b863d1069e635c7921d7"><div class="ttname"><a href="classBundlerFilter.html#a00d2b0bb78a6b863d1069e635c7921d7">BundlerFilter::loadFileExtended</a></div><div class="ttdeci">CC_FILE_ERROR loadFileExtended(const QString &amp;filename, ccHObject &amp;container, LoadParameters &amp;parameters, const QString &amp;altKeypointsFilename=QString(), bool undistortImages=false, bool generateColoredDTM=false, unsigned coloredDTMVerticesCount=1000000, float scaleFactor=1.0f)</div><div class="ttdoc">Specific load method.</div><div class="ttdef"><b>Definition:</b> <a href="BundlerFilter_8cpp_source.html#l00080">BundlerFilter.cpp:80</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a3093b9e593b44c94eea9c2b3cb9f907e"><div class="ttname"><a href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">ccCommandLineInterface::arguments</a></div><div class="ttdeci">virtual QStringList &amp; arguments()=0</div><div class="ttdoc">Returns the list of arguments.</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a799045461ab3a9f94ef83a0e23c59ba2"><div class="ttname"><a href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">ccCommandLineInterface::print</a></div><div class="ttdeci">virtual void print(const QString &amp;message) const =0</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a9a953ad222bfd53b84b0de847dbd9649"><div class="ttname"><a href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">ccCommandLineInterface::error</a></div><div class="ttdeci">virtual bool error(const QString &amp;message) const =0</div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_a9dedc469d2be32bf7a1a06182e085a1e"><div class="ttname"><a href="classccCommandLineInterface.html#a9dedc469d2be32bf7a1a06182e085a1e">ccCommandLineInterface::IsCommand</a></div><div class="ttdeci">static bool IsCommand(const QString &amp;token, const char *command)</div><div class="ttdoc">Test whether a command line token is a valid command keyword or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00119">ecvCommandLineInterface.cpp:119</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a></div><div class="ttdoc">Generic loading parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00051">FileIOFilter.h:51</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html_a9fbad51bffe97694425b130222af6f1e"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html#a9fbad51bffe97694425b130222af6f1e">FileIOFilter::LoadParameters::alwaysDisplayLoadDialog</a></div><div class="ttdeci">bool alwaysDisplayLoadDialog</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00067">FileIOFilter.h:67</a></div></div>
@@ -212,7 +226,7 @@ $(document).ready(function(){initNavTree('BundlerCommand_8cpp_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_148eb1bec32389d620143c4e90e6b93c.html">qAdditionalIO</a></li><li class="navelem"><a class="el" href="dir_b14736cabb2734d269d4858bfda65e89.html">src</a></li><li class="navelem"><a class="el" href="BundlerCommand_8cpp.html">BundlerCommand.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -132,7 +141,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                    QStringList{<span class="stringliteral">&quot;CSV matrix cloud (*.csv)&quot;</span>}, QStringList(),</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                    <a class="code" href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">Import</a>}) {}</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classCSVMatrixFilter.html#a481f2f7c2210d6f46f5cce1bd1338b97">   45</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classCSVMatrixFilter.html#a481f2f7c2210d6f46f5cce1bd1338b97">CSVMatrixFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; filename,</div>
+<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classCSVMatrixFilter.html#a481f2f7c2210d6f46f5cce1bd1338b97">   45</a></span>&#160;<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="classCSVMatrixFilter.html#a481f2f7c2210d6f46f5cce1bd1338b97">CSVMatrixFilter::loadFile</a>(<span class="keyword">const</span> QString&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                                        <a class="code" href="classccHObject.html">ccHObject</a>&amp; container,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                        <a class="code" href="structFileIOFilter_1_1LoadParameters.html">LoadParameters</a>&amp; parameters) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="classCSVMatrixOpenDialog.html">CSVMatrixOpenDialog</a> openDlg(<span class="keyword">nullptr</span>);</div>
@@ -148,7 +157,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    }</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (openDlg.lineEditSeparator-&gt;text().isEmpty()) {</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Invalid separator!&quot;</span>));</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Invalid separator!&quot;</span>));</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a82f9eb3e4a0573e37c6d64a3dc9191de">CC_FERR_BAD_ARGUMENT</a>;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    }</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
@@ -159,7 +168,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <a class="code" href="CSVMatrixFilter_8cpp.html#ab284b3ef44235bfb91cd109a84d0247b">s_loadAsMesh</a> = openDlg.loadAsMeshCheckBox-&gt;isChecked();</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <a class="code" href="CSVMatrixFilter_8cpp.html#a7ddb069d530933b144202b1ae134dae9">s_useTexture</a> = openDlg.useTextureCheckBox-&gt;isChecked();</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    QFile file(filename);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    QFile file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">if</span> (!file.open(QFile::ReadOnly | QFile::Text)) <span class="keywordflow">return</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795ae826ca1a66a45dffb387975b227377ee">CC_FERR_READING</a>;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    QTextStream stream(&amp;file);</div>
@@ -177,7 +186,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">if</span> (line.startsWith(<span class="stringliteral">&quot;//&quot;</span>)) <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">if</span> (line.size() == 0) {</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                    QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Line %1 is empty (ignored)&quot;</span>)</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                            .arg(lineIndex));</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            <span class="keywordflow">continue</span>;</div>
@@ -189,10 +198,10 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="comment">// if we have reached the max. number of points per cloud</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> &lt; 0) {</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> = parts.size();</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                    QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Detected width: %1&quot;</span>).arg(<a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>));</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> != parts.size()) {</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Line %1 has not the same &quot;</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Line %1 has not the same &quot;</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                   <span class="stringliteral">&quot;width as the previous ones!&quot;</span>)</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                                   .arg(lineIndex));</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;            <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a80459b311052822330554323ea716968">CC_FERR_MALFORMED_FILE</a>;</div>
@@ -252,7 +261,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                <span class="keywordflow">if</span> (mesh-&gt;<a class="code" href="classccMesh.html#ab9fe1906ce66c95b9cbafde13da61aa1">computePerVertexNormals</a>()) {</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                    mesh-&gt;<a class="code" href="classccGenericMesh.html#a080c8c65b3ee60a329f1d060d1a90923">showNormals</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                    <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                    <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                            QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Failed to compute &quot;</span></div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                                    <span class="stringliteral">&quot;normals on mesh (not enough memory?)&quot;</span>));</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                }</div>
@@ -261,12 +270,12 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="comment">// texture</span></div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="CSVMatrixFilter_8cpp.html#a7ddb069d530933b144202b1ae134dae9">s_useTexture</a>) {</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            QString filename = openDlg.textureFilenameLineEdit-&gt;text();</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            QString <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a> = openDlg.textureFilenameLineEdit-&gt;text();</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            QImage texture;</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <span class="keywordflow">if</span> (!texture.load(filename)) {</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Failed to load &quot;</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <span class="keywordflow">if</span> (!texture.load(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>)) {</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Failed to load &quot;</span></div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                                       <span class="stringliteral">&quot;texture from file &#39;%1&#39;&quot;</span>)</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                                       .arg(filename));</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                                       .arg(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>));</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                <span class="keywordflow">if</span> (mesh) {</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                    <a class="code" href="classTextureCoordsContainer.html">TextureCoordsContainer</a>* texCoords =</div>
@@ -307,16 +316,16 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;                        mesh-&gt;<a class="code" href="classccGenericMesh.html#acb1c36d8691e8b7442c990e24df57c16">showMaterials</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                                <span class="stringliteral">&quot;[CSVMatrixFilter] Not enough memory to map &quot;</span></div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                                <span class="stringliteral">&quot;the texture on the mesh!&quot;</span>);</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                        texCoords-&gt;<a class="code" href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">release</a>();</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                        texCoords-&gt;<a class="code" href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">release</a>();</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                        texCoords = 0;</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                    }</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;                    <span class="keywordflow">if</span> (texture.width() &lt; <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(colCount) ||</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;                        texture.height() &lt; <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(rowCount)) {</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                                QString(<span class="stringliteral">&quot;[CSVMatrixFilter] To map a texture on &quot;</span></div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                                        <span class="stringliteral">&quot;the cloud, the image size should &quot;</span></div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                                        <span class="stringliteral">&quot;equal or greater than the grid size &quot;</span></div>
@@ -333,7 +342,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                        }</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                        cloud-&gt;<a class="code" href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">showColors</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                                <span class="stringliteral">&quot;[CSVMatrixFilter] Not enough memory to map &quot;</span></div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                                <span class="stringliteral">&quot;the texture on the cloud!&quot;</span>);</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                    }</div>
@@ -352,7 +361,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;            <span class="comment">// this transformation is of no interest for the user</span></div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;            <span class="comment">// cloud-&gt;resetGLTransformationHistory_recursive();</span></div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        }</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                QString(<span class="stringliteral">&quot;[CSVMatrixFilter] Number of rows: %1&quot;</span>).arg(rowCount));</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        cloud-&gt;<a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        container.<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(mesh ? <span class="keyword">static_cast&lt;</span><a class="code" href="classccHObject.html">ccHObject</a>*<span class="keyword">&gt;</span>(mesh)</div>
@@ -374,6 +383,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="ttc" id="aCSVMatrixOpenDialog_8h_html"><div class="ttname"><a href="CSVMatrixOpenDialog_8h.html">CSVMatrixOpenDialog.h</a></div></div>
 <div class="ttc" id="aCVLog_8h_html"><div class="ttname"><a href="CVLog_8h.html">CVLog.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a></div><div class="ttdeci">CC_FILE_ERROR</div><div class="ttdoc">Typical I/O filter errors.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00020">FileIOFilter.h:20</a></div></div>
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795a425fd0ad6d502712c66a042927902cc1"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a425fd0ad6d502712c66a042927902cc1">CC_FERR_CANCELED_BY_USER</a></div><div class="ttdeci">@ CC_FERR_CANCELED_BY_USER</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00030">FileIOFilter.h:30</a></div></div>
@@ -384,12 +394,12 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div class="ttc" id="aFileIOFilter_8h_html_ae9071902dd89666d2558ac948182a795af172f08a64e603831d5b6456d400a2e5"><div class="ttname"><a href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795af172f08a64e603831d5b6456d400a2e5">CC_FERR_NOT_ENOUGH_MEMORY</a></div><div class="ttdeci">@ CC_FERR_NOT_ENOUGH_MEMORY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00031">FileIOFilter.h:31</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aclassCCShareable_html_ab8ad53d1acfbe69894cd01504d42b0a1"><div class="ttname"><a href="classCCShareable.html#ab8ad53d1acfbe69894cd01504d42b0a1">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div></div>
+<div class="ttc" id="aclassCCShareable_html_a2ea8a973d6ed745b1abf65155167a49e"><div class="ttname"><a href="classCCShareable.html#a2ea8a973d6ed745b1abf65155167a49e">CCShareable::release</a></div><div class="ttdeci">virtual void release()</div><div class="ttdoc">Decrease counter and deletes object when 0.</div><div class="ttdef"><b>Definition:</b> <a href="CVShareable_8cpp_source.html#l00035">CVShareable.cpp:35</a></div></div>
 <div class="ttc" id="aclassCSVMatrixFilter_html_a0e79fe0ec347ee3496bffaf85dc38f2b"><div class="ttname"><a href="classCSVMatrixFilter.html#a0e79fe0ec347ee3496bffaf85dc38f2b">CSVMatrixFilter::CSVMatrixFilter</a></div><div class="ttdeci">CSVMatrixFilter()</div><div class="ttdef"><b>Definition:</b> <a href="CSVMatrixFilter_8cpp_source.html#l00038">CSVMatrixFilter.cpp:38</a></div></div>
 <div class="ttc" id="aclassCSVMatrixFilter_html_a481f2f7c2210d6f46f5cce1bd1338b97"><div class="ttname"><a href="classCSVMatrixFilter.html#a481f2f7c2210d6f46f5cce1bd1338b97">CSVMatrixFilter::loadFile</a></div><div class="ttdeci">virtual CC_FILE_ERROR loadFile(const QString &amp;filename, ccHObject &amp;container, LoadParameters &amp;parameters)</div><div class="ttdoc">Loads one or more entities from a file.</div><div class="ttdef"><b>Definition:</b> <a href="CSVMatrixFilter_8cpp_source.html#l00045">CSVMatrixFilter.cpp:45</a></div></div>
 <div class="ttc" id="aclassCSVMatrixOpenDialog_html"><div class="ttname"><a href="classCSVMatrixOpenDialog.html">CSVMatrixOpenDialog</a></div><div class="ttdoc">CSV Matrix Open dialog.</div><div class="ttdef"><b>Definition:</b> <a href="CSVMatrixOpenDialog_8h_source.html#l00017">CSVMatrixOpenDialog.h:17</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html"><div class="ttname"><a href="classFileIOFilter.html">FileIOFilter</a></div><div class="ttdoc">Generic file I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00046">FileIOFilter.h:46</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a056c88c7d5d4c012ca3daf0c515675c9"><div class="ttname"><a href="classFileIOFilter.html#a056c88c7d5d4c012ca3daf0c515675c9">FileIOFilter::DEFAULT_PRIORITY</a></div><div class="ttdeci">static constexpr float DEFAULT_PRIORITY</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00313">FileIOFilter.h:313</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a"><div class="ttname"><a href="classFileIOFilter.html#a879de3291d081b325ea3f23f4344d9a2af7f176e4f48e719ddac122a9e221260a">FileIOFilter::Import</a></div><div class="ttdeci">@ Import</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00302">FileIOFilter.h:302</a></div></div>
@@ -445,7 +455,7 @@ $(document).ready(function(){initNavTree('CSVMatrixFilter_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_7805617ea41457ca4a2dd61c67136912.html">qCSVMatrixIO</a></li><li class="navelem"><a class="el" href="dir_1dd8fdf58db2052ab27907dab70255a2.html">src</a></li><li class="navelem"><a class="el" href="CSVMatrixFilter_8cpp.html">CSVMatrixFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -165,7 +174,7 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="hdf5_8h.html#aae28d0ac5e5b85baa318ff3e85315a4d">   75</a></span>&#160;<span class="preprocessor">#define CHECK_ERROR(x,y) if ((x)&lt;0) throw FLANNException((y));</span></div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="namespaceflann.html#a0f2ab6d9aea8f1c0f06b2c495b31b4da">   78</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceflann.html#a0f2ab6d9aea8f1c0f06b2c495b31b4da">save_to_file</a>(<span class="keyword">const</span> <a class="code" href="classflann_1_1Matrix.html">flann::Matrix&lt;T&gt;</a>&amp; dataset, <span class="keyword">const</span> std::string&amp; filename, <span class="keyword">const</span> std::string&amp; <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
+<div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="namespaceflann.html#a0f2ab6d9aea8f1c0f06b2c495b31b4da">   78</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceflann.html#a0f2ab6d9aea8f1c0f06b2c495b31b4da">save_to_file</a>(<span class="keyword">const</span> <a class="code" href="classflann_1_1Matrix.html">flann::Matrix&lt;T&gt;</a>&amp; dataset, <span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keyword">const</span> std::string&amp; <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;{</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#if H5Eset_auto_vers == 2</span></div>
@@ -176,9 +185,9 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    herr_t status;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    hid_t file_id;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    file_id = H5Fopen(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keywordflow">if</span> (file_id &lt; 0) {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        file_id = H5Fcreate(filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        file_id = H5Fcreate(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    }</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <a class="code" href="hdf5_8h.html#aae28d0ac5e5b85baa318ff3e85315a4d">CHECK_ERROR</a>(file_id,<span class="stringliteral">&quot;Error creating hdf5 file.&quot;</span>);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
@@ -217,10 +226,10 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00130"></a><span class="lineno"><a class="line" href="namespaceflann.html#ab3480a04cd9863e9375b7b9e228ad829">  130</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceflann.html#ab3480a04cd9863e9375b7b9e228ad829">load_from_file</a>(<a class="code" href="classflann_1_1Matrix.html">flann::Matrix&lt;T&gt;</a>&amp; dataset, <span class="keyword">const</span> std::string&amp; filename, <span class="keyword">const</span> std::string&amp; <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
+<div class="line"><a name="l00130"></a><span class="lineno"><a class="line" href="namespaceflann.html#ab3480a04cd9863e9375b7b9e228ad829">  130</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceflann.html#ab3480a04cd9863e9375b7b9e228ad829">load_from_file</a>(<a class="code" href="classflann_1_1Matrix.html">flann::Matrix&lt;T&gt;</a>&amp; dataset, <span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keyword">const</span> std::string&amp; <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;{</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    herr_t status;</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    hid_t file_id = H5Fopen(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <a class="code" href="hdf5_8h.html#aae28d0ac5e5b85baa318ff3e85315a4d">CHECK_ERROR</a>(file_id,<span class="stringliteral">&quot;Error opening hdf5 file.&quot;</span>);</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    hid_t dataset_id;</div>
@@ -252,7 +261,7 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="keyword">namespace </span>mpi</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;{</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceflann.html#ab3480a04cd9863e9375b7b9e228ad829">load_from_file</a>(<a class="code" href="classflann_1_1Matrix.html">flann::Matrix&lt;T&gt;</a>&amp; dataset, <span class="keyword">const</span> std::string&amp; filename, <span class="keyword">const</span> std::string&amp; <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespaceflann.html#ab3480a04cd9863e9375b7b9e228ad829">load_from_file</a>(<a class="code" href="classflann_1_1Matrix.html">flann::Matrix&lt;T&gt;</a>&amp; dataset, <span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keyword">const</span> std::string&amp; <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;{</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    MPI_Comm comm  = MPI_COMM_WORLD;</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    MPI_Info info  = MPI_INFO_NULL;</div>
@@ -265,7 +274,7 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160; </div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    H5Pset_fapl_mpio(plist_id, comm, info);</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    hid_t file_id = H5Fopen(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>.c_str(), H5F_ACC_RDWR, plist_id);</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <a class="code" href="hdf5_8h.html#aae28d0ac5e5b85baa318ff3e85315a4d">CHECK_ERROR</a>(file_id,<span class="stringliteral">&quot;Error opening hdf5 file.&quot;</span>);</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    H5Pclose(plist_id);</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    hid_t dataset_id;</div>
@@ -313,6 +322,7 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;} <span class="comment">// namespace flann::mpi</span></div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160; </div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* FLANN_HDF5_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aed7ea92f45bd273dde380a45ddced592"><div class="ttname"><a href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a></div><div class="ttdeci">int offset</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00135">FileIOFactory.cpp:135</a></div></div>
@@ -333,7 +343,7 @@ $(document).ready(function(){initNavTree('hdf5_8h_source.html',''); initResizabl
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_186106f66c937cacb1ffede1d0bee71a.html">FLANN</a></li><li class="navelem"><a class="el" href="dir_c839a91d5dd43d0306605c422c23507a.html">io</a></li><li class="navelem"><a class="el" href="hdf5_8h.html">hdf5.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

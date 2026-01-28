@@ -1,0 +1,6 @@
+<map id="ecvAnimationParamDlg" name="ecvAnimationParamDlg">
+<area shape="rect" id="node1" title="Dialog to interactively edit the camera pose parameters." alt="" coords="60,155,235,181"/>
+<area shape="rect" id="node2" href="$classccOverlayDialog.html" title="Generic overlay dialog interface." alt="" coords="5,80,135,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="33,5,107,32"/>
+<area shape="rect" id="node4" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="159,80,293,107"/>
+</map>

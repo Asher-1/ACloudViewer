@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -131,13 +140,13 @@ $(document).ready(function(){initNavTree('RSBagReader_8cpp_source.html',''); ini
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#a5fd953d1f402f91177e568f02c399da8">IsOpened</a>()) <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#afd4abdb296998b10e7c1adbc56ef4d6b">Close</a>();</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;}</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#a9e05aebac66d041931896e1b1749e02f">   44</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#a9e05aebac66d041931896e1b1749e02f">RSBagReader::Open</a>(<span class="keyword">const</span> std::string &amp;filename) {</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#a9e05aebac66d041931896e1b1749e02f">   44</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#a9e05aebac66d041931896e1b1749e02f">RSBagReader::Open</a>(<span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>) {</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#a5fd953d1f402f91177e568f02c399da8">IsOpened</a>()) {</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html#afd4abdb296998b10e7c1adbc56ef4d6b">Close</a>();</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    }</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        rs2::config cfg;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        cfg.enable_device_from_file(filename, <span class="keyword">false</span>);  <span class="comment">// Do not repeat playback</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        cfg.enable_device_from_file(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="keyword">false</span>);  <span class="comment">// Do not repeat playback</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        cfg.disable_all_streams();</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        cfg.enable_stream(RS2_STREAM_DEPTH);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        cfg.enable_stream(RS2_STREAM_COLOR);</div>
@@ -150,13 +159,13 @@ $(document).ready(function(){initNavTree('RSBagReader_8cpp_source.html',''); ini
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html#ad88c235f52f245ced1b1102b508ef265">RealSenseSensorConfig::GetMetadataJson</a>(<a class="code" href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a>));</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RealSenseSensorConfig.html#a8855c76422d685eee45406a9eac959bd">RealSenseSensorConfig::GetPixelDtypes</a>(<a class="code" href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a>, metadata_);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordflow">if</span> (seek_to_ == UINT64_MAX) {</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <a class="code" href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">utility::LogInfo</a>(<span class="stringliteral">&quot;File {} opened&quot;</span>, filename);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <a class="code" href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">utility::LogInfo</a>(<span class="stringliteral">&quot;File {} opened&quot;</span>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">rs2::error</a> &amp;) {</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Unable to open file {}&quot;</span>, filename);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Unable to open file {}&quot;</span>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>);</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    }</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    filename_ = filename;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    filename_ = <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    is_eof_ = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    is_opened_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="comment">// Launch thread to keep frame_buffer full</span></div>
@@ -311,6 +320,7 @@ $(document).ready(function(){initNavTree('RSBagReader_8cpp_source.html',''); ini
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;}  <span class="comment">// namespace io</span></div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;}  <span class="comment">// namespace t</span></div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aCVViewer_2benchmarks_2io_2PointCloudIO_8cpp_html_ae80f820219e45772366a2a68de6a54c4"><div class="ttname"><a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">PointCloudIO.cpp:47</a></div></div>
 <div class="ttc" id="aO3DVisualizer_8cpp_html_a0bbf218724b31893cbaf637fc7ce5798"><div class="ttname"><a href="O3DVisualizer_8cpp.html#a0bbf218724b31893cbaf637fc7ce5798">profile</a></div><div class="ttdeci">CloudViewerScene::LightingProfile profile</div><div class="ttdef"><b>Definition:</b> <a href="O3DVisualizer_8cpp_source.html#l00271">O3DVisualizer.cpp:271</a></div></div>
 <div class="ttc" id="aRSBagReader_8h_html"><div class="ttname"><a href="RSBagReader_8h.html">RSBagReader.h</a></div></div>
 <div class="ttc" id="aRealSensePrivate_8h_html"><div class="ttname"><a href="RealSensePrivate_8h.html">RealSensePrivate.h</a></div></div>
@@ -339,14 +349,14 @@ $(document).ready(function(){initNavTree('RSBagReader_8cpp_source.html',''); ini
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
 <div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_69f8b599ab6abe28788f204e4ebacea4.html">sensor</a></li><li class="navelem"><a class="el" href="dir_c25649614c58c629c45561295a1d464e.html">realsense</a></li><li class="navelem"><a class="el" href="RSBagReader_8cpp.html">RSBagReader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

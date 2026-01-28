@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -132,40 +141,40 @@ Collaboration diagram for cloudViewer::SimpleMesh:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3e96e259c468a57adac07684ff881152"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a3e96e259c468a57adac07684ff881152">SimpleMesh</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *_theVertices, bool linkVerticesWithMesh=false)</td></tr>
-<tr class="memdesc:a3e96e259c468a57adac07684ff881152"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcloudViewer_1_1SimpleMesh.html" title="A simple mesh structure, with index-based vertex access.">SimpleMesh</a> Constructor.  <a href="classcloudViewer_1_1SimpleMesh.html#a3e96e259c468a57adac07684ff881152">More...</a><br /></td></tr>
-<tr class="separator:a3e96e259c468a57adac07684ff881152"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a640d89ffa42d791b386d4809356abdcc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a640d89ffa42d791b386d4809356abdcc">~SimpleMesh</a> () override</td></tr>
-<tr class="memdesc:a640d89ffa42d791b386d4809356abdcc"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcloudViewer_1_1SimpleMesh.html" title="A simple mesh structure, with index-based vertex access.">SimpleMesh</a> destructor.  <a href="classcloudViewer_1_1SimpleMesh.html#a640d89ffa42d791b386d4809356abdcc">More...</a><br /></td></tr>
-<tr class="separator:a640d89ffa42d791b386d4809356abdcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20494e0ebe14be497b35a6989fc969f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a20494e0ebe14be497b35a6989fc969f4">forEach</a> (<a class="el" href="classcloudViewer_1_1GenericMesh.html#a68b08a7384f640d64a32ace8c551470d">genericTriangleAction</a> action) override</td></tr>
-<tr class="memdesc:a20494e0ebe14be497b35a6989fc969f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fast iteration mechanism.  <a href="classcloudViewer_1_1SimpleMesh.html#a20494e0ebe14be497b35a6989fc969f4">More...</a><br /></td></tr>
-<tr class="separator:a20494e0ebe14be497b35a6989fc969f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accb856c8468bc733952d7f4139cb220f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#accb856c8468bc733952d7f4139cb220f">placeIteratorAtBeginning</a> () override</td></tr>
-<tr class="memdesc:accb856c8468bc733952d7f4139cb220f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Places the mesh iterator at the beginning.  <a href="classcloudViewer_1_1SimpleMesh.html#accb856c8468bc733952d7f4139cb220f">More...</a><br /></td></tr>
-<tr class="separator:accb856c8468bc733952d7f4139cb220f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a116301ad54f6bcc925963e99098f0c2c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a116301ad54f6bcc925963e99098f0c2c">_getNextTriangle</a> () override</td></tr>
-<tr class="memdesc:a116301ad54f6bcc925963e99098f0c2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the next triangle (relatively to the global iterator position)  <a href="classcloudViewer_1_1SimpleMesh.html#a116301ad54f6bcc925963e99098f0c2c">More...</a><br /></td></tr>
-<tr class="separator:a116301ad54f6bcc925963e99098f0c2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46f9ac8bd93d3a9358351ef778f7e461"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a46f9ac8bd93d3a9358351ef778f7e461">_getTriangle</a> (unsigned triangleIndex) override</td></tr>
-<tr class="memdesc:a46f9ac8bd93d3a9358351ef778f7e461"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the ith triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#a46f9ac8bd93d3a9358351ef778f7e461">More...</a><br /></td></tr>
-<tr class="separator:a46f9ac8bd93d3a9358351ef778f7e461"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d3b2a4cd3b68ea060ed3a9330867541"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a7d3b2a4cd3b68ea060ed3a9330867541">getNextTriangleVertIndexes</a> () override</td></tr>
-<tr class="separator:a7d3b2a4cd3b68ea060ed3a9330867541"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83fb4a41686fb654f06ae7bc5b2d5617"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a83fb4a41686fb654f06ae7bc5b2d5617">getTriangleVertIndexes</a> (unsigned triangleIndex) override</td></tr>
-<tr class="memdesc:a83fb4a41686fb654f06ae7bc5b2d5617"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the indexes of the vertices of a given triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#a83fb4a41686fb654f06ae7bc5b2d5617">More...</a><br /></td></tr>
-<tr class="separator:a83fb4a41686fb654f06ae7bc5b2d5617"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5e2d2503529f107e929a491effbba6d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ab5e2d2503529f107e929a491effbba6d">SimpleMesh</a> (<a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *_theVertices, bool linkVerticesWithMesh=false)</td></tr>
+<tr class="memdesc:ab5e2d2503529f107e929a491effbba6d"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcloudViewer_1_1SimpleMesh.html" title="A simple mesh structure, with index-based vertex access.">SimpleMesh</a> Constructor.  <a href="classcloudViewer_1_1SimpleMesh.html#ab5e2d2503529f107e929a491effbba6d">More...</a><br /></td></tr>
+<tr class="separator:ab5e2d2503529f107e929a491effbba6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1cecb8e128e9863ddbde835f4d44a552"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a1cecb8e128e9863ddbde835f4d44a552">~SimpleMesh</a> () override</td></tr>
+<tr class="memdesc:a1cecb8e128e9863ddbde835f4d44a552"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcloudViewer_1_1SimpleMesh.html" title="A simple mesh structure, with index-based vertex access.">SimpleMesh</a> destructor.  <a href="classcloudViewer_1_1SimpleMesh.html#a1cecb8e128e9863ddbde835f4d44a552">More...</a><br /></td></tr>
+<tr class="separator:a1cecb8e128e9863ddbde835f4d44a552"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15875a1bb42133efd671f3142bb78e9c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a15875a1bb42133efd671f3142bb78e9c">forEach</a> (<a class="el" href="classcloudViewer_1_1GenericMesh.html#a68b08a7384f640d64a32ace8c551470d">genericTriangleAction</a> action) override</td></tr>
+<tr class="memdesc:a15875a1bb42133efd671f3142bb78e9c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fast iteration mechanism.  <a href="classcloudViewer_1_1SimpleMesh.html#a15875a1bb42133efd671f3142bb78e9c">More...</a><br /></td></tr>
+<tr class="separator:a15875a1bb42133efd671f3142bb78e9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6c5bc5c2bd00c5f1e75ae87b6b2f688"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ae6c5bc5c2bd00c5f1e75ae87b6b2f688">placeIteratorAtBeginning</a> () override</td></tr>
+<tr class="memdesc:ae6c5bc5c2bd00c5f1e75ae87b6b2f688"><td class="mdescLeft">&#160;</td><td class="mdescRight">Places the mesh iterator at the beginning.  <a href="classcloudViewer_1_1SimpleMesh.html#ae6c5bc5c2bd00c5f1e75ae87b6b2f688">More...</a><br /></td></tr>
+<tr class="separator:ae6c5bc5c2bd00c5f1e75ae87b6b2f688"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41cfb7e706bd2f92147af27c04edbd20"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a41cfb7e706bd2f92147af27c04edbd20">_getNextTriangle</a> () override</td></tr>
+<tr class="memdesc:a41cfb7e706bd2f92147af27c04edbd20"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the next triangle (relatively to the global iterator position)  <a href="classcloudViewer_1_1SimpleMesh.html#a41cfb7e706bd2f92147af27c04edbd20">More...</a><br /></td></tr>
+<tr class="separator:a41cfb7e706bd2f92147af27c04edbd20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb347cfb18fb61ddd9744d0ac2d1a2d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#afb347cfb18fb61ddd9744d0ac2d1a2d5">_getTriangle</a> (unsigned triangleIndex) override</td></tr>
+<tr class="memdesc:afb347cfb18fb61ddd9744d0ac2d1a2d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the ith triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#afb347cfb18fb61ddd9744d0ac2d1a2d5">More...</a><br /></td></tr>
+<tr class="separator:afb347cfb18fb61ddd9744d0ac2d1a2d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0fb16db73a9de7d5700f2a155d7ffe2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ab0fb16db73a9de7d5700f2a155d7ffe2">getNextTriangleVertIndexes</a> () override</td></tr>
+<tr class="separator:ab0fb16db73a9de7d5700f2a155d7ffe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2c2b364ee06d6ff59c4f6a733852071"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ab2c2b364ee06d6ff59c4f6a733852071">getTriangleVertIndexes</a> (unsigned triangleIndex) override</td></tr>
+<tr class="memdesc:ab2c2b364ee06d6ff59c4f6a733852071"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the indexes of the vertices of a given triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#ab2c2b364ee06d6ff59c4f6a733852071">More...</a><br /></td></tr>
+<tr class="separator:ab2c2b364ee06d6ff59c4f6a733852071"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a09e50923559461f00154cce01b9351b6"><td class="memItemLeft" align="right" valign="top">virtual unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a09e50923559461f00154cce01b9351b6">size</a> () const override</td></tr>
 <tr class="memdesc:a09e50923559461f00154cce01b9351b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of triangles.  <a href="classcloudViewer_1_1SimpleMesh.html#a09e50923559461f00154cce01b9351b6">More...</a><br /></td></tr>
 <tr class="separator:a09e50923559461f00154cce01b9351b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a002c7928ed63e93c5c74b4c4411be205"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a002c7928ed63e93c5c74b4c4411be205">getBoundingBox</a> (<a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;bbMin, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;bbMax) override</td></tr>
-<tr class="memdesc:a002c7928ed63e93c5c74b4c4411be205"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the mesh bounding-box.  <a href="classcloudViewer_1_1SimpleMesh.html#a002c7928ed63e93c5c74b4c4411be205">More...</a><br /></td></tr>
-<tr class="separator:a002c7928ed63e93c5c74b4c4411be205"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d4f5c6f51b4756309cc40e47e2bac15"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a2d4f5c6f51b4756309cc40e47e2bac15">getTriangleVertices</a> (unsigned triangleIndex, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;A, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;B, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;C) const override</td></tr>
-<tr class="memdesc:a2d4f5c6f51b4756309cc40e47e2bac15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the vertices of a given triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#a2d4f5c6f51b4756309cc40e47e2bac15">More...</a><br /></td></tr>
-<tr class="separator:a2d4f5c6f51b4756309cc40e47e2bac15"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d4fe9deb031df0eb33698e23a8dcccf"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a2d4fe9deb031df0eb33698e23a8dcccf">getTriangleVertices</a> (unsigned triangleIndex, double A[3], double B[3], double C[3]) const override</td></tr>
-<tr class="separator:a2d4fe9deb031df0eb33698e23a8dcccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac76a4527d4ca54ac6072fd73353f37f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ac76a4527d4ca54ac6072fd73353f37f4">getBoundingBox</a> (<a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;bbMin, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;bbMax) override</td></tr>
+<tr class="memdesc:ac76a4527d4ca54ac6072fd73353f37f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the mesh bounding-box.  <a href="classcloudViewer_1_1SimpleMesh.html#ac76a4527d4ca54ac6072fd73353f37f4">More...</a><br /></td></tr>
+<tr class="separator:ac76a4527d4ca54ac6072fd73353f37f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb3dacf9f9acc54373d18bf2a470fd9a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#abb3dacf9f9acc54373d18bf2a470fd9a">getTriangleVertices</a> (unsigned triangleIndex, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;A, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;B, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;C) const override</td></tr>
+<tr class="memdesc:abb3dacf9f9acc54373d18bf2a470fd9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the vertices of a given triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#abb3dacf9f9acc54373d18bf2a470fd9a">More...</a><br /></td></tr>
+<tr class="separator:abb3dacf9f9acc54373d18bf2a470fd9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb17f28e7dafb55bf5a7338e78891a54"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#abb17f28e7dafb55bf5a7338e78891a54">getTriangleVertices</a> (unsigned triangleIndex, double A[3], double B[3], double C[3]) const override</td></tr>
+<tr class="separator:abb17f28e7dafb55bf5a7338e78891a54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56d0aaedf2063b2cb74688073050979c"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a56d0aaedf2063b2cb74688073050979c">capacity</a> () const</td></tr>
 <tr class="memdesc:a56d0aaedf2063b2cb74688073050979c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the mesh capacity.  <a href="classcloudViewer_1_1SimpleMesh.html#a56d0aaedf2063b2cb74688073050979c">More...</a><br /></td></tr>
 <tr class="separator:a56d0aaedf2063b2cb74688073050979c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,21 +184,21 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aadef76be0bb7348ae35a7413957ea2b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#aadef76be0bb7348ae35a7413957ea2b1">clear</a> ()</td></tr>
 <tr class="memdesc:aadef76be0bb7348ae35a7413957ea2b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the mesh.  <a href="classcloudViewer_1_1SimpleMesh.html#aadef76be0bb7348ae35a7413957ea2b1">More...</a><br /></td></tr>
 <tr class="separator:aadef76be0bb7348ae35a7413957ea2b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6eb7540c2e36c5a45d53b1f8c0611290"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a6eb7540c2e36c5a45d53b1f8c0611290">addTriangle</a> (unsigned i1, unsigned i2, unsigned i3)</td></tr>
-<tr class="memdesc:a6eb7540c2e36c5a45d53b1f8c0611290"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a triangle to the mesh.  <a href="classcloudViewer_1_1SimpleMesh.html#a6eb7540c2e36c5a45d53b1f8c0611290">More...</a><br /></td></tr>
-<tr class="separator:a6eb7540c2e36c5a45d53b1f8c0611290"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae8de123c60e0c27c658659fc50bfca2c"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ae8de123c60e0c27c658659fc50bfca2c">reserve</a> (unsigned n)</td></tr>
-<tr class="memdesc:ae8de123c60e0c27c658659fc50bfca2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserves the memory to store the triangles (as 3 indexes each)  <a href="classcloudViewer_1_1SimpleMesh.html#ae8de123c60e0c27c658659fc50bfca2c">More...</a><br /></td></tr>
-<tr class="separator:ae8de123c60e0c27c658659fc50bfca2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade3b77c297a365b7f0e44af1a73a399e"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ade3b77c297a365b7f0e44af1a73a399e">resize</a> (unsigned n)</td></tr>
-<tr class="memdesc:ade3b77c297a365b7f0e44af1a73a399e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resizes the mesh database.  <a href="classcloudViewer_1_1SimpleMesh.html#ade3b77c297a365b7f0e44af1a73a399e">More...</a><br /></td></tr>
-<tr class="separator:ade3b77c297a365b7f0e44af1a73a399e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad5ef30e8ae178be6874a525c2f0f20df"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ad5ef30e8ae178be6874a525c2f0f20df">normalsAvailable</a> () const override</td></tr>
-<tr class="memdesc:ad5ef30e8ae178be6874a525c2f0f20df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether normals are available.  <a href="classcloudViewer_1_1SimpleMesh.html#ad5ef30e8ae178be6874a525c2f0f20df">More...</a><br /></td></tr>
-<tr class="separator:ad5ef30e8ae178be6874a525c2f0f20df"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a710273c0b714396278f84994de475e4b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a710273c0b714396278f84994de475e4b">interpolateNormals</a> (unsigned triIndex, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N) override</td></tr>
-<tr class="memdesc:a710273c0b714396278f84994de475e4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interpolates normal(s) inside a given triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#a710273c0b714396278f84994de475e4b">More...</a><br /></td></tr>
-<tr class="separator:a710273c0b714396278f84994de475e4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae4df172fb01a3870671abfc357b56a4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#aae4df172fb01a3870671abfc357b56a4">addTriangle</a> (unsigned i1, unsigned i2, unsigned i3)</td></tr>
+<tr class="memdesc:aae4df172fb01a3870671abfc357b56a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a triangle to the mesh.  <a href="classcloudViewer_1_1SimpleMesh.html#aae4df172fb01a3870671abfc357b56a4">More...</a><br /></td></tr>
+<tr class="separator:aae4df172fb01a3870671abfc357b56a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9af2c8261220fd0b94b7abb8e4b2dac"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#ac9af2c8261220fd0b94b7abb8e4b2dac">reserve</a> (unsigned n)</td></tr>
+<tr class="memdesc:ac9af2c8261220fd0b94b7abb8e4b2dac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserves the memory to store the triangles (as 3 indexes each)  <a href="classcloudViewer_1_1SimpleMesh.html#ac9af2c8261220fd0b94b7abb8e4b2dac">More...</a><br /></td></tr>
+<tr class="separator:ac9af2c8261220fd0b94b7abb8e4b2dac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04eec49f0c4e9334ee8afb7b083b0e6f"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a04eec49f0c4e9334ee8afb7b083b0e6f">resize</a> (unsigned n)</td></tr>
+<tr class="memdesc:a04eec49f0c4e9334ee8afb7b083b0e6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resizes the mesh database.  <a href="classcloudViewer_1_1SimpleMesh.html#a04eec49f0c4e9334ee8afb7b083b0e6f">More...</a><br /></td></tr>
+<tr class="separator:a04eec49f0c4e9334ee8afb7b083b0e6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59c6406d6fb4e0595a975606de03a919"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#a59c6406d6fb4e0595a975606de03a919">normalsAvailable</a> () const override</td></tr>
+<tr class="memdesc:a59c6406d6fb4e0595a975606de03a919"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether normals are available.  <a href="classcloudViewer_1_1SimpleMesh.html#a59c6406d6fb4e0595a975606de03a919">More...</a><br /></td></tr>
+<tr class="separator:a59c6406d6fb4e0595a975606de03a919"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afcd3e941417653712f48dc138aa62dcf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1SimpleMesh.html#afcd3e941417653712f48dc138aa62dcf">interpolateNormals</a> (unsigned triIndex, const <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;P, <a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;N) override</td></tr>
+<tr class="memdesc:afcd3e941417653712f48dc138aa62dcf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interpolates normal(s) inside a given triangle.  <a href="classcloudViewer_1_1SimpleMesh.html#afcd3e941417653712f48dc138aa62dcf">More...</a><br /></td></tr>
+<tr class="separator:afcd3e941417653712f48dc138aa62dcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classcloudViewer_1_1GenericIndexedMesh"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classcloudViewer_1_1GenericIndexedMesh')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html">cloudViewer::GenericIndexedMesh</a></td></tr>
 <tr class="memitem:abe88818a187e4326cd3906899d56ce86 inherit pub_methods_classcloudViewer_1_1GenericIndexedMesh"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#abe88818a187e4326cd3906899d56ce86">GenericIndexedMesh</a> ()=default</td></tr>
 <tr class="separator:abe88818a187e4326cd3906899d56ce86 inherit pub_methods_classcloudViewer_1_1GenericIndexedMesh"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -287,14 +296,14 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a3e96e259c468a57adac07684ff881152"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e96e259c468a57adac07684ff881152">&#9670;&nbsp;</a></span>SimpleMesh()</h2>
+<a id="ab5e2d2503529f107e929a491effbba6d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5e2d2503529f107e929a491effbba6d">&#9670;&nbsp;</a></span>SimpleMesh()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">cloudViewer::SimpleMesh::SimpleMesh </td>
+          <td class="memname">SimpleMesh::SimpleMesh </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html">GenericIndexedCloud</a> *&#160;</td>
           <td class="paramname"><em>_theVertices</em>, </td>
@@ -322,10 +331,12 @@ Additional Inherited Members</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00018">18</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
 </div>
 </div>
-<a id="a640d89ffa42d791b386d4809356abdcc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a640d89ffa42d791b386d4809356abdcc">&#9670;&nbsp;</a></span>~SimpleMesh()</h2>
+<a id="a1cecb8e128e9863ddbde835f4d44a552"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1cecb8e128e9863ddbde835f4d44a552">&#9670;&nbsp;</a></span>~SimpleMesh()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -334,7 +345,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">cloudViewer::SimpleMesh::~SimpleMesh </td>
+          <td class="memname">SimpleMesh::~SimpleMesh </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -349,11 +360,15 @@ Additional Inherited Members</h2></td></tr>
 
 <p><a class="el" href="classcloudViewer_1_1SimpleMesh.html" title="A simple mesh structure, with index-based vertex access.">SimpleMesh</a> destructor. </p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00025">25</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00115">verticesLinked</a>.</p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a116301ad54f6bcc925963e99098f0c2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a116301ad54f6bcc925963e99098f0c2c">&#9670;&nbsp;</a></span>_getNextTriangle()</h2>
+<a id="a41cfb7e706bd2f92147af27c04edbd20"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41cfb7e706bd2f92147af27c04edbd20">&#9670;&nbsp;</a></span>_getNextTriangle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -362,7 +377,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a>* cloudViewer::SimpleMesh::_getNextTriangle </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a> * SimpleMesh::_getNextTriangle </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -380,10 +395,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericMesh.html#a598ef450b49f92f605e84cb335897c38">cloudViewer::GenericMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00045">45</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00049">_getTriangle()</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00107">globalIterator</a>.</p>
+
 </div>
 </div>
-<a id="a46f9ac8bd93d3a9358351ef778f7e461"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a46f9ac8bd93d3a9358351ef778f7e461">&#9670;&nbsp;</a></span>_getTriangle()</h2>
+<a id="afb347cfb18fb61ddd9744d0ac2d1a2d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb347cfb18fb61ddd9744d0ac2d1a2d5">&#9670;&nbsp;</a></span>_getTriangle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -392,7 +411,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a>* cloudViewer::SimpleMesh::_getTriangle </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1GenericTriangle.html">GenericTriangle</a> * SimpleMesh::_getTriangle </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>triangleIndex</em></td><td>)</td>
@@ -417,10 +436,16 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#a113e11fc31442140a5ce5c0538edcf48">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00049">49</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleTriangle_8h_source.html#l00073">cloudViewer::SimpleTriangle::A</a>, <a class="el" href="SimpleTriangle_8h_source.html#l00075">cloudViewer::SimpleTriangle::B</a>, <a class="el" href="SimpleTriangle_8h_source.html#l00077">cloudViewer::SimpleTriangle::C</a>, <a class="el" href="SimpleMesh_8h_source.html#l00109">dummyTriangle</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i1</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i2</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i3</a>, <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00045">_getNextTriangle()</a>.</p>
+
 </div>
 </div>
-<a id="a6eb7540c2e36c5a45d53b1f8c0611290"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6eb7540c2e36c5a45d53b1f8c0611290">&#9670;&nbsp;</a></span>addTriangle()</h2>
+<a id="aae4df172fb01a3870671abfc357b56a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae4df172fb01a3870671abfc357b56a4">&#9670;&nbsp;</a></span>addTriangle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -429,7 +454,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void cloudViewer::SimpleMesh::addTriangle </td>
+          <td class="memname">void SimpleMesh::addTriangle </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>i1</em>, </td>
@@ -469,7 +494,11 @@ Additional Inherited Members</h2></td></tr>
   </dd>
 </dl>
 
-<p class="reference">Referenced by <a class="el" href="SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00103">103</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleMesh_8h_source.html#l00118">m_bbox</a>, <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>, and <a class="el" href="BoundingBox_8h_source.html#l00200">cloudViewer::BoundingBoxTpl&lt; T &gt;::setValidity()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00410">AddTriangle()</a>, <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00435">MergeOldTriangles()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00182">cloudViewer::ManualSegmentationTools::segmentMesh()</a>, and <a class="el" href="Neighbourhood_8cpp_source.html#l00682">cloudViewer::Neighbourhood::triangulateFromQuadric()</a>.</p>
 
 </div>
 </div>
@@ -500,7 +529,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00062">62</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00410">AddTriangle()</a>, <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>, and <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00182">cloudViewer::ManualSegmentationTools::segmentMesh()</a>.</p>
 
 </div>
 </div>
@@ -531,12 +560,12 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00070">70</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>, and <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00887">cloudViewer::ManualSegmentationTools::segmentMeshWithAABox()</a>.</p>
 
 </div>
 </div>
-<a id="a20494e0ebe14be497b35a6989fc969f4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20494e0ebe14be497b35a6989fc969f4">&#9670;&nbsp;</a></span>forEach()</h2>
+<a id="a15875a1bb42133efd671f3142bb78e9c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a15875a1bb42133efd671f3142bb78e9c">&#9670;&nbsp;</a></span>forEach()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -545,7 +574,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void cloudViewer::SimpleMesh::forEach </td>
+          <td class="memname">void SimpleMesh::forEach </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcloudViewer_1_1GenericMesh.html#a68b08a7384f640d64a32ace8c551470d">genericTriangleAction</a>&#160;</td>
           <td class="paramname"><em>action</em></td><td>)</td>
@@ -569,10 +598,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad766c90edf1c39618e612150024180a7">cloudViewer::GenericMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00032">32</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleTriangle_8h_source.html#l00073">cloudViewer::SimpleTriangle::A</a>, <a class="el" href="SimpleTriangle_8h_source.html#l00075">cloudViewer::SimpleTriangle::B</a>, <a class="el" href="SimpleTriangle_8h_source.html#l00077">cloudViewer::SimpleTriangle::C</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00132">count</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>.</p>
+
 </div>
 </div>
-<a id="a002c7928ed63e93c5c74b4c4411be205"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a002c7928ed63e93c5c74b4c4411be205">&#9670;&nbsp;</a></span>getBoundingBox()</h2>
+<a id="ac76a4527d4ca54ac6072fd73353f37f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac76a4527d4ca54ac6072fd73353f37f4">&#9670;&nbsp;</a></span>getBoundingBox()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -581,7 +614,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void cloudViewer::SimpleMesh::getBoundingBox </td>
+          <td class="memname">void SimpleMesh::getBoundingBox </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a> &amp;&#160;</td>
           <td class="paramname"><em>bbMin</em>, </td>
@@ -616,10 +649,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericMesh.html#a55213f9f6c05c6cc7766ede41239bf64">cloudViewer::GenericMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00084">84</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericCloud.html#a108063b0a87eff68e9575ea07db940f8">cloudViewer::GenericCloud::getBoundingBox()</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>.</p>
+
 </div>
 </div>
-<a id="a7d3b2a4cd3b68ea060ed3a9330867541"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7d3b2a4cd3b68ea060ed3a9330867541">&#9670;&nbsp;</a></span>getNextTriangleVertIndexes()</h2>
+<a id="ab0fb16db73a9de7d5700f2a155d7ffe2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0fb16db73a9de7d5700f2a155d7ffe2">&#9670;&nbsp;</a></span>getNextTriangleVertIndexes()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -628,7 +665,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a>* cloudViewer::SimpleMesh::getNextTriangleVertIndexes </td>
+          <td class="memname"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a> * SimpleMesh::getNextTriangleVertIndexes </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -644,10 +681,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#a692f9cf798bf7ab0c8213e4b6d51d824">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00184">184</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00180">getTriangleVertIndexes()</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00107">globalIterator</a>.</p>
+
 </div>
 </div>
-<a id="a2d4f5c6f51b4756309cc40e47e2bac15"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2d4f5c6f51b4756309cc40e47e2bac15">&#9670;&nbsp;</a></span>getTriangleVertices() <span class="overload">[1/2]</span></h2>
+<a id="abb3dacf9f9acc54373d18bf2a470fd9a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb3dacf9f9acc54373d18bf2a470fd9a">&#9670;&nbsp;</a></span>getTriangleVertices() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -656,7 +697,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void cloudViewer::SimpleMesh::getTriangleVertices </td>
+          <td class="memname">void SimpleMesh::getTriangleVertices </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>triangleIndex</em>, </td>
@@ -705,10 +746,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#aee23ef2d61abff0dc99dd7c6e1081dc1">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00060">60</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i1</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i2</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i3</a>, <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>.</p>
+
 </div>
 </div>
-<a id="a2d4fe9deb031df0eb33698e23a8dcccf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2d4fe9deb031df0eb33698e23a8dcccf">&#9670;&nbsp;</a></span>getTriangleVertices() <span class="overload">[2/2]</span></h2>
+<a id="abb17f28e7dafb55bf5a7338e78891a54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb17f28e7dafb55bf5a7338e78891a54">&#9670;&nbsp;</a></span>getTriangleVertices() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -717,7 +762,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void cloudViewer::SimpleMesh::getTriangleVertices </td>
+          <td class="memname">void cloudViewer::SimpleMesh::getTriangleVertices </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>triangleIndex</em>, </td>
@@ -755,10 +800,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#a788a41238172c50efc7a7a83762a97ab">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00072">72</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i1</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i2</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i3</a>, <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>.</p>
+
 </div>
 </div>
-<a id="a83fb4a41686fb654f06ae7bc5b2d5617"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83fb4a41686fb654f06ae7bc5b2d5617">&#9670;&nbsp;</a></span>getTriangleVertIndexes()</h2>
+<a id="ab2c2b364ee06d6ff59c4f6a733852071"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2c2b364ee06d6ff59c4f6a733852071">&#9670;&nbsp;</a></span>getTriangleVertIndexes()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -767,7 +816,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a>* cloudViewer::SimpleMesh::getTriangleVertIndexes </td>
+          <td class="memname"><a class="el" href="structcloudViewer_1_1VerticesIndexes.html">VerticesIndexes</a> * SimpleMesh::getTriangleVertIndexes </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>triangleIndex</em></td><td>)</td>
@@ -792,10 +841,16 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#ac61829af080549bfe25f32eefff695f7">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00180">180</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00184">getNextTriangleVertIndexes()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00558">ImportSourceVertices()</a>, and <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00435">MergeOldTriangles()</a>.</p>
+
 </div>
 </div>
-<a id="a710273c0b714396278f84994de475e4b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a710273c0b714396278f84994de475e4b">&#9670;&nbsp;</a></span>interpolateNormals()</h2>
+<a id="afcd3e941417653712f48dc138aa62dcf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afcd3e941417653712f48dc138aa62dcf">&#9670;&nbsp;</a></span>interpolateNormals()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -804,7 +859,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool cloudViewer::SimpleMesh::interpolateNormals </td>
+          <td class="memname">bool SimpleMesh::interpolateNormals </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>triIndex</em>, </td>
@@ -847,10 +902,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#a0ee3c365ba98e4f7a4e05aa99732567c">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00131">131</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l01295">cross()</a>, <a class="el" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">cloudViewer::GenericIndexedCloud::getPoint()</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i1</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i2</a>, <a class="el" href="GenericIndexedMesh_8h_source.html#l00019">cloudViewer::VerticesIndexes::i3</a>, <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>, <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+
 </div>
 </div>
-<a id="ad5ef30e8ae178be6874a525c2f0f20df"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad5ef30e8ae178be6874a525c2f0f20df">&#9670;&nbsp;</a></span>normalsAvailable()</h2>
+<a id="a59c6406d6fb4e0595a975606de03a919"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59c6406d6fb4e0595a975606de03a919">&#9670;&nbsp;</a></span>normalsAvailable()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -859,7 +918,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool cloudViewer::SimpleMesh::normalsAvailable </td>
+          <td class="memname">bool SimpleMesh::normalsAvailable </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -876,10 +935,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classcloudViewer_1_1GenericIndexedMesh.html#a9d388c8361a006592b4c526a7f1a56c3">cloudViewer::GenericIndexedMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00127">127</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="GenericIndexedCloud_8h_source.html#l00053">cloudViewer::GenericIndexedCloud::normalsAvailable()</a>, and <a class="el" href="SimpleMesh_8h_source.html#l00112">theVertices</a>.</p>
+
 </div>
 </div>
-<a id="accb856c8468bc733952d7f4139cb220f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#accb856c8468bc733952d7f4139cb220f">&#9670;&nbsp;</a></span>placeIteratorAtBeginning()</h2>
+<a id="ae6c5bc5c2bd00c5f1e75ae87b6b2f688"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae6c5bc5c2bd00c5f1e75ae87b6b2f688">&#9670;&nbsp;</a></span>placeIteratorAtBeginning()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -888,7 +951,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void cloudViewer::SimpleMesh::placeIteratorAtBeginning </td>
+          <td class="memname">void SimpleMesh::placeIteratorAtBeginning </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -906,10 +969,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classcloudViewer_1_1GenericMesh.html#ad24beb13c85a002ef4c0ddb496452141">cloudViewer::GenericMesh</a>.</p>
 
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00043">43</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleMesh_8h_source.html#l00107">globalIterator</a>.</p>
+
 </div>
 </div>
-<a id="ae8de123c60e0c27c658659fc50bfca2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae8de123c60e0c27c658659fc50bfca2c">&#9670;&nbsp;</a></span>reserve()</h2>
+<a id="ac9af2c8261220fd0b94b7abb8e4b2dac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9af2c8261220fd0b94b7abb8e4b2dac">&#9670;&nbsp;</a></span>reserve()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -918,7 +985,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual bool cloudViewer::SimpleMesh::reserve </td>
+          <td class="memname">bool SimpleMesh::reserve </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>n</em></td><td>)</td>
@@ -941,12 +1008,16 @@ Additional Inherited Members</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the method succeeds, false otherwise </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00109">109</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00410">AddTriangle()</a>, <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00435">MergeOldTriangles()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00182">cloudViewer::ManualSegmentationTools::segmentMesh()</a>, and <a class="el" href="Neighbourhood_8cpp_source.html#l00682">cloudViewer::Neighbourhood::triangulateFromQuadric()</a>.</p>
 
 </div>
 </div>
-<a id="ade3b77c297a365b7f0e44af1a73a399e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade3b77c297a365b7f0e44af1a73a399e">&#9670;&nbsp;</a></span>resize()</h2>
+<a id="a04eec49f0c4e9334ee8afb7b083b0e6f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04eec49f0c4e9334ee8afb7b083b0e6f">&#9670;&nbsp;</a></span>resize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -955,7 +1026,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual bool cloudViewer::SimpleMesh::resize </td>
+          <td class="memname">bool SimpleMesh::resize </td>
           <td>(</td>
           <td class="paramtype">unsigned&#160;</td>
           <td class="paramname"><em>n</em></td><td>)</td>
@@ -978,7 +1049,11 @@ Additional Inherited Members</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the method succeeds, false otherwise </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00118">118</a> of file <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SimpleMesh_8h_source.html#l00104">m_triIndexes</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00435">MergeOldTriangles()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00182">cloudViewer::ManualSegmentationTools::segmentMesh()</a>, and <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00887">cloudViewer::ManualSegmentationTools::segmentMeshWithAABox()</a>.</p>
 
 </div>
 </div>
@@ -1012,6 +1087,8 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00047">47</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00410">AddTriangle()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00558">ImportSourceVertices()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00435">MergeOldTriangles()</a>, <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00182">cloudViewer::ManualSegmentationTools::segmentMesh()</a>, and <a class="el" href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00887">cloudViewer::ManualSegmentationTools::segmentMeshWithAABox()</a>.</p>
+
 </div>
 </div>
 <a id="a489ac8d29670cb28c621707f2fec5ef1"></a>
@@ -1041,7 +1118,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00067">67</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvCropTool_8cpp_source.html#l00023">ccCropTool::Crop()</a>, and <a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2SimpleMesh_8cpp_source.html#l00018">define_SimpleMesh()</a>.</p>
 
 </div>
 </div>
@@ -1070,6 +1147,8 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00109">109</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00049">_getTriangle()</a>.</p>
+
 </div>
 </div>
 <a id="a0acb81e88879d474e9109986736e1583"></a>
@@ -1095,6 +1174,8 @@ Additional Inherited Members</h2></td></tr>
 <p>Iterator on the list of triangles. </p>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00107">107</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00045">_getNextTriangle()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00184">getNextTriangleVertIndexes()</a>, and <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00043">placeIteratorAtBeginning()</a>.</p>
 
 </div>
 </div>
@@ -1122,6 +1203,8 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00118">118</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00103">addTriangle()</a>.</p>
+
 </div>
 </div>
 <a id="afeb23bd7cb13cb2a5846eae4db3f8ca7"></a>
@@ -1147,6 +1230,8 @@ Additional Inherited Members</h2></td></tr>
 <p>The triangles indexes. </p>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00104">104</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00049">_getTriangle()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00103">addTriangle()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00032">forEach()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00060">getTriangleVertices()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00180">getTriangleVertIndexes()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00131">interpolateNormals()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00109">reserve()</a>, and <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00118">resize()</a>.</p>
 
 </div>
 </div>
@@ -1174,6 +1259,8 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00112">112</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00049">_getTriangle()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00032">forEach()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00084">getBoundingBox()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00060">getTriangleVertices()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00131">interpolateNormals()</a>, <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00127">normalsAvailable()</a>, and <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00025">~SimpleMesh()</a>.</p>
+
 </div>
 </div>
 <a id="aa330c6e0ba5874e2f815efeb4dce0749"></a>
@@ -1199,10 +1286,13 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="SimpleMesh_8h_source.html#l00115">115</a> of file <a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="core_2src_2SimpleMesh_8cpp_source.html#l00025">~SimpleMesh()</a>.</p>
+
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/include/<a class="el" href="SimpleMesh_8h_source.html">SimpleMesh.h</a></li>
+<li>/root/ACloudViewer/core/src/<a class="el" href="core_2src_2SimpleMesh_8cpp_source.html">SimpleMesh.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1210,7 +1300,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1SimpleMesh.html">SimpleMesh</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:35 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

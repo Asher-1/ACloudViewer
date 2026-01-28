@@ -1,5 +1,6 @@
 <map id="CorrespondenceMatchingDialog" name="CorrespondenceMatchingDialog">
-<area shape="rect" id="node1" title="CANUPO plugin&#39;s training dialog." alt="" coords="11,95,240,121"/>
+<area shape="rect" id="node1" title="CANUPO plugin&#39;s training dialog." alt="" coords="95,109,324,136"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,13,80,39"/>
 <area shape="rect" id="node3" title=" " alt="" coords="105,5,314,47"/>
+<area shape="rect" id="node4" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="339,13,499,39"/>
 </map>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -190,7 +199,7 @@ $(document).ready(function(){initNavTree('MarchingCubes_8h_source.html',''); ini
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">#if NEW_ORDERING</span></div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classMarchingSquares.html#a04a568b30bd10ce6a93e9fcce4f3b549">HasEdgeRoots</a>( <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> mcIndex , <span class="keywordtype">int</span> edgeIndex );</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// NEW_ORDERING</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> <a class="code" href="classMarchingSquares.html#aed950cf41558b87974385fbe144d9e99">AddEdges</a>( <span class="keyword">const</span> <span class="keywordtype">double</span> v[<a class="code" href="classSquare.html#aad230daf469196cdc371874bc3a643b9">Square::CORNERS</a>] , <span class="keywordtype">double</span> isoValue , <a class="code" href="classEdge.html">Edge</a>* <a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a> );</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> <a class="code" href="classMarchingSquares.html#aed950cf41558b87974385fbe144d9e99">AddEdges</a>( <span class="keyword">const</span> <span class="keywordtype">double</span> v[<a class="code" href="classSquare.html#aad230daf469196cdc371874bc3a643b9">Square::CORNERS</a>] , <span class="keywordtype">double</span> isoValue , <a class="code" href="structEdge.html">Edge</a>* <a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a> );</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> <a class="code" href="classMarchingSquares.html#af7c724d561208a7a22244a3c1df5b6c6">AddEdgeIndices</a>( <span class="keyword">const</span> <span class="keywordtype">double</span> v[<a class="code" href="classSquare.html#aad230daf469196cdc371874bc3a643b9">Square::CORNERS</a>] , <span class="keywordtype">double</span> isoValue , <span class="keywordtype">int</span>* <a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>);</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> <a class="code" href="classMarchingSquares.html#af7c724d561208a7a22244a3c1df5b6c6">AddEdgeIndices</a>( <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> mcIndex , <span class="keywordtype">int</span>* <a class="code" href="classMarchingSquares.html#a94c6bfc918aea43982af6deaf4108ef2">edges</a>);</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;};</div>
@@ -258,7 +267,6 @@ $(document).ready(function(){initNavTree('MarchingCubes_8h_source.html',''); ini
 <div class="ttc" id="aclassCube_html_ab7886e84a6ebb9ada06e995fc8615e12"><div class="ttname"><a href="classCube.html#ab7886e84a6ebb9ada06e995fc8615e12">Cube::EdgeCorners</a></div><div class="ttdeci">static void EdgeCorners(int idx, int &amp;c1, int &amp;c2)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00194">MarchingCubes.cpp:194</a></div></div>
 <div class="ttc" id="aclassCube_html_ab89b7926463fb06ca0a75d09aecea317"><div class="ttname"><a href="classCube.html#ab89b7926463fb06ca0a75d09aecea317">Cube::FaceIndex</a></div><div class="ttdeci">static int FaceIndex(int dir, int offSet)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00122">MarchingCubes.cpp:122</a></div></div>
 <div class="ttc" id="aclassCube_html_ae1f21a66596e1b9a2a099ad27b7dbe0b"><div class="ttname"><a href="classCube.html#ae1f21a66596e1b9a2a099ad27b7dbe0b">Cube::FactorCornerIndex</a></div><div class="ttdeci">static void FactorCornerIndex(int idx, int &amp;x, int &amp;y, int &amp;z)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00104">MarchingCubes.cpp:104</a></div></div>
-<div class="ttc" id="aclassEdge_html"><div class="ttname"><a href="classEdge.html">Edge</a></div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00192">Geometry.h:192</a></div></div>
 <div class="ttc" id="aclassMarchingCubes_html"><div class="ttname"><a href="classMarchingCubes.html">MarchingCubes</a></div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8h_source.html#l00108">MarchingCubes.h:109</a></div></div>
 <div class="ttc" id="aclassMarchingCubes_html_a034b3f0d98b66320f5b0630ef2df4bef"><div class="ttname"><a href="classMarchingCubes.html#a034b3f0d98b66320f5b0630ef2df4bef">MarchingCubes::IsAmbiguous</a></div><div class="ttdeci">static bool IsAmbiguous(const double v[Cube::CORNERS], double isoValue, int faceIndex)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00820">MarchingCubes.cpp:820</a></div></div>
 <div class="ttc" id="aclassMarchingCubes_html_a3be8b064b4335f322c7c636f7d91d416"><div class="ttname"><a href="classMarchingCubes.html#a3be8b064b4335f322c7c636f7d91d416">MarchingCubes::cornerMap</a></div><div class="ttdeci">static const int cornerMap[Cube::CORNERS]</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8h_source.html#l00123">MarchingCubes.h:123</a></div></div>
@@ -298,13 +306,14 @@ $(document).ready(function(){initNavTree('MarchingCubes_8h_source.html',''); ini
 <div class="ttc" id="aclassSquare_html_aee0b9daff5bfa849d6faa3b3e6b551a4"><div class="ttname"><a href="classSquare.html#aee0b9daff5bfa849d6faa3b3e6b551a4">Square::EDGES</a></div><div class="ttdeci">static const unsigned int EDGES</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8h_source.html#l00039">MarchingCubes.h:39</a></div></div>
 <div class="ttc" id="aclassSquare_html_afe2fe9960cf422ef1422bb46e669ee59"><div class="ttname"><a href="classSquare.html#afe2fe9960cf422ef1422bb46e669ee59">Square::CornerIndex</a></div><div class="ttdeci">static int CornerIndex(int x, int y)</div><div class="ttdef"><b>Definition:</b> <a href="MarchingCubes_8cpp_source.html#l00039">MarchingCubes.cpp:39</a></div></div>
 <div class="ttc" id="aclassTriangle_html"><div class="ttname"><a href="classTriangle.html">Triangle</a></div><div class="ttdef"><b>Definition:</b> <a href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00203">Geometry.h:203</a></div></div>
+<div class="ttc" id="astructEdge_html"><div class="ttname"><a href="structEdge.html">Edge</a></div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2PointProjectionTools_8cpp_source.html#l00491">PointProjectionTools.cpp:491</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_a515367177c6490682dd4e4f103f6175.html">lib</a></li><li class="navelem"><a class="el" href="dir_550c509dcfd15517971c4d29b99072aa.html">PoissonRecon</a></li><li class="navelem"><a class="el" href="MarchingCubes_8h.html">MarchingCubes.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:59 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

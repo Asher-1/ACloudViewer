@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -106,7 +115,7 @@ $(document).ready(function(){initNavTree('qMeshIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &quot;assimp/version.h&quot;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;qMeshIO::qMeshIO(QObject *parent)</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    : QObject(parent), ccIOPluginInterface(<span class="stringliteral">&quot;:/asmaloney/qMeshIO/info.json&quot;</span>) {</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    : QObject(parent), <a class="code" href="classccIOPluginInterface.html">ccIOPluginInterface</a>(<span class="stringliteral">&quot;:/asmaloney/qMeshIO/info.json&quot;</span>) {</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    <span class="keyword">const</span> QString cAssimpVer =</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;            QStringLiteral(<span class="stringliteral">&quot;\t[qMeshIO] Using Assimp %1.%2 (%3-%4)&quot;</span>)</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;                    .arg(QString::number(aiGetVersionMajor()),</div>
@@ -114,14 +123,14 @@ $(document).ready(function(){initNavTree('qMeshIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                    .arg(aiGetVersionRevision(), 0, 16)</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                    .arg(aiGetBranchName());</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <a class="code" href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a>(cAssimpVer);</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(cAssimpVer);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;}</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keywordtype">void</span> qMeshIO::registerCommands(ccCommandLineInterface *inCmdLine) {</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keywordtype">void</span> qMeshIO::registerCommands(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *inCmdLine) {</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    Q_UNUSED(inCmdLine);</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;}</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;ccIOPluginInterface::FilterList qMeshIO::getFilters() {</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<a class="code" href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a> qMeshIO::getFilters() {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">return</span> {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;            <a class="code" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a>(<span class="keyword">new</span> <a class="code" href="classAssimpIfc.html">AssimpIfc</a>),</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;            <a class="code" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a>(<span class="keyword">new</span> <a class="code" href="classAssimp3DMax.html">Assimp3DMax</a>),</div>
@@ -143,8 +152,11 @@ $(document).ready(function(){initNavTree('qMeshIO_8cpp_source.html',''); initRes
 <div class="ttc" id="aclassAssimpCommonFilter_html"><div class="ttname"><a href="classAssimpCommonFilter.html">AssimpCommonFilter</a></div><div class="ttdef"><b>Definition:</b> <a href="AssimpCommonFilter_8h_source.html#l00014">AssimpCommonFilter.h:14</a></div></div>
 <div class="ttc" id="aclassAssimpGltf_html"><div class="ttname"><a href="classAssimpGltf.html">AssimpGltf</a></div><div class="ttdef"><b>Definition:</b> <a href="AssimpGltf_8h_source.html#l00014">AssimpGltf.h:14</a></div></div>
 <div class="ttc" id="aclassAssimpIfc_html"><div class="ttname"><a href="classAssimpIfc.html">AssimpIfc</a></div><div class="ttdef"><b>Definition:</b> <a href="AssimpIfc_8h_source.html#l00016">AssimpIfc.h:16</a></div></div>
-<div class="ttc" id="aclassCVLog_html_aa28f523a139f6c8343acacf9df97a6fd"><div class="ttname"><a href="classCVLog.html#aa28f523a139f6c8343acacf9df97a6fd">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div></div>
+<div class="ttc" id="aclassCVLog_html_a3d2082aa909f4090da3caa69d709e2cb"><div class="ttname"><a href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a></div><div class="ttdeci">static bool Print(const char *format,...)</div><div class="ttdoc">Prints out a formatted message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00113">CVLog.cpp:113</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_abfe3e5d65638ebcf0ec20432b23da4bd"><div class="ttname"><a href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a></div><div class="ttdeci">QSharedPointer&lt; FileIOFilter &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00097">FileIOFilter.h:97</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html"><div class="ttname"><a href="classccIOPluginInterface.html">ccIOPluginInterface</a></div><div class="ttdoc">I/O filter plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00020">ecvIOPluginInterface.h:20</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html_a66bef21cd54a0c6c13a1279a0ff1a827"><div class="ttname"><a href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a></div><div class="ttdeci">QVector&lt; FileIOFilter::Shared &gt; FilterList</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00022">ecvIOPluginInterface.h:22</a></div></div>
 <div class="ttc" id="aqMeshIO_8h_html"><div class="ttname"><a href="qMeshIO_8h.html">qMeshIO.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -152,7 +164,7 @@ $(document).ready(function(){initNavTree('qMeshIO_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_93729575d6fedf5bf48258f8bebc2d7a.html">qMeshIO</a></li><li class="navelem"><a class="el" href="dir_cbaf5887df0850fa9bfa13889c85bbfc.html">src</a></li><li class="navelem"><a class="el" href="qMeshIO_8cpp.html">qMeshIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

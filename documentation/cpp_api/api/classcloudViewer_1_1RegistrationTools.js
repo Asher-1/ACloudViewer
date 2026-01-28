@@ -12,6 +12,6 @@ var classcloudViewer_1_1RegistrationTools =
       [ "SKIP_TZ", "classcloudViewer_1_1RegistrationTools.html#a6b1877035a1deab3da4a051fd40b3305aefe8800d612b13601490ce97b4f58d78", null ],
       [ "SKIP_TRANSLATION", "classcloudViewer_1_1RegistrationTools.html#a6b1877035a1deab3da4a051fd40b3305adbd4ec3af2f022fcc1fbfe515fbae810", null ]
     ] ],
-    [ "FilterTransformation", "classcloudViewer_1_1RegistrationTools.html#a3b5b6a06e48ed70217a2a8d60f20e04e", null ],
-    [ "RegistrationProcedure", "classcloudViewer_1_1RegistrationTools.html#a20bd7108f719846071adcf1461eddb2d", null ]
+    [ "FilterTransformation", "classcloudViewer_1_1RegistrationTools.html#ac20c0e7f5cb758482bff8008e87962b7", null ],
+    [ "RegistrationProcedure", "classcloudViewer_1_1RegistrationTools.html#a451259945e88b25203965fb5e6bfe12b", null ]
 ];

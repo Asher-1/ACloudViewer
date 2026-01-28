@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -144,11 +153,11 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="preprocessor">#include &lt;time.h&gt;</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">   57</a></span>&#160;<span class="keyword">static</span> ecvMainAppInterface* <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a> = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">   57</a></span>&#160;<span class="keyword">static</span> <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a> = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;qRansacSD::qRansacSD(QObject* parent <span class="comment">/*=nullptr*/</span>)</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    : QObject(parent),</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;      ccStdPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qRANSAC_SD/info.json&quot;</span>),</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;      <a class="code" href="classccStdPluginInterface.html">ccStdPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qRANSAC_SD/info.json&quot;</span>),</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;      m_action(nullptr) {</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a> = m_app;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;}</div>
@@ -162,9 +171,9 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;QList&lt;QAction*&gt; qRansacSD::getActions() {</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="comment">// default action</span></div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>) {</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a> = <span class="keyword">new</span> QAction(getName(), <span class="keyword">this</span>);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>-&gt;setToolTip(getDescription());</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>-&gt;setIcon(getIcon());</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a> = <span class="keyword">new</span> QAction(<a class="code" href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">getName</a>(), <span class="keyword">this</span>);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>-&gt;setToolTip(<a class="code" href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">getDescription</a>());</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>-&gt;setIcon(<a class="code" href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">getIcon</a>());</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="comment">// connect signal</span></div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        connect(<a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>, &amp;QAction::triggered, <span class="keyword">this</span>, &amp;<a class="code" href="classqRansacSD.html#ae0ee3e5a650c58fb59f0afd5185a42c2">qRansacSD::doAction</a>);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    }</div>
@@ -172,13 +181,13 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keywordflow">return</span> QList&lt;QAction*&gt;{<a class="code" href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">m_action</a>};</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;}</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keywordtype">void</span> qRansacSD::registerCommands(ccCommandLineInterface* cmd) {</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keywordtype">void</span> qRansacSD::registerCommands(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a>* cmd) {</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordflow">if</span> (!cmd) {</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    }</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    cmd-&gt;registerCommand(</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            ccCommandLineInterface::Command::Shared(<span class="keyword">new</span> <a class="code" href="structCommandRANSAC.html">CommandRANSAC</a>));</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    cmd-&gt;<a class="code" href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">registerCommand</a>(</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a>(<span class="keyword">new</span> <a class="code" href="structCommandRANSAC.html">CommandRANSAC</a>));</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;}</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="keyword">static</span> MiscLib::Vector&lt;std::pair&lt;MiscLib::RefCountPtr&lt;PrimitiveShape&gt;, <span class="keywordtype">size_t</span>&gt;&gt;*</div>
@@ -209,20 +218,20 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00119"></a><span class="lineno"><a class="line" href="qRANSAC__SD_8cpp.html#a1a98724d22e4970cccd879143d7db26c">  119</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="qRANSAC__SD_8cpp.html#a1a98724d22e4970cccd879143d7db26c">s_randomColor</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
 <div class="line"><a name="l00121"></a><span class="lineno"><a class="line" href="classqRansacSD.html#ae0ee3e5a650c58fb59f0afd5185a42c2">  121</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classqRansacSD.html#ae0ee3e5a650c58fb59f0afd5185a42c2">qRansacSD::doAction</a>() {</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    assert(m_app);</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (!m_app) <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    assert(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>);</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = m_app-&gt;getSelectedEntities();</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a>&amp; selectedEntities = <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="keywordtype">size_t</span> selNum = selectedEntities.size();</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordflow">if</span> (selNum != 1) {</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Select only one cloud!&quot;</span>);</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Select only one cloud!&quot;</span>);</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    }</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* ent = selectedEntities[0];</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    assert(ent);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keywordflow">if</span> (!ent || !ent-&gt;<a class="code" href="classccObject.html#a7b4d06906277afee84282d5a217ee125">isA</a>(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Select a real point cloud!&quot;</span>);</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Select a real point cloud!&quot;</span>);</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    }</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
@@ -235,7 +244,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordtype">float</span> scale = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(diff[0], diff[1]), diff[2]);</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160; </div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="comment">// init dialog with default values</span></div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <a class="code" href="classccRansacSDDlg.html">ccRansacSDDlg</a> rsdDlg(m_app-&gt;getActiveWindow());</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <a class="code" href="classccRansacSDDlg.html">ccRansacSDDlg</a> rsdDlg(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">getActiveWindow</a>());</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    rsdDlg.epsilonDoubleSpinBox-&gt;setValue(</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;            .005f *</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;            scale);  <span class="comment">// set distance threshold to 0.5% of bounding box width</span></div>
@@ -287,7 +296,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* group = executeRANSAC(pc, <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160; </div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordflow">if</span> (group) {</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        m_app-&gt;addToDB(group);</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(group);</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    }</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;}</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
@@ -301,7 +310,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            primCount += <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[k]);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        }</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        <span class="keywordflow">if</span> (primCount == 0) {</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] No primitive type selected!&quot;</span>);</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] No primitive type selected!&quot;</span>);</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;        }</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    }</div>
@@ -322,7 +331,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;            cloud.reserve(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>);</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        } <span class="keywordflow">catch</span> (...) {</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                    <span class="stringliteral">&quot;[qRansacSD] Could not create temporary cloud, Not enough &quot;</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                    <span class="stringliteral">&quot;memory!&quot;</span>);</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
@@ -379,7 +388,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a>) {</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                pDlg = <span class="keyword">new</span> QProgressDialog(<span class="stringliteral">&quot;Computing normals (please wait)&quot;</span>,</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                                           QString(), 0, 0,</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                                           <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a>-&gt;getMainWindow());</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                                           <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                pDlg = <span class="keyword">new</span> QProgressDialog(<span class="stringliteral">&quot;Computing normals (please wait)&quot;</span>,</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                                           QString(), 0, 0, <span class="keyword">nullptr</span>);</div>
@@ -404,7 +413,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            <span class="comment">// currently selected entities appearance may have changed!</span></div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            ccPC-&gt;<a class="code" href="classccHObject.html#a8c328da68923d50bfdcfa030f6b07fbe">setRedrawFlagRecursive</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Not enough memory to compute normals!&quot;</span>);</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Not enough memory to compute normals!&quot;</span>);</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            <span class="keywordflow">if</span> (pDlg) {</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                pDlg-&gt;hide();</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                <span class="keyword">delete</span> pDlg;</div>
@@ -452,7 +461,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a>) {</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                pDlg = <span class="keyword">new</span> QProgressDialog(</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                        <span class="stringliteral">&quot;Operation in progress (please wait)&quot;</span>, QString(), 0, 0,</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                        <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a>-&gt;getMainWindow());</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                        <a class="code" href="qRANSAC__SD_8cpp.html#a9666675707a14794eef48f124f50496e">s_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">getMainWindow</a>());</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;                pDlg = <span class="keyword">new</span> QProgressDialog(</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                        <span class="stringliteral">&quot;Operation in progress (please wait)&quot;</span>, QString(), 0, 0,</div>
@@ -520,7 +529,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160; </div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    <span class="keywordflow">if</span> (remaining == <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>) {</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;        <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Segmentation failed...&quot;</span>);</div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;        <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Segmentation failed...&quot;</span>);</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;    }</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160; </div>
@@ -538,12 +547,12 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160; </div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;            <span class="comment">// too many points?!</span></div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;            <span class="keywordflow">if</span> (shapePointsCount &gt; <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>) {</div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;                <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Inconsistent result!&quot;</span>);</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Inconsistent result!&quot;</span>);</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;            }</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160; </div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;            <span class="keywordflow">if</span> (shapePointsCount &lt; <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.supportPoints) {</div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;                <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;                <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;                        <span class="stringliteral">&quot;[qRansacSD] Skipping shape, %d did not meet minimum &quot;</span></div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                        <span class="stringliteral">&quot;point requirement&quot;</span>,</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;                        shapePointsCount);</div>
@@ -566,7 +575,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;                <span class="comment">// we fill cloud with sub-part points</span></div>
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;                <span class="keywordflow">if</span> (!refPcShape.reserve(</div>
 <div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;                            <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(shapePointsCount))) {</div>
-<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;                    <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Not enough memory!&quot;</span>);</div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;                    <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Not enough memory!&quot;</span>);</div>
 <div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;                }</div>
 <div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160; </div>
@@ -587,7 +596,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;                pcShape = <span class="keyword">new</span> <a class="code" href="classccPointCloud.html">ccPointCloud</a>(desc.c_str());</div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;                <span class="keywordflow">if</span> (!pcShape-&gt;<a class="code" href="classccPointCloud.html#a7daad7286b0cc90bded6efc84ee40619">reserve</a>(</div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;                            <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(shapePointsCount))) {</div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                    <a class="code" href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Not enough memory!&quot;</span>);</div>
+<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                    <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[qRansacSD] Not enough memory!&quot;</span>);</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                    <span class="keyword">delete</span> pcShape;</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;                }</div>
@@ -824,7 +833,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                    <span class="keyword">const</span> TorusPrimitiveShape* torus =</div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                            <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>TorusPrimitiveShape*<span class="keyword">&gt;</span>(shape);</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                    <span class="keywordflow">if</span> (torus-&gt;Internal().IsAppleShaped()) {</div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;                        <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;                        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;                                <span class="stringliteral">&quot;[qRansacSD] Apple-shaped torus are not &quot;</span></div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;                                <span class="stringliteral">&quot;handled by ACloudViewer!&quot;</span>);</div>
 <div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;                    } <span class="keywordflow">else</span> {</div>
@@ -891,7 +900,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160; </div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;            <span class="comment">// we hide input cloud</span></div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;            ccPC-&gt;<a class="code" href="classccObject.html#a9f0e313a854dd2ff9803d7b6d074872c">setEnabled</a>(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;            <a class="code" href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a>(</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;            <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                    <span class="stringliteral">&quot;[qRansacSD] Input cloud has been automatically hidden!&quot;</span>);</div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; </div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;            group-&gt;<a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(<span class="keyword">true</span>);</div>
@@ -911,8 +920,8 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="ttc" id="aSmallVector_8cpp_html_ab385e5bea03d0c55b5efca299f25532e"><div class="ttname"><a href="SmallVector_8cpp.html#ab385e5bea03d0c55b5efca299f25532e">X</a></div><div class="ttdeci">void * X</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00045">SmallVector.cpp:45</a></div></div>
 <div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="accRansacSDDlg_8h_html"><div class="ttname"><a href="ccRansacSDDlg_8h.html">ccRansacSDDlg.h</a></div></div>
-<div class="ttc" id="aclassCVLog_html_a5fa9d49971249fc22958b1f9ebfdc789"><div class="ttname"><a href="classCVLog.html#a5fa9d49971249fc22958b1f9ebfdc789">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div></div>
-<div class="ttc" id="aclassCVLog_html_af943c02dcca9d57434d6b8e35d8d713d"><div class="ttname"><a href="classCVLog.html#af943c02dcca9d57434d6b8e35d8d713d">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div></div>
+<div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassCVLog_html_af2f3cbaa178ff5745feafef782cb3a4c"><div class="ttname"><a href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a></div><div class="ttdeci">static bool Error(const char *format,...)</div><div class="ttdoc">Display an error dialog with formatted message.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00143">CVLog.cpp:143</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_a64cc8e49fc845aff7a2a0592c5610447"><div class="ttname"><a href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">Tuple3Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_ac8d05ce413d7659429e2e7243b8a8257"><div class="ttname"><a href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">Tuple3Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_aea57f32b7c87f9388205c027216ba132"><div class="ttname"><a href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">Tuple3Tpl::z</a></div><div class="ttdeci">Type z</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
@@ -920,8 +929,13 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="ttc" id="aclassVector3Tpl_html_a0ac4b8e2c782fa1059a65b9e59bbfb13"><div class="ttname"><a href="classVector3Tpl.html#a0ac4b8e2c782fa1059a65b9e59bbfb13">Vector3Tpl::normalize</a></div><div class="ttdeci">void normalize()</div><div class="ttdoc">Sets vector norm to unity.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00428">CVGeom.h:428</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html_a3434995b93669a2f4dc91123bb51b689"><div class="ttname"><a href="classVector3Tpl.html#a3434995b93669a2f4dc91123bb51b689">Vector3Tpl::orthogonal</a></div><div class="ttdeci">Vector3Tpl orthogonal() const</div><div class="ttdoc">Returns a normalized vector which is orthogonal to this one.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00433">CVGeom.h:433</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html_a7afd060d5392e69ceed8c9dd9775bca5"><div class="ttname"><a href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">Vector3Tpl&lt; PointCoordinateType &gt;::fromArray</a></div><div class="ttdeci">static Vector3Tpl fromArray(const int a[3])</div><div class="ttdoc">Constructor from an int array.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00268">CVGeom.h:268</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab4644e6978732163718383530cd5cd6b"><div class="ttname"><a href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">ccCommandLineInterface::registerCommand</a></div><div class="ttdeci">virtual bool registerCommand(Command::Shared command)=0</div><div class="ttdoc">Registers a new command.</div></div>
 <div class="ttc" id="aclassccCone_html"><div class="ttname"><a href="classccCone.html">ccCone</a></div><div class="ttdoc">Cone (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvCone_8h_source.html#l00016">ecvCone.h:16</a></div></div>
 <div class="ttc" id="aclassccCylinder_html"><div class="ttname"><a href="classccCylinder.html">ccCylinder</a></div><div class="ttdoc">Cylinder (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvCylinder_8h_source.html#l00016">ecvCylinder.h:16</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_a8a1a1767db7a925da80ee8a356ce423b"><div class="ttname"><a href="classccDefaultPluginInterface.html#a8a1a1767db7a925da80ee8a356ce423b">ccDefaultPluginInterface::getName</a></div><div class="ttdeci">virtual QString getName() const override</div><div class="ttdoc">Returns (short) name (for menu entry, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00100">ecvDefaultPluginInterface.cpp:100</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_aae6336c05f8e7de1be072565b8d6256c"><div class="ttname"><a href="classccDefaultPluginInterface.html#aae6336c05f8e7de1be072565b8d6256c">ccDefaultPluginInterface::getDescription</a></div><div class="ttdeci">virtual QString getDescription() const override</div><div class="ttdoc">Returns long name/description (for tooltip, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00104">ecvDefaultPluginInterface.cpp:104</a></div></div>
+<div class="ttc" id="aclassccDefaultPluginInterface_html_ac9d5f749c5b30b78dab3cc78812e8d8e"><div class="ttname"><a href="classccDefaultPluginInterface.html#ac9d5f749c5b30b78dab3cc78812e8d8e">ccDefaultPluginInterface::getIcon</a></div><div class="ttdeci">virtual QIcon getIcon() const override</div><div class="ttdoc">Returns icon.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8cpp_source.html#l00108">ecvDefaultPluginInterface.cpp:108</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_a3d00d1fb3ceea8ef31e7f6953db9d9b4"><div class="ttname"><a href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">ccDrawableObject::setVisible</a></div><div class="ttdeci">virtual void setVisible(bool state)</div><div class="ttdoc">Sets entity visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00040">ecvDrawableObject.h:40</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_aa12b442ecaa84514ff4a2f38d0580d2b"><div class="ttname"><a href="classccDrawableObject.html#aa12b442ecaa84514ff4a2f38d0580d2b">ccDrawableObject::showNormals</a></div><div class="ttdeci">virtual void showNormals(bool state)</div><div class="ttdoc">Sets normals visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00093">ecvDrawableObject.h:93</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_abafa4534cf5bd169084fcdbf9d636c9b"><div class="ttname"><a href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">ccDrawableObject::showColors</a></div><div class="ttdeci">virtual void showColors(bool state)</div><div class="ttdoc">Sets colors visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00084">ecvDrawableObject.h:84</a></div></div>
@@ -961,6 +975,8 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="ttc" id="aclassccShiftedObject_html_aa69aa4885030aee94471ed4e1211c451"><div class="ttname"><a href="classccShiftedObject.html#aa69aa4885030aee94471ed4e1211c451">ccShiftedObject::getGlobalShift</a></div><div class="ttdeci">virtual const CCVector3d &amp; getGlobalShift() const</div><div class="ttdoc">Returns the shift applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00046">ecvShiftedObject.h:46</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_ac6a17ca5216af799eaf4cac4166d8610"><div class="ttname"><a href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">ccShiftedObject::getGlobalScale</a></div><div class="ttdeci">virtual double getGlobalScale() const</div><div class="ttdoc">Returns the scale applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00053">ecvShiftedObject.h:53</a></div></div>
 <div class="ttc" id="aclassccSphere_html"><div class="ttname"><a href="classccSphere.html">ccSphere</a></div><div class="ttdoc">Sphere (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvSphere_8h_source.html#l00016">ecvSphere.h:16</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
+<div class="ttc" id="aclassccStdPluginInterface_html_af46bcfd10da04c21300a7f1a59b29d86"><div class="ttname"><a href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">ccStdPluginInterface::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Main application interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00085">ecvStdPluginInterface.h:85</a></div></div>
 <div class="ttc" id="aclassccTorus_html"><div class="ttname"><a href="classccTorus.html">ccTorus</a></div><div class="ttdoc">Torus (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvTorus_8h_source.html#l00016">ecvTorus.h:16</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6ddde1b580164e0dad00bcd53cd45dc7"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6ddde1b580164e0dad00bcd53cd45dc7">cloudViewer::PointCloudTpl::getBoundingBox</a></div><div class="ttdeci">void getBoundingBox(CCVector3 &amp;bbMin, CCVector3 &amp;bbMax) override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00057">PointCloudTpl.h:57</a></div></div>
@@ -969,6 +985,11 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1Generator_html_aee8e7e510cc845670af822b9b4dbc571"><div class="ttname"><a href="classecvColor_1_1Generator.html#aee8e7e510cc845670af822b9b4dbc571">ecvColor::Generator::Random</a></div><div class="ttdeci">static Rgb Random(bool lightOnly=true)</div><div class="ttdoc">Generates a random color.</div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
 <div class="ttc" id="aclassqRansacSD_html_a0bd7c08d4324f6c51e38a73f0f0bd553"><div class="ttname"><a href="classqRansacSD.html#a0bd7c08d4324f6c51e38a73f0f0bd553">qRansacSD::m_action</a></div><div class="ttdeci">QAction * m_action</div><div class="ttdoc">Associated action.</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD_8h_source.html#l00099">qRANSAC_SD.h:99</a></div></div>
 <div class="ttc" id="aclassqRansacSD_html_ae0ee3e5a650c58fb59f0afd5185a42c2"><div class="ttname"><a href="classqRansacSD.html#ae0ee3e5a650c58fb59f0afd5185a42c2">qRansacSD::doAction</a></div><div class="ttdeci">void doAction()</div><div class="ttdoc">Slot called when associated ation is triggered.</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD_8cpp_source.html#l00121">qRANSAC_SD.cpp:121</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
@@ -982,7 +1003,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="ttc" id="aecvSphere_8h_html"><div class="ttname"><a href="ecvSphere_8h.html">ecvSphere.h</a></div></div>
 <div class="ttc" id="aecvTorus_8h_html"><div class="ttname"><a href="ecvTorus_8h.html">ecvTorus.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a841b56bbb03f75b2952a783a34eff584"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">cloudViewer::utility::Sleep</a></div><div class="ttdeci">void Sleep(int milliseconds)</div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1utility_html_a841b56bbb03f75b2952a783a34eff584"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">cloudViewer::utility::Sleep</a></div><div class="ttdeci">void Sleep(int milliseconds)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00278">Helper.cpp:278</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a6286aab37e15a37234bcb5ba345062e2"><div class="ttname"><a href="namespacecloudViewer.html#a6286aab37e15a37234bcb5ba345062e2">cloudViewer::DegreesToRadians</a></div><div class="ttdeci">float DegreesToRadians(int degrees)</div><div class="ttdoc">Convert degrees to radians.</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00098">CVMath.h:98</a></div></div>
 <div class="ttc" id="aqRANSAC__SD_8cpp_html_a0ee445964218bacebc4d335829445075"><div class="ttname"><a href="qRANSAC__SD_8cpp.html#a0ee445964218bacebc4d335829445075">s_shapes</a></div><div class="ttdeci">static MiscLib::Vector&lt; std::pair&lt; MiscLib::RefCountPtr&lt; PrimitiveShape &gt;, size_t &gt; &gt; * s_shapes</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD_8cpp_source.html#l00095">qRANSAC_SD.cpp:95</a></div></div>
 <div class="ttc" id="aqRANSAC__SD_8cpp_html_a175306f26fd0bd61776f66d84d9c88b0"><div class="ttname"><a href="qRANSAC__SD_8cpp.html#a175306f26fd0bd61776f66d84d9c88b0">s_supportPoints</a></div><div class="ttdeci">static unsigned s_supportPoints</div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD_8cpp_source.html#l00107">qRANSAC_SD.cpp:107</a></div></div>
@@ -1000,13 +1021,14 @@ $(document).ready(function(){initNavTree('qRANSAC__SD_8cpp_source.html',''); ini
 <div class="ttc" id="aqRANSAC__SD_8h_html"><div class="ttname"><a href="qRANSAC__SD_8h.html">qRANSAC_SD.h</a></div></div>
 <div class="ttc" id="aqRANSAC__SD__Commands_8h_html"><div class="ttname"><a href="qRANSAC__SD__Commands_8h.html">qRANSAC_SD_Commands.h</a></div></div>
 <div class="ttc" id="astructCommandRANSAC_html"><div class="ttname"><a href="structCommandRANSAC.html">CommandRANSAC</a></div><div class="ttdef"><b>Definition:</b> <a href="qRANSAC__SD__Commands_8h_source.html#l00049">qRANSAC_SD_Commands.h:49</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html_a40d4dd296bcd3331b8e0ea78479fd55e"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a></div><div class="ttdeci">QSharedPointer&lt; Command &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00132">ecvCommandLineInterface.h:132</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_b63d785a9b8f5adc38b5a828fbc08a5c.html">qRANSAC_SD</a></li><li class="navelem"><a class="el" href="dir_0443135a70add91c462f3d7e5522e326.html">src</a></li><li class="navelem"><a class="el" href="qRANSAC__SD_8cpp.html">qRANSAC_SD.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -143,11 +152,11 @@ $(document).ready(function(){initNavTree('SaitoSquaredDistanceTransform_8h_sourc
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    }</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a4cdd17a2902c4ec93cab09f7428d6a4b">   80</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a4cdd17a2902c4ec93cab09f7428d6a4b">EDT_1D</a>(<a class="code" href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">GridElement</a>* slice, std::size_t r, std::size_t c);</div>
-<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#ad365ff8febb4800869980e64226b530c">   82</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#ad365ff8febb4800869980e64226b530c">SDT_2D</a>(<a class="code" href="classcloudViewer_1_1Grid3D.html">Grid3D&lt;GridElement&gt;</a>&amp; <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>,</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> EDT_1D(GridElement* slice, std::size_t r, std::size_t c);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> SDT_2D(<a class="code" href="classcloudViewer_1_1Grid3D.html">Grid3D&lt;GridElement&gt;</a>&amp; <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                       std::size_t sliceIndex,</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                       <span class="keyword">const</span> std::vector&lt;GridElement&gt;&amp; sq);</div>
-<div class="line"><a name="l00086"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a7c25e876e19f5c7c94deaa027b2b969b">   86</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a7c25e876e19f5c7c94deaa027b2b969b">SDT_3D</a>(<a class="code" href="classcloudViewer_1_1Grid3D.html">Grid3D&lt;GridElement&gt;</a>&amp; <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>,</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> SDT_3D(<a class="code" href="classcloudViewer_1_1Grid3D.html">Grid3D&lt;GridElement&gt;</a>&amp; <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>,</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                       <a class="code" href="classcloudViewer_1_1GenericProgressCallback.html">GenericProgressCallback</a>* progressCb = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;};</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
@@ -166,26 +175,22 @@ $(document).ready(function(){initNavTree('SaitoSquaredDistanceTransform_8h_sourc
 <div class="ttc" id="aclasscloudViewer_1_1GenericIndexedMesh_html"><div class="ttname"><a href="classcloudViewer_1_1GenericIndexedMesh.html">cloudViewer::GenericIndexedMesh</a></div><div class="ttdoc">A generic mesh with index-based vertex access.</div><div class="ttdef"><b>Definition:</b> <a href="GenericIndexedMesh_8h_source.html#l00037">GenericIndexedMesh.h:37</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericProgressCallback_html"><div class="ttname"><a href="classcloudViewer_1_1GenericProgressCallback.html">cloudViewer::GenericProgressCallback</a></div><div class="ttdef"><b>Definition:</b> <a href="GenericProgressCallback_8h_source.html#l00020">GenericProgressCallback.h:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Grid3D_html"><div class="ttname"><a href="classcloudViewer_1_1Grid3D.html">cloudViewer::Grid3D</a></div><div class="ttdoc">Simple 3D grid structure.</div><div class="ttdef"><b>Definition:</b> <a href="Grid3D_8h_source.html#l00032">Grid3D.h:32</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1Grid3D_html_a33172222d73c83131639cd15ae685639"><div class="ttname"><a href="classcloudViewer_1_1Grid3D.html#a33172222d73c83131639cd15ae685639">cloudViewer::Grid3D&lt; unsigned &gt;::GridElement</a></div><div class="ttdeci">unsigned GridElement</div><div class="ttdoc">Cell type.</div><div class="ttdef"><b>Definition:</b> <a href="Grid3D_8h_source.html#l00035">Grid3D.h:35</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1Grid3D_html_ae6e1293c527d181a5216a3346c750f12"><div class="ttname"><a href="classcloudViewer_1_1Grid3D.html#ae6e1293c527d181a5216a3346c750f12">cloudViewer::Grid3D::init</a></div><div class="ttdeci">bool init(unsigned di, unsigned dj, unsigned dk, unsigned margin, GridElement defaultCellValue=0)</div><div class="ttdoc">Initializes the grid.</div><div class="ttdef"><b>Definition:</b> <a href="Grid3D_8h_source.html#l00077">Grid3D.h:77</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1MathTools_html"><div class="ttname"><a href="classcloudViewer_1_1MathTools.html">cloudViewer::MathTools</a></div><div class="ttdoc">Empty class - for classification purpose only.</div><div class="ttdef"><b>Definition:</b> <a href="MathTools_8h_source.html#l00015">MathTools.h:15</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html">cloudViewer::SaitoSquaredDistanceTransform</a></div><div class="ttdef"><b>Definition:</b> <a href="SaitoSquaredDistanceTransform_8h_source.html#l00025">SaitoSquaredDistanceTransform.h:26</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_a0336a6e95ded734937dcf64f62650238"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a0336a6e95ded734937dcf64f62650238">cloudViewer::SaitoSquaredDistanceTransform::initDT</a></div><div class="ttdeci">bool initDT(GenericCloud *cloud, PointCoordinateType cellLength, const CCVector3 &amp;gridMinCorner, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Initializes the distance transform with a cloud.</div><div class="ttdef"><b>Definition:</b> <a href="SaitoSquaredDistanceTransform_8h_source.html#l00050">SaitoSquaredDistanceTransform.h:50</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_a18b03527b3e70fab26d7ca70524f2ad8"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a18b03527b3e70fab26d7ca70524f2ad8">cloudViewer::SaitoSquaredDistanceTransform::SaitoSquaredDistanceTransform</a></div><div class="ttdeci">SaitoSquaredDistanceTransform()=default</div><div class="ttdoc">Default constructor.</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_a20df91d039d683eb938228052053579f"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a20df91d039d683eb938228052053579f">cloudViewer::SaitoSquaredDistanceTransform::propagateDistance</a></div><div class="ttdeci">bool propagateDistance(GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Computes the exact Squared Distance Transform on the whole grid.</div><div class="ttdef"><b>Definition:</b> <a href="SaitoSquaredDistanceTransform_8h_source.html#l00073">SaitoSquaredDistanceTransform.h:73</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_a4cdd17a2902c4ec93cab09f7428d6a4b"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a4cdd17a2902c4ec93cab09f7428d6a4b">cloudViewer::SaitoSquaredDistanceTransform::EDT_1D</a></div><div class="ttdeci">static bool EDT_1D(GridElement *slice, std::size_t r, std::size_t c)</div><div class="ttdoc">1D Euclidean Distance Transform</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_a7c25e876e19f5c7c94deaa027b2b969b"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#a7c25e876e19f5c7c94deaa027b2b969b">cloudViewer::SaitoSquaredDistanceTransform::SDT_3D</a></div><div class="ttdeci">static bool SDT_3D(Grid3D&lt; GridElement &gt; &amp;image, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">3D Exact Squared Distance Transform</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_ad365ff8febb4800869980e64226b530c"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#ad365ff8febb4800869980e64226b530c">cloudViewer::SaitoSquaredDistanceTransform::SDT_2D</a></div><div class="ttdeci">static bool SDT_2D(Grid3D&lt; GridElement &gt; &amp;image, std::size_t sliceIndex, const std::vector&lt; GridElement &gt; &amp;sq)</div><div class="ttdoc">2D Exact Squared Distance Transform</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_ad89afda9ba9abed8575bde427bfbe049"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#ad89afda9ba9abed8575bde427bfbe049">cloudViewer::SaitoSquaredDistanceTransform::initDT</a></div><div class="ttdeci">bool initDT(GenericIndexedMesh *mesh, PointCoordinateType cellLength, const CCVector3 &amp;gridMinCorner, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Initializes the distance transform with a mesh.</div><div class="ttdef"><b>Definition:</b> <a href="SaitoSquaredDistanceTransform_8h_source.html#l00042">SaitoSquaredDistanceTransform.h:42</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1SaitoSquaredDistanceTransform_html_ae98256d2de5dd6dd01ef26fc39e53420"><div class="ttname"><a href="classcloudViewer_1_1SaitoSquaredDistanceTransform.html#ae98256d2de5dd6dd01ef26fc39e53420">cloudViewer::SaitoSquaredDistanceTransform::initGrid</a></div><div class="ttdeci">bool initGrid(const Tuple3ui &amp;gridSize)</div><div class="ttdoc">Initializes the grid.</div><div class="ttdef"><b>Definition:</b> <a href="SaitoSquaredDistanceTransform_8h_source.html#l00035">SaitoSquaredDistanceTransform.h:35</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="SaitoSquaredDistanceTransform_8h.html">SaitoSquaredDistanceTransform.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:19 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -99,7 +108,7 @@ $(document).ready(function(){initNavTree('qCloudLayers_2include_2ccMouseCircle_8
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecv2DViewportObject_8h.html">ecv2DViewportObject.h</a>&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a>&gt;</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;ecvStdPluginInterface.h&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a>&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">// Qt</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &lt;QEvent&gt;</span></div>
@@ -109,7 +118,7 @@ $(document).ready(function(){initNavTree('qCloudLayers_2include_2ccMouseCircle_8
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classccMouseCircle.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="classccMouseCircle.html">ccMouseCircle</a> : <span class="keyword">public</span> <a class="code" href="classcc2DViewportObject.html">cc2DViewportObject</a>, <span class="keyword">public</span> QObject {</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="comment">// constructor</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classccMouseCircle.html#a6b6b18779e8ed82fedab8daf93f1b21e">ccMouseCircle</a>(ecvMainAppInterface* appInterface,</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classccMouseCircle.html#a6b6b18779e8ed82fedab8daf93f1b21e">ccMouseCircle</a>(<a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* appInterface,</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                           QWidget* owner,</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                           QString <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a> = QString(<span class="stringliteral">&quot;MouseCircle&quot;</span>));</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
@@ -130,10 +139,10 @@ $(document).ready(function(){initNavTree('qCloudLayers_2include_2ccMouseCircle_8
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="comment">// draws a circle of radius r around the mouse</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMouseCircle.html#a6277bb41ee6962d0d0a70325d305825e">draw</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccMouseCircle.html#a6277bb41ee6962d0d0a70325d305825e">draw</a>(<a class="code" href="structccGLDrawContext.html">CC_DRAW_CONTEXT</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    ecvMainAppInterface* m_app;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <a class="code" href="classecvMainAppInterface.html">ecvMainAppInterface</a>* m_app;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    QWidget* m_owner;</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
@@ -148,7 +157,6 @@ $(document).ready(function(){initNavTree('qCloudLayers_2include_2ccMouseCircle_8
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;};</div>
 <div class="ttc" id="aBitmapWindowSystem_8cpp_html_a676b8935df5792ce9ed1492ee266822e"><div class="ttname"><a href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a></div><div class="ttdeci">MouseEvent event</div><div class="ttdef"><b>Definition:</b> <a href="BitmapWindowSystem_8cpp_source.html#l00061">BitmapWindowSystem.cpp:61</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclasscc2DViewportObject_html"><div class="ttname"><a href="classcc2DViewportObject.html">cc2DViewportObject</a></div><div class="ttdoc">2D viewport object</div><div class="ttdef"><b>Definition:</b> <a href="ecv2DViewportObject_8h_source.html#l00015">ecv2DViewportObject.h:15</a></div></div>
 <div class="ttc" id="aclassccMouseCircle_html"><div class="ttname"><a href="classccMouseCircle.html">ccMouseCircle</a></div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_2include_2ccMouseCircle_8h_source.html#l00024">ccMouseCircle.h:24</a></div></div>
 <div class="ttc" id="aclassccMouseCircle_html_a1db862c6261488b1b0061c8e395d7193"><div class="ttname"><a href="classccMouseCircle.html#a1db862c6261488b1b0061c8e395d7193">ccMouseCircle::ownerIsDead</a></div><div class="ttdeci">void ownerIsDead()</div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_2include_2ccMouseCircle_8h_source.html#l00041">ccMouseCircle.h:41</a></div></div>
@@ -158,8 +166,11 @@ $(document).ready(function(){initNavTree('qCloudLayers_2include_2ccMouseCircle_8
 <div class="ttc" id="aclassccMouseCircle_html_a9421bb5075caa3af7b3d56bf9e2a2c2a"><div class="ttname"><a href="classccMouseCircle.html#a9421bb5075caa3af7b3d56bf9e2a2c2a">ccMouseCircle::getRadiusWorld</a></div><div class="ttdeci">float getRadiusWorld()</div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_2src_2ccMouseCircle_8cpp_source.html#l00059">ccMouseCircle.cpp:59</a></div></div>
 <div class="ttc" id="aclassccMouseCircle_html_aa5353db7c09571adfa078229865303ef"><div class="ttname"><a href="classccMouseCircle.html#aa5353db7c09571adfa078229865303ef">ccMouseCircle::getRadiusPx</a></div><div class="ttdeci">int getRadiusPx() const</div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_2include_2ccMouseCircle_8h_source.html#l00035">ccMouseCircle.h:35</a></div></div>
 <div class="ttc" id="aclassccMouseCircle_html_ae42bcf49ecf832d77e6bb169d27adf2e"><div class="ttname"><a href="classccMouseCircle.html#ae42bcf49ecf832d77e6bb169d27adf2e">ccMouseCircle::setAllowScroll</a></div><div class="ttdeci">void setAllowScroll(bool state)</div><div class="ttdef"><b>Definition:</b> <a href="qCloudLayers_2include_2ccMouseCircle_8h_source.html#l00044">ccMouseCircle.h:44</a></div></div>
+<div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aecv2DViewportObject_8h_html"><div class="ttname"><a href="ecv2DViewportObject_8h.html">ecv2DViewportObject.h</a></div></div>
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
+<div class="ttc" id="aecvStdPluginInterface_8h_html"><div class="ttname"><a href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="astructccGLDrawContext_html"><div class="ttname"><a href="structccGLDrawContext.html">ccGLDrawContext</a></div><div class="ttdoc">Display context.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawContext_8h_source.html#l00365">ecvDrawContext.h:365</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -167,7 +178,7 @@ $(document).ready(function(){initNavTree('qCloudLayers_2include_2ccMouseCircle_8
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_0ddd015bacd93a2b1d2bac93db97fdae.html">qCloudLayers</a></li><li class="navelem"><a class="el" href="dir_1722d22e6dce0bc59d3c8c7777271c30.html">include</a></li><li class="navelem"><a class="el" href="qCloudLayers_2include_2ccMouseCircle_8h.html">ccMouseCircle.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

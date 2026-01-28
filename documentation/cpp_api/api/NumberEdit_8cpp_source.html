@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -177,7 +186,7 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    impl_-&gt;on_changed_ = on_changed;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;}</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a42ed3e44776f02cd215224a2a94932cb">   90</a></span>&#160;<a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Size.html">Size</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a42ed3e44776f02cd215224a2a94932cb">NumberEdit::CalcPreferredSize</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">LayoutContext</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
+<div class="line"><a name="l00090"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a42ed3e44776f02cd215224a2a94932cb">   90</a></span>&#160;<a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Size.html">Size</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a42ed3e44776f02cd215224a2a94932cb">NumberEdit::CalcPreferredSize</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">LayoutContext</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                                   <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Widget_1_1Constraints.html">Constraints</a>&amp; constraints)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordtype">int</span> num_min_digits =</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(std::log10(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(impl_-&gt;min_value_))));</div>
@@ -197,14 +206,14 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    }</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> =</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            (num_digits * <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.font_size) / 2 + padding + incdec_width;</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            (num_digits * <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.font_size) / 2 + padding + incdec_width;</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keywordflow">if</span> (impl_-&gt;preferred_width_ &gt; 0) {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> = impl_-&gt;preferred_width_;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    }</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Size.html">Size</a>(<a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>, <a class="code" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;}</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
-<div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#aafee29c355965af0c95d29a7f4e4cc5f">  117</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391">Widget::DrawResult</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#aafee29c355965af0c95d29a7f4e4cc5f">NumberEdit::Draw</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">DrawContext</a>&amp; <a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) {</div>
+<div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#aafee29c355965af0c95d29a7f4e4cc5f">  117</a></span>&#160;<a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391">Widget::DrawResult</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#aafee29c355965af0c95d29a7f4e4cc5f">NumberEdit::Draw</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">DrawContext</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>) {</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keyword">auto</span>&amp; <a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a> = <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a8f803341eeec0654d823b75168f8bab9">GetFrame</a>();</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    ImGui::SetCursorScreenPos(</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;            ImVec2(<span class="keywordtype">float</span>(<a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.x), <span class="keywordtype">float</span>(<a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.y) - ImGui::GetScrollY()));</div>
@@ -214,13 +223,13 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    ImGui::PushStyleColor(</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;            ImGuiCol_FrameBg,</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;            <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.text_edit_background_color));</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;            <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.text_edit_background_color));</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    ImGui::PushStyleColor(</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            ImGuiCol_FrameBgHovered,</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.text_edit_background_color));</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.text_edit_background_color));</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    ImGui::PushStyleColor(</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;            ImGuiCol_FrameBgActive,</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(<a class="code" href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.text_edit_background_color));</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            <a class="code" href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">colorToImgui</a>(<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>.theme.text_edit_background_color));</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keyword">auto</span> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693">Widget::DrawResult::NONE</a>;</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#af28e1765c4a30741c6c50ec397562ce1">DrawImGuiPushEnabledState</a>();</div>
@@ -283,7 +292,6 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="ttc" id="aTheme_8h_html"><div class="ttname"><a href="Theme_8h.html">Theme.h</a></div></div>
 <div class="ttc" id="aUtil_8h_html"><div class="ttname"><a href="Util_8h.html">Util.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="aWindow_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1NumberEdit_html"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html">cloudViewer::visualization::gui::NumberEdit</a></div><div class="ttdef"><b>Definition:</b> <a href="NumberEdit_8h_source.html#l00018">NumberEdit.h:18</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1NumberEdit_html_a1a19f940bd6c92552bcece7cde42b9ae"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a1a19f940bd6c92552bcece7cde42b9ae">cloudViewer::visualization::gui::NumberEdit::GetMinimumValue</a></div><div class="ttdeci">double GetMinimumValue() const</div><div class="ttdef"><b>Definition:</b> <a href="NumberEdit_8cpp_source.html#l00061">NumberEdit.cpp:61</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1NumberEdit_html_a2123e6b3772c1433cced851fd4a2156f"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a2123e6b3772c1433cced851fd4a2156f">cloudViewer::visualization::gui::NumberEdit::~NumberEdit</a></div><div class="ttdeci">~NumberEdit()</div><div class="ttdef"><b>Definition:</b> <a href="NumberEdit_8cpp_source.html#l00047">NumberEdit.cpp:47</a></div></div>
@@ -311,10 +319,11 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
 <div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_aca9fc6fdaa1ee91a03470ca0ed4735a3"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">cloudViewer::visualization::gui::colorToImgui</a></div><div class="ttdeci">ImVec4 colorToImgui(const Color &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00020">Util.cpp:20</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AdvancedIndexing_8cpp_source.html#l00014">AdvancedIndexing.cpp:14</a></div></div>
-<div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="DLPack_8h_source.html#l00678">DLPack.h:678</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8h_source.html#l00086">IJsonConvertible.h:86</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1DrawContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">cloudViewer::visualization::gui::DrawContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00037">Widget.h:37</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1LayoutContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">cloudViewer::visualization::gui::LayoutContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00032">Widget.h:32</a></div></div>
@@ -335,7 +344,7 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_016d0f202ff0280a7e5050aeab20bc2e.html">gui</a></li><li class="navelem"><a class="el" href="NumberEdit_8cpp.html">NumberEdit.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

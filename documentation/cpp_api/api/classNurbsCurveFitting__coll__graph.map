@@ -1,9 +1,11 @@
 <map id="NurbsCurveFitting" name="NurbsCurveFitting">
-<area shape="rect" id="node1" title="Greedy Triangulation." alt="" coords="192,184,331,211"/>
-<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="119,95,241,121"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,80,32"/>
-<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="104,5,267,32"/>
-<area shape="rect" id="node5" href="$classNurbsCurveFittingDlg.html" title=" " alt="" coords="265,95,426,121"/>
-<area shape="rect" id="node6" title=" " alt="" coords="301,5,376,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="401,5,583,32"/>
+<area shape="rect" id="node1" title="Greedy Triangulation." alt="" coords="624,157,763,184"/>
+<area shape="rect" id="node2" href="$classBasePclModule.html" title="Base abstract class for each implemented PCL filter." alt="" coords="369,107,491,133"/>
+<area shape="rect" id="node3" title=" " alt="" coords="59,5,134,32"/>
+<area shape="rect" id="node4" href="$structPclModuleDescription.html" title="PCL filter description." alt="" coords="15,56,178,83"/>
+<area shape="rect" id="node5" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="29,107,164,133"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="17,157,177,184"/>
+<area shape="rect" id="node7" href="$classNurbsCurveFittingDlg.html" title=" " alt="" coords="349,208,511,235"/>
+<area shape="rect" id="node8" title=" " alt="" coords="59,208,134,235"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,259,188,285"/>
 </map>

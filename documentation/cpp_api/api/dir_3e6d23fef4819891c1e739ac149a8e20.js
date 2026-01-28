@@ -27,7 +27,7 @@ var dir_3e6d23fef4819891c1e739ac149a8e20 =
     [ "TransformCPU.cpp", "TransformCPU_8cpp.html", null ],
     [ "TransformCUDA.cu", "TransformCUDA_8cu.html", null ],
     [ "TransformImpl.h", "TransformImpl_8h.html", "TransformImpl_8h" ],
-    [ "TriangleMesh.cpp", "kernel_2TriangleMesh_8cpp.html", null ],
+    [ "TriangleMesh.cpp", "cloudViewer_2t_2geometry_2kernel_2TriangleMesh_8cpp.html", null ],
     [ "TriangleMesh.h", "t_2geometry_2kernel_2TriangleMesh_8h.html", "t_2geometry_2kernel_2TriangleMesh_8h" ],
     [ "TriangleMeshCPU.cpp", "TriangleMeshCPU_8cpp.html", "TriangleMeshCPU_8cpp" ],
     [ "TriangleMeshCUDA.cu", "TriangleMeshCUDA_8cu.html", null ],

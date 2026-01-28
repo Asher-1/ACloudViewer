@@ -1,3 +1,4 @@
+<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -17,6 +18,14 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3TQPKGV6Z3');
+</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -27,7 +36,7 @@
   <td id="projectlogo"><img alt="Logo" src="ACloudViewer_logo_horizontal.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">ACloudViewer
-   &#160;<span id="projectnumber">3.9.3</span>
+   &#160;<span id="projectnumber">3.9.4</span>
    </div>
    <div id="projectbrief">A Modern Library for 3D Data Processing</div>
   </td>
@@ -101,14 +110,14 @@ $(document).ready(function(){initNavTree('qFBXIO_8cpp_source.html',''); initResi
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="FBXFilter_8h.html">FBXFilter.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;qFBXIO::qFBXIO(QObject *parent)</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    : QObject(parent), ccIOPluginInterface(<span class="stringliteral">&quot;:/CC/plugin/qFBXIO/info.json&quot;</span>) {}</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    : QObject(parent), <a class="code" href="classccIOPluginInterface.html">ccIOPluginInterface</a>(<span class="stringliteral">&quot;:/CC/plugin/qFBXIO/info.json&quot;</span>) {}</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keywordtype">void</span> qFBXIO::registerCommands(ccCommandLineInterface *cmd) {</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    cmd-&gt;registerCommand(</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;            ccCommandLineInterface::Command::Shared(<span class="keyword">new</span> <a class="code" href="classFBXCommand.html">FBXCommand</a>));</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">qFBXIO::registerCommands</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> *cmd) {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    cmd-&gt;<a class="code" href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">registerCommand</a>(</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;            <a class="code" href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a>(<span class="keyword">new</span> <a class="code" href="classFBXCommand.html">FBXCommand</a>));</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;}</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;ccIOPluginInterface::FilterList qFBXIO::getFilters() {</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<a class="code" href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a> qFBXIO::getFilters() {</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keywordflow">return</span> {<a class="code" href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a>(<span class="keyword">new</span> <a class="code" href="classFBXFilter.html">FBXFilter</a>)};</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;}</div>
 <div class="ttc" id="aFBXCommand_8h_html"><div class="ttname"><a href="FBXCommand_8h.html">FBXCommand.h</a></div></div>
@@ -116,14 +125,20 @@ $(document).ready(function(){initNavTree('qFBXIO_8cpp_source.html',''); initResi
 <div class="ttc" id="aclassFBXCommand_html"><div class="ttname"><a href="classFBXCommand.html">FBXCommand</a></div><div class="ttdef"><b>Definition:</b> <a href="FBXCommand_8h_source.html#l00029">FBXCommand.h:29</a></div></div>
 <div class="ttc" id="aclassFBXFilter_html"><div class="ttname"><a href="classFBXFilter.html">FBXFilter</a></div><div class="ttdoc">Autodesk FBX format I/O filter.</div><div class="ttdef"><b>Definition:</b> <a href="FBXFilter_8h_source.html#l00015">FBXFilter.h:15</a></div></div>
 <div class="ttc" id="aclassFileIOFilter_html_abfe3e5d65638ebcf0ec20432b23da4bd"><div class="ttname"><a href="classFileIOFilter.html#abfe3e5d65638ebcf0ec20432b23da4bd">FileIOFilter::Shared</a></div><div class="ttdeci">QSharedPointer&lt; FileIOFilter &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00097">FileIOFilter.h:97</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
+<div class="ttc" id="aclassccCommandLineInterface_html_ab4644e6978732163718383530cd5cd6b"><div class="ttname"><a href="classccCommandLineInterface.html#ab4644e6978732163718383530cd5cd6b">ccCommandLineInterface::registerCommand</a></div><div class="ttdeci">virtual bool registerCommand(Command::Shared command)=0</div><div class="ttdoc">Registers a new command.</div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html"><div class="ttname"><a href="classccIOPluginInterface.html">ccIOPluginInterface</a></div><div class="ttdoc">I/O filter plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00020">ecvIOPluginInterface.h:20</a></div></div>
+<div class="ttc" id="aclassccIOPluginInterface_html_a66bef21cd54a0c6c13a1279a0ff1a827"><div class="ttname"><a href="classccIOPluginInterface.html#a66bef21cd54a0c6c13a1279a0ff1a827">ccIOPluginInterface::FilterList</a></div><div class="ttdeci">QVector&lt; FileIOFilter::Shared &gt; FilterList</div><div class="ttdef"><b>Definition:</b> <a href="ecvIOPluginInterface_8h_source.html#l00022">ecvIOPluginInterface.h:22</a></div></div>
+<div class="ttc" id="aclassccPluginInterface_html_a7a86584af99d29165624d778c016b05a"><div class="ttname"><a href="classccPluginInterface.html#a7a86584af99d29165624d778c016b05a">ccPluginInterface::registerCommands</a></div><div class="ttdeci">virtual void registerCommands(ccCommandLineInterface *cmd)</div><div class="ttdoc">Optional: registers commands (for the command line mode)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPluginInterface_8h_source.html#l00121">ecvPluginInterface.h:121</a></div></div>
 <div class="ttc" id="aqFBXIO_8h_html"><div class="ttname"><a href="qFBXIO_8h.html">qFBXIO.h</a></div></div>
+<div class="ttc" id="astructccCommandLineInterface_1_1Command_html_a40d4dd296bcd3331b8e0ea78479fd55e"><div class="ttname"><a href="structccCommandLineInterface_1_1Command.html#a40d4dd296bcd3331b8e0ea78479fd55e">ccCommandLineInterface::Command::Shared</a></div><div class="ttdeci">QSharedPointer&lt; Command &gt; Shared</div><div class="ttdoc">Shared type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00132">ecvCommandLineInterface.h:132</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_ba78d2b40d836d0b4658cd30e65ca81f.html">qFBXIO</a></li><li class="navelem"><a class="el" href="dir_7297c69ea43aa2ec5de73a0d1130164e.html">src</a></li><li class="navelem"><a class="el" href="qFBXIO_8cpp.html">qFBXIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 02:20:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

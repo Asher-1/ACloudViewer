@@ -1,0 +1,6 @@
+<map id="ccWaveWidget" name="ccWaveWidget">
+<area shape="rect" id="node1" title="Waveform widget." alt="" coords="21,185,139,212"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,81,112,108"/>
+<area shape="rect" id="node3" href="$classQCPBarsWithText.html" title="QCustomPlot: vertical bar with text along side." alt="" coords="137,81,271,108"/>
+<area shape="rect" id="node4" title=" " alt="" coords="165,5,243,32"/>
+</map>
