@@ -6,7 +6,7 @@ Web visualizer and Jupyter
 Introduction
 ---------------
 
-ACloudViewer web visualizer enables advanced rendering and visualization of 3D models
+CloudViewer web visualizer enables advanced rendering and visualization of 3D models
 in modern browsers. You first start the visualization server on a local
 or remote machine, and then the 3D models can be viewed from any device with
 a modern browser. The web visualizer server and client communicate via the
@@ -15,14 +15,14 @@ protocol.
 
 In this tutorial, we cover two common use cases:
 
-- Standalone mode: Run ACloudViewer web visualizer server as a standalone application
+- Standalone mode: Run CloudViewer web visualizer server as a standalone application
   and view the 3D models in a browser. It supports both C++ and Python. You'll
   only need add one line to your code to enable the server.
-- Jupyter mode: Run ACloudViewer web visualizer as embedded Jupyter cells. It supports
+- Jupyter mode: Run CloudViewer web visualizer as embedded Jupyter cells. It supports
   both the Python Jupyter notebook and Jupyter lab environments. You'll need
   to modify your code to use the non-blocking APIs and wrappers.
 
-As of the current release, ACloudViewer web visualizer is supported on the following
+As of the current release, CloudViewer web visualizer is supported on the following
 platforms:
 
 .. image:: ../../_static/visualization/webrtc_visualizer.gif
@@ -61,7 +61,7 @@ Additional notes on compatibility:
 Standalone mode
 ------------------
 
-In standalone mode, ACloudViewer web visualizer server runs as a standalone
+In standalone mode, CloudViewer web visualizer server runs as a standalone
 application. It supports both C++ and Python. You'll only need to make very
 minimal changes to your code to enable the server.
 
@@ -113,7 +113,7 @@ for the complete source code.
 IP/port binding
 :::::::::::::::
 
-Similar to other web servers, the ACloudViewer web visualizer server allows binding
+Similar to other web servers, the CloudViewer web visualizer server allows binding
 to custom IP address and port. This is typically required for setting up remote
 servers.
 
@@ -204,8 +204,8 @@ the implementation of ``cloudViewer.web_visualizer.draw`` as an example.
 Build Jupyter package from source
 :::::::::::::::::::::::::::::::::
 
-ACloudViewer official Python wheels come with Jupyter web visualizer support.
-To build ACloudViewer Python package from source with Jupyter web visualizer, you'll
+CloudViewer official Python wheels come with Jupyter web visualizer support.
+To build CloudViewer Python package from source with Jupyter web visualizer, you'll
 need to :
 
 1. Install ``npm`` and ``yarn``. For example, you may
@@ -218,7 +218,7 @@ need to :
 
      pip install -r python/requirements_jupyter_build.txt
 
-3. Build ACloudViewer Python package:
+3. Build CloudViewer Python package:
 
    .. code-block:: sh
 

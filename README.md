@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/ACloudViewer_logo_horizontal.png">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/ACloudViewer_logo_horizontal.png">
 </p>
 
 # ACloudViewer: A Modern System for 3D Data Processing
@@ -18,11 +18,11 @@
 </h4>
 
 
-[![GitHub release](docs/images/version.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
+[![GitHub release](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/version.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
 [![Ubuntu CI](https://github.com/Asher-1/ACloudViewer/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22Ubuntu+CI%22)
 [![macOS CI](https://github.com/Asher-1/ACloudViewer/actions/workflows/macos.yml/badge.svg)](https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22macOS+CI%22)
 [![Windows CI](https://github.com/Asher-1/ACloudViewer/actions/workflows/windows.yml/badge.svg)](https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22Windows+CI%22)
-[![Releases](docs/images/newRelease.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
+[![Releases](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/newRelease.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
 
 Introduction
 ------------
@@ -55,7 +55,7 @@ More on ACloudViewer [here](https://asher-1.github.io/ACloudViewer/)
 Here's a brief overview of the different components of ACloudViewer and how they fit
 together to enable full end to end pipelines:
 
-![CloudViewer_layers](docs/images/AbstractionLayers.png)
+![CloudViewer_layers](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/AbstractionLayers.png)
 
 For more, please visit the [ACloudViewer documentation](https://asher-1.github.io/ACloudViewer/documentation/).
 
@@ -89,7 +89,7 @@ cloudViewer example reconstruction/gui
 ## ACloudViewer System
 
 <p align="center">
-  <img width="640" src="docs/images/MainUI.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/MainUI.png">
 </p>
 
 ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
@@ -98,40 +98,40 @@ Please stay tuned for MacOS. Download ACloudViewer from the [release page](https
 Semantic Annotation Tool:
 
 <p align="center">
-  <img width="640" src="docs/images/Annotaion.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Annotaion.png">
 </p>
 
 <p align="center">
-  <img width="640" src="docs/images/SemanticAnnotation.png" >
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SemanticAnnotation.png" >
 </p>
 
 
 Reconstruction Tool:
 
 <p align="center">
-  <img width="640" src="docs/images/Reconstruction.png" >
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/Reconstruction.png" >
 </p>
 
 
 Selection and Measurement Tools:
 
 <p align="center">
-  <img width="640" src="docs/images/selection_tools.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/selection_tools.png">
 </p>
 
 <p align="center">
-  <img width="640" src="docs/images/ruler_measurement_tools.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/ruler_measurement_tools.png">
 </p>
 
 <p align="center">
-  <img width="640" src="docs/images/protractor_measurement_tools.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/protractor_measurement_tools.png">
 </p>
 
 
 ## CloudViewer app
 
 <p align="center">
-  <img width="640" src="docs/images/CloudViewerApp.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/CloudViewerApp.png">
 </p>
 
 CloudViewer-Viewer is a standalone 3D viewer app available on Ubuntu and Windows.
@@ -141,7 +141,7 @@ Please stay tuned for MacOS. Download CloudViewer app from the
 ## CloudViewer-ML
 
 <p align="center">
-  <img width="640" src="docs/images/gifs/getting_started_ml_visualizer.gif">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/gifs/getting_started_ml_visualizer.gif">
 </p>
 
 CloudViewer-ML is an extension of CloudViewer for 3D machine learning tasks. It builds on

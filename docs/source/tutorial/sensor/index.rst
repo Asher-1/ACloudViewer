@@ -1,7 +1,7 @@
 Sensor
 ======
 
-This section covers sensor integration and data capture with ACloudViewer. ACloudViewer supports various RGB-D sensors for capturing and processing 3D data.
+This section covers sensor integration and data capture with CloudViewer. CloudViewer supports various RGB-D sensors for capturing and processing 3D data.
 
 Supported Sensors
 -----------------
@@ -15,7 +15,7 @@ Supported Sensors
 Overview
 --------
 
-ACloudViewer provides comprehensive support for RGB-D sensors:
+CloudViewer provides comprehensive support for RGB-D sensors:
 
 - **Azure Kinect**: Microsoft Azure Kinect DK sensor support
 - **RealSense**: Intel RealSense camera support (L515, D435, etc.)

@@ -64,6 +64,7 @@ set(DOCS_DOXYGEN_DIR ${DOCS_BUILD_DIR}/doxygen)
 
 # Main documentation target
 # Delegates all work to make_docs.py (matches ci_utils.sh::build_docs)
+# Note: make_docs.py automatically processes .in.rst templates for version substitution
 add_custom_target(documentation
     COMMAND ${CMAKE_COMMAND} -E echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     COMMAND ${CMAKE_COMMAND} -E echo "📚 Building ACloudViewer Documentation"

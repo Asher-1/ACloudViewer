@@ -17,7 +17,7 @@ Advanced tutorials are under development:
 **Custom Operators**
 
 - Implementing custom algorithms
-- Extending ACloudViewer with C++
+- Extending CloudViewer with C++
 - Creating Python bindings
 - Plugin development
 

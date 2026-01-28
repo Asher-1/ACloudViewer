@@ -229,6 +229,8 @@ docs/source/tutorial/**/*.splat
 docs/source/python_api/
 docs/source/python_example
 docs/source/conf.py
+docs/source/getting_started/builddocs.rst
+docs/source/getting_started/installation.rst
 docs/Doxyfile
 docs/html
 docs/tensorboard.md
