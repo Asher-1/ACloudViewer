@@ -11,58 +11,70 @@ Python Installation
 
 Download wheel files from `GitHub Releases <https://github.com/Asher-1/ACloudViewer/releases>`_.
 
-**Linux (Ubuntu 22.04, Python 3.10, CUDA)**
+.. note::
+   
+   **Current version:** |cv_version|
+   
+   Download from the `Releases page <https://github.com/Asher-1/ACloudViewer/releases>`_.
+
+**Linux (Ubuntu 22.04, Python 3.13, CUDA)**
 
 .. code-block:: bash
 
-   wget https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/cloudviewer-3.9.3-cp310-cp310-manylinux_2_35_x86_64.whl
-   pip install cloudviewer-3.9.3-cp310-cp310-manylinux_2_35_x86_64.whl
+   wget https://github.com/Asher-1/ACloudViewer/releases/download/v@cv_version@/cloudviewer-@cv_version@-cp313-cp313-manylinux_2_35_x86_64.whl
+   pip install cloudviewer-@cv_version@-cp313-cp313-manylinux_2_35_x86_64.whl
 
-**Linux (Ubuntu 22.04, Python 3.10, CPU-only)**
-
-.. code-block:: bash
-
-   wget https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/cloudviewer_cpu-3.9.3-cp310-cp310-manylinux_2_35_x86_64.whl
-   pip install cloudviewer_cpu-3.9.3-cp310-cp310-manylinux_2_35_x86_64.whl
-
-**macOS (ARM64, Python 3.10)**
+**Linux (Ubuntu 22.04, Python 3.13, CPU-only)**
 
 .. code-block:: bash
 
-   wget https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/cloudViewer-3.9.3-cp310-cp310-macosx_11_0_arm64.whl
-   pip install cloudViewer-3.9.3-cp310-cp310-macosx_11_0_arm64.whl
+   wget https://github.com/Asher-1/ACloudViewer/releases/download/v@cv_version@/cloudviewer_cpu-@cv_version@-cp313-cp313-manylinux_2_35_x86_64.whl
+   pip install cloudviewer_cpu-@cv_version@-cp313-cp313-manylinux_2_35_x86_64.whl
 
-**Windows (Python 3.10, CUDA)**
+**macOS (ARM64, Python 3.12)**
+
+.. code-block:: bash
+
+   wget https://github.com/Asher-1/ACloudViewer/releases/download/v@cv_version@/cloudViewer-@cv_version@-cp312-cp312-macosx_11_0_arm64.whl
+   pip install cloudViewer-@cv_version@-cp312-cp312-macosx_11_0_arm64.whl
+
+**Windows (Python 3.12, CUDA)**
 
 .. code-block:: powershell
 
    # Download from GitHub Releases
-   pip install cloudViewer-3.9.3-cp310-cp310-win_amd64.whl
+   pip install cloudViewer-@cv_version@-cp312-cp312-win_amd64.whl
+
+.. tip::
+   
+   Adjust ``cp312`` or ``cp313`` for your Python version (cp310 for 3.10, cp311 for 3.11, cp312 for 3.12, cp313 for 3.13).
 
 Desktop Application
 ~~~~~~~~~~~~~~~~~~~
 
-Download installers from `GitHub Releases <https://github.com/Asher-1/ACloudViewer/releases>`_.
+Download installers for your platform from `GitHub Releases <https://github.com/Asher-1/ACloudViewer/releases>`_.
 
-**Linux**
+**Linux (Ubuntu 22.04+)**
 
 .. code-block:: bash
 
-   # Ubuntu 22.04 with CUDA
-   wget https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.3/ACloudViewer-3.9.3-ubuntu22.04-cuda-amd64.run
-   chmod +x ACloudViewer-3.9.3-ubuntu22.04-cuda-amd64.run
-   ./ACloudViewer-3.9.3-ubuntu22.04-cuda-amd64.run
+   # Download the .run installer
+   wget https://github.com/Asher-1/ACloudViewer/releases/download/v@cv_version@/ACloudViewer-@cv_version@-ubuntu22.04-cuda-amd64.run
+   chmod +x ACloudViewer-@cv_version@-ubuntu22.04-cuda-amd64.run
+   ./ACloudViewer-@cv_version@-ubuntu22.04-cuda-amd64.run
 
-**macOS**
+**macOS (11.0+)**
 
 .. code-block:: bash
 
    # Download and open DMG file
-   open ACloudViewer-3.9.3-mac-cpu-ARM64.dmg
+   open ACloudViewer-@cv_version@-mac-cpu-ARM64.dmg
 
-**Windows**
+Or drag and drop the application to Applications folder.
 
-Download and run the EXE installer.
+**Windows (10+)**
+
+Download the ``.exe`` installer from the releases page and run it. Follow the installation wizard.
 
 Docker Installation
 -------------------

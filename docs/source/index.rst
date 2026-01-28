@@ -80,6 +80,8 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
    getting_started/installation
    getting_started/quickstart
    getting_started/build_from_source
+   getting_started/builddocs
+   getting_started/cloudViewer_ml
 
 .. toctree::
    :maxdepth: 2

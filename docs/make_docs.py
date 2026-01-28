@@ -834,6 +834,70 @@ class SphinxDocsBuilder:
             raise
 
 
+def process_rst_templates(pwd):
+    """Process .in.rst template files by replacing version placeholders."""
+    print("=" * 70)
+    print("Processing RST template files (.in.rst)")
+    print("=" * 70)
+    
+    # Read version from version.txt
+    version_file = os.path.join(pwd, "..", "libs", "cloudViewer", "version.txt")
+    version = "3.9.4"  # Fallback
+    
+    try:
+        with open(version_file, 'r') as f:
+            lines = f.readlines()
+        version_dict = {}
+        for line in lines:
+            match = re.match(r'CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH)\s+(\d+)', line.strip())
+            if match:
+                version_dict[match.group(1).lower()] = match.group(2)
+        
+        if 'major' in version_dict and 'minor' in version_dict and 'patch' in version_dict:
+            version = f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
+            print(f"[make_docs] Version read successfully: {version}")
+    except (FileNotFoundError, IOError) as e:
+        print(f"[make_docs] Warning: Could not read version file: {e}")
+        print(f"[make_docs] Using fallback version: {version}")
+    
+    # Find all .in.rst files
+    source_dir = os.path.join(pwd, "source")
+    in_rst_files = []
+    for root, dirs, files in os.walk(source_dir):
+        for file in files:
+            if file.endswith('.in.rst'):
+                in_rst_files.append(os.path.join(root, file))
+    
+    if not in_rst_files:
+        print("[make_docs] No .in.rst files found")
+        print()
+        return
+    
+    print(f"[make_docs] Found {len(in_rst_files)} .in.rst file(s)")
+    
+    success_count = 0
+    for in_file in in_rst_files:
+        out_file = in_file.replace('.in.rst', '.rst')
+        try:
+            with open(in_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Replace @cv_version@ with actual version
+            content = content.replace('@cv_version@', version)
+            
+            with open(out_file, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            print(f"[make_docs] Generated: {os.path.basename(out_file)}")
+            success_count += 1
+        except Exception as e:
+            print(f"[make_docs] Error processing {in_file}: {e}")
+    
+    print(f"[make_docs] Processed {success_count}/{len(in_rst_files)} file(s) successfully")
+    print("=" * 70)
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Build ACloudViewer documentation",
@@ -952,6 +1016,11 @@ def main():
         ddb.run()
     else:
         print("ℹ️  Doxygen build disabled, use --doxygen to enable")
+
+    # Process RST templates FIRST (before any Sphinx-related tasks)
+    # This replaces @cv_version@ placeholders with actual version
+    if args.sphinx:
+        process_rst_templates(pwd)
 
     # Python API reST docs
     if not args.py_api_rst == "never":
