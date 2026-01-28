@@ -834,13 +834,8 @@ class SphinxDocsBuilder:
             raise
 
 
-def process_rst_templates(pwd):
-    """Process .in.rst template files by replacing version placeholders."""
-    print("=" * 70)
-    print("Processing RST template files (.in.rst)")
-    print("=" * 70)
-    
-    # Read version from version.txt
+def get_cloudviewer_version(pwd):
+    """Read CloudViewer version from version.txt."""
     version_file = os.path.join(pwd, "..", "libs", "cloudViewer", "version.txt")
     version = "3.9.4"  # Fallback
     
@@ -856,9 +851,55 @@ def process_rst_templates(pwd):
         if 'major' in version_dict and 'minor' in version_dict and 'patch' in version_dict:
             version = f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
             print(f"[make_docs] Version read successfully: {version}")
+            return version
     except (FileNotFoundError, IOError) as e:
         print(f"[make_docs] Warning: Could not read version file: {e}")
-        print(f"[make_docs] Using fallback version: {version}")
+    
+    print(f"[make_docs] Using fallback version: {version}")
+    return version
+
+
+def process_doxyfile_template(pwd, version):
+    """Process Doxyfile.in template to generate Doxyfile with version."""
+    doxyfile_in = os.path.join(pwd, "Doxyfile.in")
+    doxyfile_out = os.path.join(pwd, "Doxyfile")
+    
+    if not os.path.exists(doxyfile_in):
+        print("[make_docs] No Doxyfile.in found, skipping Doxyfile generation")
+        return
+    
+    print(f"[make_docs] Processing Doxyfile.in -> Doxyfile")
+    
+    try:
+        with open(doxyfile_in, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Get project source directory (parent of docs/)
+        project_source_dir = os.path.abspath(os.path.join(pwd, ".."))
+        docs_source_dir = os.path.abspath(os.path.join(pwd, "source"))
+        doxygen_output_dir = os.path.abspath(os.path.join(pwd, "doxygen"))
+        
+        # Replace CMake-style variables
+        content = content.replace('@PROJECT_VERSION@', version)
+        content = content.replace('@PROJECT_SOURCE_DIR@', project_source_dir)
+        content = content.replace('@DOCS_SOURCE_DIR@', docs_source_dir)
+        content = content.replace('@DOXYGEN_OUTPUT_DIRECTORY@', doxygen_output_dir)
+        
+        with open(doxyfile_out, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        print(f"[make_docs] Generated Doxyfile with version {version}")
+        print(f"[make_docs]   PROJECT_VERSION: {version}")
+        print(f"[make_docs]   PROJECT_SOURCE_DIR: {project_source_dir}")
+    except Exception as e:
+        print(f"[make_docs] Error processing Doxyfile.in: {e}")
+
+
+def process_rst_templates(pwd, version):
+    """Process .in.rst template files by replacing version placeholders."""
+    print("=" * 70)
+    print("Processing RST template files (.in.rst)")
+    print("=" * 70)
     
     # Find all .in.rst files
     source_dir = os.path.join(pwd, "source")
@@ -1010,8 +1051,14 @@ def main():
     if args.clean or (args.sphinx or args.doxygen):
         _create_or_clear_dir(html_output_dir)
 
-    # Build Doxygen documentation FIRST (Sphinx depends on it)
+    # Read version once for all template processing
+    version = get_cloudviewer_version(pwd)
+    print()
+
+    # Process Doxyfile template BEFORE building Doxygen
     if args.doxygen:
+        process_doxyfile_template(pwd, version)
+        print()
         ddb = DoxygenDocsBuilder(html_output_dir, doxygen_output_dir)
         ddb.run()
     else:
@@ -1020,7 +1067,7 @@ def main():
     # Process RST templates FIRST (before any Sphinx-related tasks)
     # This replaces @cv_version@ placeholders with actual version
     if args.sphinx:
-        process_rst_templates(pwd)
+        process_rst_templates(pwd, version)
 
     # Python API reST docs
     if not args.py_api_rst == "never":
