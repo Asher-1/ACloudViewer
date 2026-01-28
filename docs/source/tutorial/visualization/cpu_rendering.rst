@@ -3,7 +3,7 @@
 CPU (Software) Rendering
 ========================
 
-ACloudViewer's new visualization functionality (:class:`.O3DVisualizer` class,
+CloudViewer's new visualization functionality (:class:`.O3DVisualizer` class,
 :func:`.draw()` function and :mod:`cloudViewer.visualization.gui` and
 :mod:`cloudViewer.visualization.rendering` modules) requires a recent GPU with
 support for OpenGL 4.1 or higher. This is not available in certain situations:
@@ -17,7 +17,7 @@ support for OpenGL 4.1 or higher. This is not available in certain situations:
       is a common scenario for cloud based Jupyter notebooks deployed in docker
       containers.
 
-ACloudViewer supports CPU or software rendering in such situations. Note that this
+CloudViewer supports CPU or software rendering in such situations. Note that this
 usually produces slower and less responsive rendering, so a GPU is recommended.
 Currently, this is available only for Linux. There are two separate ways to
 use CPU rendering depending on whether interactive or headless rendering is
@@ -28,7 +28,7 @@ Headless CPU Rendering
 
 For Python code, you can enable CPU rendering for headless rendering when using
 the :class: `.OffscreenRenderer` for a process by setting an environment
-variable  before importing ACloudViewer::
+variable  before importing CloudViewer::
 
  - ``EGL_PLATFORM=surfaceless`` for Ubuntu 20.04+ (Mesa v20.2 or newer)
 
@@ -69,12 +69,12 @@ The method for enabling interactive CPU rendering depends on your system:
     OS, such as Ubuntu 20.04. Check your Mesa version from your package manager
     (e.g. run ``dpkg -s libglx-mesa0 | grep Version`` in Debian or Ubuntu). In this
     case, you can switch to CPU rendering by simply setting an environment
-    variable before starting your application. For example, start the ACloudViewer
+    variable before starting your application. For example, start the CloudViewer
     visualizer app in CPU rendering mode with:
 
     .. code:: bash
 
-        LIBGL_ALWAYS_SOFTWARE=true ACloudViewer
+        LIBGL_ALWAYS_SOFTWARE=true CloudViewer
 
     Or for Python code:
 
@@ -88,13 +88,13 @@ The method for enabling interactive CPU rendering depends on your system:
 
 2.  **You use Nvidia or AMD drivers, but your OS comes with recent Mesa drivers (>= v20.2).** 
     Install Mesa drivers if they are not installed in your system (e.g. `sudo apt install libglx0-mesa`
-    in Ubuntu). Preload the Mesa driver library before running any ACloudViewer application requiring CPU rendering.
+    in Ubuntu). Preload the Mesa driver library before running any CloudViewer application requiring CPU rendering.
     For example:
 
     .. code:: bash
 
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
-        ACloudViewer
+        CloudViewer
 
     Or with Python code:
 

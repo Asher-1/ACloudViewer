@@ -46,4 +46,4 @@ With the data association, we are able to conduct integration. In this example, 
    :lineno-start: 98
    :lines: 8,99-108,113-132
 
-You may follow the example and adapt it to your customized properties. ACloudViewer supports conversion from and to PyTorch tensors without memory any copy, see :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`. This can be use to leverage PyTorch's capabilities such as automatic differentiation and other operators.
+You may follow the example and adapt it to your customized properties. CloudViewer supports conversion from and to PyTorch tensors without memory any copy, see :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`. This can be use to leverage PyTorch's capabilities such as automatic differentiation and other operators.

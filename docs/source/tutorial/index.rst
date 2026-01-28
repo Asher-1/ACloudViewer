@@ -4,7 +4,7 @@ Tutorial
 Overview
 --------
 
-This tutorial provides step-by-step guides for using ACloudViewer.
+This tutorial provides step-by-step guides for using CloudViewer.
 
 Tutorial Structure
 ------------------
@@ -33,9 +33,9 @@ Tutorial Structure
 Getting Started
 ---------------
 
-If you're new to ACloudViewer, start here:
+If you're new to CloudViewer, start here:
 
-1. :doc:`../getting_started/installation` - Install ACloudViewer
+1. :doc:`../getting_started/installation` - Install CloudViewer
 2. :doc:`../getting_started/quickstart` - Quick start guide
 3. :doc:`geometry/pointcloud` - Your first point cloud
 4. :doc:`visualization/visualization` - Basic visualization
