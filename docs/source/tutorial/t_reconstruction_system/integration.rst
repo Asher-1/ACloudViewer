@@ -40,7 +40,7 @@ and CUDA
    :lineno-start: 238
    :lines: 238-244
 
-For more generalized functionalities, you may extend the macros and/or the kernel functions and compile ACloudViewer from scratch to achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
+For more generalized functionalities, you may extend the macros and/or the kernel functions and compile CloudViewer from scratch to achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
 Surface extraction
 ``````````````````

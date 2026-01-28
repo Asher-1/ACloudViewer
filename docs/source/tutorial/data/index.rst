@@ -3,7 +3,7 @@
 Dataset
 =======
 
-ACloudViewer comes with a built-in dataset module for convenient access to commonly
+CloudViewer comes with a built-in dataset module for convenient access to commonly
 used example datasets. These datasets will be downloaded automatically from the
 internet.
 

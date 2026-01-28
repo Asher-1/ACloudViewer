@@ -30,7 +30,7 @@ Register RGBD image pairs
    :lineno-match:
 
 The function reads a pair of RGBD images and registers the ``source_rgbd_image``
-to the ``target_rgbd_image``. The ACloudViewer function ``compute_rgbd_odometry`` is
+to the ``target_rgbd_image``. The CloudViewer function ``compute_rgbd_odometry`` is
 called to align the RGBD images. For adjacent RGBD images, an identity matrix is
 used as the initialization. For non-adjacent RGBD images, wide baseline matching
 is used as the initialization. In particular, the function ``pose_estimation``
