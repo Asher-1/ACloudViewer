@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -113,7 +104,7 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qPythonRuntim
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacepybind11.html">py</a> = <a class="code" href="namespacepybind11.html">pybind11</a>;</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">using namespace </span>pybind11::literals;</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="cccorelib_8cpp.html#ab34f8099e08a88ca8832260798f666ab">   17</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp.html#ab34f8099e08a88ca8832260798f666ab">define_RegistrationTools</a>(py::module &amp;cccorelib)</div>
+<div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="cccorelib_8cpp.html#ab34f8099e08a88ca8832260798f666ab">   17</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp.html#ab34f8099e08a88ca8832260798f666ab">define_RegistrationTools</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;cccorelib)</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;{</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    py::class_&lt;cloudViewer::RegistrationTools&gt; RegistrationTools(cccorelib, <span class="stringliteral">&quot;RegistrationTools&quot;</span>);</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
@@ -236,7 +227,8 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qPythonRuntim
 <div class="ttc" id="aclasscloudViewer_1_1HornRegistrationTools_html_a1a1387f095ed6312f0b728b28c86a79e"><div class="ttname"><a href="classcloudViewer_1_1HornRegistrationTools.html#a1a1387f095ed6312f0b728b28c86a79e">cloudViewer::HornRegistrationTools::ComputeRMS</a></div><div class="ttdeci">static double ComputeRMS(GenericCloud *lCloud, GenericCloud *rCloud, const ScaledTransformation &amp;trans)</div><div class="ttdoc">Computes RMS between two clouds given a transformation and a scale.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2RegistrationTools_8cpp_source.html#l00824">RegistrationTools.cpp:824</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ICPRegistrationTools_html_a49420d206c7cd9a0e4f1a106319903f3"><div class="ttname"><a href="classcloudViewer_1_1ICPRegistrationTools.html#a49420d206c7cd9a0e4f1a106319903f3">cloudViewer::ICPRegistrationTools::Register</a></div><div class="ttdeci">static RESULT_TYPE Register(GenericIndexedCloudPersist *modelCloud, GenericIndexedMesh *modelMesh, GenericIndexedCloudPersist *dataCloud, const Parameters &amp;params, ScaledTransformation &amp;totalTrans, double &amp;finalRMS, unsigned &amp;finalPointCount, GenericProgressCallback *progressCb=nullptr)</div><div class="ttdoc">Registers two clouds or a cloud and a mesh.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2RegistrationTools_8cpp_source.html#l00145">RegistrationTools.cpp:145</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1RegistrationTools_html_ac20c0e7f5cb758482bff8008e87962b7"><div class="ttname"><a href="classcloudViewer_1_1RegistrationTools.html#ac20c0e7f5cb758482bff8008e87962b7">cloudViewer::RegistrationTools::FilterTransformation</a></div><div class="ttdeci">static void FilterTransformation(const ScaledTransformation &amp;inTrans, int transformationFilters, const CCVector3 &amp;toBeAlignedGravityCenter, const CCVector3 &amp;referenceGravityCenter, ScaledTransformation &amp;outTrans)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2RegistrationTools_8cpp_source.html#l00031">RegistrationTools.cpp:31</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_aeae743e84fe331928171854b17029eaf"><div class="ttname"><a href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">Utils::module</a></div><div class="ttdeci">static double module(T *vector)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00105">utils.h:105</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 <div class="ttc" id="aplugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp_html_ab34f8099e08a88ca8832260798f666ab"><div class="ttname"><a href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp.html#ab34f8099e08a88ca8832260798f666ab">define_RegistrationTools</a></div><div class="ttdeci">void define_RegistrationTools(py::module &amp;cccorelib)</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp_source.html#l00017">RegistrationTools.cpp:17</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1ICPRegistrationTools_1_1Parameters_html_a0e92916deac0e8e4d67aa5503c06fa5d"><div class="ttname"><a href="structcloudViewer_1_1ICPRegistrationTools_1_1Parameters.html#a0e92916deac0e8e4d67aa5503c06fa5d">cloudViewer::ICPRegistrationTools::Parameters::adjustScale</a></div><div class="ttdeci">bool adjustScale</div><div class="ttdef"><b>Definition:</b> <a href="RegistrationTools_8h_source.html#l00181">RegistrationTools.h:181</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1ICPRegistrationTools_1_1Parameters_html_a4a61d9303a583764454d1170e27a88e4"><div class="ttname"><a href="structcloudViewer_1_1ICPRegistrationTools_1_1Parameters.html#a4a61d9303a583764454d1170e27a88e4">cloudViewer::ICPRegistrationTools::Parameters::convType</a></div><div class="ttdeci">CONVERGENCE_TYPE convType</div><div class="ttdoc">Convergence type.</div><div class="ttdef"><b>Definition:</b> <a href="RegistrationTools_8h_source.html#l00169">RegistrationTools.h:169</a></div></div>
@@ -255,7 +247,7 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qPythonRuntim
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_932acd6304591f5a356d6890e438ae73.html">cccorelib</a></li><li class="navelem"><a class="el" href="dir_c17cf8b2e440d80463baea1f1e29a48d.html">src</a></li><li class="navelem"><a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2RegistrationTools_8cpp.html">RegistrationTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -150,7 +141,7 @@ $(document).ready(function(){initNavTree('MergeMesh_8cpp_source.html',''); initR
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="comment">// DGM: no need to lock it as it is only used by one mesh!</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        baseVertices-&gt;<a class="code" href="classccObject.html#a10a51898e3444e4219ac3c0d84922a7b">setLocked</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="keyword">auto</span> <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a4a4839ac8fc267ad1857ee1b01615550">mesh_ptr</a> = std::make_shared&lt;ccMesh&gt;(baseVertices);</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a4a4839ac8fc267ad1857ee1b01615550">mesh_ptr</a>-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(baseVertices);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a4a4839ac8fc267ad1857ee1b01615550">mesh_ptr</a>-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(baseVertices);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer_1_1io.html#af0b17a26db3b5ee5aa20a2f42cd04abd">cloudViewer::io::ReadTriangleMesh</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, *<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a4a4839ac8fc267ad1857ee1b01615550">mesh_ptr</a>)) {</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="comment">// do some cleaning</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            {</div>
@@ -178,7 +169,7 @@ $(document).ready(function(){initNavTree('MergeMesh_8cpp_source.html',''); initR
 <div class="ttc" id="aMergeMesh_8cpp_html_a3c04138a5bfe5d72780bb7e82a18e627"><div class="ttname"><a href="MergeMesh_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a></div><div class="ttdeci">int main(int argc, char **argv)</div><div class="ttdef"><b>Definition:</b> <a href="MergeMesh_8cpp_source.html#l00025">MergeMesh.cpp:25</a></div></div>
 <div class="ttc" id="aMergeMesh_8cpp_html_ae964ff8411b4fdcaf65cb5529aea4bef"><div class="ttname"><a href="MergeMesh_8cpp.html#ae964ff8411b4fdcaf65cb5529aea4bef">PrintHelp</a></div><div class="ttdeci">void PrintHelp()</div><div class="ttdef"><b>Definition:</b> <a href="MergeMesh_8cpp_source.html#l00010">MergeMesh.cpp:10</a></div></div>
 <div class="ttc" id="aclassNormsIndexesTableType_html"><div class="ttname"><a href="classNormsIndexesTableType.html">NormsIndexesTableType</a></div><div class="ttdoc">Array of compressed 3D normals (single index)</div><div class="ttdef"><b>Definition:</b> <a href="ecvAdvancedTypes_8h_source.html#l00021">ecvAdvancedTypes.h:22</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a7ee62cff1282c3f7d99acdabfa709fc0"><div class="ttname"><a href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div></div>
+<div class="ttc" id="aclassccHObject_html_ad618a89e257a6b831543fcd1192fc733"><div class="ttname"><a href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00534">ecvHObject.cpp:534</a></div></div>
 <div class="ttc" id="aclassccMesh_html_a1457fde9ba6325d0f446f82d73b95b73"><div class="ttname"><a href="classccMesh.html#a1457fde9ba6325d0f446f82d73b95b73">ccMesh::getTriNormsTable</a></div><div class="ttdeci">NormsIndexesTableType * getTriNormsTable() const override</div><div class="ttdoc">Returns per-triangle normals shared array.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00344">ecvMesh.h:344</a></div></div>
 <div class="ttc" id="aclassccMesh_html_ae747fd2124787800f03ec3b3a5215094"><div class="ttname"><a href="classccMesh.html#ae747fd2124787800f03ec3b3a5215094">ccMesh::shrinkToFit</a></div><div class="ttdeci">void shrinkToFit()</div><div class="ttdoc">Removes unused capacity.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00302">ecvMesh.h:302</a></div></div>
 <div class="ttc" id="aclassccObject_html_a10a51898e3444e4219ac3c0d84922a7b"><div class="ttname"><a href="classccObject.html#a10a51898e3444e4219ac3c0d84922a7b">ccObject::setLocked</a></div><div class="ttdeci">virtual void setLocked(bool state)</div><div class="ttdoc">Sets the &quot;enabled&quot; property.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00117">ecvObject.h:117</a></div></div>
@@ -197,14 +188,14 @@ $(document).ready(function(){initNavTree('MergeMesh_8cpp_source.html',''); initR
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a2ae83ff42dd112dcbf69c5dfa18f56e0"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a2ae83ff42dd112dcbf69c5dfa18f56e0">cloudViewer::utility::VerbosityLevel</a></div><div class="ttdeci">VerbosityLevel</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00097">Logging.h:97</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a2ae83ff42dd112dcbf69c5dfa18f56e0aa603905470e2a5b8c13e96b579ef0dba"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a2ae83ff42dd112dcbf69c5dfa18f56e0aa603905470e2a5b8c13e96b579ef0dba">cloudViewer::utility::VerbosityLevel::Debug</a></div><div class="ttdeci">@ Debug</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a3783839135815339b7f20156a6c2f5ff"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a3783839135815339b7f20156a6c2f5ff">cloudViewer::utility::ProgramOptionExists</a></div><div class="ttdeci">bool ProgramOptionExists(int argc, char **argv, const std::string &amp;option)</div><div class="ttdef"><b>Definition:</b> <a href="Console_8cpp_source.html#l00100">Console.cpp:100</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_7ca1acaefb8190390b510b63acf876fa.html">CVViewer</a></li><li class="navelem"><a class="el" href="dir_45fd95cb21b355925acb11df5b97a546.html">tools</a></li><li class="navelem"><a class="el" href="MergeMesh_8cpp.html">MergeMesh.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:41 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -148,7 +139,7 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8cpp_source.html',''); 
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    }</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    assert(comboBox-&gt;itemData(index).isValid());</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordtype">unsigned</span> uniqueID = comboBox-&gt;itemData(index).toUInt();</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* item = dbRoot-&gt;<a class="code" href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">find</a>(uniqueID);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* item = dbRoot-&gt;<a class="code" href="classccHObject.html#a5fc1263b75c01185319667615cb01cc0">find</a>(uniqueID);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">if</span> (!item || !item-&gt;<a class="code" href="classccObject.html#a7b4d06906277afee84282d5a217ee125">isA</a>(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a>)) {</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
@@ -209,7 +200,7 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8cpp_source.html',''); 
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">m_mesh1</a>) {</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <a class="code" href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">m_mesh1</a>-&gt;<a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(state);</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="comment">// m_mesh1-&gt;prepareDisplayForRefresh();</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive</a>(<span class="keyword">false</span>);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classecvDisplayTools.html#a892218f69eeaccc97f3aa69a43ccbe45">ecvDisplayTools::SetRedrawRecursive</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <a class="code" href="classqVoxFallDialog.html#a199c7ea89769920e65193762d516232d">m_mesh1</a>-&gt;<a class="code" href="classccDrawableObject.html#a651fb582605925090468878c96ba5927">setRedraw</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71">m_app</a>) {</div>
@@ -222,7 +213,7 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8cpp_source.html',''); 
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415">m_mesh2</a>) {</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <a class="code" href="classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415">m_mesh2</a>-&gt;<a class="code" href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">setVisible</a>(state);</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="comment">// m_mesh2-&gt;prepareDisplayForRefresh();</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <a class="code" href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive</a>(<span class="keyword">false</span>);</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <a class="code" href="classecvDisplayTools.html#a892218f69eeaccc97f3aa69a43ccbe45">ecvDisplayTools::SetRedrawRecursive</a>(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <a class="code" href="classqVoxFallDialog.html#a8e3b6b502a8f256f04ee2a7e061f2415">m_mesh2</a>-&gt;<a class="code" href="classccDrawableObject.html#a651fb582605925090468878c96ba5927">setRedraw</a>(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    }</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classqVoxFallDialog.html#aa1d6a910bd4fac7c296ad1f3aaeaff71">m_app</a>) {</div>
@@ -296,12 +287,12 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8cpp_source.html',''); 
 <div class="ttc" id="aclassccDrawableObject_html_a3d00d1fb3ceea8ef31e7f6953db9d9b4"><div class="ttname"><a href="classccDrawableObject.html#a3d00d1fb3ceea8ef31e7f6953db9d9b4">ccDrawableObject::setVisible</a></div><div class="ttdeci">virtual void setVisible(bool state)</div><div class="ttdoc">Sets entity visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00040">ecvDrawableObject.h:40</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_a651fb582605925090468878c96ba5927"><div class="ttname"><a href="classccDrawableObject.html#a651fb582605925090468878c96ba5927">ccDrawableObject::setRedraw</a></div><div class="ttdeci">virtual void setRedraw(bool state)</div><div class="ttdoc">Sets entity redraw mode.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00048">ecvDrawableObject.h:48</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a275b9f9c8d4605c01060edaa6821ddff"><div class="ttname"><a href="classccHObject.html#a275b9f9c8d4605c01060edaa6821ddff">ccHObject::find</a></div><div class="ttdeci">ccHObject * find(unsigned uniqueID)</div><div class="ttdoc">Finds an entity in this object hierarchy.</div></div>
+<div class="ttc" id="aclassccHObject_html_a5fc1263b75c01185319667615cb01cc0"><div class="ttname"><a href="classccHObject.html#a5fc1263b75c01185319667615cb01cc0">ccHObject::find</a></div><div class="ttdeci">ccHObject * find(unsigned uniqueID)</div><div class="ttdoc">Finds an entity in this object hierarchy.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00594">ecvHObject.cpp:594</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
 <div class="ttc" id="aclassccObject_html_a51a9dd33f5ee0c27f1d09dbc9c3136e4"><div class="ttname"><a href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">ccObject::getName</a></div><div class="ttdeci">virtual QString getName() const</div><div class="ttdoc">Returns object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00072">ecvObject.h:72</a></div></div>
 <div class="ttc" id="aclassccObject_html_a5a48a5bd04d1125df52b76dce8ac9c71"><div class="ttname"><a href="classccObject.html#a5a48a5bd04d1125df52b76dce8ac9c71">ccObject::getUniqueID</a></div><div class="ttdeci">virtual unsigned getUniqueID() const</div><div class="ttdoc">Returns object unique ID.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00086">ecvObject.h:86</a></div></div>
 <div class="ttc" id="aclassccObject_html_a7b4d06906277afee84282d5a217ee125"><div class="ttname"><a href="classccObject.html#a7b4d06906277afee84282d5a217ee125">ccObject::isA</a></div><div class="ttdeci">bool isA(CV_CLASS_ENUM type) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00131">ecvObject.h:131</a></div></div>
-<div class="ttc" id="aclassecvDisplayTools_html_aa29d1469d3fd7b184ff420fba0cac6b2"><div class="ttname"><a href="classecvDisplayTools.html#aa29d1469d3fd7b184ff420fba0cac6b2">ecvDisplayTools::SetRedrawRecursive</a></div><div class="ttdeci">static void SetRedrawRecursive(bool redraw=false)</div></div>
+<div class="ttc" id="aclassecvDisplayTools_html_a892218f69eeaccc97f3aa69a43ccbe45"><div class="ttname"><a href="classecvDisplayTools.html#a892218f69eeaccc97f3aa69a43ccbe45">ecvDisplayTools::SetRedrawRecursive</a></div><div class="ttdeci">static void SetRedrawRecursive(bool redraw=false)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8cpp_source.html#l01992">ecvDisplayTools.cpp:1992</a></div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html"><div class="ttname"><a href="classecvMainAppInterface.html">ecvMainAppInterface</a></div><div class="ttdoc">Main application interface (for plugins)</div><div class="ttdef"><b>Definition:</b> <a href="ecvMainAppInterface_8h_source.html#l00024">ecvMainAppInterface.h:24</a></div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_a04bbf3c01e3d49efbfd74c2e5fa76ccb"><div class="ttname"><a href="classecvMainAppInterface.html#a04bbf3c01e3d49efbfd74c2e5fa76ccb">ecvMainAppInterface::updateUI</a></div><div class="ttdeci">virtual void updateUI()=0</div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_a7b991e44c1e2638f7c2b49afae63d6cb"><div class="ttname"><a href="classecvMainAppInterface.html#a7b991e44c1e2638f7c2b49afae63d6cb">ecvMainAppInterface::refreshAll</a></div><div class="ttdeci">virtual void refreshAll(bool only2D=false, bool forceRedraw=true)=0</div><div class="ttdoc">Redraws all GL windows that have the 'refresh' flag on.</div></div>
@@ -327,7 +318,7 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8cpp_source.html',''); 
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvQtHelpers_8h_html"><div class="ttname"><a href="ecvQtHelpers_8h.html">ecvQtHelpers.h</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a37b6a6efd49938515df5d3f416619d9d">CV_TYPES::MESH</a></div><div class="ttdeci">@ MESH</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00105">CVTypes.h:105</a></div></div>
-<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
+<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="sfEditDlg_8h_source.html#l00016">sfEditDlg.h:16</a></div></div>
 <div class="ttc" id="aqVoxFallDialog_8cpp_html_a42b46b85b46be1d571b5e5c5ba73078e"><div class="ttname"><a href="qVoxFallDialog_8cpp.html#a42b46b85b46be1d571b5e5c5ba73078e">GetMeshFromCombo</a></div><div class="ttdeci">static ccMesh * GetMeshFromCombo(QComboBox *comboBox, ccHObject *dbRoot)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallDialog_8cpp_source.html#l00037">qVoxFallDialog.cpp:37</a></div></div>
 <div class="ttc" id="aqVoxFallDialog_8cpp_html_a9db42d6184a267fc01a5a1835dda37f4"><div class="ttname"><a href="qVoxFallDialog_8cpp.html#a9db42d6184a267fc01a5a1835dda37f4">GetEntityName</a></div><div class="ttdeci">static QString GetEntityName(ccHObject *obj)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallDialog_8cpp_source.html#l00024">qVoxFallDialog.cpp:24</a></div></div>
 <div class="ttc" id="aqVoxFallDialog_8h_html"><div class="ttname"><a href="qVoxFallDialog_8h.html">qVoxFallDialog.h</a></div></div>
@@ -337,7 +328,7 @@ $(document).ready(function(){initNavTree('qVoxFallDialog_8cpp_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4bac82d6d66125057afc5b6a16ccbd7c.html">qVoxFall</a></li><li class="navelem"><a class="el" href="dir_8968ffa52cafc454537db249a1a7ae52.html">src</a></li><li class="navelem"><a class="el" href="qVoxFallDialog_8cpp.html">qVoxFallDialog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

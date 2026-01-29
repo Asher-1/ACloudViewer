@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -110,11 +101,11 @@ $(document).ready(function(){initNavTree('AutomaticReconstructionController_8h_s
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">// This allows app to reuse the implementation from libs/Reconstruction</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// while adding visualization-specific data collection</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;controllers/automatic_reconstruction.h&quot;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;util/ply.h&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="automatic__reconstruction_8h.html">controllers/automatic_reconstruction.h</a>&quot;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ply_8h.html">util/ply.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="namespacecolmap.html">   17</a></span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecolmap.html">colmap</a> {</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">class </span>Reconstruction;</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">class </span><a class="code" href="classcolmap_1_1Reconstruction.html">Reconstruction</a>;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;}</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecolmap.html">colmap</a> {</div>
@@ -128,17 +119,17 @@ $(document).ready(function(){initNavTree('AutomaticReconstructionController_8h_s
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">// 1. Data collection for UI visualization via hook methods</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment">// 2. autoVisualization option for automatic scene integration</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1AutomaticReconstructionController.html">   31</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1AutomaticReconstructionController.html">AutomaticReconstructionController</a></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    : <span class="keyword">public</span> colmap::AutomaticReconstructionController {</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    : <span class="keyword">public</span> <a class="code" href="classcolmap_1_1AutomaticReconstructionController.html">colmap::AutomaticReconstructionController</a> {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="comment">// Extend Options with app-specific settings</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html">   35</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html">Options</a> : <span class="keyword">public</span> colmap::AutomaticReconstructionController::Options {</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html">   35</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html">Options</a> : <span class="keyword">public</span> <a class="code" href="structcolmap_1_1AutomaticReconstructionController_1_1Options.html">colmap::AutomaticReconstructionController::Options</a> {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="comment">// Whether to add the reconstruction results to DBRoot automatically</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html#abb8f5dfe9f6bb3bb8061b7886621518e">   37</a></span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html#abb8f5dfe9f6bb3bb8061b7886621518e">autoVisualization</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    };</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="classcloudViewer_1_1AutomaticReconstructionController.html#aa30b5605011c8788183813affd595b88">AutomaticReconstructionController</a>(</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;            <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html">Options</a>&amp; options,</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            colmap::ReconstructionManager* reconstruction_manager);</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            <a class="code" href="classcolmap_1_1ReconstructionManager.html">colmap::ReconstructionManager</a>* reconstruction_manager);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="comment">// app-specific: Public data for UI visualization</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="comment">// These collect results during reconstruction for display</span></div>
@@ -166,6 +157,7 @@ $(document).ready(function(){initNavTree('AutomaticReconstructionController_8h_s
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_af7f8f4a4e39e09fdb5e9f02330ecabef"><div class="ttname"><a href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a></div><div class="ttdeci">int points</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00144">FileIOFactory.cpp:144</a></div></div>
+<div class="ttc" id="aautomatic__reconstruction_8h_html"><div class="ttname"><a href="automatic__reconstruction_8h.html">automatic_reconstruction.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionController_html"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionController.html">cloudViewer::AutomaticReconstructionController</a></div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00031">AutomaticReconstructionController.h:32</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionController_html_a13b894e448c8c597bd7e54b6e550832c"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionController.html#a13b894e448c8c597bd7e54b6e550832c">cloudViewer::AutomaticReconstructionController::texturing_success_</a></div><div class="ttdeci">bool texturing_success_</div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00049">AutomaticReconstructionController.h:49</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionController_html_a36bb4a4e0e38aade0b511ae0fac70d69"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionController.html#a36bb4a4e0e38aade0b511ae0fac70d69">cloudViewer::AutomaticReconstructionController::OnTexturedMeshGenerated</a></div><div class="ttdeci">void OnTexturedMeshGenerated(size_t reconstruction_idx, const std::string &amp;textured_path) override</div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8cpp_source.html#l00052">AutomaticReconstructionController.cpp:52</a></div></div>
@@ -176,17 +168,22 @@ $(document).ready(function(){initNavTree('AutomaticReconstructionController_8h_s
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionController_html_abff492d29d1e622f58c4331796296eda"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionController.html#abff492d29d1e622f58c4331796296eda">cloudViewer::AutomaticReconstructionController::meshing_paths_</a></div><div class="ttdeci">std::vector&lt; std::string &gt; meshing_paths_</div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00047">AutomaticReconstructionController.h:47</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionController_html_acb9a3321ef45613980b02c4cb9764c87"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionController.html#acb9a3321ef45613980b02c4cb9764c87">cloudViewer::AutomaticReconstructionController::textured_paths_</a></div><div class="ttdeci">std::vector&lt; std::string &gt; textured_paths_</div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00048">AutomaticReconstructionController.h:48</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionController_html_adf2768c26a49024d82827f8912904ed1"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionController.html#adf2768c26a49024d82827f8912904ed1">cloudViewer::AutomaticReconstructionController::fused_points_</a></div><div class="ttdeci">std::vector&lt; std::vector&lt; colmap::PlyPoint &gt; &gt; fused_points_</div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00046">AutomaticReconstructionController.h:46</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1AutomaticReconstructionController_html"><div class="ttname"><a href="classcolmap_1_1AutomaticReconstructionController.html">colmap::AutomaticReconstructionController</a></div><div class="ttdef"><b>Definition:</b> <a href="automatic__reconstruction_8h_source.html#l00019">automatic_reconstruction.h:19</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManager_html"><div class="ttname"><a href="classcolmap_1_1ReconstructionManager.html">colmap::ReconstructionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager_8h_source.html#l00016">reconstruction_manager.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1Reconstruction_html"><div class="ttname"><a href="classcolmap_1_1Reconstruction.html">colmap::Reconstruction</a></div><div class="ttdef"><b>Definition:</b> <a href="reconstruction_8h_source.html#l00040">reconstruction.h:40</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecolmap_html"><div class="ttname"><a href="namespacecolmap.html">colmap</a></div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00017">AutomaticReconstructionController.h:17</a></div></div>
+<div class="ttc" id="aply_8h_html"><div class="ttname"><a href="ply_8h.html">ply.h</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1AutomaticReconstructionController_1_1Options_html"><div class="ttname"><a href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html">cloudViewer::AutomaticReconstructionController::Options</a></div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00035">AutomaticReconstructionController.h:35</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1AutomaticReconstructionController_1_1Options_html_abb8f5dfe9f6bb3bb8061b7886621518e"><div class="ttname"><a href="structcloudViewer_1_1AutomaticReconstructionController_1_1Options.html#abb8f5dfe9f6bb3bb8061b7886621518e">cloudViewer::AutomaticReconstructionController::Options::autoVisualization</a></div><div class="ttdeci">bool autoVisualization</div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00037">AutomaticReconstructionController.h:37</a></div></div>
+<div class="ttc" id="astructcolmap_1_1AutomaticReconstructionController_1_1Options_html"><div class="ttname"><a href="structcolmap_1_1AutomaticReconstructionController_1_1Options.html">colmap::AutomaticReconstructionController::Options</a></div><div class="ttdef"><b>Definition:</b> <a href="automatic__reconstruction_8h_source.html#l00025">automatic_reconstruction.h:25</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="dir_2e78016a36d9dd3bcbaa64263b633065.html">controllers</a></li><li class="navelem"><a class="el" href="AutomaticReconstructionController_8h.html">AutomaticReconstructionController.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

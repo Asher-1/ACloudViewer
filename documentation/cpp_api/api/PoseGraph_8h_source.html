@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -123,8 +114,8 @@ $(document).ready(function(){initNavTree('PoseGraph_8h_source.html',''); initRes
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a4deaa900d322ce0196a8340e4df0f4fc">~PoseGraphNode</a>();</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a1f1744f85a4a09ffed4b4e743e5841bf">ConvertToJsonValue</a>(Json::Value &amp;value) <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a1f1744f85a4a09ffed4b4e743e5841bf">ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">   35</a></span>&#160;    <a class="code" href="namespaceEigen.html#a80fb78029f78d3425b02386737a108b6">Eigen::Matrix4d_u</a> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>;</div>
@@ -136,7 +127,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8h_source.html',''); initRes
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <span class="keywordtype">int</span> source_node_id = -1,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <span class="keywordtype">int</span> target_node_id = -1,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="keyword">const</span> Eigen::Matrix4d &amp;transformation = Eigen::Matrix4d::Identity(),</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keyword">const</span> <a class="code" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> &amp;information = Eigen::Matrix6d::Identity(),</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keyword">const</span> <a class="code" href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a> &amp;information = Eigen::Matrix6d::Identity(),</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordtype">bool</span> uncertain = <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keywordtype">double</span> confidence = 1.0)</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        : <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a7e8e18cac9c14ffc5d5c457babf5394c">source_node_id_</a>(source_node_id),</div>
@@ -148,8 +139,8 @@ $(document).ready(function(){initNavTree('PoseGraph_8h_source.html',''); initRes
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a6ec0c2a3a7e1715fee7f7fb63c77e3b3">~PoseGraphEdge</a>();</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aa376be5d0f563a9e9f048e7fa485546b">ConvertToJsonValue</a>(Json::Value &amp;value) <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aa376be5d0f563a9e9f048e7fa485546b">ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a7e8e18cac9c14ffc5d5c457babf5394c">   72</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a7e8e18cac9c14ffc5d5c457babf5394c">source_node_id_</a>;</div>
@@ -166,8 +157,8 @@ $(document).ready(function(){initNavTree('PoseGraph_8h_source.html',''); initRes
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a59ce0fadb04d97d8414e8c4f5907e3f8">~PoseGraph</a>() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a87669e9bee235a63f2427127c15f8f6f">ConvertToJsonValue</a>(Json::Value &amp;value) <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a838d10da7eb79bce4bf0ab8c45fd567d">ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a87669e9bee235a63f2427127c15f8f6f">ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a838d10da7eb79bce4bf0ab8c45fd567d">ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">  108</a></span>&#160;    std::vector&lt;PoseGraphNode&gt; <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">nodes_</a>;</div>
@@ -207,15 +198,16 @@ $(document).ready(function(){initNavTree('PoseGraph_8h_source.html',''); initRes
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html">cloudViewer::utility::IJsonConvertible</a></div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8h_source.html#l00041">IJsonConvertible.h:41</a></div></div>
 <div class="ttc" id="anamespaceEigen_html_a6c375b935a975a2d4f8047be883d2628"><div class="ttname"><a href="namespaceEigen.html#a6c375b935a975a2d4f8047be883d2628">Eigen::Matrix6d_u</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 6, Eigen::DontAlign &gt; Matrix6d_u</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00112">Eigen.h:112</a></div></div>
 <div class="ttc" id="anamespaceEigen_html_a80fb78029f78d3425b02386737a108b6"><div class="ttname"><a href="namespaceEigen.html#a80fb78029f78d3425b02386737a108b6">Eigen::Matrix4d_u</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 4, 4, Eigen::DontAlign &gt; Matrix4d_u</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00113">Eigen.h:113</a></div></div>
-<div class="ttc" id="anamespaceEigen_html_ab6f8b8b11b0f6350ed45e7cd3437207f"><div class="ttname"><a href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 6 &gt; Matrix6d</div><div class="ttdoc">Extending Eigen namespace by adding frequently used matrix type.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00106">Eigen.h:106</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespaceEigen_html_a8b8976b0ff4ff0c2f9af3b753a38f758"><div class="ttname"><a href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 6 &gt; Matrix6d</div><div class="ttdoc">Extending Eigen namespace by adding frequently used matrix type.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00106">Eigen.h:106</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="avtkDistributedTrivialProducer_8cxx_html_a1ee6276fc24448fd28f1d17b9f02e438"><div class="ttname"><a href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Value</a></div><div class="ttdeci">static vtkPVTrivialProducerStaticInternal Value</div><div class="ttdef"><b>Definition:</b> <a href="vtkDistributedTrivialProducer_8cxx_source.html#l00065">vtkDistributedTrivialProducer.cxx:65</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="PoseGraph_8h.html">PoseGraph.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

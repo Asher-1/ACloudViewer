@@ -2,8 +2,8 @@ var classccExtru =
 [
     [ "ccExtru", "classccExtru.html#ab35469169ebab6a0e036c46791f8f18c", null ],
     [ "ccExtru", "classccExtru.html#ae876bcc7c75d6fbdd1735c22ce3e806c", null ],
-    [ "buildUp", "classccExtru.html#ae3adb94f109d12711e32db6b6b7df555", null ],
-    [ "clone", "classccExtru.html#a1982b0e5683d7b3c2d5567f6a5e94b3c", null ],
+    [ "buildUp", "classccExtru.html#ad13ee4a70ea81cef59f182a81d927104", null ],
+    [ "clone", "classccExtru.html#adad1f18b177d2b37cb583483e165c8b4", null ],
     [ "fromFile_MeOnly", "classccExtru.html#a331fd55436581e97947637b38b023edd", null ],
     [ "getClassID", "classccExtru.html#a3233aab692d0356625d0b14c4c40e077", null ],
     [ "getProfile", "classccExtru.html#a9c0640f08a01e8eccdcfc39d64a8ec81", null ],

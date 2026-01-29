@@ -7,7 +7,7 @@ var classccFastMarchingForNormsDirection =
     [ "init", "classccFastMarchingForNormsDirection.html#af5a4a55f6c740c12f4c0c8caae28cd6a", null ],
     [ "initTrialCells", "classccFastMarchingForNormsDirection.html#adc7369bfc6b3c2ffba38617d672fd480", null ],
     [ "instantiateGrid", "classccFastMarchingForNormsDirection.html#af17e22b8f14fe372803061e1986e3364", null ],
-    [ "OrientNormals", "classccFastMarchingForNormsDirection.html#a7c50b9fb219dd154b49380e46fcb882b", null ],
+    [ "OrientNormals", "classccFastMarchingForNormsDirection.html#a802cc97cc93eda963f4c2a37071640af", null ],
     [ "propagate", "classccFastMarchingForNormsDirection.html#aaac87e931f60aac3f83d2d1a79e476a6", null ],
     [ "resolveCellOrientation", "classccFastMarchingForNormsDirection.html#a561f70704e094763e32ee3418dfd950d", null ],
     [ "step", "classccFastMarchingForNormsDirection.html#a15fbee2bf1789e2a79e8d5aa5cd4d156", null ],

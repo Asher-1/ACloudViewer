@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -175,7 +166,7 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a4d48db51350a8c2c6086c09771f782df"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Jacobi_8h.html#a4d48db51350a8c2c6086c09771f782df">ROTATE</a>(a,  i,  j,  k,  l)</td></tr>
+<tr class="memitem:a4d48db51350a8c2c6086c09771f782df"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Jacobi_8h.html#a4d48db51350a8c2c6086c09771f782df">ROTATE</a>(<a class="el" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,  i,  j,  k,  l)</td></tr>
 <tr class="separator:a4d48db51350a8c2c6086c09771f782df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -189,7 +180,7 @@ Macros</h2></td></tr>
           <td class="memname">#define ROTATE</td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
-          <td class="paramname">a, </td>
+          <td class="paramname"><a class="el" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -223,11 +214,12 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">    {                                    \</div>
-<div class="line">        Scalar g = a[i][j];              \</div>
-<div class="line">        h = a[k][l];                     \</div>
+<div class="line">        Scalar g = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i][j];              \</div>
+<div class="line">        h = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[k][l];                     \</div>
 <div class="line">        a[i][j] = g - s * (h + g * tau); \</div>
 <div class="line">        a[k][l] = h + s * (g - h * tau); \</div>
 <div class="line">    }</div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
 </div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="Jacobi_8h_source.html#l00013">13</a> of file <a class="el" href="Jacobi_8h_source.html">Jacobi.h</a>.</p>
 
@@ -239,7 +231,7 @@ Macros</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="Jacobi_8h.html">Jacobi.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

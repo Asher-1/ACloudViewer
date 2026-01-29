@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -120,7 +111,7 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">using namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a>;</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">// GAMMA function</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="core_2src_2WeibullDistribution_8cpp.html#a470decac2c964eecb63322e33ea544fc">   24</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="core_2src_2WeibullDistribution_8cpp.html#a470decac2c964eecb63322e33ea544fc">Gamma_cc</a>(<span class="keywordtype">double</span> x) {</div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="core_2src_2WeibullDistribution_8cpp.html#a470decac2c964eecb63322e33ea544fc">   24</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">double</span> <a class="code" href="core_2src_2WeibullDistribution_8cpp.html#a470decac2c964eecb63322e33ea544fc">Gamma_cc</a>(<span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) {</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">double</span> g[25] = {1.0,</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                                 0.5772156649015329,</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                 -0.6558780715202538,</div>
@@ -147,39 +138,39 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                 -0.54e-14,</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                 0.14e-14};</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">if</span> (x &gt; 171.0) {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;double&gt;::max</a>();</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> &gt; 171.0) {</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keywordflow">return</span> std::numeric_limits&lt;double&gt;::max();</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    }</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> (x == <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(x)) {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keywordflow">if</span> (x &gt; 0.0)  <span class="comment">// use factorial</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> == <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> &gt; 0.0)  <span class="comment">// use factorial</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        {</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;            <span class="keywordtype">double</span> ga = 1.0;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 2; i &lt; x; i++) ga *= i;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 2; i &lt; <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>; i++) ga *= i;</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            <span class="keywordflow">return</span> ga;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;double&gt;::max</a>();</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            <span class="keywordflow">return</span> std::numeric_limits&lt;double&gt;::max();</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        }</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordtype">double</span> z = 0.0, r = 0.0;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(x) &gt; 1.0) {</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        z = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(x);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordtype">int</span> m = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(z);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> = 0.0, r = 0.0;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">if</span> (std::abs(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) &gt; 1.0) {</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> = std::abs(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordtype">int</span> m = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        r = 1.0;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> k = 1; k &lt;= m; k++) r *= (z - k);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        z -= m;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> k = 1; k &lt;= m; k++) r *= (<a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> - k);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> -= m;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        z = x;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    }</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordtype">double</span> gr = g[24];</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> k = 23; k &gt;= 0; k--) gr = gr * z + g[k];</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordtype">double</span> ga = 1.0 / (gr * z);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(x) &gt; 1.0) {</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> k = 23; k &gt;= 0; k--) gr = gr * <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> + g[k];</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordtype">double</span> ga = 1.0 / (gr * <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">if</span> (std::abs(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) &gt; 1.0) {</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        ga *= r;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">if</span> (x &lt; 0.0) {</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            ga = -<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a> / (x * ga * sin(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a> * x));</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> &lt; 0.0) {</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            ga = -<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a> / (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> * ga * sin(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a> * <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>));</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        }</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    }</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordflow">return</span> ga;</div>
@@ -187,14 +178,14 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#ac30c767d26df709d1773f38740e4bc14">   89</a></span>&#160;<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ac30c767d26df709d1773f38740e4bc14">WeibullDistribution::WeibullDistribution</a>() { <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">setParameters</a>(0, 0, 0); }</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
-<div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#af5d2a8dd63c2b47dd52c6b15e44174e1">   91</a></span>&#160;<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ac30c767d26df709d1773f38740e4bc14">WeibullDistribution::WeibullDistribution</a>(ScalarType a,</div>
+<div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#af5d2a8dd63c2b47dd52c6b15e44174e1">   91</a></span>&#160;<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ac30c767d26df709d1773f38740e4bc14">WeibullDistribution::WeibullDistribution</a>(ScalarType <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                         ScalarType b,</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                                         ScalarType valueShift) {</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">setParameters</a>(a, b, valueShift);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">setParameters</a>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, b, valueShift);</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;}</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
-<div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#a704296adeef26dc8809c0a909baf1c37">   97</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a704296adeef26dc8809c0a909baf1c37">WeibullDistribution::getParameters</a>(ScalarType&amp; a, ScalarType&amp; b)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    a = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>;</div>
+<div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#a704296adeef26dc8809c0a909baf1c37">   97</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a704296adeef26dc8809c0a909baf1c37">WeibullDistribution::getParameters</a>(ScalarType&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, ScalarType&amp; b)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    b = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html#a8f1a2e19be9082d0d1b8e7f6a8350c96">isValid</a>();</div>
@@ -208,11 +199,11 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html#a8f1a2e19be9082d0d1b8e7f6a8350c96">isValid</a>();</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;}</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
-<div class="line"><a name="l00112"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">  112</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">WeibullDistribution::setParameters</a>(ScalarType a,</div>
+<div class="line"><a name="l00112"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">  112</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">WeibullDistribution::setParameters</a>(ScalarType <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                                        ScalarType b,</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                                        ScalarType valueShift) {</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a> = valueShift;</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a> = a;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a> = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a> = b;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="comment">// for the Chi2 test</span></div>
@@ -267,8 +258,8 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    }</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <span class="keywordtype">double</span> a = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#acf817e963e8ff4c19776e88d00500896">FindGRoot</a>(values, minValue, valueRange);</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keywordflow">if</span> (a &lt; 0.0) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#acf817e963e8ff4c19776e88d00500896">FindGRoot</a>(values, minValue, valueRange);</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> &lt; 0.0) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <span class="comment">// we can compute b</span></div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    <span class="keywordtype">double</span> b = 0;</div>
@@ -278,7 +269,7 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">ScalarField::ValidValue</a>(v))  <span class="comment">// we ignore NaN values</span></div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        {</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;            <span class="keywordflow">if</span> (v &gt;= minValue) {</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                b += pow((<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(v) - minValue) / valueRange, a);</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                b += pow((<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(v) - minValue) / valueRange, <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>);</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                ++counter;</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;            }</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;        }</div>
@@ -286,24 +277,24 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordflow">if</span> (counter == 0) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a69d64057279e322fa7a02206db43309a">setParameters</a>(</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(a),</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(valueRange * pow(b / counter, 1.0 / a)),</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>),</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(valueRange * pow(b / counter, 1.0 / <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)),</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            minValue);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;}</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160; </div>
 <div class="line"><a name="l00195"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#a66ec5ab5d337bf87aeeeff9e3dfd0660">  195</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a66ec5ab5d337bf87aeeeff9e3dfd0660">WeibullDistribution::computeP</a>(ScalarType _x)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="keywordtype">double</span> x = <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(_x - <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a>) / <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>;</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">if</span> (x &lt; 0) <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(_x - <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a>) / <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>;</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> &lt; 0) <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160; </div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordtype">double</span> xp = pow(x, <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a> - 1.0);</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <span class="keywordflow">return</span> (<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>) / <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>) * xp * exp(-xp * x);</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordtype">double</span> xp = pow(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a> - 1.0);</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <span class="keywordflow">return</span> (<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>) / <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>) * xp * exp(-xp * <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;}</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160; </div>
-<div class="line"><a name="l00203"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#add9d2cc1bfd50a7768171fc4af2d0783">  203</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#add9d2cc1bfd50a7768171fc4af2d0783">WeibullDistribution::computePfromZero</a>(ScalarType x)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">return</span> (x &lt;= <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a></div>
+<div class="line"><a name="l00203"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#add9d2cc1bfd50a7768171fc4af2d0783">  203</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#add9d2cc1bfd50a7768171fc4af2d0783">WeibullDistribution::computePfromZero</a>(ScalarType <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">return</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> &lt;= <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a></div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                    ? 0.0</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                    : 1.0 - exp(-pow(</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(x - <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a>) / <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>,</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> - <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aca28cceb5e435dac73c2b6294313d6cc">m_valueShift</a>) / <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">m_b</a>,</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                                    <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>))));</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;}</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160; </div>
@@ -387,7 +378,7 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        vMin = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8525eb2145e6ccb5850cb8d1f74df689">ComputeG</a>(values, aMin, valueShift, valueRange);</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    }</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160; </div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">LessThanEpsilon</a>(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(vMin))) {</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">LessThanEpsilon</a>(std::abs(vMin))) {</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        <span class="keywordflow">return</span> aMin;</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (vMin &gt; 0) {</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        <span class="keywordflow">return</span> r;  <span class="comment">// r = -1 (i.e. problem)</span></div>
@@ -399,21 +390,21 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        vMax = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8525eb2145e6ccb5850cb8d1f74df689">ComputeG</a>(values, aMax, valueShift, valueRange);</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    }</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">LessThanEpsilon</a>(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(vMax))) {</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">LessThanEpsilon</a>(std::abs(vMax))) {</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keywordflow">return</span> aMax;</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (vMax &lt; 0) {</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="keywordflow">return</span> r;  <span class="comment">// r = -1 (i.e. problem)</span></div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    }</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160; </div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="comment">// binary search to find r so that std::abs(ComputeG(r)) &lt; ZERO_TOLERANCE</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="keywordflow">while</span> (<a class="code" href="namespacecloudViewer.html#a40c4286c80bddd2f6f96f6d5f00137d8">GreaterThanEpsilon</a>(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(v) *</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="keywordflow">while</span> (<a class="code" href="namespacecloudViewer.html#a40c4286c80bddd2f6f96f6d5f00137d8">GreaterThanEpsilon</a>(std::abs(v) *</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                              100))  <span class="comment">// DGM: *100 ?! (can&#39;t remember why ;)</span></div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    {</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        r = (aMin + aMax) / 2;</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        <span class="keywordtype">double</span> old_v = v;</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        v = <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8525eb2145e6ccb5850cb8d1f74df689">ComputeG</a>(values, r, valueShift, valueRange);</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160; </div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">LessThanEpsilon</a>(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(old_v - v))) <span class="keywordflow">return</span> r;</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">LessThanEpsilon</a>(std::abs(old_v - v))) <span class="keywordflow">return</span> r;</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160; </div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <span class="keywordflow">if</span> (v &lt; 0)</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            aMin = r;</div>
@@ -525,7 +516,7 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;}</div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160; </div>
 <div class="line"><a name="l00428"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1WeibullDistribution.html#aaebb04b454b8bb6152dec43a81301123">  428</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#aaebb04b454b8bb6152dec43a81301123">WeibullDistribution::computeSkewness</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1GenericDistribution.html#a8f1a2e19be9082d0d1b8e7f6a8350c96">isValid</a>() || <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>) &lt; std::numeric_limits&lt;double&gt;::epsilon() ||</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1GenericDistribution.html#a8f1a2e19be9082d0d1b8e7f6a8350c96">isValid</a>() || std::abs(<a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a8e73069253ca602cd55b62c6dbf1ae26">m_a</a>) &lt; std::numeric_limits&lt;double&gt;::epsilon() ||</div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;        <a class="code" href="classcloudViewer_1_1WeibullDistribution.html#a9615b837e4fd1ec3e64380cd414ebe9a">m_sigma2</a> &lt; std::numeric_limits&lt;double&gt;::epsilon()) {</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;        <span class="keywordflow">return</span> std::numeric_limits&lt;double&gt;::quiet_NaN();</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    }</div>
@@ -569,9 +560,10 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div class="ttc" id="aclasscloudViewer_1_1WeibullDistribution_html_add9d2cc1bfd50a7768171fc4af2d0783"><div class="ttname"><a href="classcloudViewer_1_1WeibullDistribution.html#add9d2cc1bfd50a7768171fc4af2d0783">cloudViewer::WeibullDistribution::computePfromZero</a></div><div class="ttdeci">double computePfromZero(ScalarType x) const override</div><div class="ttdoc">Computes the cumulative probability between 0 and x.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2WeibullDistribution_8cpp_source.html#l00203">WeibullDistribution.cpp:203</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1WeibullDistribution_html_ae0813f5e519f5ae71e7ff05d17ff56d9"><div class="ttname"><a href="classcloudViewer_1_1WeibullDistribution.html#ae0813f5e519f5ae71e7ff05d17ff56d9">cloudViewer::WeibullDistribution::computeMode</a></div><div class="ttdeci">double computeMode() const</div><div class="ttdoc">Returns the distribution 'mode'.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2WeibullDistribution_8cpp_source.html#l00420">WeibullDistribution.cpp:420</a></div></div>
 <div class="ttc" id="acore_2src_2WeibullDistribution_8cpp_html_a470decac2c964eecb63322e33ea544fc"><div class="ttname"><a href="core_2src_2WeibullDistribution_8cpp.html#a470decac2c964eecb63322e33ea544fc">Gamma_cc</a></div><div class="ttdeci">static double Gamma_cc(double x)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2WeibullDistribution_8cpp_source.html#l00024">WeibullDistribution.cpp:24</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a98156be7bd5bb4bfe78e2541d057cab6"><div class="ttname"><a href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a></div><div class="ttdeci">normal_z z</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a40c4286c80bddd2f6f96f6d5f00137d8"><div class="ttname"><a href="namespacecloudViewer.html#a40c4286c80bddd2f6f96f6d5f00137d8">cloudViewer::GreaterThanEpsilon</a></div><div class="ttdeci">bool GreaterThanEpsilon(float x)</div><div class="ttdoc">Test a floating point number against our epsilon (a very small number).</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00037">CVMath.h:37</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_aeb8a3b0235e7f430fd7de83a10580b2d"><div class="ttname"><a href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">cloudViewer::LessThanEpsilon</a></div><div class="ttdeci">bool LessThanEpsilon(float x)</div><div class="ttdoc">Test a floating point number against our epsilon (a very small number).</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00023">CVMath.h:23</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -580,7 +572,7 @@ $(document).ready(function(){initNavTree('core_2src_2WeibullDistribution_8cpp_so
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2WeibullDistribution_8cpp.html">WeibullDistribution.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

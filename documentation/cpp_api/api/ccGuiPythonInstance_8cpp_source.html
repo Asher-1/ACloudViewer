@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -127,9 +118,9 @@ $(document).ready(function(){initNavTree('ccGuiPythonInstance_8cpp_source.html',
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacepybind11.html">py</a> = <a class="code" href="namespacepybind11.html">pybind11</a>;</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">using namespace </span>pybind11::literals;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="ccGuiPythonInstance_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">   31</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="ccGuiPythonInstance_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a>(<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>)</div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="ccGuiPythonInstance_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">   31</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="ccGuiPythonInstance_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a>(<a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> error)</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;{</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">switch</span> (<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>)</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">switch</span> (error)</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">case</span> <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>:</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="keywordflow">break</span>;</div>
@@ -209,7 +200,7 @@ $(document).ready(function(){initNavTree('ccGuiPythonInstance_8cpp_source.html',
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                                         <a class="code" href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a> &amp;parameters)</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;{</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795">CC_FILE_ERROR</a> <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="FileIOFilter_8h.html#ae9071902dd89666d2558ac948182a795a98a12b4612a9fb1880bdef92007b5534">CC_FERR_NO_ERROR</a>;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a> *newGroup = <a class="code" href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, parameters, <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a> *newGroup = <a class="code" href="classFileIOFilter.html#a1e00e2acc0d090df0309f3dc71c2eb9c">FileIOFilter::LoadFromFile</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, parameters, <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <a class="code" href="ccGuiPythonInstance_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a>(<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keywordflow">if</span> (newGroup)</div>
@@ -297,7 +288,7 @@ $(document).ready(function(){initNavTree('ccGuiPythonInstance_8cpp_source.html',
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="keywordflow">return</span> m_app;</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;}</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
-<div class="line"><a name="l00201"></a><span class="lineno"><a class="line" href="ccGuiPythonInstance_8cpp.html#a12fb2f6196973e44dd711533e597670f">  201</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccGuiPythonInstance_8cpp.html#a12fb2f6196973e44dd711533e597670f">define_ccGUIPythonInstance</a>(py::module &amp;m)</div>
+<div class="line"><a name="l00201"></a><span class="lineno"><a class="line" href="ccGuiPythonInstance_8cpp.html#a12fb2f6196973e44dd711533e597670f">  201</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccGuiPythonInstance_8cpp.html#a12fb2f6196973e44dd711533e597670f">define_ccGUIPythonInstance</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;m)</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;{</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    py::class_&lt;ccGuiPythonInstance&gt;(m,</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                                    <span class="stringliteral">&quot;ccPythonInstance&quot;</span>,</div>
@@ -385,7 +376,7 @@ $(document).ready(function(){initNavTree('ccGuiPythonInstance_8cpp_source.html',
 <div class="ttc" id="accGuiPythonInstance_8cpp_html_a12fb2f6196973e44dd711533e597670f"><div class="ttname"><a href="ccGuiPythonInstance_8cpp.html#a12fb2f6196973e44dd711533e597670f">define_ccGUIPythonInstance</a></div><div class="ttdeci">void define_ccGUIPythonInstance(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8cpp_source.html#l00201">ccGuiPythonInstance.cpp:201</a></div></div>
 <div class="ttc" id="accGuiPythonInstance_8cpp_html_a62e7ac532a5abf3b7058e5ba371a7ab7"><div class="ttname"><a href="ccGuiPythonInstance_8cpp.html#a62e7ac532a5abf3b7058e5ba371a7ab7">ThrowForFileError</a></div><div class="ttdeci">static void ThrowForFileError(CC_FILE_ERROR error)</div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8cpp_source.html#l00031">ccGuiPythonInstance.cpp:31</a></div></div>
 <div class="ttc" id="accGuiPythonInstance_8h_html"><div class="ttname"><a href="ccGuiPythonInstance_8h.html">ccGuiPythonInstance.h</a></div></div>
-<div class="ttc" id="aclassFileIOFilter_html_ad18f37613e75433a397a653ce4bfd539"><div class="ttname"><a href="classFileIOFilter.html#ad18f37613e75433a397a653ce4bfd539">FileIOFilter::LoadFromFile</a></div><div class="ttdeci">static ccHObject * LoadFromFile(const QString &amp;filename, LoadParameters &amp;parameters, Shared filter, CC_FILE_ERROR &amp;result)</div><div class="ttdoc">Loads one or more entities from a file with a known filter.</div></div>
+<div class="ttc" id="aclassFileIOFilter_html_a1e00e2acc0d090df0309f3dc71c2eb9c"><div class="ttname"><a href="classFileIOFilter.html#a1e00e2acc0d090df0309f3dc71c2eb9c">FileIOFilter::LoadFromFile</a></div><div class="ttdeci">static ccHObject * LoadFromFile(const QString &amp;filename, LoadParameters &amp;parameters, Shared filter, CC_FILE_ERROR &amp;result)</div><div class="ttdoc">Loads one or more entities from a file with a known filter.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8cpp_source.html#l00253">FileIOFilter.cpp:253</a></div></div>
 <div class="ttc" id="aclassccGuiPythonInstance_html_a04dfce9300147c7c78060ff1e8ef8f51"><div class="ttname"><a href="classccGuiPythonInstance.html#a04dfce9300147c7c78060ff1e8ef8f51">ccGuiPythonInstance::haveOneSelection</a></div><div class="ttdeci">bool haveOneSelection() const</div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8cpp_source.html#l00094">ccGuiPythonInstance.cpp:94</a></div></div>
 <div class="ttc" id="aclassccGuiPythonInstance_html_a051a88ce4047ff7efbd32d57b4b9035d"><div class="ttname"><a href="classccGuiPythonInstance.html#a051a88ce4047ff7efbd32d57b4b9035d">ccGuiPythonInstance::disableAll</a></div><div class="ttdeci">void disableAll()</div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8cpp_source.html#l00182">ccGuiPythonInstance.cpp:182</a></div></div>
 <div class="ttc" id="aclassccGuiPythonInstance_html_a1152e236cb22b9edeaa7ede99673b804"><div class="ttname"><a href="classccGuiPythonInstance.html#a1152e236cb22b9edeaa7ede99673b804">ccGuiPythonInstance::dbRootObject</a></div><div class="ttdeci">ccHObject * dbRootObject()</div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8cpp_source.html#l00162">ccGuiPythonInstance.cpp:162</a></div></div>
@@ -409,8 +400,8 @@ $(document).ready(function(){initNavTree('ccGuiPythonInstance_8cpp_source.html',
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
 <div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_aeae743e84fe331928171854b17029eaf"><div class="ttname"><a href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">Utils::module</a></div><div class="ttdeci">static double module(T *vector)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00105">utils.h:105</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 <div class="ttc" id="astructFileIOFilter_1_1LoadParameters_html"><div class="ttname"><a href="structFileIOFilter_1_1LoadParameters.html">FileIOFilter::LoadParameters</a></div><div class="ttdoc">Generic loading parameters.</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFilter_8h_source.html#l00051">FileIOFilter.h:51</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -418,7 +409,7 @@ $(document).ready(function(){initNavTree('ccGuiPythonInstance_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="dir_55cc919656e65b5b0b09260db66aea16.html">Runtime</a></li><li class="navelem"><a class="el" href="ccGuiPythonInstance_8cpp.html">ccGuiPythonInstance.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

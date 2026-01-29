@@ -1,16 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" title=" " alt="" coords="5,326,180,353"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1AutomaticReconstructionWidget.html" title=" " alt="" coords="228,5,503,47"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1BundleAdjustmentWidget.html" title=" " alt="" coords="250,71,481,112"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1ExtractionWidget.html" title=" " alt="" coords="254,137,477,163"/>
-<area shape="rect" id="node7" href="$classcloudViewer_1_1MapperBundleAdjustmentOptionsWidget.html" title=" " alt="" coords="263,188,467,229"/>
-<area shape="rect" id="node8" href="$classcloudViewer_1_1MapperFilteringOptionsWidget.html" title=" " alt="" coords="259,253,471,295"/>
-<area shape="rect" id="node9" href="$classcloudViewer_1_1MapperGeneralOptionsWidget.html" title=" " alt="" coords="260,319,471,360"/>
-<area shape="rect" id="node10" href="$classcloudViewer_1_1MapperInitializationOptionsWidget.html" title=" " alt="" coords="245,384,485,425"/>
-<area shape="rect" id="node11" href="$classcloudViewer_1_1MapperRegistrationOptionsWidget.html" title=" " alt="" coords="246,449,485,491"/>
-<area shape="rect" id="node12" href="$classcloudViewer_1_1MapperTriangulationOptionsWidget.html" title=" " alt="" coords="244,515,487,556"/>
-<area shape="rect" id="node13" href="$classcloudViewer_1_1RenderOptionsWidget.html" title=" " alt="" coords="262,580,469,621"/>
-<area shape="rect" id="node14" href="$classcloudViewer_1_1UndistortionWidget.html" title=" " alt="" coords="270,645,461,687"/>
-<area shape="rect" id="node5" href="$classcloudViewer_1_1ImportFeaturesWidget.html" title=" " alt="" coords="551,97,760,139"/>
-<area shape="rect" id="node6" href="$classcloudViewer_1_1SIFTExtractionWidget.html" title=" " alt="" coords="554,163,757,204"/>
+<area shape="rect" id="node1" href="$classcloudViewer_1_1core_1_1nns_1_1NeighborSearchAllocator.html" title=" " alt="" coords="5,5,220,61"/>
 </map>

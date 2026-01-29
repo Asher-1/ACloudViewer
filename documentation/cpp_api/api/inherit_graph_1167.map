@@ -1,3 +1,11 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structpoint.html" title=" " alt="" coords="5,5,60,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,69,203,96"/>
+<area shape="rect" id="node2" href="$classQVTKWidgetCustom.html" title="Container widget for vtk." alt="" coords="261,19,415,45"/>
+<area shape="rect" id="node3" href="$classVtkUtils_1_1VtkPlotWidget.html" title=" " alt="" coords="251,69,425,96"/>
+<area shape="rect" id="node7" href="$classVtkUtils_1_1VtkWidget.html" title=" " alt="" coords="263,132,413,159"/>
+<area shape="rect" id="node4" href="$classVtkUtils_1_1VtkPlot2DWidget.html" title=" " alt="" coords="474,5,667,32"/>
+<area shape="rect" id="node5" href="$classVtkUtils_1_1VtkPlot3DWidget.html" title=" " alt="" coords="474,56,667,83"/>
+<area shape="rect" id="node6" href="$classVtkUtils_1_1VtkPlotPieWidget.html" title=" " alt="" coords="473,107,668,133"/>
+<area shape="rect" id="node8" href="$classVtkUtils_1_1Surface.html" title=" " alt="" coords="505,157,636,184"/>
+<area shape="rect" id="node9" href="$classVtkUtils_1_1Contour.html" title=" " alt="" coords="716,157,849,184"/>
 </map>

@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structcloudViewer_1_1io_1_1rpc_1_1messages_1_1SetMeshData.html" title=" " alt="" coords="5,5,196,47"/>
+<area shape="rect" id="node1" href="$classcloudViewer_1_1pipelines_1_1integration_1_1TSDFVolume.html" title="Base class of the Truncated Signed Distance Function (TSDF) volume." alt="" coords="5,39,197,80"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1integration_1_1ScalableTSDFVolume.html" title=" " alt="" coords="245,5,492,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html" title="UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996)..." alt="" coords="246,71,491,112"/>
 </map>

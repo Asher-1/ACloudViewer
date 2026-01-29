@@ -1,4 +1,6 @@
 <map id="/root/ACloudViewer/libs/CV_io/include/DepthMapFileFilter.h" name="/root/ACloudViewer/libs/CV_io/include/DepthMapFileFilter.h">
-<area shape="rect" id="node1" title=" " alt="" coords="7,5,167,61"/>
-<area shape="rect" id="node2" href="$MainWindow_8cpp.html" title=" " alt="" coords="5,109,169,151"/>
+<area shape="rect" id="node1" title=" " alt="" coords="217,5,377,61"/>
+<area shape="rect" id="node2" href="$MainWindow_8cpp.html" title=" " alt="" coords="5,117,169,158"/>
+<area shape="rect" id="node3" href="$DepthMapFileFilter_8cpp.html" title=" " alt="" coords="193,109,400,165"/>
+<area shape="rect" id="node4" href="$FileIOFilter_8cpp.html" title=" " alt="" coords="425,117,638,158"/>
 </map>

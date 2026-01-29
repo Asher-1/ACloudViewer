@@ -12,7 +12,7 @@ var classecvFontPropertyWidget =
     [ "fontFamilyIndexChanged", "classecvFontPropertyWidget.html#aa98c2af595e8ed610cbc4e4bf307bfa4", null ],
     [ "fontOpacity", "classecvFontPropertyWidget.html#a0cad23397b97d1961623af3518b555cf", null ],
     [ "fontOpacityChanged", "classecvFontPropertyWidget.html#afeda9e8723446ae97df3aff700127776", null ],
-    [ "fontProperties", "classecvFontPropertyWidget.html#acde581b7df5ed147e73b45db3868f9ac", null ],
+    [ "fontProperties", "classecvFontPropertyWidget.html#a0e791aabec3c6a9d421bb2ab13ed6298", null ],
     [ "fontPropertiesChanged", "classecvFontPropertyWidget.html#adbde1cb1740a4cc7fcceb19913bef8c1", null ],
     [ "fontSize", "classecvFontPropertyWidget.html#a09fdef702105220c9ddba58ccd20c876", null ],
     [ "fontSizeChanged", "classecvFontPropertyWidget.html#adc1c46e59fdcba13ea8cca38b349eeb3", null ],

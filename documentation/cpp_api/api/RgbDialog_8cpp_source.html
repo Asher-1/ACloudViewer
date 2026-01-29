@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -197,20 +188,20 @@ $(document).ready(function(){initNavTree('RgbDialog_8cpp_source.html',''); initR
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <span class="comment">// Get RGB values of the picked point</span></div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            <a class="code" href="classccGenericPointCloud.html">ccGenericPointCloud</a>* cloud =</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                    <span class="keyword">static_cast&lt;</span><a class="code" href="classccGenericPointCloud.html">ccGenericPointCloud</a>*<span class="keyword">&gt;</span>(pi.<a class="code" href="structccPickingListener_1_1PickedItem.html#a6d5fe13a00e2f72fe5130cff31c4a653">entity</a>);</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <span class="keyword">const</span> <a class="code" href="classecvColor_1_1RgbTpl.html">ecvColor::Rgb</a>&amp; rgb = cloud-&gt;<a class="code" href="classccGenericPointCloud.html#a9a77e7617fead9a0bb1b189406433395">getPointColor</a>(pi.<a class="code" href="structccPickingListener_1_1PickedItem.html#a1ca3c2e63e79278e8e04043ad4f4b0d9">itemIndex</a>);</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <span class="keyword">const</span> <a class="code" href="classecvColor_1_1RgbTpl.html">ecvColor::Rgb</a>&amp; <a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a> = cloud-&gt;<a class="code" href="classccGenericPointCloud.html#a9a77e7617fead9a0bb1b189406433395">getPointColor</a>(pi.<a class="code" href="structccPickingListener_1_1PickedItem.html#a1ca3c2e63e79278e8e04043ad4f4b0d9">itemIndex</a>);</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <span class="keywordflow">if</span> (pointPickingButton_first-&gt;isChecked()) {</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;Point picked from first point picker&quot;</span>);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                red_first-&gt;setValue(rgb.<a class="code" href="classecvColor_1_1RgbTpl.html#a71bdb7daa072e90e889b98ee0ab70c04">r</a>);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                green_first-&gt;setValue(rgb.<a class="code" href="classecvColor_1_1RgbTpl.html#a0f0db28e58d97db3711841616dc01464">g</a>);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                blue_first-&gt;setValue(rgb.<a class="code" href="classecvColor_1_1RgbTpl.html#a1f61925054e683444965627c90976b39">b</a>);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                red_first-&gt;setValue(<a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a>.r);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                green_first-&gt;setValue(<a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a>.g);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                blue_first-&gt;setValue(<a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a>.b);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                pointPickingButton_first-&gt;setChecked(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(<span class="stringliteral">&quot;Point picked from second point picker&quot;</span>);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                red_second-&gt;setValue(rgb.<a class="code" href="classecvColor_1_1RgbTpl.html#a71bdb7daa072e90e889b98ee0ab70c04">r</a>);</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                green_second-&gt;setValue(rgb.<a class="code" href="classecvColor_1_1RgbTpl.html#a0f0db28e58d97db3711841616dc01464">g</a>);</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                blue_second-&gt;setValue(rgb.<a class="code" href="classecvColor_1_1RgbTpl.html#a1f61925054e683444965627c90976b39">b</a>);</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                red_second-&gt;setValue(<a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a>.r);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                green_second-&gt;setValue(<a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a>.g);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                blue_second-&gt;setValue(<a class="code" href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a>.b);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                pointPickingButton_second-&gt;setChecked(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;            }</div>
@@ -238,13 +229,11 @@ $(document).ready(function(){initNavTree('RgbDialog_8cpp_source.html',''); initR
 <div class="ttc" id="aclassccPickingHub_html_ac5bc184b7fb06c449745cf450b5ad407"><div class="ttname"><a href="classccPickingHub.html#ac5bc184b7fb06c449745cf450b5ad407">ccPickingHub::addListener</a></div><div class="ttdeci">bool addListener(ccPickingListener *listener, bool exclusive=false, bool autoStartPicking=true, ecvDisplayTools::PICKING_MODE mode=ecvDisplayTools::POINT_OR_TRIANGLE_PICKING)</div><div class="ttdoc">Adds a listener.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingHub_8cpp_source.html#l00104">ecvPickingHub.cpp:104</a></div></div>
 <div class="ttc" id="aclassccPickingHub_html_af4e4ed622dc9efd7f1770d849b8badad"><div class="ttname"><a href="classccPickingHub.html#af4e4ed622dc9efd7f1770d849b8badad">ccPickingHub::activeWindow</a></div><div class="ttdeci">QWidget * activeWindow() const</div><div class="ttdoc">Returns the currently active window.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingHub_8h_source.html#l00074">ecvPickingHub.h:74</a></div></div>
 <div class="ttc" id="aclassecvColor_1_1RgbTpl_html"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html">ecvColor::RgbTpl</a></div><div class="ttdoc">RGB color structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00049">ecvColorTypes.h:49</a></div></div>
-<div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a0f0db28e58d97db3711841616dc01464"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a0f0db28e58d97db3711841616dc01464">ecvColor::RgbTpl::g</a></div><div class="ttdeci">Type g</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
-<div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a1f61925054e683444965627c90976b39"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a1f61925054e683444965627c90976b39">ecvColor::RgbTpl::b</a></div><div class="ttdeci">Type b</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
-<div class="ttc" id="aclassecvColor_1_1RgbTpl_html_a71bdb7daa072e90e889b98ee0ab70c04"><div class="ttname"><a href="classecvColor_1_1RgbTpl.html#a71bdb7daa072e90e889b98ee0ab70c04">ecvColor::RgbTpl::r</a></div><div class="ttdeci">Type r</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8h_source.html#l00054">ecvColorTypes.h:54</a></div></div>
 <div class="ttc" id="aecvGenericPointCloud_8h_html"><div class="ttname"><a href="ecvGenericPointCloud_8h.html">ecvGenericPointCloud.h</a></div></div>
 <div class="ttc" id="aecvPickingHub_8h_html"><div class="ttname"><a href="ecvPickingHub_8h.html">ecvPickingHub.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a719ce7b67750b44a9537fb6e425e221a"><div class="ttname"><a href="my__point__types_8h.html#a719ce7b67750b44a9537fb6e425e221a">rgb</a></div><div class="ttdeci">normal_z rgb</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
-<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
+<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="sfEditDlg_8h_source.html#l00016">sfEditDlg.h:16</a></div></div>
 <div class="ttc" id="astructccPickingListener_1_1PickedItem_html"><div class="ttname"><a href="structccPickingListener_1_1PickedItem.html">ccPickingListener::PickedItem</a></div><div class="ttdoc">Picked item.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingListener_8h_source.html#l00026">ecvPickingListener.h:26</a></div></div>
 <div class="ttc" id="astructccPickingListener_1_1PickedItem_html_a1ca3c2e63e79278e8e04043ad4f4b0d9"><div class="ttname"><a href="structccPickingListener_1_1PickedItem.html#a1ca3c2e63e79278e8e04043ad4f4b0d9">ccPickingListener::PickedItem::itemIndex</a></div><div class="ttdeci">unsigned itemIndex</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingListener_8h_source.html#l00031">ecvPickingListener.h:31</a></div></div>
 <div class="ttc" id="astructccPickingListener_1_1PickedItem_html_a6d5fe13a00e2f72fe5130cff31c4a653"><div class="ttname"><a href="structccPickingListener_1_1PickedItem.html#a6d5fe13a00e2f72fe5130cff31c4a653">ccPickingListener::PickedItem::entity</a></div><div class="ttdeci">ccHObject * entity</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingListener_8h_source.html#l00030">ecvPickingListener.h:30</a></div></div>
@@ -254,7 +243,7 @@ $(document).ready(function(){initNavTree('RgbDialog_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_861f8ab3a75efd6c1a4bc468dceb871c.html">qColorimetricSegmenter</a></li><li class="navelem"><a class="el" href="RgbDialog_8cpp.html">RgbDialog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

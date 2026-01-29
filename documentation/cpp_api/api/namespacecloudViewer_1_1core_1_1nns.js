@@ -35,7 +35,6 @@ var namespacecloudViewer_1_1core_1_1nns =
     [ "HybridSearchCPU< double, int64_t >", "namespacecloudViewer_1_1core_1_1nns.html#af5e421a91def11af7d6fad843e543415", null ],
     [ "HybridSearchCPU< float, int32_t >", "namespacecloudViewer_1_1core_1_1nns.html#a5bc88724c73bbe77da742083af22f5af", null ],
     [ "HybridSearchCPU< float, int64_t >", "namespacecloudViewer_1_1core_1_1nns.html#a30a122bc924e5808c917155f7033a5ee", null ],
-    [ "pybind_core_nns", "namespacecloudViewer_1_1core_1_1nns.html#aa5f1a325316ab33c30193d9e963204f8", null ],
     [ "SpatialHash", "namespacecloudViewer_1_1core_1_1nns.html#a52eb1db5acafacda2b78229e9048fbaf", null ],
     [ "SpatialHash", "namespacecloudViewer_1_1core_1_1nns.html#a707125e2cb2692dab571b51eabe4d72c", null ]
 ];

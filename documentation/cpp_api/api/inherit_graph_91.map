@@ -1,4 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classccExternalFactory.html" title=" " alt="" coords="5,5,143,32"/>
-<area shape="rect" id="node2" href="$classG3PointFactory.html" title="CCPluginStub." alt="" coords="191,5,311,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,83,32"/>
+<area shape="rect" id="node2" href="$classccPointCloudLODThread.html" title="Thread for background computation." alt="" coords="131,5,309,32"/>
 </map>

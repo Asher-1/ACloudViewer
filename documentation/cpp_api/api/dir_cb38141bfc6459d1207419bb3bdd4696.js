@@ -1,7 +1,7 @@
 var dir_cb38141bfc6459d1207419bb3bdd4696 =
 [
     [ "BoundingVolume.h", "geometry_2BoundingVolume_8h.html", "geometry_2BoundingVolume_8h" ],
-    [ "Geometry.h", "cloudViewer_2geometry_2Geometry_8h.html", "cloudViewer_2geometry_2Geometry_8h" ],
+    [ "Geometry.h", "geometry_2Geometry_8h.html", "geometry_2Geometry_8h" ],
     [ "HalfEdgeTriangleMesh.h", "cloudViewer_2geometry_2HalfEdgeTriangleMesh_8h.html", null ],
     [ "Image.h", "cloudViewer_2geometry_2Image_8h.html", null ],
     [ "Keypoint.h", "Keypoint_8h.html", null ],

@@ -1,17 +1,18 @@
 <map id="/root/ACloudViewer/plugins/core/IO/qPhotoscanIO" name="/root/ACloudViewer/plugins/core/IO/qPhotoscanIO">
-<area shape="rect" id="node2" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html" title="extern" alt="" coords="77,159,149,207"/>
-<area shape="rect" id="node6" href="dir_4270bfced15e0e73154b13468c7c9ad9.html" title="core" alt="" coords="277,255,349,303"/>
-<area shape="rect" id="edge3-headlabel" href="dir_000230_000046.html" title="2" alt="" coords="257,250,266,265"/>
-<area shape="rect" id="node3" href="dir_f63ae5920bf09855ffd1145140bbe6ef.html" title="include" alt="" coords="173,159,245,207"/>
-<area shape="rect" id="node5" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html" title="libs" alt="" coords="277,159,349,207"/>
-<area shape="rect" id="edge8-headlabel" href="dir_000235_000048.html" title="2" alt="" coords="254,167,264,182"/>
+<area shape="rect" id="node2" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html" title="extern" alt="" coords="133,159,205,207"/>
+<area shape="rect" id="node5" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html" title="libs" alt="" coords="71,255,143,303"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000229_000004.html" title="4" alt="" coords="126,236,135,251"/>
+<area shape="rect" id="node6" href="dir_4270bfced15e0e73154b13468c7c9ad9.html" title="core" alt="" coords="144,351,216,399"/>
+<area shape="rect" id="edge4-headlabel" href="dir_000229_000036.html" title="2" alt="" coords="181,325,191,339"/>
+<area shape="rect" id="node3" href="dir_f63ae5920bf09855ffd1145140bbe6ef.html" title="include" alt="" coords="37,159,109,207"/>
+<area shape="rect" id="edge9-headlabel" href="dir_000233_000004.html" title="2" alt="" coords="96,227,105,242"/>
 <area shape="rect" id="node4" href="dir_92ec852836d617788569fc074dd086e7.html" title="src" alt="" coords="37,63,109,111"/>
-<area shape="rect" id="edge4-headlabel" href="dir_000236_000230.html" title="2" alt="" coords="100,131,109,146"/>
-<area shape="rect" id="edge7-headlabel" href="dir_000236_000235.html" title="3" alt="" coords="161,134,170,149"/>
-<area shape="rect" id="edge6-headlabel" href="dir_000236_000048.html" title="7" alt="" coords="259,143,268,158"/>
-<area shape="rect" id="edge5-headlabel" href="dir_000236_000046.html" title="2" alt="" coords="356,239,366,254"/>
-<area shape="rect" id="edge2-headlabel" href="dir_000048_000230.html" title="1" alt="" coords="151,146,160,161"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000048_000046.html" title="495" alt="" coords="309,229,334,244"/>
+<area shape="rect" id="edge5-headlabel" href="dir_000234_000229.html" title="2" alt="" coords="134,132,143,147"/>
+<area shape="rect" id="edge8-headlabel" href="dir_000234_000233.html" title="3" alt="" coords="77,133,86,148"/>
+<area shape="rect" id="edge7-headlabel" href="dir_000234_000004.html" title="8" alt="" coords="54,242,63,257"/>
+<area shape="rect" id="edge6-headlabel" href="dir_000234_000036.html" title="2" alt="" coords="205,331,214,345"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000004_000229.html" title="1" alt="" coords="141,211,150,226"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000004_000036.html" title="460" alt="" coords="145,324,170,338"/>
 <area shape="rect" id="clust2" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html" alt="" coords="27,52,256,217"/>
 <area shape="rect" id="clust1" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html" title="IO" alt="" coords="16,16,267,228"/>
 </map>

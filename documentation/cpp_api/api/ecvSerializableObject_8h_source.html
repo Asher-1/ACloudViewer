@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -218,7 +209,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160; </div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">class</span> Type, <span class="keywordtype">int</span> N, <span class="keyword">class</span> ComponentType&gt;</div>
-<div class="line"><a name="l00173"></a><span class="lineno"><a class="line" href="classccSerializationHelper.html#a15de312af24586ed25799aca929f5c3d">  173</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializationHelper.html#a15de312af24586ed25799aca929f5c3d">GenericArrayToFile</a>(<span class="keyword">const</span> std::vector&lt;Type&gt;&amp; data, QFile&amp; out) {</div>
+<div class="line"><a name="l00173"></a><span class="lineno"><a class="line" href="classccSerializationHelper.html#a15de312af24586ed25799aca929f5c3d">  173</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializationHelper.html#a15de312af24586ed25799aca929f5c3d">GenericArrayToFile</a>(<span class="keyword">const</span> std::vector&lt;Type&gt;&amp; <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, QFile&amp; out) {</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        assert(out.isOpen() &amp;&amp; (out.openMode() &amp; QIODevice::WriteOnly));</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        <span class="comment">// removed to allow saving empty clouds</span></div>
@@ -233,7 +224,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#adcf23e696e7bd0bbf18a0c42b199ac7c">ccSerializableObject::WriteError</a>();</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160; </div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        <span class="comment">// element count = array size (dataVersion&gt;=20)</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        ::uint32_t elementCount = <span class="keyword">static_cast&lt;</span>::uint32_t<span class="keyword">&gt;</span>(data.size());</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        ::uint32_t elementCount = <span class="keyword">static_cast&lt;</span>::uint32_t<span class="keyword">&gt;</span>(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.size());</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        <span class="keywordflow">if</span> (out.write((<span class="keyword">const</span> <span class="keywordtype">char</span>*)&amp;elementCount, 4) &lt; 0)</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#adcf23e696e7bd0bbf18a0c42b199ac7c">ccSerializableObject::WriteError</a>();</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160; </div>
@@ -241,13 +232,13 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        {</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;            <span class="comment">// DGM: do it by chunks, in case it&#39;s too big to be processed by the</span></div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;            <span class="comment">// system</span></div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            <span class="keyword">const</span> <span class="keywordtype">char</span>* _data = (<span class="keyword">const</span> <span class="keywordtype">char</span>*)data.data();</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            <span class="keyword">const</span> <span class="keywordtype">char</span>* _data = (<span class="keyword">const</span> <span class="keywordtype">char</span>*)<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.data();</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;            qint64 byteCount = <span class="keyword">static_cast&lt;</span>qint64<span class="keyword">&gt;</span>(elementCount);</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;            byteCount *= <span class="keyword">sizeof</span>(Type);</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            <span class="keywordflow">while</span> (byteCount != 0) {</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                <span class="keyword">static</span> <span class="keyword">const</span> qint64 s_maxByteSaveCount =</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                        (1 &lt;&lt; 26);  <span class="comment">// 64 Mb each time</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                qint64 saveCount = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(byteCount, s_maxByteSaveCount);</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                qint64 saveCount = std::min(byteCount, s_maxByteSaveCount);</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                <span class="keywordflow">if</span> (out.write(_data, saveCount) &lt; 0)</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                    <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#adcf23e696e7bd0bbf18a0c42b199ac7c">ccSerializableObject::WriteError</a>();</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                _data += saveCount;</div>
@@ -259,7 +250,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160; </div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">class</span> Type, <span class="keywordtype">int</span> N, <span class="keyword">class</span> ComponentType&gt;</div>
-<div class="line"><a name="l00219"></a><span class="lineno"><a class="line" href="classccSerializationHelper.html#a106335fa9163e12ae6f0dcf8333df08a">  219</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializationHelper.html#a106335fa9163e12ae6f0dcf8333df08a">GenericArrayFromFile</a>(std::vector&lt;Type&gt;&amp; data,</div>
+<div class="line"><a name="l00219"></a><span class="lineno"><a class="line" href="classccSerializationHelper.html#a106335fa9163e12ae6f0dcf8333df08a">  219</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializationHelper.html#a106335fa9163e12ae6f0dcf8333df08a">GenericArrayFromFile</a>(std::vector&lt;Type&gt;&amp; <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>,</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                                     QFile&amp; in,</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                                     <span class="keywordtype">short</span> dataVersion,</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                                     <span class="keyword">const</span> QString&amp; verboseDescription) {</div>
@@ -281,7 +272,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keywordflow">if</span> (elementCount) {</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            <span class="comment">// try to allocate memory</span></div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            <span class="keywordflow">try</span> {</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                data.resize(elementCount);</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.resize(elementCount);</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#aee85a5594a3f6691031f4415f81c4c58">ccSerializableObject::MemoryError</a>();</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;            }</div>
@@ -293,11 +284,11 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                <span class="keyword">static</span> <span class="keyword">const</span> qint64 MaxElementPerChunk =</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                        (<span class="keyword">static_cast&lt;</span>qint64<span class="keyword">&gt;</span>(1) &lt;&lt; 24);</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                assert(<span class="keyword">sizeof</span>(ComponentType) * N == <span class="keyword">sizeof</span>(Type));</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                qint64 byteCount = <span class="keyword">static_cast&lt;</span>qint64<span class="keyword">&gt;</span>(data.size()) *</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                qint64 byteCount = <span class="keyword">static_cast&lt;</span>qint64<span class="keyword">&gt;</span>(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.size()) *</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                                   (<span class="keyword">sizeof</span>(ComponentType) * N);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                <span class="keywordtype">char</span>* dest = (<span class="keywordtype">char</span>*)data.data();</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                <span class="keywordtype">char</span>* dest = (<span class="keywordtype">char</span>*)<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.data();</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                <span class="keywordflow">while</span> (byteCount &gt; 0) {</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                    qint64 chunkSize = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(MaxElementPerChunk, byteCount);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                    qint64 chunkSize = std::min(MaxElementPerChunk, byteCount);</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                    <span class="keywordflow">if</span> (in.read(dest, chunkSize) &lt; 0) {</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                        <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#a77efab0f94b6e2938153bbe7e47e9fda">ccSerializableObject::ReadError</a>();</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                    }</div>
@@ -313,7 +304,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">class</span> Type, <span class="keywordtype">int</span> N, <span class="keyword">class</span> ComponentType, <span class="keyword">class</span> FileComponentType&gt;</div>
 <div class="line"><a name="l00278"></a><span class="lineno"><a class="line" href="classccSerializationHelper.html#a80a1d9fafb1cbd813b1add265af0e421">  278</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classccSerializationHelper.html#a80a1d9fafb1cbd813b1add265af0e421">GenericArrayFromTypedFile</a>(</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;            std::vector&lt;Type&gt;&amp; data,</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;            std::vector&lt;Type&gt;&amp; <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>,</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            QFile&amp; in,</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            <span class="keywordtype">short</span> dataVersion,</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            <span class="keyword">const</span> QString&amp; verboseDescription,</div>
@@ -336,7 +327,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        <span class="keywordflow">if</span> (elementCount) {</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;            <span class="comment">// try to allocate memory</span></div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;            <span class="keywordflow">try</span> {</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                data.resize(elementCount);</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.resize(elementCount);</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;            } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                <span class="keywordflow">return</span> <a class="code" href="classccSerializableObject.html#aee85a5594a3f6691031f4415f81c4c58">ccSerializableObject::MemoryError</a>();</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;            }</div>
@@ -346,7 +337,7 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;            <span class="comment">// we must convert each element, value by value!</span></div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            FileComponentType dummyArray[N]{0};</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160; </div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;            ComponentType* _data = (ComponentType*)data.data();</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;            ComponentType* _data = (ComponentType*)<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.data();</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160; </div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            <span class="keywordtype">size_t</span> elementSize = <span class="keyword">sizeof</span>(FileComponentType) * N;</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
@@ -441,14 +432,14 @@ $(document).ready(function(){initNavTree('ecvSerializableObject_8h_source.html',
 <div class="ttc" id="aclassccSerializationHelper_html_a80a1d9fafb1cbd813b1add265af0e421"><div class="ttname"><a href="classccSerializationHelper.html#a80a1d9fafb1cbd813b1add265af0e421">ccSerializationHelper::GenericArrayFromTypedFile</a></div><div class="ttdeci">static bool GenericArrayFromTypedFile(std::vector&lt; Type &gt; &amp;data, QFile &amp;in, short dataVersion, const QString &amp;verboseDescription, FileComponentType *_autoOffset=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00278">ecvSerializableObject.h:278</a></div></div>
 <div class="ttc" id="aclassccSerializationHelper_html_a8247d026efb19bc99d2e1062e7521111"><div class="ttname"><a href="classccSerializationHelper.html#a8247d026efb19bc99d2e1062e7521111">ccSerializationHelper::CoordsFromDataStream</a></div><div class="ttdeci">static void CoordsFromDataStream(QDataStream &amp;stream, int flags, PointCoordinateType *out, unsigned count=1)</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00127">ecvSerializableObject.h:127</a></div></div>
 <div class="ttc" id="aclassccSerializationHelper_html_a83e9f4ea922386d74e90890f9112f2a4"><div class="ttname"><a href="classccSerializationHelper.html#a83e9f4ea922386d74e90890f9112f2a4">ccSerializationHelper::GenericArrayToFileMinVersion</a></div><div class="ttdeci">static short GenericArrayToFileMinVersion()</div><div class="ttdoc">Returns the minimum file version to save/load a 'generic array'.</div><div class="ttdef"><b>Definition:</b> <a href="ecvSerializableObject_8h_source.html#l00123">ecvSerializableObject.h:123</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvSerializableObject_8h.html">ecvSerializableObject.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:37 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

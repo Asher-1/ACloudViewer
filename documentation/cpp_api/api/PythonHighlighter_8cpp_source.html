@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -148,9 +139,9 @@ $(document).ready(function(){initNavTree('PythonHighlighter_8cpp_source.html',''
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">// Python braces</span></div>
 <div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="PythonHighlighter_8cpp.html#aa1aa10c2788e96000ca03d6afa35d15b">   50</a></span>&#160;<span class="keyword">static</span> <span class="keyword">const</span> QStringList <a class="code" href="PythonHighlighter_8cpp.html#aa1aa10c2788e96000ca03d6afa35d15b">s_Braces</a> = {<span class="stringliteral">&quot;\\{&quot;</span>, <span class="stringliteral">&quot;\\}&quot;</span>, <span class="stringliteral">&quot;\\(&quot;</span>, <span class="stringliteral">&quot;\\)&quot;</span>, R<span class="stringliteral">&quot;([)&quot;, R</span><span class="stringliteral">&quot;(])&quot;};</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="stringliteral"></span> </div>
-<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classPythonHighlighter.html#a03d07ce868953b276b951879550af110">   52</a></span>&#160;<span class="stringliteral">QString <a class="code" href="classPythonHighlighter.html#a03d07ce868953b276b951879550af110">PythonHighlighter::CodeElementName</a>(<a class="code" href="classPythonHighlighter.html#a935cc784574833b5373e014354339746">PythonHighlighter::CodeElement</a> e)</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classPythonHighlighter.html#a03d07ce868953b276b951879550af110">   52</a></span>&#160;<span class="stringliteral">QString <a class="code" href="classPythonHighlighter.html#a03d07ce868953b276b951879550af110">PythonHighlighter::CodeElementName</a>(<a class="code" href="classPythonHighlighter.html#a935cc784574833b5373e014354339746">PythonHighlighter::CodeElement</a> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>)</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="stringliteral">{</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="stringliteral">    </span><span class="keywordflow">switch</span> (e)</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="stringliteral">    </span><span class="keywordflow">switch</span> (<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>)</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    {</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">case</span> <a class="code" href="classPythonHighlighter.html#a935cc784574833b5373e014354339746a220f3d3750583b9db48568a0b5b9a5f1">CodeElement::Keyword</a>:</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordflow">return</span> {<span class="stringliteral">&quot;Keyword&quot;</span>};</div>
@@ -262,11 +253,11 @@ $(document).ready(function(){initNavTree('PythonHighlighter_8cpp_source.html',''
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <span class="keywordflow">while</span> (index &gt;= 0)</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        {</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;            index = wrapper.pos(rule.matchIndex);</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            <span class="keywordtype">int</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = wrapper.cap(rule.matchIndex).length();</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> &gt; 0)</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            <span class="keywordtype">int</span> length = wrapper.cap(rule.matchIndex).length();</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            <span class="keywordflow">if</span> (length &gt; 0)</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            {</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                setFormat(index, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>, rule.format);</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                index = wrapper.indexIn(text, index + <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                setFormat(index, length, rule.format);</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                index = wrapper.indexIn(text, index + length);</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            }</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            {</div>
@@ -291,7 +282,7 @@ $(document).ready(function(){initNavTree('PythonHighlighter_8cpp_source.html',''
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="keywordtype">bool</span> PythonHighlighter::matchMultiLine(<span class="keyword">const</span> QString &amp;text, <span class="keyword">const</span> HighlightingRule &amp;rule)</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;{</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="keywordtype">int</span> start, add, end, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>;</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="keywordtype">int</span> start, add, end, length;</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; </div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="comment">// Use QtCompatRegExpWrapper for unified QRegExp-like API (works in both Qt5 and Qt6)</span></div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <a class="code" href="classQtCompatRegExpWrapper.html">QtCompatRegExpWrapper</a> wrapper(rule.pattern);</div>
@@ -318,21 +309,21 @@ $(document).ready(function(){initNavTree('PythonHighlighter_8cpp_source.html',''
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;        <span class="comment">// Ending delimiter on this line?</span></div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        <span class="keywordflow">if</span> (end &gt;= add)</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        {</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;            <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = end - start + add + wrapper.matchedLength();</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;            length = end - start + add + wrapper.matchedLength();</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;            setCurrentBlockState(0);</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        }</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        <span class="comment">// No; multi-line string</span></div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        {</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            setCurrentBlockState(rule.matchIndex);</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = text.length() - start + add;</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            length = text.length() - start + add;</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        }</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="comment">// Apply formatting</span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        setFormat(start, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>, rule.format);</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        setFormat(start, length, rule.format);</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160; </div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="comment">// Look for the next match</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        start = wrapper.indexIn(text, start + <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        start = wrapper.indexIn(text, start + length);</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    }</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="comment">// Return True if still inside a multi-line string, False otherwise</span></div>
@@ -360,14 +351,14 @@ $(document).ready(function(){initNavTree('PythonHighlighter_8cpp_source.html',''
 <div class="ttc" id="aclassPythonHighlighter_html_a935cc784574833b5373e014354339746ae1b3ec89ead7f83a9245ed5c9cacfdbf"><div class="ttname"><a href="classPythonHighlighter.html#a935cc784574833b5373e014354339746ae1b3ec89ead7f83a9245ed5c9cacfdbf">PythonHighlighter::CodeElement::Operator</a></div><div class="ttdeci">@ Operator</div></div>
 <div class="ttc" id="aclassPythonHighlighter_html_af1dab21abdfa0ded642e572deffb9f6d"><div class="ttname"><a href="classPythonHighlighter.html#af1dab21abdfa0ded642e572deffb9f6d">PythonHighlighter::useColorScheme</a></div><div class="ttdeci">void useColorScheme(const ColorScheme &amp;colorScheme)</div><div class="ttdef"><b>Definition:</b> <a href="PythonHighlighter_8cpp_source.html#l00082">PythonHighlighter.cpp:82</a></div></div>
 <div class="ttc" id="aclassQtCompatRegExpWrapper_html"><div class="ttname"><a href="classQtCompatRegExpWrapper.html">QtCompatRegExpWrapper</a></div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00479">QtCompat.h:479</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="PythonHighlighter_8cpp.html">PythonHighlighter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

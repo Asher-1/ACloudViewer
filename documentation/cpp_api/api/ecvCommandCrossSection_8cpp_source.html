@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -125,8 +116,8 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="structCommandCrossSection.html#aae23bb0a8640192e2012950b1bac38e9">   26</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="structCommandCrossSection.html#aae23bb0a8640192e2012950b1bac38e9">CommandCrossSection::process</a>(<a class="code" href="classccCommandLineInterface.html">ccCommandLineInterface</a> &amp;cmd) {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(<span class="stringliteral">&quot;[CROSS SECTION]&quot;</span>);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keyword">static</span> QString s_xmlACloudViewer = <span class="stringliteral">&quot;ACloudViewer&quot;</span>;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keyword">static</span> QString s_xmlCloudCompare = <span class="stringliteral">&quot;CloudCompare&quot;</span>;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keyword">static</span> QString <a class="code" href="ecvColorScale_8cpp.html#aa3a4919ee7fc36788670b8145110a1ca">s_xmlACloudViewer</a> = <span class="stringliteral">&quot;ACloudViewer&quot;</span>;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keyword">static</span> QString <a class="code" href="ecvColorScale_8cpp.html#ac3edce242636bd18c5b9298a545af6d5">s_xmlCloudCompare</a> = <span class="stringliteral">&quot;CloudCompare&quot;</span>;</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keyword">static</span> QString s_xmlBoxThickness = <span class="stringliteral">&quot;BoxThickness&quot;</span>;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">static</span> QString s_xmlBoxCenter = <span class="stringliteral">&quot;BoxCenter&quot;</span>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keyword">static</span> QString s_xmlRepeatDim = <span class="stringliteral">&quot;RepeatDim&quot;</span>;</div>
@@ -162,11 +153,11 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="comment">// expected: ACloudViewer or CloudCompare</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <span class="keywordflow">if</span> (!stream.readNextStartElement() ||</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            (stream.name() != s_xmlACloudViewer &amp;&amp;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;             stream.name() != s_xmlCloudCompare)) {</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            (stream.name() != <a class="code" href="ecvColorScale_8cpp.html#aa3a4919ee7fc36788670b8145110a1ca">s_xmlACloudViewer</a> &amp;&amp;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;             stream.name() != <a class="code" href="ecvColorScale_8cpp.html#ac3edce242636bd18c5b9298a545af6d5">s_xmlCloudCompare</a>)) {</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                    QString(<span class="stringliteral">&quot;Invalid XML file (should start by &#39;&lt;%1 or %2&gt;&#39;)&quot;</span>)</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                            .arg(s_xmlACloudViewer, s_xmlCloudCompare));</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                            .arg(<a class="code" href="ecvColorScale_8cpp.html#aa3a4919ee7fc36788670b8145110a1ca">s_xmlACloudViewer</a>, <a class="code" href="ecvColorScale_8cpp.html#ac3edce242636bd18c5b9298a545af6d5">s_xmlCloudCompare</a>));</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        }</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordtype">unsigned</span> mandatoryCount = 0;</div>
@@ -328,7 +319,7 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; entities.size(); ++i) {</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                <span class="comment">// check entity bounding-box</span></div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                <a class="code" href="classccHObject.html">ccHObject</a> *ent = entities[i];</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                <a class="code" href="classccBBox.html">ccBBox</a> bbox = ent-&gt;<a class="code" href="classccHObject.html#a19931028cc0a393a8b2de2ca548b3a22">getOwnBB</a>();</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                <a class="code" href="classccBBox.html">ccBBox</a> bbox = ent-&gt;<a class="code" href="classccHObject.html#adef3ec5d4112952e60758006824fc1c1">getOwnBB</a>();</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                <span class="keywordflow">if</span> (!bbox.<a class="code" href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">isValid</a>()) {</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a416e079b27ab3d25b128cdb8988dabd4">warning</a>(</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                            QString(<span class="stringliteral">&quot;Entity &#39;%1&#39; has an invalid bounding-box!&quot;</span>)</div>
@@ -454,7 +445,7 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                                            <span class="keyword">static_cast&lt;</span><a class="code" href="classccMesh.html">ccMesh</a> *<span class="keyword">&gt;</span>(croppedEnt),</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                                            outputBasename,</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                                            outputDir.absolutePath(),</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                                            entities.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>() &gt; 1</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                                            entities.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>() &gt; 1</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;                                                    ? <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(i)</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                                                    : -1);</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;                                    errorStr = cmd.<a class="code" href="classccCommandLineInterface.html#ab21014751ce83f1c0ab59c6cea711212">exportEntity</a>(desc);</div>
@@ -552,10 +543,10 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div class="ttc" id="aclassccCommandLineInterface_html_aff5c07ec8e7f1e8b40330262ea21fb17"><div class="ttname"><a href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">ccCommandLineInterface::clouds</a></div><div class="ttdeci">virtual std::vector&lt; CLCloudDesc &gt; &amp; clouds()</div><div class="ttdoc">Currently opened point clouds and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00133">ecvCommandLineInterface.cpp:133</a></div></div>
 <div class="ttc" id="aclassccCropTool_html_a297dccba6767a027fc06d1d4a644ae35"><div class="ttname"><a href="classccCropTool.html#a297dccba6767a027fc06d1d4a644ae35">ccCropTool::Crop</a></div><div class="ttdeci">static ccHObject * Crop(ccHObject *entity, const ccBBox &amp;box, bool inside=true, const ccGLMatrix *meshRotation=0)</div><div class="ttdoc">Crops the input entity.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCropTool_8cpp_source.html#l00023">ecvCropTool.cpp:23</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a19931028cc0a393a8b2de2ca548b3a22"><div class="ttname"><a href="classccHObject.html#a19931028cc0a393a8b2de2ca548b3a22">ccHObject::getOwnBB</a></div><div class="ttdeci">virtual ccBBox getOwnBB(bool withGLFeatures=false)</div><div class="ttdoc">Returns the entity's own bounding-box.</div></div>
+<div class="ttc" id="aclassccHObject_html_adef3ec5d4112952e60758006824fc1c1"><div class="ttname"><a href="classccHObject.html#adef3ec5d4112952e60758006824fc1c1">ccHObject::getOwnBB</a></div><div class="ttdeci">virtual ccBBox getOwnBB(bool withGLFeatures=false)</div><div class="ttdoc">Returns the entity's own bounding-box.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00757">ecvHObject.cpp:757</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
-<div class="ttc" id="aclassccMesh_html_ac7ff917d8d21843eaa1b92bb824a2c9e"><div class="ttname"><a href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">ccMesh::size</a></div><div class="ttdeci">virtual unsigned size() const override</div><div class="ttdoc">Returns the number of triangles.</div></div>
+<div class="ttc" id="aclassccMesh_html_a49a432c0284fff5e8fccc51845e49cbe"><div class="ttname"><a href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">ccMesh::size</a></div><div class="ttdeci">virtual unsigned size() const override</div><div class="ttdoc">Returns the number of triangles.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02143">ecvMesh.cpp:2143</a></div></div>
 <div class="ttc" id="aclassccObject_html_a51a9dd33f5ee0c27f1d09dbc9c3136e4"><div class="ttname"><a href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">ccObject::getName</a></div><div class="ttdeci">virtual QString getName() const</div><div class="ttdoc">Returns object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00072">ecvObject.h:72</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_a3b4197a19a89e56536d7780c7fb14cbd"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#a3b4197a19a89e56536d7780c7fb14cbd">cloudViewer::BoundingBoxTpl::getCenter</a></div><div class="ttdeci">Vector3Tpl&lt; T &gt; getCenter() const</div><div class="ttdoc">Returns center.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00164">BoundingBox.h:164</a></div></div>
@@ -563,6 +554,8 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_aaacc1e30352f82a5c944148912c855ec"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#aaacc1e30352f82a5c944148912c855ec">cloudViewer::BoundingBoxTpl::minCorner</a></div><div class="ttdeci">const Vector3Tpl&lt; T &gt; &amp; minCorner() const</div><div class="ttdoc">Returns min corner (const)</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00154">BoundingBox.h:154</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_ae42ccda2daa6b8891fb33eb06948daa2"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">cloudViewer::BoundingBoxTpl::isValid</a></div><div class="ttdeci">bool isValid() const</div><div class="ttdoc">Returns whether bounding box is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00203">BoundingBox.h:203</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
+<div class="ttc" id="aecvColorScale_8cpp_html_aa3a4919ee7fc36788670b8145110a1ca"><div class="ttname"><a href="ecvColorScale_8cpp.html#aa3a4919ee7fc36788670b8145110a1ca">s_xmlACloudViewer</a></div><div class="ttdeci">static const QString s_xmlACloudViewer(&quot;ACloudViewer&quot;)</div></div>
+<div class="ttc" id="aecvColorScale_8cpp_html_ac3edce242636bd18c5b9298a545af6d5"><div class="ttname"><a href="ecvColorScale_8cpp.html#ac3edce242636bd18c5b9298a545af6d5">s_xmlCloudCompare</a></div><div class="ttdeci">static const QString s_xmlCloudCompare(&quot;CloudCompare&quot;)</div></div>
 <div class="ttc" id="aecvCommandCrossSection_8cpp_html_a41249fe69bf305b0426ab166f2393ed9"><div class="ttname"><a href="ecvCommandCrossSection_8cpp.html#a41249fe69bf305b0426ab166f2393ed9">COMMAND_CROSS_SECTION</a></div><div class="ttdeci">constexpr char COMMAND_CROSS_SECTION[]</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandCrossSection_8cpp_source.html#l00021">ecvCommandCrossSection.cpp:21</a></div></div>
 <div class="ttc" id="aecvCommandCrossSection_8h_html"><div class="ttname"><a href="ecvCommandCrossSection_8h.html">ecvCommandCrossSection.h</a></div></div>
 <div class="ttc" id="aecvCommandLineCommands_8h_html"><div class="ttname"><a href="ecvCommandLineCommands_8h.html">ecvCommandLineCommands.h</a></div></div>
@@ -583,7 +576,7 @@ $(document).ready(function(){initNavTree('ecvCommandCrossSection_8cpp_source.htm
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="ecvCommandCrossSection_8cpp.html">ecvCommandCrossSection.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

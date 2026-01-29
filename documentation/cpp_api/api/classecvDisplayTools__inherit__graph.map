@@ -1,5 +1,6 @@
 <map id="ecvDisplayTools" name="ecvDisplayTools">
 <area shape="rect" id="node1" title=" " alt="" coords="54,155,181,181"/>
+<area shape="rect" id="node5" href="$classPCLDisplayTools.html" title="CC to PCL cloud converter." alt="" coords="53,229,181,256"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,80,80,107"/>
 <area shape="rect" id="node3" href="$classecvGenericDisplayTools.html" title="Generic display tools." alt="" coords="105,80,282,107"/>
 <area shape="rect" id="node4" href="$classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="104,5,283,32"/>

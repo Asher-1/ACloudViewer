@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -165,7 +156,7 @@ $(document).ready(function(){initNavTree('E57SimpleReader_8h_source.html',''); i
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;      <span class="keywordtype">bool</span> ReadData3D( int64_t dataIndex, <a class="code" href="structe57_1_1Data3D.html">Data3D</a> &amp;data3DHeader ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;      <span class="keywordtype">bool</span> GetData3DSizes( int64_t dataIndex, int64_t &amp;rowMax, int64_t &amp;columnMax, int64_t &amp;pointsSize,</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                           int64_t &amp;groupsSize, int64_t &amp;countSize, <span class="keywordtype">bool</span> &amp;<a class="code" href="sqlite3_8c.html#aecb92892e377cbedaa264efa5e95f0b4">columnIndex</a> ) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                           int64_t &amp;groupsSize, int64_t &amp;countSize, <span class="keywordtype">bool</span> &amp;columnIndex ) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      <span class="keywordtype">bool</span> ReadData3DGroupsData( int64_t dataIndex, int64_t groupCount, int64_t *idElementValue,</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;                                 int64_t *startPointIndex, int64_t *pointCount ) <span class="keyword">const</span>;</div>
@@ -206,7 +197,6 @@ $(document).ready(function(){initNavTree('E57SimpleReader_8h_source.html',''); i
 <div class="ttc" id="anamespacee57_html_a8748694e2ef57a688e0ac0535c9daaf5"><div class="ttname"><a href="namespacee57.html#a8748694e2ef57a688e0ac0535c9daaf5">e57::Image2DProjection</a></div><div class="ttdeci">Image2DProjection</div><div class="ttdoc">Identifies the representation for the image data.</div><div class="ttdef"><b>Definition:</b> <a href="E57SimpleData_8h_source.html#l00644">E57SimpleData.h:645</a></div></div>
 <div class="ttc" id="anamespacee57_html_a9e6406ed43079c9c575971f1c52c0821"><div class="ttname"><a href="namespacee57.html#a9e6406ed43079c9c575971f1c52c0821">e57::Image2DType</a></div><div class="ttdeci">Image2DType</div><div class="ttdoc">Identifies the format representation for the image data.</div><div class="ttdef"><b>Definition:</b> <a href="E57SimpleData_8h_source.html#l00635">E57SimpleData.h:636</a></div></div>
 <div class="ttc" id="anamespacee57_html_aa52d9c7d60546840767b2484ed33f0de"><div class="ttname"><a href="namespacee57.html#aa52d9c7d60546840767b2484ed33f0de">e57::ustring</a></div><div class="ttdeci">std::string ustring</div><div class="ttdoc">UTF-8 encodeded Unicode string.</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00054">E57Format.h:54</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_aecb92892e377cbedaa264efa5e95f0b4"><div class="ttname"><a href="sqlite3_8c.html#aecb92892e377cbedaa264efa5e95f0b4">columnIndex</a></div><div class="ttdeci">static int columnIndex(Table *pTab, const char *zCol)</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l129243">sqlite3.c:129243</a></div></div>
 <div class="ttc" id="astructe57_1_1Data3DPointsData__t_html"><div class="ttname"><a href="structe57_1_1Data3DPointsData__t.html">e57::Data3DPointsData_t</a></div><div class="ttdoc">Stores pointers to user-provided buffers.</div><div class="ttdef"><b>Definition:</b> <a href="E57SimpleData_8h_source.html#l00438">E57SimpleData.h:439</a></div></div>
 <div class="ttc" id="astructe57_1_1Data3D_html"><div class="ttname"><a href="structe57_1_1Data3D.html">e57::Data3D</a></div><div class="ttdoc">Stores the top-level information for a single lidar scan.</div><div class="ttdef"><b>Definition:</b> <a href="E57SimpleData_8h_source.html#l00391">E57SimpleData.h:392</a></div></div>
 <div class="ttc" id="astructe57_1_1E57Root_html"><div class="ttname"><a href="structe57_1_1E57Root.html">e57::E57Root</a></div><div class="ttdoc">Stores the top-level information for the XML section of the file.</div><div class="ttdef"><b>Definition:</b> <a href="E57SimpleData_8h_source.html#l00254">E57SimpleData.h:255</a></div></div>
@@ -217,7 +207,7 @@ $(document).ready(function(){initNavTree('E57SimpleReader_8h_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d21333906be55f8c765d03a59e7fedc5.html">include</a></li><li class="navelem"><a class="el" href="E57SimpleReader_8h.html">E57SimpleReader.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

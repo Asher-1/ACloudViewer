@@ -23,7 +23,7 @@ var classecvGenericTransformTool =
     [ "getFinalTransformation", "classecvGenericTransformTool.html#a2139b4f09d128362385c746501c235de", null ],
     [ "getOutput", "classecvGenericTransformTool.html#a81b3effbe4eb77142de3c4a066700728", null ],
     [ "reset", "classecvGenericTransformTool.html#a2c2f9d31f7ae8afc20bcaf9da917279d", null ],
-    [ "setInputData", "classecvGenericTransformTool.html#ae719452e204997884e3797e51f994430", null ],
+    [ "setInputData", "classecvGenericTransformTool.html#a1c45e52b3fe8329621d0ad221889fc62", null ],
     [ "setRotationMode", "classecvGenericTransformTool.html#aa34f647e3bb523ba3cabba2f60532308", null ],
     [ "setScaleEnabled", "classecvGenericTransformTool.html#aa1a9401ef4c857808a0c85eb8fc0da0a", null ],
     [ "setShearEnabled", "classecvGenericTransformTool.html#a49c903d380499f2aff3bc8ea60b5a5cc", null ],

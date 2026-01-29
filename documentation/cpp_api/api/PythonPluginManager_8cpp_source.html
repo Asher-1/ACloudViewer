@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -199,11 +190,11 @@ $(document).ready(function(){initNavTree('PythonPluginManager_8cpp_source.html',
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            m_plugins.push_back(plugin);</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <a class="code" href="Utilities_8h.html#a730223ccb392553fb88d2e91428f24b6">plgPrint</a>() &lt;&lt; <span class="stringliteral">&quot;\tLoaded plugin: &#39;&quot;</span> &lt;&lt; pluginName &lt;&lt; <span class="stringliteral">&quot;&#39;&quot;</span>;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        }</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;e)</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        {</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            <a class="code" href="Utilities_8h.html#a2775111d94dd73d46cff438e05ebf94d">plgWarning</a>() &lt;&lt; <span class="stringliteral">&quot;\tFailed to instantiate plugin named &#39;&quot;</span> &lt;&lt; pluginName</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                         &lt;&lt; <span class="stringliteral">&quot;&#39;\nThe error was:\n&quot;</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                         &lt;&lt; e.what();</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                         &lt;&lt; <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what();</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        }</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    }</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;}</div>
@@ -250,10 +241,10 @@ $(document).ready(function(){initNavTree('PythonPluginManager_8cpp_source.html',
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                py::module::import(nameToImportStd.c_str());</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                <a class="code" href="Utilities_8h.html#ae4262e87b9c8227e9bbe0ecb456c81f3">plgVerbose</a>() &lt;&lt; <span class="stringliteral">&quot;\tLoaded python module &#39;&quot;</span> &lt;&lt; nameToImportStd.c_str() &lt;&lt; <span class="stringliteral">&quot;&#39;&quot;</span>;</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            }</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;e)</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>)</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            {</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                <a class="code" href="Utilities_8h.html#a2775111d94dd73d46cff438e05ebf94d">plgWarning</a>() &lt;&lt; <span class="stringliteral">&quot;\tFailed to python module &#39;&quot;</span> &lt;&lt; nameToImportStd.c_str()</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                             &lt;&lt; e.what();</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                             &lt;&lt; <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what();</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            }</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        }</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    }</div>
@@ -274,11 +265,11 @@ $(document).ready(function(){initNavTree('PythonPluginManager_8cpp_source.html',
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            m_plugins.push_back(plugin);</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <a class="code" href="Utilities_8h.html#a730223ccb392553fb88d2e91428f24b6">plgPrint</a>() &lt;&lt; <span class="stringliteral">&quot;\tLoaded plugin: &#39;&quot;</span> &lt;&lt; pluginName &lt;&lt; <span class="stringliteral">&quot;&#39;&quot;</span>;</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        }</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;e)</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>)</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        {</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;            <a class="code" href="Utilities_8h.html#a2775111d94dd73d46cff438e05ebf94d">plgWarning</a>() &lt;&lt; <span class="stringliteral">&quot;\tFailed to instantiate plugin named &#39;&quot;</span> &lt;&lt; pluginName</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                         &lt;&lt; <span class="stringliteral">&quot;&#39;\nThe error was:\n&quot;</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                         &lt;&lt; e.what();</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                         &lt;&lt; <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what();</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        }</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    }</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;}</div>
@@ -296,6 +287,7 @@ $(document).ready(function(){initNavTree('PythonPluginManager_8cpp_source.html',
 <div class="ttc" id="aclassPythonPluginManager_html_a89c71fb47ce086ac8faa2753e6118b87"><div class="ttname"><a href="classPythonPluginManager.html#a89c71fb47ce086ac8faa2753e6118b87">PythonPluginManager::plugins</a></div><div class="ttdeci">const std::vector&lt; Runtime::RegisteredPlugin &gt; &amp; plugins() const</div><div class="ttdoc">Returns the currently loaded plugins.</div><div class="ttdef"><b>Definition:</b> <a href="PythonPluginManager_8cpp_source.html#l00016">PythonPluginManager.cpp:16</a></div></div>
 <div class="ttc" id="aclassPythonPluginManager_html_ac709b327eeb4f0f98eb5968a0adf6d17"><div class="ttname"><a href="classPythonPluginManager.html#ac709b327eeb4f0f98eb5968a0adf6d17">PythonPluginManager::loadPluginsFromEntryPoints</a></div><div class="ttdeci">void loadPluginsFromEntryPoints()</div><div class="ttdef"><b>Definition:</b> <a href="PythonPluginManager_8cpp_source.html#l00021">PythonPluginManager.cpp:21</a></div></div>
 <div class="ttc" id="aclassPythonPluginManager_html_acbfacfd1d9593da9be765c703189e93d"><div class="ttname"><a href="classPythonPluginManager.html#acbfacfd1d9593da9be765c703189e93d">PythonPluginManager::unloadPlugins</a></div><div class="ttdeci">void unloadPlugins()</div><div class="ttdoc">This MUST be called before finalizing the interpreter.</div><div class="ttdef"><b>Definition:</b> <a href="PythonPluginManager_8cpp_source.html#l00187">PythonPluginManager.cpp:187</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="astructRuntime_1_1RegisteredPlugin_html"><div class="ttname"><a href="structRuntime_1_1RegisteredPlugin.html">Runtime::RegisteredPlugin</a></div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8h_source.html#l00021">Runtime.h:22</a></div></div>
 <div class="ttc" id="astructRuntime_1_1RegisteredPlugin_html_a5cd94a7f6076caaaa50144530eb05b66"><div class="ttname"><a href="structRuntime_1_1RegisteredPlugin.html#a5cd94a7f6076caaaa50144530eb05b66">Runtime::RegisteredPlugin::InstanciatePlugin</a></div><div class="ttdeci">static RegisteredPlugin InstanciatePlugin(pybind11::object class_type, const QString &amp;name) noexcept(false)</div><div class="ttdoc">Instanciate a plugin with a known name.</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8h_source.html#l00040">Runtime.h:40</a></div></div>
@@ -305,7 +297,7 @@ $(document).ready(function(){initNavTree('PythonPluginManager_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="PythonPluginManager_8cpp.html">PythonPluginManager.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

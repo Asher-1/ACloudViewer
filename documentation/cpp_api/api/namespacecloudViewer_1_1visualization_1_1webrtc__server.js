@@ -18,8 +18,6 @@ var namespacecloudViewer_1_1visualization_1_1webrtc__server =
     [ "GetEnvWebRTCPort", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#a2b9f4c27425abb29dc0b8718eb4e90a0", null ],
     [ "GetIceServerFromUrl", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#a9ee9dfcfafc26f4421a9216aab0fcee5", null ],
     [ "LogMessage", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#a4c9600ef8fcbd85a9bc288067054f0d9", null ],
-    [ "pybind_webrtc_server", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#a77a8b9b960f1f2976bac5f9d1f380f0c", null ],
-    [ "pybind_webrtc_server_functions", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#ae345cb0c79d4a39e61da5dd6a84792cf", null ],
     [ "_callbacks", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#ae1113360e511afc6f472c906dbcc046a", null ],
     [ "k_candidate_sdp_mid_name", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#a856c75ef7dbfb10106b376f063464111", null ],
     [ "k_candidate_sdp_mline_index_name", "namespacecloudViewer_1_1visualization_1_1webrtc__server.html#ad44ee325671fd64a9bd7dcb604b57135", null ],

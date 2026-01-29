@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,8 +97,8 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2pipelines_2registra
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2pipelines_2registration_2FastGlobalRegistration_8h.html">pipelines/registration/FastGlobalRegistration.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Helper.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvFeature_8h.html">ecvFeature.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvKDTreeFlann_8h.html">ecvKDTreeFlann.h</a>&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
@@ -353,7 +344,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2pipelines_2registra
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        std::tie(success, <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>) = <a class="code" href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">utility::SolveLinearSystemPSD</a>(-JTJ, JTr);</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        Eigen::Matrix4d delta = <a class="code" href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">utility::TransformVector6dToMatrix4d</a>(<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>);</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        trans = delta * trans;</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        point_cloud_copy_j.<a class="code" href="classccPointCloud.html#a0d8e78d38b0bccab5a6f55cb7b4682dc">Transform</a>(delta);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        point_cloud_copy_j.<a class="code" href="classccPointCloud.html#ae6a2b4a97ab6d0ba4583013eedddc276">Transform</a>(delta);</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160; </div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="comment">// graduated non-convexity.</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <span class="keywordflow">if</span> (option.<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1FastGlobalRegistrationOption.html#ad732ac15e2f298d2a7420a189c91f585">decrease_mu_</a>) {</div>
@@ -477,7 +468,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2pipelines_2registra
 <div class="ttc" id="aRandom_8h_html"><div class="ttname"><a href="Random_8h.html">Random.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
-<div class="ttc" id="aclassccPointCloud_html_a0d8e78d38b0bccab5a6f55cb7b4682dc"><div class="ttname"><a href="classccPointCloud.html#a0d8e78d38b0bccab5a6f55cb7b4682dc">ccPointCloud::Transform</a></div><div class="ttdeci">virtual ccPointCloud &amp; Transform(const Eigen::Matrix4d &amp;trans) override</div><div class="ttdoc">Apply transformation (4x4 matrix) to the geometry coordinates.</div></div>
+<div class="ttc" id="aclassccPointCloud_html_ae6a2b4a97ab6d0ba4583013eedddc276"><div class="ttname"><a href="classccPointCloud.html#ae6a2b4a97ab6d0ba4583013eedddc276">ccPointCloud::Transform</a></div><div class="ttdeci">virtual ccPointCloud &amp; Transform(const Eigen::Matrix4d &amp;trans) override</div><div class="ttdoc">Apply transformation (4x4 matrix) to the geometry coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8cpp_source.html#l02566">ecvPointCloud.cpp:2566</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_acf7e056dbe8fead71104ac5d37aadd68"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#acf7e056dbe8fead71104ac5d37aadd68">cloudViewer::PointCloudTpl::getEigenPoint</a></div><div class="ttdeci">Eigen::Vector3d getEigenPoint(size_t index) const</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00320">PointCloudTpl.h:320</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1geometry_1_1KDTreeFlann_html"><div class="ttname"><a href="classcloudViewer_1_1geometry_1_1KDTreeFlann.html">cloudViewer::geometry::KDTreeFlann</a></div><div class="ttdoc">KDTree with FLANN for nearest neighbor search.</div><div class="ttdef"><b>Definition:</b> <a href="ecvKDTreeFlann_8h_source.html#l00033">ecvKDTreeFlann.h:33</a></div></div>
@@ -501,9 +492,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2pipelines_2registra
 <div class="ttc" id="aecvFeature_8h_html"><div class="ttname"><a href="ecvFeature_8h.html">ecvFeature.h</a></div></div>
 <div class="ttc" id="aecvKDTreeFlann_8h_html"><div class="ttname"><a href="ecvKDTreeFlann_8h.html">ecvKDTreeFlann.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
 <div class="ttc" id="alibs_2cloudViewer_2pipelines_2registration_2FastGlobalRegistration_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2pipelines_2registration_2FastGlobalRegistration_8h.html">FastGlobalRegistration.h</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a1806f302f8dff1879d2508e294551355"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a1806f302f8dff1879d2508e294551355">cloudViewer::pipelines::registration::OptimizePairwiseRegistration</a></div><div class="ttdeci">Eigen::Matrix4d OptimizePairwiseRegistration(const std::vector&lt; ccPointCloud &gt; &amp;point_cloud_vec, const std::vector&lt; std::pair&lt; int, int &gt;&gt; &amp;corres, double scale_start, const FastGlobalRegistrationOption &amp;option)</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2pipelines_2registration_2FastGlobalRegistration_8cpp_source.html#l00185">FastGlobalRegistration.cpp:185</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a187b7e59a23b717f6de63af3c548fa1b"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a187b7e59a23b717f6de63af3c548fa1b">cloudViewer::pipelines::registration::GetTransformationOriginalScale</a></div><div class="ttdeci">Eigen::Matrix4d GetTransformationOriginalScale(const Eigen::Matrix4d &amp;transformation, const std::vector&lt; Eigen::Vector3d &gt; &amp;pcd_mean_vec, const double scale_global)</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2pipelines_2registration_2FastGlobalRegistration_8cpp_source.html#l00271">FastGlobalRegistration.cpp:271</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a5d6d302b5823728dae4a97b31820c4b3"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a5d6d302b5823728dae4a97b31820c4b3">cloudViewer::pipelines::registration::CorrespondenceSet</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector2i &gt; CorrespondenceSet</div><div class="ttdef"><b>Definition:</b> <a href="pipelines_2registration_2TransformationEstimation_8h_source.html#l00023">TransformationEstimation.h:23</a></div></div>
@@ -515,7 +504,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2pipelines_2registra
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_afa56679ac6ff46d09e398dbe56766676"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#afa56679ac6ff46d09e398dbe56766676">cloudViewer::pipelines::registration::EvaluateRegistration</a></div><div class="ttdeci">RegistrationResult EvaluateRegistration(const ccPointCloud &amp;source, const ccPointCloud &amp;target, double max_correspondence_distance, const Eigen::Matrix4d &amp;transformation)</div><div class="ttdoc">Function for evaluating registration between point clouds.</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2pipelines_2registration_2Registration_8cpp_source.html#l00110">Registration.cpp:110</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a49e438c8916e5075a03171db433df4a4"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">cloudViewer::utility::SolveLinearSystemPSD</a></div><div class="ttdeci">std::tuple&lt; bool, Eigen::VectorXd &gt; SolveLinearSystemPSD(const Eigen::MatrixXd &amp;A, const Eigen::VectorXd &amp;b, bool prefer_sparse=false, bool check_symmetric=false, bool check_det=false, bool check_psd=false)</div><div class="ttdoc">Function to solve Ax=b.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00021">Eigen.cpp:21</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a7c203be6c52984c361b887c22839a1ab"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">cloudViewer::utility::TransformVector6dToMatrix4d</a></div><div class="ttdeci">Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &amp;input)</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00076">Eigen.cpp:76</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -523,7 +512,7 @@ $(document).ready(function(){initNavTree('libs_2cloudViewer_2pipelines_2registra
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="libs_2cloudViewer_2pipelines_2registration_2FastGlobalRegistration_8cpp.html">FastGlobalRegistration.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

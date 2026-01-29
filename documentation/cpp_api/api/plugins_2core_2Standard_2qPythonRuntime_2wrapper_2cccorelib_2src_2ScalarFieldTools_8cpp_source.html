@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -121,7 +112,7 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qPythonRuntim
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="cccorelib_8h.html">cccorelib.h</a>&quot;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="cccorelib_8cpp.html#a98ffbf5bf363296393110c6aff32dff8">   25</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp.html#a98ffbf5bf363296393110c6aff32dff8">define_ScalarFieldTools</a>(py::module &amp;cccorelib)</div>
+<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="cccorelib_8cpp.html#a98ffbf5bf363296393110c6aff32dff8">   25</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp.html#a98ffbf5bf363296393110c6aff32dff8">define_ScalarFieldTools</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;cccorelib)</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;{</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    py::class_&lt;cloudViewer::KMeanClass&gt; pyKMeanClass(cccorelib, <span class="stringliteral">&quot;KMeanClass&quot;</span>);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    py::class_&lt;ScalarFieldTools&gt; pyScalarFieldTools(cccorelib, <span class="stringliteral">&quot;ScalarFieldTools&quot;</span>);</div>
@@ -200,7 +191,8 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qPythonRuntim
 <div class="ttc" id="aclasscloudViewer_1_1ScalarFieldTools_html"><div class="ttname"><a href="classcloudViewer_1_1ScalarFieldTools.html">cloudViewer::ScalarFieldTools</a></div><div class="ttdoc">Several scalar field treatment algorithms (gradient, classification, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldTools_8h_source.html#l00035">ScalarFieldTools.h:35</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarFieldTools_html_a7390e4a77a7edac9f0754f396b853a17"><div class="ttname"><a href="classcloudViewer_1_1ScalarFieldTools.html#a7390e4a77a7edac9f0754f396b853a17">cloudViewer::ScalarFieldTools::SetScalarValueToNaN</a></div><div class="ttdeci">static void SetScalarValueToNaN(const CCVector3 &amp;P, ScalarType &amp;scalarValue)</div><div class="ttdoc">Sets the distance value associated to a point.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarFieldTools_8cpp_source.html#l00022">ScalarFieldTools.cpp:22</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarFieldTools_html_af042be51e657fa7467b8c9c9f2abce35"><div class="ttname"><a href="classcloudViewer_1_1ScalarFieldTools.html#af042be51e657fa7467b8c9c9f2abce35">cloudViewer::ScalarFieldTools::computeScalarFieldExtremas</a></div><div class="ttdeci">static void computeScalarFieldExtremas(const GenericCloud *theCloud, ScalarType &amp;minV, ScalarType &amp;maxV)</div><div class="ttdoc">Compute the extreme values of a scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarFieldTools_8cpp_source.html#l00419">ScalarFieldTools.cpp:419</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_aeae743e84fe331928171854b17029eaf"><div class="ttname"><a href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">Utils::module</a></div><div class="ttdeci">static double module(T *vector)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00105">utils.h:105</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 <div class="ttc" id="aplugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp_html_a98ffbf5bf363296393110c6aff32dff8"><div class="ttname"><a href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp.html#a98ffbf5bf363296393110c6aff32dff8">define_ScalarFieldTools</a></div><div class="ttdeci">void define_ScalarFieldTools(py::module &amp;cccorelib)</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp_source.html#l00025">ScalarFieldTools.cpp:25</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1KMeanClass_html_a50df1190147e186e14cf6e1e6b43e51e"><div class="ttname"><a href="structcloudViewer_1_1KMeanClass.html#a50df1190147e186e14cf6e1e6b43e51e">cloudViewer::KMeanClass::mean</a></div><div class="ttdeci">ScalarType mean</div><div class="ttdoc">K-mean class mean value.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldTools_8h_source.html#l00024">ScalarFieldTools.h:24</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1KMeanClass_html_aa1f14d34229edc3bfeb123e4bbd7d834"><div class="ttname"><a href="structcloudViewer_1_1KMeanClass.html#aa1f14d34229edc3bfeb123e4bbd7d834">cloudViewer::KMeanClass::minValue</a></div><div class="ttdeci">ScalarType minValue</div><div class="ttdoc">K-mean class minimum value.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarFieldTools_8h_source.html#l00026">ScalarFieldTools.h:26</a></div></div>
@@ -211,7 +203,7 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qPythonRuntim
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_932acd6304591f5a356d6890e438ae73.html">cccorelib</a></li><li class="navelem"><a class="el" href="dir_c17cf8b2e440d80463baea1f1e29a48d.html">src</a></li><li class="navelem"><a class="el" href="plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2ScalarFieldTools_8cpp.html">ScalarFieldTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

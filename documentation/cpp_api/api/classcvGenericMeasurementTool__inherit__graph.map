@@ -1,0 +1,7 @@
+<map id="cvGenericMeasurementTool" name="cvGenericMeasurementTool">
+<area shape="rect" id="node1" title=" " alt="" coords="103,80,305,107"/>
+<area shape="rect" id="node3" href="$classcvContourTool.html" title=" " alt="" coords="5,155,120,181"/>
+<area shape="rect" id="node4" href="$classcvDistanceTool.html" title=" " alt="" coords="144,155,264,181"/>
+<area shape="rect" id="node5" href="$classcvProtractorTool.html" title=" " alt="" coords="289,155,415,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="165,5,243,32"/>
+</map>

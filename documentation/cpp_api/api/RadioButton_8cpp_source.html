@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -156,7 +147,7 @@ $(document).ready(function(){initNavTree('RadioButton_8cpp_source.html',''); ini
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1RadioButton.html#a88a12f2bc538745b9e46f1ad372a955f">   58</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1RadioButton.html#a88a12f2bc538745b9e46f1ad372a955f">RadioButton::SetSelectedIndex</a>(<span class="keywordtype">int</span> index) {</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">if</span> (index &gt;= 0) {</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        impl_-&gt;selected_index_ = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(<span class="keywordtype">int</span>(impl_-&gt;items_.size() - 1), index);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        impl_-&gt;selected_index_ = std::min(<span class="keywordtype">int</span>(impl_-&gt;items_.size() - 1), index);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    }</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;}</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
@@ -176,7 +167,7 @@ $(document).ready(function(){initNavTree('RadioButton_8cpp_source.html',''); ini
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                                             <span class="keywordtype">float</span>(constraints.<a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Widget_1_1Constraints.html#aab52b929de75e6567093ac10367caec5">width</a>), 0.0,</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                             item.c_str());</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        <span class="keywordflow">if</span> (impl_-&gt;type_ == Type::VERT) {</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>.x = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>.x, item_size.x);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>.x = std::max(<a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>.x, item_size.x);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>.y += fh;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>.x += fh + item_size.x + spacing;</div>
@@ -205,7 +196,7 @@ $(document).ready(function(){initNavTree('RadioButton_8cpp_source.html',''); ini
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            ImGui::SameLine();</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;            <span class="keyword">auto</span> pos = ImGui::GetCursorScreenPos();</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            pos.x = float(<a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.x);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            pos.x = <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(<a class="code" href="BitmapWindowSystem_8cpp.html#a1ce080cc240f0a51d1ccc913ba97e0db">frame</a>.x);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            ImGui::SetCursorScreenPos(pos);</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        }</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
@@ -272,12 +263,11 @@ $(document).ready(function(){initNavTree('RadioButton_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_a99324f03e30cd674761dafc88448f391a8493617dd77e400daa81294925a52201"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391a8493617dd77e400daa81294925a52201">cloudViewer::visualization::gui::Widget::DrawResult::REDRAW</a></div><div class="ttdeci">@ REDRAW</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693">cloudViewer::visualization::gui::Widget::DrawResult::NONE</a></div><div class="ttdeci">@ NONE</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_af28e1765c4a30741c6c50ec397562ce1"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#af28e1765c4a30741c6c50ec397562ce1">cloudViewer::visualization::gui::Widget::DrawImGuiPushEnabledState</a></div><div class="ttdeci">void DrawImGuiPushEnabledState()</div><div class="ttdef"><b>Definition:</b> <a href="Widget_8cpp_source.html#l00111">Widget.cpp:111</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_aca9fc6fdaa1ee91a03470ca0ed4735a3"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">cloudViewer::visualization::gui::colorToImgui</a></div><div class="ttdeci">ImVec4 colorToImgui(const Color &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00020">Util.cpp:20</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1DrawContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">cloudViewer::visualization::gui::DrawContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00037">Widget.h:37</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1LayoutContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">cloudViewer::visualization::gui::LayoutContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00032">Widget.h:32</a></div></div>
@@ -296,7 +286,7 @@ $(document).ready(function(){initNavTree('RadioButton_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_016d0f202ff0280a7e5050aeab20bc2e.html">gui</a></li><li class="navelem"><a class="el" href="RadioButton_8cpp.html">RadioButton.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

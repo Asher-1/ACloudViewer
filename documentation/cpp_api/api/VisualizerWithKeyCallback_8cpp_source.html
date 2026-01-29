@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('VisualizerWithKeyCallback_8cpp_source.
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="VisualizerWithKeyCallback_8h.html">visualization/visualizer/VisualizerWithKeyCallback.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
@@ -188,28 +179,28 @@ $(document).ready(function(){initNavTree('VisualizerWithKeyCallback_8cpp_source.
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;}</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
 <div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a9921bbc83f5bfb6343af73579f0a28eb">   91</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a9921bbc83f5bfb6343af73579f0a28eb">VisualizerWithKeyCallback::MouseMoveCallback</a>(GLFWwindow *window,</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                                  <span class="keywordtype">double</span> x,</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                                                  <span class="keywordtype">double</span> y) {</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                                  <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>,</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                                                  <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) {</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#ab675c960048c3c899af4c2e2ededf186">mouse_move_callback_</a>) {</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#ab675c960048c3c899af4c2e2ededf186">mouse_move_callback_</a>(<span class="keyword">this</span>, x, y)) {</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#ab675c960048c3c899af4c2e2ededf186">mouse_move_callback_</a>(<span class="keyword">this</span>, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>)) {</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a0198fffe8d0a895aa4d35095b66ff79f">UpdateGeometry</a>();</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a56b8805c37d03c86d38f6d11d2c85edc">UpdateRender</a>();</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a86d36bf875820d9ace96d68f2ce7e458">Visualizer::MouseMoveCallback</a>(window, x, y);</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a86d36bf875820d9ace96d68f2ce7e458">Visualizer::MouseMoveCallback</a>(window, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;}</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
 <div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a1f3452fe55fe919a03aa7e43adc3e6ac">  104</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a1f3452fe55fe919a03aa7e43adc3e6ac">VisualizerWithKeyCallback::MouseScrollCallback</a>(GLFWwindow *window,</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                                                    <span class="keywordtype">double</span> x,</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                                    <span class="keywordtype">double</span> y) {</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                                                    <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>,</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                                    <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) {</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a4a1650966a4f606bff27c0a7690d9924">mouse_scroll_callback_</a>) {</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a4a1650966a4f606bff27c0a7690d9924">mouse_scroll_callback_</a>(<span class="keyword">this</span>, x, y)) {</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html#a4a1650966a4f606bff27c0a7690d9924">mouse_scroll_callback_</a>(<span class="keyword">this</span>, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>)) {</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a0198fffe8d0a895aa4d35095b66ff79f">UpdateGeometry</a>();</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        }</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a56b8805c37d03c86d38f6d11d2c85edc">UpdateRender</a>();</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a5c8be6e2812f7ac97fd2b8608e99dea3">Visualizer::MouseScrollCallback</a>(window, x, y);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a5c8be6e2812f7ac97fd2b8608e99dea3">Visualizer::MouseScrollCallback</a>(window, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    }</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;}</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
@@ -307,8 +298,9 @@ $(document).ready(function(){initNavTree('VisualizerWithKeyCallback_8cpp_source.
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1Visualizer_html_a86d36bf875820d9ace96d68f2ce7e458"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1Visualizer.html#a86d36bf875820d9ace96d68f2ce7e458">cloudViewer::visualization::Visualizer::MouseMoveCallback</a></div><div class="ttdeci">virtual void MouseMoveCallback(GLFWwindow *window, double x, double y)</div><div class="ttdef"><b>Definition:</b> <a href="VisualizerCallback_8cpp_source.html#l00029">VisualizerCallback.cpp:29</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1Visualizer_html_add3879a58bebe892ddc78613768c6447"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1Visualizer.html#add3879a58bebe892ddc78613768c6447">cloudViewer::visualization::Visualizer::PrintVisualizerHelp</a></div><div class="ttdeci">virtual void PrintVisualizerHelp()</div><div class="ttdef"><b>Definition:</b> <a href="Visualizer_8cpp_source.html#l00515">Visualizer.cpp:515</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -316,7 +308,7 @@ $(document).ready(function(){initNavTree('VisualizerWithKeyCallback_8cpp_source.
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="VisualizerWithKeyCallback_8cpp.html">VisualizerWithKeyCallback.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:32 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

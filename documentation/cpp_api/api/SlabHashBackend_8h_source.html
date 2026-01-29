@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -312,7 +303,7 @@ $(document).ready(function(){initNavTree('SlabHashBackend_8h_source.html',''); i
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Hash, <span class="keyword">typename</span> Eq&gt;</div>
 <div class="line"><a name="l00216"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1core_1_1SlabHashBackend.html#a8831d85e8f6665bed340e81d48b86c33">  216</a></span>&#160;<span class="keywordtype">float</span> <a class="code" href="classcloudViewer_1_1core_1_1SlabHashBackend.html#a8831d85e8f6665bed340e81d48b86c33">SlabHashBackend&lt;Key, Hash, Eq&gt;::LoadFactor</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <a class="code" href="classcloudViewer_1_1core_1_1CUDAScopedDevice.html">CUDAScopedDevice</a> scoped_device(this-&gt;device_);</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="keywordflow">return</span> float(Size()) / float(this-&gt;bucket_count_);</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(Size()) / <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(this-&gt;bucket_count_);</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;}</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160; </div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Hash, <span class="keyword">typename</span> Eq&gt;</div>
@@ -428,6 +419,7 @@ $(document).ready(function(){initNavTree('SlabHashBackend_8h_source.html',''); i
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1SlabHashBackend_html_af93601b1bb1f50215022b551cc6ba2f3"><div class="ttname"><a href="classcloudViewer_1_1core_1_1SlabHashBackend.html#af93601b1bb1f50215022b551cc6ba2f3">cloudViewer::core::SlabHashBackend::Free</a></div><div class="ttdeci">void Free() override</div><div class="ttdef"><b>Definition:</b> <a href="SlabHashBackend_8h_source.html#l00291">SlabHashBackend.h:291</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Slab_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Slab.html">cloudViewer::core::Slab</a></div><div class="ttdef"><b>Definition:</b> <a href="SlabNodeManager_8h_source.html#l00039">SlabNodeManager.h:39</a></div></div>
 <div class="ttc" id="ahashmap_2Dispatch_8h_html"><div class="ttname"><a href="hashmap_2Dispatch_8h.html">Dispatch.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1cuda_html_a84c8eb9b59fbeed7230b494b892b2675"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1cuda.html#a84c8eb9b59fbeed7230b494b892b2675">cloudViewer::core::cuda::Synchronize</a></div><div class="ttdeci">void Synchronize()</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8cpp_source.html#l00059">CUDAUtils.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0e9e4c4a2bfd6f858ed2e6fb6fa45199"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0e9e4c4a2bfd6f858ed2e6fb6fa45199">cloudViewer::core::EraseKernelPass0</a></div><div class="ttdeci">__global__ void EraseKernelPass0(SlabHashBackendImpl&lt; Key, Hash, Eq &gt; impl, const void *input_keys, buf_index_t *output_buf_indices, bool *output_masks, int64_t count)</div><div class="ttdef"><b>Definition:</b> <a href="SlabHashBackendImpl_8h_source.html#l00601">SlabHashBackendImpl.h:601</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a19bb9e4e18c48601b3881656b1531220"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a19bb9e4e18c48601b3881656b1531220">cloudViewer::core::Free</a></div><div class="ttdeci">void Free(benchmark::State &amp;state, int size, const Device &amp;device, const MemoryManagerBackend &amp;backend)</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2core_2MemoryManager_8cpp_source.html#l00075">MemoryManager.cpp:75</a></div></div>
@@ -440,14 +432,14 @@ $(document).ready(function(){initNavTree('SlabHashBackend_8h_source.html',''); i
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a85bbd3fc6aac36ba72ad4f80d58d210f"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a85bbd3fc6aac36ba72ad4f80d58d210f">cloudViewer::core::InsertKernelPass1</a></div><div class="ttdeci">__global__ void InsertKernelPass1(SlabHashBackendImpl&lt; Key, Hash, Eq &gt; impl, const void *input_keys, buf_index_t *output_buf_indices, bool *output_masks, int64_t count)</div><div class="ttdef"><b>Definition:</b> <a href="SlabHashBackendImpl_8h_source.html#l00493">SlabHashBackendImpl.h:493</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_adfc8e2dee3ea9fed571d389717d1aa8c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#adfc8e2dee3ea9fed571d389717d1aa8c">cloudViewer::core::InsertKernelPass0</a></div><div class="ttdeci">__global__ void InsertKernelPass0(SlabHashBackendImpl&lt; Key, Hash, Eq &gt; impl, const void *input_keys, buf_index_t *output_buf_indices, int heap_counter_prev, int64_t count)</div><div class="ttdoc">Kernels.</div><div class="ttdef"><b>Definition:</b> <a href="SlabHashBackendImpl_8h_source.html#l00474">SlabHashBackendImpl.h:474</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_af0810aa182f7cd1ad4eef434dc32c824"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#af0810aa182f7cd1ad4eef434dc32c824">cloudViewer::core::kThreadsPerBlock</a></div><div class="ttdeci">static constexpr uint32_t kThreadsPerBlock</div><div class="ttdef"><b>Definition:</b> <a href="SlabMacros_8h_source.html#l00044">SlabMacros.h:44</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_11cd595bc1a6cf95c72762161b00a494.html">hashmap</a></li><li class="navelem"><a class="el" href="dir_504ab8c9a99707ffea18b00a9599e93c.html">CUDA</a></li><li class="navelem"><a class="el" href="SlabHashBackend_8h.html">SlabHashBackend.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

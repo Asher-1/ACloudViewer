@@ -1,0 +1,4 @@
+<map id="PclUtils::renders::PBRRenderer" name="PclUtils::renders::PBRRenderer">
+<area shape="rect" id="node1" title="Unified PBR (Physically Based Rendering) renderer." alt="" coords="18,95,154,136"/>
+<area shape="rect" id="node2" href="$classPclUtils_1_1renders_1_1TextureRendererBase.html" title="Base class for all texture renderers." alt="" coords="5,5,167,47"/>
+</map>

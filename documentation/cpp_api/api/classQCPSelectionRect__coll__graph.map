@@ -1,0 +1,18 @@
+<map id="QCPSelectionRect" name="QCPSelectionRect">
+<area shape="rect" id="node1" title="Provides rect/rubber&#45;band data selection and range zoom interaction." alt="" coords="271,5,409,32"/>
+<area shape="rect" id="node5" href="$classQCustomPlot.html" title="The central class of the library. This is the QWidget which displays the plot and interacts with the ..." alt="" coords="147,95,253,121"/>
+<area shape="rect" id="node2" href="$classQCPLayerable.html" title="Base class for all drawable objects." alt="" coords="638,273,751,300"/>
+<area shape="rect" id="node9" href="$classQCPLayoutElement.html" title="The abstract base class for all objects that form the layout system." alt="" coords="372,363,519,389"/>
+<area shape="rect" id="node10" href="$classQCPAxis.html" title="Manages a single axis inside a QCustomPlot." alt="" coords="667,768,743,795"/>
+<area shape="rect" id="node13" href="$classQCPGrid.html" title="Responsible for drawing the grid of a QCPAxis." alt="" coords="731,429,807,456"/>
+<area shape="rect" id="node3" title=" " alt="" coords="577,95,652,121"/>
+<area shape="rect" id="node4" href="$classQCPLayer.html" title="A layer that may contain objects, to control the rendering order." alt="" coords="437,184,523,211"/>
+<area shape="rect" id="node6" title=" " alt="" coords="143,5,222,32"/>
+<area shape="rect" id="node7" href="$classQCPLayoutGrid.html" title="A layout that arranges child elements in a grid." alt="" coords="43,572,163,599"/>
+<area shape="rect" id="node16" href="$classQCPLegend.html" title="Manages a legend inside a QCustomPlot." alt="" coords="55,677,151,704"/>
+<area shape="rect" id="node8" href="$classQCPLayout.html" title="The abstract base class for layouts." alt="" coords="256,496,349,523"/>
+<area shape="rect" id="node15" href="$classQCPLayoutInset.html" title="A layout that places child elements aligned to the border or arbitrarily positioned." alt="" coords="240,572,365,599"/>
+<area shape="rect" id="node14" href="$classQCPAxisRect.html" title="Holds multiple axes and arranges them in a rectangular shape." alt="" coords="381,677,486,704"/>
+<area shape="rect" id="node11" href="$classQCPRange.html" title="Represents the range an axis is encompassing." alt="" coords="520,572,611,599"/>
+<area shape="rect" id="node12" title=" " alt="" coords="899,677,1066,704"/>
+</map>

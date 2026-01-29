@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -6,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: Edge Struct Reference</title>
+<title>ACloudViewer: Edge Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -94,32 +85,58 @@ $(document).ready(function(){initNavTree('structEdge.html',''); initResizable();
 
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="structEdge-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Edge Struct Reference</div>  </div>
+<div class="title">Edge Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html">Geometry.h</a>&gt;</code></p>
+<p>Weighted graph edge.  
+ <a href="structEdge.html#details">More...</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a800c407690379d572481c2b27519b472"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a800c407690379d572481c2b27519b472">Key</a></td></tr>
+<tr class="memdesc:a800c407690379d572481c2b27519b472"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unique edge key type.  <a href="structEdge.html#a800c407690379d572481c2b27519b472">More...</a><br /></td></tr>
+<tr class="separator:a800c407690379d572481c2b27519b472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a3106b11d60125009dbf7a738ce540fdf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a3106b11d60125009dbf7a738ce540fdf">Edge</a> ()</td></tr>
 <tr class="separator:a3106b11d60125009dbf7a738ce540fdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc913d2cda6dd320c2093188337cd03f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#acc913d2cda6dd320c2093188337cd03f">Edge</a> (const <a class="el" href="core_2src_2PointProjectionTools_8cpp.html#a8ca1814e02e060cbcf53635f6973cc5f">VertexIterator</a> &amp;A, unsigned _nearestPointIndex, float _nearestPointSquareDist)</td></tr>
+<tr class="memitem:acc913d2cda6dd320c2093188337cd03f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#acc913d2cda6dd320c2093188337cd03f">Edge</a> (const <a class="el" href="core_2src_2PointProjectionTools_8cpp.html#a8ca1814e02e060cbcf53635f6973cc5f">VertexIterator</a> &amp;A, unsigned _nearestPointIndex, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> _nearestPointSquareDist)</td></tr>
 <tr class="separator:acc913d2cda6dd320c2093188337cd03f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9199551fe9afee1b079b9d434068532"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ac9199551fe9afee1b079b9d434068532">operator&lt;</a> (const <a class="el" href="structEdge.html">Edge</a> &amp;e) const</td></tr>
+<tr class="memitem:ac9199551fe9afee1b079b9d434068532"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ac9199551fe9afee1b079b9d434068532">operator&lt;</a> (const <a class="el" href="structEdge.html">Edge</a> &amp;<a class="el" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) const</td></tr>
 <tr class="separator:ac9199551fe9afee1b079b9d434068532"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7a61860cf68f58d6b770f74c1eac8a4"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ae7a61860cf68f58d6b770f74c1eac8a4">Length</a> (void) const</td></tr>
-<tr class="separator:ae7a61860cf68f58d6b770f74c1eac8a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3106b11d60125009dbf7a738ce540fdf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a3106b11d60125009dbf7a738ce540fdf">Edge</a> ()</td></tr>
 <tr class="separator:a3106b11d60125009dbf7a738ce540fdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc913d2cda6dd320c2093188337cd03f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#acc913d2cda6dd320c2093188337cd03f">Edge</a> (const <a class="el" href="core_2src_2PointProjectionTools_8cpp.html#a8ca1814e02e060cbcf53635f6973cc5f">VertexIterator</a> &amp;A, unsigned _nearestPointIndex, float _nearestPointSquareDist)</td></tr>
+<tr class="memitem:acc913d2cda6dd320c2093188337cd03f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#acc913d2cda6dd320c2093188337cd03f">Edge</a> (const <a class="el" href="core_2src_2PointProjectionTools_8cpp.html#a8ca1814e02e060cbcf53635f6973cc5f">VertexIterator</a> &amp;A, unsigned _nearestPointIndex, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> _nearestPointSquareDist)</td></tr>
 <tr class="separator:acc913d2cda6dd320c2093188337cd03f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9199551fe9afee1b079b9d434068532"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ac9199551fe9afee1b079b9d434068532">operator&lt;</a> (const <a class="el" href="structEdge.html">Edge</a> &amp;e) const</td></tr>
+<tr class="memitem:ac9199551fe9afee1b079b9d434068532"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ac9199551fe9afee1b079b9d434068532">operator&lt;</a> (const <a class="el" href="structEdge.html">Edge</a> &amp;<a class="el" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) const</td></tr>
 <tr class="separator:ac9199551fe9afee1b079b9d434068532"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fed7d2a603d6def233994cd428f3d42"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a2fed7d2a603d6def233994cd428f3d42">Edge</a> (unsigned <a class="el" href="structEdge.html#a67c119f7eeba44169dbc118c0313cbeb">v1</a>, unsigned <a class="el" href="structEdge.html#a1ff0f1e376fc339a4ad1bbfa208249af">v2</a>, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> weight)</td></tr>
+<tr class="memdesc:a2fed7d2a603d6def233994cd428f3d42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="structEdge.html#a2fed7d2a603d6def233994cd428f3d42">More...</a><br /></td></tr>
+<tr class="separator:a2fed7d2a603d6def233994cd428f3d42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6a06c5da57efed1991960f61e870c8b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ab6a06c5da57efed1991960f61e870c8b">operator&lt;</a> (const <a class="el" href="structEdge.html">Edge</a> &amp;other) const</td></tr>
+<tr class="memdesc:ab6a06c5da57efed1991960f61e870c8b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Strict weak ordering operator (required by std::priority_queue)  <a href="structEdge.html#ab6a06c5da57efed1991960f61e870c8b">More...</a><br /></td></tr>
+<tr class="separator:ab6a06c5da57efed1991960f61e870c8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67c119f7eeba44169dbc118c0313cbeb"><td class="memItemLeft" align="right" valign="top">const unsigned &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a67c119f7eeba44169dbc118c0313cbeb">v1</a> () const</td></tr>
+<tr class="memdesc:a67c119f7eeba44169dbc118c0313cbeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns first vertex (index)  <a href="structEdge.html#a67c119f7eeba44169dbc118c0313cbeb">More...</a><br /></td></tr>
+<tr class="separator:a67c119f7eeba44169dbc118c0313cbeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ff0f1e376fc339a4ad1bbfa208249af"><td class="memItemLeft" align="right" valign="top">const unsigned &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a1ff0f1e376fc339a4ad1bbfa208249af">v2</a> () const</td></tr>
+<tr class="memdesc:a1ff0f1e376fc339a4ad1bbfa208249af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns second vertex (index)  <a href="structEdge.html#a1ff0f1e376fc339a4ad1bbfa208249af">More...</a><br /></td></tr>
+<tr class="separator:a1ff0f1e376fc339a4ad1bbfa208249af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:abf04b67e492c8b20656be7aa0bda3d59"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structEdge.html#a800c407690379d572481c2b27519b472">Key</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#abf04b67e492c8b20656be7aa0bda3d59">ConstructKey</a> (unsigned <a class="el" href="structEdge.html#a67c119f7eeba44169dbc118c0313cbeb">v1</a>, unsigned <a class="el" href="structEdge.html#a1ff0f1e376fc339a4ad1bbfa208249af">v2</a>)</td></tr>
+<tr class="memdesc:abf04b67e492c8b20656be7aa0bda3d59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the unique key of an edge (no vertex order)  <a href="structEdge.html#abf04b67e492c8b20656be7aa0bda3d59">More...</a><br /></td></tr>
+<tr class="separator:abf04b67e492c8b20656be7aa0bda3d59"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -127,17 +144,44 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a75497f599d58b622d64df972cdd9e459"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f2d5ce0696681db59d2dbf1595ff4d8"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a6f2d5ce0696681db59d2dbf1595ff4d8">nearestPointIndex</a></td></tr>
 <tr class="separator:a6f2d5ce0696681db59d2dbf1595ff4d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab00ea3f3d9c39371dc0f51fa001b8e78"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ab00ea3f3d9c39371dc0f51fa001b8e78">nearestPointSquareDist</a></td></tr>
+<tr class="memitem:ab00ea3f3d9c39371dc0f51fa001b8e78"><td class="memItemLeft" align="right" valign="top"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ab00ea3f3d9c39371dc0f51fa001b8e78">nearestPointSquareDist</a></td></tr>
 <tr class="separator:ab00ea3f3d9c39371dc0f51fa001b8e78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af803e62eb12a1757acb08d4b0f0bcfd1"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#af803e62eb12a1757acb08d4b0f0bcfd1">p</a> [2][2]</td></tr>
-<tr class="separator:af803e62eb12a1757acb08d4b0f0bcfd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a34b8e0e68025942fc2aa1ee2307708b5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structEdge.html#a800c407690379d572481c2b27519b472">Key</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#a34b8e0e68025942fc2aa1ee2307708b5">m_key</a></td></tr>
+<tr class="memdesc:a34b8e0e68025942fc2aa1ee2307708b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unique key.  <a href="structEdge.html#a34b8e0e68025942fc2aa1ee2307708b5">More...</a><br /></td></tr>
+<tr class="separator:a34b8e0e68025942fc2aa1ee2307708b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3eddcf5202e684e57436c854d51943f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structEdge.html#ac3eddcf5202e684e57436c854d51943f">m_weight</a></td></tr>
+<tr class="memdesc:ac3eddcf5202e684e57436c854d51943f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associated weight.  <a href="structEdge.html#ac3eddcf5202e684e57436c854d51943f">More...</a><br /></td></tr>
+<tr class="separator:ac3eddcf5202e684e57436c854d51943f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
+<div class="textblock"><p>Weighted graph edge. </p>
+
 <p class="definition">Definition at line <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00491">491</a> of file <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html">PointProjectionTools.cpp</a>.</p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+</div><h2 class="groupheader">Member Typedef Documentation</h2>
+<a id="a800c407690379d572481c2b27519b472"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a800c407690379d572481c2b27519b472">&#9670;&nbsp;</a></span>Key</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef std::pair&lt;unsigned, unsigned&gt; <a class="el" href="structEdge.html#a800c407690379d572481c2b27519b472">Edge::Key</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Unique edge key type. </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00030">30</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3106b11d60125009dbf7a738ce540fdf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3106b11d60125009dbf7a738ce540fdf">&#9670;&nbsp;</a></span>Edge() <span class="overload">[1/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3106b11d60125009dbf7a738ce540fdf">&#9670;&nbsp;</a></span>Edge() <span class="overload">[1/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -164,7 +208,7 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <a id="acc913d2cda6dd320c2093188337cd03f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acc913d2cda6dd320c2093188337cd03f">&#9670;&nbsp;</a></span>Edge() <span class="overload">[2/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#acc913d2cda6dd320c2093188337cd03f">&#9670;&nbsp;</a></span>Edge() <span class="overload">[2/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -187,7 +231,7 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
+          <td class="paramtype"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td>
           <td class="paramname"><em>_nearestPointSquareDist</em>&#160;</td>
         </tr>
         <tr>
@@ -208,7 +252,7 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <a id="a3106b11d60125009dbf7a738ce540fdf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3106b11d60125009dbf7a738ce540fdf">&#9670;&nbsp;</a></span>Edge() <span class="overload">[3/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3106b11d60125009dbf7a738ce540fdf">&#9670;&nbsp;</a></span>Edge() <span class="overload">[3/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -235,7 +279,7 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <a id="acc913d2cda6dd320c2093188337cd03f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acc913d2cda6dd320c2093188337cd03f">&#9670;&nbsp;</a></span>Edge() <span class="overload">[4/4]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#acc913d2cda6dd320c2093188337cd03f">&#9670;&nbsp;</a></span>Edge() <span class="overload">[4/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -258,7 +302,7 @@ Public Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
+          <td class="paramtype"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td>
           <td class="paramname"><em>_nearestPointSquareDist</em>&#160;</td>
         </tr>
         <tr>
@@ -278,9 +322,8 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae7a61860cf68f58d6b770f74c1eac8a4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7a61860cf68f58d6b770f74c1eac8a4">&#9670;&nbsp;</a></span>Length()</h2>
+<a id="a2fed7d2a603d6def233994cd428f3d42"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2fed7d2a603d6def233994cd428f3d42">&#9670;&nbsp;</a></span>Edge() <span class="overload">[5/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -289,11 +332,27 @@ Public Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">double Edge::Length </td>
+          <td class="memname">Edge::Edge </td>
           <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>v1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>v2</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td>
+          <td class="paramname"><em>weight</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -303,14 +362,61 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00195">195</a> of file <a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html">Geometry.h</a>.</p>
+<p>Default constructor. </p>
 
-<p class="reference">References <a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00194">p</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00038">38</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00058">m_weight</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="abf04b67e492c8b20656be7aa0bda3d59"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf04b67e492c8b20656be7aa0bda3d59">&#9670;&nbsp;</a></span>ConstructKey()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="structEdge.html#a800c407690379d572481c2b27519b472">Key</a> Edge::ConstructKey </td>
+          <td>(</td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>v1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>v2</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the unique key of an edge (no vertex order) </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00033">33</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="SlabTraits_8h_source.html#l00049">cloudViewer::core::make_pair()</a>, <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00049">v1()</a>, and <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00051">v2()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00109">Graph::addEdge()</a>, and <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00098">Graph::weight()</a>.</p>
 
 </div>
 </div>
 <a id="ac9199551fe9afee1b079b9d434068532"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac9199551fe9afee1b079b9d434068532">&#9670;&nbsp;</a></span>operator&lt;() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9199551fe9afee1b079b9d434068532">&#9670;&nbsp;</a></span>operator&lt;() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -335,12 +441,12 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvContourExtractor_8cpp_source.html#l00055">55</a> of file <a class="el" href="ecvContourExtractor_8cpp_source.html">ecvContourExtractor.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00508">nearestPointSquareDist</a>.</p>
+<p class="reference">References <a class="el" href="essential__matrix__poly_8h_source.html#l00010">e</a>, and <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00508">nearestPointSquareDist</a>.</p>
 
 </div>
 </div>
 <a id="ac9199551fe9afee1b079b9d434068532"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac9199551fe9afee1b079b9d434068532">&#9670;&nbsp;</a></span>operator&lt;() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9199551fe9afee1b079b9d434068532">&#9670;&nbsp;</a></span>operator&lt;() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -365,7 +471,105 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00502">502</a> of file <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html">PointProjectionTools.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00508">nearestPointSquareDist</a>.</p>
+<p class="reference">References <a class="el" href="essential__matrix__poly_8h_source.html#l00010">e</a>.</p>
+
+</div>
+</div>
+<a id="ab6a06c5da57efed1991960f61e870c8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6a06c5da57efed1991960f61e870c8b">&#9670;&nbsp;</a></span>operator&lt;() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Edge::operator&lt; </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structEdge.html">Edge</a> &amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Strict weak ordering operator (required by std::priority_queue) </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00044">44</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00058">m_weight</a>.</p>
+
+</div>
+</div>
+<a id="a67c119f7eeba44169dbc118c0313cbeb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a67c119f7eeba44169dbc118c0313cbeb">&#9670;&nbsp;</a></span>v1()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const unsigned&amp; Edge::v1 </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns first vertex (index) </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00049">49</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00055">m_key</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00033">ConstructKey()</a>, and <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00130">ResolveNormalsWithMST()</a>.</p>
+
+</div>
+</div>
+<a id="a1ff0f1e376fc339a4ad1bbfa208249af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ff0f1e376fc339a4ad1bbfa208249af">&#9670;&nbsp;</a></span>v2()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const unsigned&amp; Edge::v2 </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns second vertex (index) </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00051">51</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00055">m_key</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00033">ConstructKey()</a>, and <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00130">ResolveNormalsWithMST()</a>.</p>
 
 </div>
 </div>
@@ -384,7 +588,61 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00506">506</a> of file <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html">PointProjectionTools.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ecvContourExtractor_8cpp_source.html#l00189">ccContourExtractor::ExtractConcaveHull2D()</a>, and <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00564">cloudViewer::PointProjectionTools::extractConcaveHull2D()</a>.</p>
+</div>
+</div>
+<a id="a34b8e0e68025942fc2aa1ee2307708b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34b8e0e68025942fc2aa1ee2307708b5">&#9670;&nbsp;</a></span>m_key</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structEdge.html#a800c407690379d572481c2b27519b472">Key</a> Edge::m_key</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Unique key. </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00055">55</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00049">v1()</a>, and <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00051">v2()</a>.</p>
+
+</div>
+</div>
+<a id="ac3eddcf5202e684e57436c854d51943f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3eddcf5202e684e57436c854d51943f">&#9670;&nbsp;</a></span>m_weight</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> Edge::m_weight</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Associated weight. </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00058">58</a> of file <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00038">Edge()</a>, and <a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00044">operator&lt;()</a>.</p>
 
 </div>
 </div>
@@ -402,8 +660,6 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00507">507</a> of file <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html">PointProjectionTools.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ecvContourExtractor_8cpp_source.html#l00189">ccContourExtractor::ExtractConcaveHull2D()</a>, and <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00564">cloudViewer::PointProjectionTools::extractConcaveHull2D()</a>.</p>
-
 </div>
 </div>
 <a id="ab00ea3f3d9c39371dc0f51fa001b8e78"></a>
@@ -413,38 +669,20 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Edge::nearestPointSquareDist</td>
+          <td class="memname"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> Edge::nearestPointSquareDist</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html#l00508">508</a> of file <a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html">PointProjectionTools.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ecvContourExtractor_8cpp_source.html#l00189">ccContourExtractor::ExtractConcaveHull2D()</a>, and <a class="el" href="ecvContourExtractor_8cpp_source.html#l00055">operator&lt;()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ecvContourExtractor_8cpp_source.html#l00055">operator&lt;()</a>.</p>
 
 </div>
 </div>
-<a id="af803e62eb12a1757acb08d4b0f0bcfd1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af803e62eb12a1757acb08d4b0f0bcfd1">&#9670;&nbsp;</a></span>p</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">double Edge::p[2][2]</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00194">194</a> of file <a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html">Geometry.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="MarchingCubes_8cpp_source.html#l00430">MarchingSquares::AddEdges()</a>, and <a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html#l00195">Length()</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this struct was generated from the following files:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/core/src/<a class="el" href="core_2src_2PointProjectionTools_8cpp_source.html">PointProjectionTools.cpp</a></li>
-<li>/root/ACloudViewer/libs/Reconstruction/lib/PoissonRecon/<a class="el" href="Reconstruction_2lib_2PoissonRecon_2Geometry_8h_source.html">Geometry.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/src/<a class="el" href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html">ecvMinimumSpanningTreeForNormsDirection.cpp</a></li>
 <li>/root/ACloudViewer/app/<a class="el" href="ecvContourExtractor_8cpp_source.html">ecvContourExtractor.cpp</a></li>
 </ul>
 </div><!-- contents -->
@@ -453,7 +691,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="structEdge.html">Edge</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

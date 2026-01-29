@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -130,23 +121,23 @@ $(document).ready(function(){initNavTree('ecvApplicationBase_8h_source.html','')
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="ecvApplicationBase_8h.html#af16c962005b558d4a0f0145e05f4f831">   33</a></span>&#160;<span class="preprocessor">#define ecvApp (static_cast&lt;ecvApplicationBase *&gt;(QCoreApplication::instance()))</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html">   35</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVAppCommon_8h.html#a611044c4db5a9ae7e7dc58b77d91c9aa">CVAPPCOMMON_LIB_API</a> <a class="code" href="classecvApplicationBase.html">ecvApplicationBase</a> : <span class="keyword">public</span> QApplication {</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html">   35</a></span>&#160;<span class="keyword">class </span><a class="code" href="CVAppCommon_8h.html#a611044c4db5a9ae7e7dc58b77d91c9aa">CVAPPCOMMON_LIB_API</a> <a class="code" href="classecvApplicationBase.html">ecvApplicationBase</a> : <span class="keyword">public</span> <a class="code" href="classQApplication.html">QApplication</a> {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#a13d6ad4930f4986eb36ce3dcf549dfad">   39</a></span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classecvApplicationBase.html#a13d6ad4930f4986eb36ce3dcf549dfad">InitOpenGL</a>();</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> InitOpenGL();</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#ad7d7cdb798b0cebf557510cd268cf4ab">   41</a></span>&#160;    <a class="code" href="classecvApplicationBase.html#ad7d7cdb798b0cebf557510cd268cf4ab">ecvApplicationBase</a>(<span class="keywordtype">int</span> &amp;argc,</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classecvApplicationBase.html">ecvApplicationBase</a>(<span class="keywordtype">int</span> &amp;argc,</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                       <span class="keywordtype">char</span> **argv,</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                       <span class="keywordtype">bool</span> isCommandLine,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                       <span class="keyword">const</span> QString &amp;<a class="code" href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a>);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#acb2cecb576589f503be1ea3a8f95c500">   46</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classecvApplicationBase.html#acb2cecb576589f503be1ea3a8f95c500">isCommandLine</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> c_CommandLine; }</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#a1ab49df4cd446fec23065e954291466e">   48</a></span>&#160;    QString <a class="code" href="classecvApplicationBase.html#a1ab49df4cd446fec23065e954291466e">versionStr</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#aaaaaa0bde98382d6dc06d73732c902e8">   49</a></span>&#160;    QString <a class="code" href="classecvApplicationBase.html#aaaaaa0bde98382d6dc06d73732c902e8">versionLongStr</a>(<span class="keywordtype">bool</span> includeOS) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    QString versionStr() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    QString <a class="code" href="ecvVersion_8h.html#aa539257bf097026cdbe6691f19218c27">versionLongStr</a>(<span class="keywordtype">bool</span> includeOS) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#a6daf2820f9fed223b862b447bce89b8b">   51</a></span>&#160;    <span class="keyword">const</span> QString &amp;<a class="code" href="classecvApplicationBase.html#a6daf2820f9fed223b862b447bce89b8b">translationPath</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keyword">const</span> QString &amp;translationPath() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classecvApplicationBase.html#af768d5fddd3f50ea8d8acbfc655ffaec">   67</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classecvApplicationBase.html#af768d5fddd3f50ea8d8acbfc655ffaec">setAppStyle</a>(<span class="keyword">const</span> QString &amp;styleKey);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">bool</span> setAppStyle(<span class="keyword">const</span> QString &amp;styleKey);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordtype">void</span> setupPaths();</div>
@@ -162,21 +153,17 @@ $(document).ready(function(){initNavTree('ecvApplicationBase_8h_source.html','')
 <div class="ttc" id="aCVAppCommon_8h_html"><div class="ttname"><a href="CVAppCommon_8h.html">CVAppCommon.h</a></div></div>
 <div class="ttc" id="aCVAppCommon_8h_html_a611044c4db5a9ae7e7dc58b77d91c9aa"><div class="ttname"><a href="CVAppCommon_8h.html#a611044c4db5a9ae7e7dc58b77d91c9aa">CVAPPCOMMON_LIB_API</a></div><div class="ttdeci">#define CVAPPCOMMON_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CVAppCommon_8h_source.html#l00015">CVAppCommon.h:15</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a728b969e374aba4020e39aea7e02e64f"><div class="ttname"><a href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a></div><div class="ttdeci">std::string version</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00140">FileIOFactory.cpp:140</a></div></div>
+<div class="ttc" id="aclassQApplication_html"><div class="ttname"><a href="classQApplication.html">QApplication</a></div><div class="ttdef"><b>Definition:</b> <a href="gui_8h_source.html#l00016">gui.h:16</a></div></div>
 <div class="ttc" id="aclassecvApplicationBase_html"><div class="ttname"><a href="classecvApplicationBase.html">ecvApplicationBase</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvApplicationBase_8h_source.html#l00035">ecvApplicationBase.h:35</a></div></div>
-<div class="ttc" id="aclassecvApplicationBase_html_a13d6ad4930f4986eb36ce3dcf549dfad"><div class="ttname"><a href="classecvApplicationBase.html#a13d6ad4930f4986eb36ce3dcf549dfad">ecvApplicationBase::InitOpenGL</a></div><div class="ttdeci">static void InitOpenGL()</div></div>
-<div class="ttc" id="aclassecvApplicationBase_html_a1ab49df4cd446fec23065e954291466e"><div class="ttname"><a href="classecvApplicationBase.html#a1ab49df4cd446fec23065e954291466e">ecvApplicationBase::versionStr</a></div><div class="ttdeci">QString versionStr() const</div></div>
-<div class="ttc" id="aclassecvApplicationBase_html_a6daf2820f9fed223b862b447bce89b8b"><div class="ttname"><a href="classecvApplicationBase.html#a6daf2820f9fed223b862b447bce89b8b">ecvApplicationBase::translationPath</a></div><div class="ttdeci">const QString &amp; translationPath() const</div></div>
-<div class="ttc" id="aclassecvApplicationBase_html_aaaaaa0bde98382d6dc06d73732c902e8"><div class="ttname"><a href="classecvApplicationBase.html#aaaaaa0bde98382d6dc06d73732c902e8">ecvApplicationBase::versionLongStr</a></div><div class="ttdeci">QString versionLongStr(bool includeOS) const</div></div>
 <div class="ttc" id="aclassecvApplicationBase_html_acb2cecb576589f503be1ea3a8f95c500"><div class="ttname"><a href="classecvApplicationBase.html#acb2cecb576589f503be1ea3a8f95c500">ecvApplicationBase::isCommandLine</a></div><div class="ttdeci">bool isCommandLine() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvApplicationBase_8h_source.html#l00046">ecvApplicationBase.h:46</a></div></div>
-<div class="ttc" id="aclassecvApplicationBase_html_ad7d7cdb798b0cebf557510cd268cf4ab"><div class="ttname"><a href="classecvApplicationBase.html#ad7d7cdb798b0cebf557510cd268cf4ab">ecvApplicationBase::ecvApplicationBase</a></div><div class="ttdeci">ecvApplicationBase(int &amp;argc, char **argv, bool isCommandLine, const QString &amp;version)</div></div>
-<div class="ttc" id="aclassecvApplicationBase_html_af768d5fddd3f50ea8d8acbfc655ffaec"><div class="ttname"><a href="classecvApplicationBase.html#af768d5fddd3f50ea8d8acbfc655ffaec">ecvApplicationBase::setAppStyle</a></div><div class="ttdeci">bool setAppStyle(const QString &amp;styleKey)</div><div class="ttdoc">Set the application style.</div></div>
+<div class="ttc" id="aecvVersion_8h_html_aa539257bf097026cdbe6691f19218c27"><div class="ttname"><a href="ecvVersion_8h.html#aa539257bf097026cdbe6691f19218c27">versionLongStr</a></div><div class="ttdeci">static QString versionLongStr(bool includeOS, QString verStr)</div><div class="ttdef"><b>Definition:</b> <a href="ecvVersion_8h_source.html#l00016">ecvVersion.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_65ea405835028049343971675536584d.html">CVAppCommon</a></li><li class="navelem"><a class="el" href="dir_89dcf544b0f80d59b5726bee0cbda5e2.html">include</a></li><li class="navelem"><a class="el" href="ecvApplicationBase_8h.html">ecvApplicationBase.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:41 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

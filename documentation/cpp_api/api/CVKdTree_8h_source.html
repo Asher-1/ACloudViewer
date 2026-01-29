@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -140,7 +131,7 @@ $(document).ready(function(){initNavTree('CVKdTree_8h_source.html',''); initResi
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordtype">unsigned</span> radiusSearch(<span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint,</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                          ScalarType distance,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                          ScalarType <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">distance</a>,</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                          ScalarType tolerance,</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                          std::vector&lt;unsigned&gt; &amp;pointndexes);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
@@ -150,7 +141,7 @@ $(document).ready(function(){initNavTree('CVKdTree_8h_source.html',''); initResi
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordtype">unsigned</span> findPointsLyingToDistance(<span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint,</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                       ScalarType distance,</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                       ScalarType <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">distance</a>,</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                                       ScalarType tolerance,</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                                       std::vector&lt;unsigned&gt; &amp;<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>);</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
@@ -226,8 +217,8 @@ $(document).ready(function(){initNavTree('CVKdTree_8h_source.html',''); initResi
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="keywordtype">void</span> pointToCellDistances(<span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint,</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                              <a class="code" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell,</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                              ScalarType &amp;<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a>,</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                              ScalarType &amp;<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>);</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                              ScalarType &amp;min,</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                              ScalarType &amp;max);</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <span class="keywordtype">int</span> checkNearerPointInSubTree(<span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint,</div>
@@ -241,7 +232,7 @@ $(document).ready(function(){initNavTree('CVKdTree_8h_source.html',''); initResi
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160; </div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    <span class="keywordtype">void</span> distanceScanTree(<span class="keyword">const</span> <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> *queryPoint,</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                          ScalarType distance,</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                          ScalarType <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">distance</a>,</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                          ScalarType tolerance,</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                          <a class="code" href="structcloudViewer_1_1KDTree_1_1KdCell.html">KdCell</a> *cell,</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                          std::vector&lt;unsigned&gt; &amp;localArray);</div>
@@ -261,9 +252,8 @@ $(document).ready(function(){initNavTree('CVKdTree_8h_source.html',''); initResi
 <div class="ttc" id="aclasscloudViewer_1_1KDTree_html_a3c57627de1b1fb7560e52c8d46f4d61f"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html#a3c57627de1b1fb7560e52c8d46f4d61f">cloudViewer::KDTree::m_cellCount</a></div><div class="ttdeci">unsigned m_cellCount</div><div class="ttdoc">Number of cells.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00175">CVKdTree.h:175</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1KDTree_html_aa88bc67534e82dc78d17107654338027"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html#aa88bc67534e82dc78d17107654338027">cloudViewer::KDTree::m_root</a></div><div class="ttdeci">KdCell * m_root</div><div class="ttdoc">Tree root.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00169">CVKdTree.h:169</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1KDTree_html_ab87ea867bbca625899afb74ffadb2826"><div class="ttname"><a href="classcloudViewer_1_1KDTree.html#ab87ea867bbca625899afb74ffadb2826">cloudViewer::KDTree::getAssociatedCloud</a></div><div class="ttdeci">GenericIndexedCloud * getAssociatedCloud() const</div><div class="ttdoc">Gets the point cloud from which the tree has been build.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00040">CVKdTree.h:40</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_ae430a5de18ca81ff5600530347e7d0fa"><div class="ttname"><a href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">Utils::distance</a></div><div class="ttdeci">static double distance(T *pot1, T *pot2)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00111">utils.h:111</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacefgr_html_a2c499fc907f85495103cac3413e6dff8"><div class="ttname"><a href="namespacefgr.html#a2c499fc907f85495103cac3413e6dff8">fgr::KDTree</a></div><div class="ttdeci">flann::Index&lt; flann::L2&lt; float &gt; &gt; KDTree</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8cpp_source.html#l00022">FastGlobalRegistration.cpp:22</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1KDTree_1_1KdCell_html"><div class="ttname"><a href="structcloudViewer_1_1KDTree_1_1KdCell.html">cloudViewer::KDTree::KdCell</a></div><div class="ttdoc">A KDTre cell struct.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00101">CVKdTree.h:101</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1KDTree_1_1KdCell_html_a0e614b36344008fe865e770e90e2235e"><div class="ttname"><a href="structcloudViewer_1_1KDTree_1_1KdCell.html#a0e614b36344008fe865e770e90e2235e">cloudViewer::KDTree::KdCell::outbbmin</a></div><div class="ttdeci">CCVector3 outbbmin</div><div class="ttdoc">Outside bounding box min point.</div><div class="ttdef"><b>Definition:</b> <a href="CVKdTree_8h_source.html#l00129">CVKdTree.h:129</a></div></div>
@@ -285,7 +275,7 @@ $(document).ready(function(){initNavTree('CVKdTree_8h_source.html',''); initResi
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="CVKdTree_8h.html">CVKdTree.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

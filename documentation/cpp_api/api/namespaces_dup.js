@@ -1,7 +1,7 @@
 var namespaces_dup =
 [
-    [ "boost", "namespaceboost.html", "namespaceboost" ],
     [ "callbacks", "namespacecallbacks.html", "namespacecallbacks" ],
+    [ "CallbackTools", "namespaceCallbackTools.html", "namespaceCallbackTools" ],
     [ "CC_ITEM_TREE", "namespaceCC__ITEM__TREE.html", [
       [ "CC_TYPES_MAP", "namespaceCC__ITEM__TREE.html#a9a9e33c2435948f2aa2dc45c11080582", [
         [ "HIERARCHY_OBJECT", "namespaceCC__ITEM__TREE.html#a9a9e33c2435948f2aa2dc45c11080582aa34ede570c815aeeb1bd314b09d8966a", null ],
@@ -89,7 +89,7 @@ var namespaces_dup =
       [ "SemanticMap", "namespaceClassMap.html#a29bde1246f63e987cc15749e8a58e4dc", null ]
     ] ],
     [ "cloudViewer", "namespacecloudViewer.html", "namespacecloudViewer" ],
-    [ "colmap", "namespacecolmap.html", null ],
+    [ "colmap", "namespacecolmap.html", "namespacecolmap" ],
     [ "core", null, [
       [ "Tensor", null, [
         [ "ConstIterator", null, [
@@ -101,6 +101,7 @@ var namespaces_dup =
       ] ]
     ] ],
     [ "CP", "namespaceCP.html", "namespaceCP" ],
+    [ "CurveFittingTool", "namespaceCurveFittingTool.html", "namespaceCurveFittingTool" ],
     [ "CV_TYPES", "namespaceCV__TYPES.html", [
       [ "GeometryType", "namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434", [
         [ "OBJECT", "namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434af0e2b685b4da26a2f5f2269fcfaa4783", null ],
@@ -159,30 +160,56 @@ var namespaces_dup =
         [ "CUSTOM_LEAF_OBJECT", "namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434ac45d4c235708bbf0329fc3e40ac69994", null ]
       ] ]
     ] ],
+    [ "cvMeasurementTools", "namespacecvMeasurementTools.html", [
+      [ "configureHandle3D", "namespacecvMeasurementTools.html#a7044adb99f26274525232852bf5cb638", null ],
+      [ "ARC_COLOR", "namespacecvMeasurementTools.html#ac002e7b31fdf074fbe298502a1789904", null ],
+      [ "FOREGROUND_COLOR", "namespacecvMeasurementTools.html#a54cb4f9e82713f5e94b0fd76d72227ee", null ],
+      [ "INTERACTION_COLOR", "namespacecvMeasurementTools.html#a9397c53e6f543890acc633d8e556f3f6", null ],
+      [ "RAY_COLOR", "namespacecvMeasurementTools.html#aeef4c5abd49ffbc8e08b12b17b4da869", null ]
+    ] ],
     [ "e57", "namespacee57.html", "namespacee57" ],
     [ "ecvColor", "namespaceecvColor.html", "namespaceecvColor" ],
     [ "ecvFileUtils", "namespaceecvFileUtils.html", [
       [ "defaultDocPath", "namespaceecvFileUtils.html#ae4aab4936c27dcc80eef207462b82c32", null ]
     ] ],
+    [ "ecvTools", "namespaceecvTools.html", [
+      [ "AddPointCloud", "namespaceecvTools.html#a8a61c5edc46c2a669a00742b1555c635", null ],
+      [ "DiffVector", "namespaceecvTools.html#a1a162a958d07299989fb5623d2f6a8ae", null ],
+      [ "GetClousterGroup", "namespaceecvTools.html#ac97b5a5aba5b2b1d5e875485f05fe1ea", null ],
+      [ "GetClousterGroup", "namespaceecvTools.html#a0901ab62f411fe1f9b84556bb93f607f", null ],
+      [ "GetPolylines", "namespaceecvTools.html#af56356aa6ec8faaa751bfb90548439a7", null ],
+      [ "GetSegmentationGroup", "namespaceecvTools.html#a22acd3a418ec5c8dc1a79f061d966d60", null ],
+      [ "IntersectionVector", "namespaceecvTools.html#af5939ab314aae9ccabf8a0df299dae62", null ],
+      [ "TransFormRGB", "namespaceecvTools.html#a654215633d05ad7286eb2f1ca9f0f9ec", null ],
+      [ "TransFormRGB", "namespaceecvTools.html#ae8e74e2da44c74a9e19f501d706be405", null ],
+      [ "UnionVector", "namespaceecvTools.html#a21e5607bcc2fe48f2eda537e15fe6107", null ]
+    ] ],
     [ "ecvUtils", "namespaceecvUtils.html", [
       [ "DisplayLockedVerticesWarning", "namespaceecvUtils.html#af004048439fcaf282bfac6381412270c", null ]
     ] ],
     [ "Eigen", "namespaceEigen.html", [
+      [ "Matrix2x3d", "namespaceEigen.html#a18b2b7be4ce3099827ed964bb2ac107a", null ],
+      [ "Matrix3x4d", "namespaceEigen.html#a39281cc907044b0c66578d47ea5680a9", null ],
+      [ "Matrix3x4f", "namespaceEigen.html#a8f473ce1ebfde90f994ddaa71560aec4", null ],
       [ "Matrix4d_u", "namespaceEigen.html#a80fb78029f78d3425b02386737a108b6", null ],
-      [ "Matrix6d", "namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f", null ],
+      [ "Matrix6d", "namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758", null ],
       [ "Matrix6d_u", "namespaceEigen.html#a6c375b935a975a2d4f8047be883d2628", null ],
+      [ "RowMajorMatrixXd", "namespaceEigen.html#aa49edd6f7fe3d056b1c7b8c97c4155f0", null ],
+      [ "RowMajorMatrixXf", "namespaceEigen.html#a24504f5897409b98ade1a9a85d07f880", null ],
+      [ "RowMajorMatrixXi", "namespaceEigen.html#ad7870fdaf9a5ef4eef5c6a0fc33ff23e", null ],
       [ "Vector14d", "namespaceEigen.html#a0e27c7a93e3792f02cfad46281d9540f", null ],
       [ "Vector14i", "namespaceEigen.html#a57edbd1a1bd7ea8a5eb0a914d058c963", null ],
       [ "Vector3d_u", "namespaceEigen.html#ac97a34e2938334678923cfbaff0e5816", null ],
       [ "Vector3f_u", "namespaceEigen.html#aa15cd2cc8731688895a70723f980bf93", null ],
+      [ "Vector3ub", "namespaceEigen.html#a7170cbd6473be0f16c9c1d9b1c202c56", null ],
       [ "Vector3uint8", "namespaceEigen.html#ad33eb5beeda10f106e9fddfb9e647993", null ],
       [ "Vector4d_u", "namespaceEigen.html#a2be5b4bb7b904f5f4d1002a14537c4d4", null ],
       [ "Vector4f_u", "namespaceEigen.html#a90c90bd83cd48338dba644b697c9e845", null ],
-      [ "Vector6d", "namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0", null ]
+      [ "Vector4ub", "namespaceEigen.html#a3e03fe12aa9752ea131def61d0a8756f", null ],
+      [ "Vector6d", "namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0", null ]
     ] ],
     [ "fgr", "namespacefgr.html", "namespacefgr" ],
     [ "filament", "namespacefilament.html", null ],
-    [ "flann", "namespaceflann.html", "namespaceflann" ],
     [ "fmt", "namespacefmt.html", "namespacefmt" ],
     [ "G3Point", "namespaceG3Point.html", "namespaceG3Point" ],
     [ "IoUtils", "namespaceIoUtils.html", [
@@ -242,9 +269,38 @@ var namespaces_dup =
     [ "patch", "namespacepatch.html", [
       [ "to_string", "namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede", null ]
     ] ],
-    [ "pba", "namespacepba.html", "namespacepba" ],
-    [ "PCLModules", "namespacePCLModules.html", null ],
+    [ "pcl", "namespacepcl.html", "namespacepcl" ],
+    [ "PCLModules", "namespacePCLModules.html", "namespacePCLModules" ],
+    [ "PclTools", "namespacePclTools.html", [
+      [ "AddPolyDataCell", "namespacePclTools.html#a589d4bd200ee4ba2859cc42a2708a69c", null ],
+      [ "AllocVtkUnstructuredGrid", "namespacePclTools.html#acb8f5ea98f9a8f93622170b69e6f37b9", null ],
+      [ "CreateActorFromVTKDataSet", "namespacePclTools.html#ae5a40638bdb70c5d79aeb91a049e6185", null ],
+      [ "CreateActorFromVTKDataSet", "namespacePclTools.html#a703b9364853c8f21ce13e178b366cc5f", null ],
+      [ "CreateCameraSensor", "namespacePclTools.html#a8ec41b843340bc14769a8cc2be1936d9", null ],
+      [ "CreateCoordinate", "namespacePclTools.html#a7e63daf8ad7e7a183abf30f85924dad1", null ],
+      [ "CreateCoordinateFromLineSet", "namespacePclTools.html#a155127baf4afa5c2d77c523fbe37267d", null ],
+      [ "CreateCube", "namespacePclTools.html#a68ad98f2451c29900032bca227a0daa8", null ],
+      [ "CreateCube", "namespacePclTools.html#ae2283a56c421631f98eea78c70c2fae5", null ],
+      [ "CreateGBLSensor", "namespacePclTools.html#ad216b9be76e8305b59cadafbc717b4e6", null ],
+      [ "CreateLine", "namespacePclTools.html#a6f150d4dadb1f1551fe7f98b58c8ec24", null ],
+      [ "CreateLine", "namespacePclTools.html#ae4ecbeaf2cdaaf10f2b59f706b342c4b", null ],
+      [ "CreatePlane", "namespacePclTools.html#abb0c72da045a42acda8ff81f5769008e", null ],
+      [ "CreatePlane", "namespacePclTools.html#acbaf6da8b3720f30ca2201b2d1f63bd1", null ],
+      [ "CreatePolyDataFromLineSet", "namespacePclTools.html#a36193f3e91a0eb8af00a189e547e86e4", null ],
+      [ "CreateTexturingMesh", "namespacePclTools.html#a08d1bd9c94c60c56ad19cc2c863a60c4", null ],
+      [ "CreateTexturingMesh", "namespacePclTools.html#a3492142c8f27877e5e89303d4b7bab23", null ],
+      [ "CreateTexturingMesh", "namespacePclTools.html#a930f64d981e4afa7cab3d26441859b85", null ],
+      [ "GetDefaultScalarInterpolationForDataSet", "namespacePclTools.html#a442bc4ead95405c86b24332d268c1530", null ],
+      [ "GetVtkPointsAndLinesFromLineSet", "namespacePclTools.html#a8e1c6ffc3d440ea130ea579797c6b2cd", null ],
+      [ "GetVtkPointsFromLineSet", "namespacePclTools.html#a554b48cf8274e40afa92c71b63c34e8a", null ],
+      [ "SetPolyDataColor", "namespacePclTools.html#a92bb78852af3443995e870fd59e4c803", null ],
+      [ "TransformPolyData", "namespacePclTools.html#af5c0e965269da222547f26392eaf6924", null ],
+      [ "TransformVtkPoints", "namespacePclTools.html#a89a796a5be98b63647c4f7fadf1993b0", null ],
+      [ "UpdateScalarBar", "namespacePclTools.html#aaec1b89ba21445e0462aa51791a1995a", null ]
+    ] ],
+    [ "PclUtils", "namespacePclUtils.html", "namespacePclUtils" ],
     [ "PdmsTools", "namespacePdmsTools.html", "namespacePdmsTools" ],
+    [ "poisson", "namespacepoisson.html", "namespacepoisson" ],
     [ "pybind11", "namespacepybind11.html", "namespacepybind11" ],
     [ "PyCC", "namespacePyCC.html", [
       [ "addPointsFromArrays", "namespacePyCC.html#ae887e13ed59e34d46448283c3573fd61", null ],
@@ -252,6 +308,180 @@ var namespaces_dup =
       [ "SpanAsNumpyArray", "namespacePyCC.html#aa8529f51ac6731ff42b128293927cba6", null ],
       [ "SpanAsNumpyArray", "namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6", null ],
       [ "VectorAsNumpyArray", "namespacePyCC.html#a6b806ed115f1af093c698286e74b6e56", null ]
+    ] ],
+    [ "QCP", "namespaceQCP.html", [
+      [ "AntialiasedElement", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0c", [
+        [ "aeAxes", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca1eb20113361989d76dfabd202f814502", null ],
+        [ "aeGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef60bcbc52dd565706b896f5eb26f488", null ],
+        [ "aeSubGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caca6919b585ccffe40364b380b0f4c1ed", null ],
+        [ "aeLegend", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf8f073e2923e44ec2771ed879494abda", null ],
+        [ "aeLegendItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca766d7779ca565298e460f57504ec3fd6", null ],
+        [ "aePlottables", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab057dff2d0ecd9a98209d0e45f9f4477", null ],
+        [ "aeItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca526e1a78abbfe966fd1901afc57cc6dc", null ],
+        [ "aeScatters", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca670f1aad7bba469bddb0ebe0e261570e", null ],
+        [ "aeFills", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cad30ecca82c45de5fba6632a3b6a8952d", null ],
+        [ "aeZeroLine", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf803633c6b23d3d88482179d5e8522d7", null ],
+        [ "aeOther", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca51dfdad36b2907277ae1221b09936441", null ],
+        [ "aeAll", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef59e48fa717a04ab65ba33672d77893", null ],
+        [ "aeNone", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab3ec55af617a573ccb3466e5c6384ef1", null ],
+        [ "aeAxes", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca1eb20113361989d76dfabd202f814502", null ],
+        [ "aeGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef60bcbc52dd565706b896f5eb26f488", null ],
+        [ "aeSubGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caca6919b585ccffe40364b380b0f4c1ed", null ],
+        [ "aeLegend", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf8f073e2923e44ec2771ed879494abda", null ],
+        [ "aeLegendItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca766d7779ca565298e460f57504ec3fd6", null ],
+        [ "aePlottables", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab057dff2d0ecd9a98209d0e45f9f4477", null ],
+        [ "aeItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca526e1a78abbfe966fd1901afc57cc6dc", null ],
+        [ "aeScatters", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca670f1aad7bba469bddb0ebe0e261570e", null ],
+        [ "aeErrorBars", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca9dcf3882cb321bb305f71fdc0f09f63d", null ],
+        [ "aeFills", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cad30ecca82c45de5fba6632a3b6a8952d", null ],
+        [ "aeZeroLine", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf803633c6b23d3d88482179d5e8522d7", null ],
+        [ "aeAll", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef59e48fa717a04ab65ba33672d77893", null ],
+        [ "aeNone", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab3ec55af617a573ccb3466e5c6384ef1", null ]
+      ] ],
+      [ "AntialiasedElement", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0c", [
+        [ "aeAxes", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca1eb20113361989d76dfabd202f814502", null ],
+        [ "aeGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef60bcbc52dd565706b896f5eb26f488", null ],
+        [ "aeSubGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caca6919b585ccffe40364b380b0f4c1ed", null ],
+        [ "aeLegend", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf8f073e2923e44ec2771ed879494abda", null ],
+        [ "aeLegendItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca766d7779ca565298e460f57504ec3fd6", null ],
+        [ "aePlottables", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab057dff2d0ecd9a98209d0e45f9f4477", null ],
+        [ "aeItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca526e1a78abbfe966fd1901afc57cc6dc", null ],
+        [ "aeScatters", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca670f1aad7bba469bddb0ebe0e261570e", null ],
+        [ "aeFills", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cad30ecca82c45de5fba6632a3b6a8952d", null ],
+        [ "aeZeroLine", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf803633c6b23d3d88482179d5e8522d7", null ],
+        [ "aeOther", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca51dfdad36b2907277ae1221b09936441", null ],
+        [ "aeAll", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef59e48fa717a04ab65ba33672d77893", null ],
+        [ "aeNone", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab3ec55af617a573ccb3466e5c6384ef1", null ],
+        [ "aeAxes", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca1eb20113361989d76dfabd202f814502", null ],
+        [ "aeGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef60bcbc52dd565706b896f5eb26f488", null ],
+        [ "aeSubGrid", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caca6919b585ccffe40364b380b0f4c1ed", null ],
+        [ "aeLegend", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf8f073e2923e44ec2771ed879494abda", null ],
+        [ "aeLegendItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca766d7779ca565298e460f57504ec3fd6", null ],
+        [ "aePlottables", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab057dff2d0ecd9a98209d0e45f9f4477", null ],
+        [ "aeItems", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca526e1a78abbfe966fd1901afc57cc6dc", null ],
+        [ "aeScatters", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca670f1aad7bba469bddb0ebe0e261570e", null ],
+        [ "aeErrorBars", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0ca9dcf3882cb321bb305f71fdc0f09f63d", null ],
+        [ "aeFills", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cad30ecca82c45de5fba6632a3b6a8952d", null ],
+        [ "aeZeroLine", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caf803633c6b23d3d88482179d5e8522d7", null ],
+        [ "aeAll", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0caef59e48fa717a04ab65ba33672d77893", null ],
+        [ "aeNone", "namespaceQCP.html#ae55dbe315d41fe80f29ba88100843a0cab3ec55af617a573ccb3466e5c6384ef1", null ]
+      ] ],
+      [ "ExportPen", "namespaceQCP.html#a17844f19e1019693a953e1eb93536d2f", [
+        [ "epNoCosmetic", "namespaceQCP.html#a17844f19e1019693a953e1eb93536d2faae8fcfaafee234ce18558afef83f6a78", null ],
+        [ "epAllowCosmetic", "namespaceQCP.html#a17844f19e1019693a953e1eb93536d2fa50d3657dba3fb90560b93a823cb0a6e8", null ]
+      ] ],
+      [ "Interaction", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037", [
+        [ "iRangeDrag", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900", null ],
+        [ "iRangeZoom", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0", null ],
+        [ "iMultiSelect", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ad0378264fda468cecdab409dde4542ad", null ],
+        [ "iSelectPlottables", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ab4ac8dbba56ed6ef7d1355895707d6a5", null ],
+        [ "iSelectAxes", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a7f49c26c8cf12373ac867d63737c62b9", null ],
+        [ "iSelectLegend", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2b0800bffd93fc13090670eabf0fe1db", null ],
+        [ "iSelectItems", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a271679ebb13ab4a6b4c2c2d9459f1de8", null ],
+        [ "iSelectOther", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2ba96f62595bc22603da0e575b589a83", null ],
+        [ "iRangeDrag", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900", null ],
+        [ "iRangeZoom", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0", null ],
+        [ "iMultiSelect", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ad0378264fda468cecdab409dde4542ad", null ],
+        [ "iSelectPlottables", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ab4ac8dbba56ed6ef7d1355895707d6a5", null ],
+        [ "iSelectAxes", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a7f49c26c8cf12373ac867d63737c62b9", null ],
+        [ "iSelectLegend", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2b0800bffd93fc13090670eabf0fe1db", null ],
+        [ "iSelectItems", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a271679ebb13ab4a6b4c2c2d9459f1de8", null ],
+        [ "iSelectOther", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2ba96f62595bc22603da0e575b589a83", null ]
+      ] ],
+      [ "Interaction", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037", [
+        [ "iRangeDrag", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900", null ],
+        [ "iRangeZoom", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0", null ],
+        [ "iMultiSelect", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ad0378264fda468cecdab409dde4542ad", null ],
+        [ "iSelectPlottables", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ab4ac8dbba56ed6ef7d1355895707d6a5", null ],
+        [ "iSelectAxes", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a7f49c26c8cf12373ac867d63737c62b9", null ],
+        [ "iSelectLegend", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2b0800bffd93fc13090670eabf0fe1db", null ],
+        [ "iSelectItems", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a271679ebb13ab4a6b4c2c2d9459f1de8", null ],
+        [ "iSelectOther", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2ba96f62595bc22603da0e575b589a83", null ],
+        [ "iRangeDrag", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900", null ],
+        [ "iRangeZoom", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0", null ],
+        [ "iMultiSelect", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ad0378264fda468cecdab409dde4542ad", null ],
+        [ "iSelectPlottables", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ab4ac8dbba56ed6ef7d1355895707d6a5", null ],
+        [ "iSelectAxes", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a7f49c26c8cf12373ac867d63737c62b9", null ],
+        [ "iSelectLegend", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2b0800bffd93fc13090670eabf0fe1db", null ],
+        [ "iSelectItems", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a271679ebb13ab4a6b4c2c2d9459f1de8", null ],
+        [ "iSelectOther", "namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a2ba96f62595bc22603da0e575b589a83", null ]
+      ] ],
+      [ "MarginSide", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54", [
+        [ "msLeft", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a9a47416a401c58f0c6219d17152757a9", null ],
+        [ "msRight", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a75c2181d12e8b8346e2e99e1beb4b694", null ],
+        [ "msTop", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a19acab50954e500a120e251211ff39bf", null ],
+        [ "msBottom", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54ae0bf0dc064e422ecd13970b6a5f6f0fb", null ],
+        [ "msAll", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a79334be9c93ef74c6211fee80487945a", null ],
+        [ "msNone", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a3108d916ac730d3b4ecdfc2911de2595", null ],
+        [ "msLeft", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a9a47416a401c58f0c6219d17152757a9", null ],
+        [ "msRight", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a75c2181d12e8b8346e2e99e1beb4b694", null ],
+        [ "msTop", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a19acab50954e500a120e251211ff39bf", null ],
+        [ "msBottom", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54ae0bf0dc064e422ecd13970b6a5f6f0fb", null ],
+        [ "msAll", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a79334be9c93ef74c6211fee80487945a", null ],
+        [ "msNone", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a3108d916ac730d3b4ecdfc2911de2595", null ]
+      ] ],
+      [ "MarginSide", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54", [
+        [ "msLeft", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a9a47416a401c58f0c6219d17152757a9", null ],
+        [ "msRight", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a75c2181d12e8b8346e2e99e1beb4b694", null ],
+        [ "msTop", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a19acab50954e500a120e251211ff39bf", null ],
+        [ "msBottom", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54ae0bf0dc064e422ecd13970b6a5f6f0fb", null ],
+        [ "msAll", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a79334be9c93ef74c6211fee80487945a", null ],
+        [ "msNone", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a3108d916ac730d3b4ecdfc2911de2595", null ],
+        [ "msLeft", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a9a47416a401c58f0c6219d17152757a9", null ],
+        [ "msRight", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a75c2181d12e8b8346e2e99e1beb4b694", null ],
+        [ "msTop", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a19acab50954e500a120e251211ff39bf", null ],
+        [ "msBottom", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54ae0bf0dc064e422ecd13970b6a5f6f0fb", null ],
+        [ "msAll", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a79334be9c93ef74c6211fee80487945a", null ],
+        [ "msNone", "namespaceQCP.html#a7e487e3e2ccb62ab7771065bab7cae54a3108d916ac730d3b4ecdfc2911de2595", null ]
+      ] ],
+      [ "PlottingHint", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4", [
+        [ "phNone", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a6a4b80cab7683c4533cb04b27a862fe1", null ],
+        [ "phFastPolylines", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a016e00979e96542daa49cc14c976dd02", null ],
+        [ "phImmediateRefresh", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a30840fba10eebfa519a92cf5c3d32870", null ],
+        [ "phCacheLabels", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a3165c7c7d350a5a5813a4105067e2f37", null ],
+        [ "phNone", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a6a4b80cab7683c4533cb04b27a862fe1", null ],
+        [ "phFastPolylines", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a016e00979e96542daa49cc14c976dd02", null ],
+        [ "phForceRepaint", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4aa3090dafa0e0f9a28c579c79d6c2d283", null ],
+        [ "phCacheLabels", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a3165c7c7d350a5a5813a4105067e2f37", null ]
+      ] ],
+      [ "PlottingHint", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4", [
+        [ "phNone", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a6a4b80cab7683c4533cb04b27a862fe1", null ],
+        [ "phFastPolylines", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a016e00979e96542daa49cc14c976dd02", null ],
+        [ "phImmediateRefresh", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a30840fba10eebfa519a92cf5c3d32870", null ],
+        [ "phCacheLabels", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a3165c7c7d350a5a5813a4105067e2f37", null ],
+        [ "phNone", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a6a4b80cab7683c4533cb04b27a862fe1", null ],
+        [ "phFastPolylines", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a016e00979e96542daa49cc14c976dd02", null ],
+        [ "phForceRepaint", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4aa3090dafa0e0f9a28c579c79d6c2d283", null ],
+        [ "phCacheLabels", "namespaceQCP.html#a5400e5fcb9528d92002ddb938c1f4ef4a3165c7c7d350a5a5813a4105067e2f37", null ]
+      ] ],
+      [ "ResolutionUnit", "namespaceQCP.html#a715d46153da230990aa887d0f0602452", [
+        [ "ruDotsPerMeter", "namespaceQCP.html#a715d46153da230990aa887d0f0602452a707d005dea5c4ab694e4270d9c6094e8", null ],
+        [ "ruDotsPerCentimeter", "namespaceQCP.html#a715d46153da230990aa887d0f0602452a4224e01f49b331489ad8cb12b619b229", null ],
+        [ "ruDotsPerInch", "namespaceQCP.html#a715d46153da230990aa887d0f0602452affb887d8efe79c39a1aca2acd7002afc", null ]
+      ] ],
+      [ "SelectionRectMode", "namespaceQCP.html#ac9aa4d6d81ac76b094f9af9ad2d3aacf", [
+        [ "srmNone", "namespaceQCP.html#ac9aa4d6d81ac76b094f9af9ad2d3aacfa9032f170490d67240a6c68c2638ffab1", null ],
+        [ "srmZoom", "namespaceQCP.html#ac9aa4d6d81ac76b094f9af9ad2d3aacfa739c260bf4d9a15f73423c91158b9428", null ],
+        [ "srmSelect", "namespaceQCP.html#ac9aa4d6d81ac76b094f9af9ad2d3aacfa62c286e8da283a0cbb88ecac2f3f7506", null ],
+        [ "srmCustom", "namespaceQCP.html#ac9aa4d6d81ac76b094f9af9ad2d3aacfa15e7a00c8e7e0673c7b31d75266888d4", null ]
+      ] ],
+      [ "SelectionType", "namespaceQCP.html#ac6cb9db26a564b27feda362a438db038", [
+        [ "stNone", "namespaceQCP.html#ac6cb9db26a564b27feda362a438db038aa64628e338a2dd1e6f0dc84dec0b63fe", null ],
+        [ "stWhole", "namespaceQCP.html#ac6cb9db26a564b27feda362a438db038aff7a688d4d520e8e7f01be098a034a2d", null ],
+        [ "stSingleData", "namespaceQCP.html#ac6cb9db26a564b27feda362a438db038ae5b11259c42962db355e7448f4a8633a", null ],
+        [ "stDataRange", "namespaceQCP.html#ac6cb9db26a564b27feda362a438db038aa05d2cba99c724df004d9c48971e4371", null ],
+        [ "stMultipleDataRanges", "namespaceQCP.html#ac6cb9db26a564b27feda362a438db038a7cf82676966ebf79cc371f65278e0e16", null ]
+      ] ],
+      [ "SignDomain", "namespaceQCP.html#afd50e7cf431af385614987d8553ff8a9", [
+        [ "sdNegative", "namespaceQCP.html#afd50e7cf431af385614987d8553ff8a9a2d18af0bc58f6528d1e82ce699fe4829", null ],
+        [ "sdBoth", "namespaceQCP.html#afd50e7cf431af385614987d8553ff8a9aa38352ef02d51ddfa4399d9551566e24", null ],
+        [ "sdPositive", "namespaceQCP.html#afd50e7cf431af385614987d8553ff8a9a584784b75fb816abcc627cf743bb699f", null ]
+      ] ],
+      [ "getMarginValue", "namespaceQCP.html#a23a2679d3495c444acc26acc61e35b5b", null ],
+      [ "isInvalidData", "namespaceQCP.html#a07ab701c05329089f933b9cae2638a63", null ],
+      [ "isInvalidData", "namespaceQCP.html#a728903e5c3dd17847bee280f4005496f", null ],
+      [ "setMarginValue", "namespaceQCP.html#afbf6e3084c108f2bb4372107945ee82f", null ],
+      [ "staticMetaObject", "namespaceQCP.html#a07ffa1eb1537a3b1f218ff2a442b2017", null ]
     ] ],
     [ "QtCompat", "namespaceQtCompat.html", [
       [ "endl", "namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c", null ],
@@ -262,6 +492,11 @@ var namespaces_dup =
       [ "CaseInsensitive", "namespaceQtCompatRegExpOption.html#aef3543c60166ecb59e406c1fc2c29950", null ],
       [ "DotMatchesEverything", "namespaceQtCompatRegExpOption.html#a6d44073868b1eb95fc8b5966e07a03d8", null ],
       [ "Multiline", "namespaceQtCompatRegExpOption.html#a5f4e6780690da81081cce8e93cffaade", null ]
+    ] ],
+    [ "QueryExpressionUtils", "namespaceQueryExpressionUtils.html", [
+      [ "createRegex", "namespaceQueryExpressionUtils.html#a8182fe1e9b5a216241736ad40bfafbc3", null ],
+      [ "formatExpression", "namespaceQueryExpressionUtils.html#a7378e8999d2db7daf445b41b720c52fe", null ],
+      [ "splitByAnd", "namespaceQueryExpressionUtils.html#a6c1ca57b31310ba9d464c0a1d761cab4", null ]
     ] ],
     [ "rs2", "namespacers2.html", null ],
     [ "Runtime", "namespaceRuntime.html", "namespaceRuntime" ],
@@ -314,6 +549,11 @@ var namespaces_dup =
       [ "THEME_TOKYONIGHT", "namespaceThemes.html#ac7c790a1180982ef4e19144b1acd2b71", null ]
     ] ],
     [ "Ui", "namespaceUi.html", null ],
+    [ "Utils", "namespaceUtils.html", "namespaceUtils" ],
+    [ "VTKExtensions", "namespaceVTKExtensions.html", "namespaceVTKExtensions" ],
+    [ "vtksys", "namespacevtksys.html", null ],
+    [ "VtkUtils", "namespaceVtkUtils.html", "namespaceVtkUtils" ],
+    [ "Widgets", "namespaceWidgets.html", "namespaceWidgets" ],
     [ "wl", "namespacewl.html", "namespacewl" ],
     [ "XERCES_CPP_NAMESPACE", "namespaceXERCES__CPP__NAMESPACE.html", null ],
     [ "zmq", "namespacezmq.html", null ]

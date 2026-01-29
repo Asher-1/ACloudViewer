@@ -1,3 +1,8 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structcloudViewer_1_1visualization_1_1gui_1_1VectorEdit_1_1Impl.html" title=" " alt="" coords="5,5,199,47"/>
+<area shape="rect" id="node1" href="$classcloudViewer_1_1visualization_1_1Visualizer.html" title="The main Visualizer class." alt="" coords="5,136,199,177"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1VisualizerForAlignment.html" title=" " alt="" coords="270,5,465,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html" title=" " alt="" coords="247,71,488,112"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html" title="Visualizer with editing capabilities." alt="" coords="271,136,464,177"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html" title="Visualizer with custom key callack capabilities." alt="" coords="265,201,469,243"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html" title=" " alt="" coords="254,267,481,308"/>
 </map>

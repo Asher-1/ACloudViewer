@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -116,7 +107,7 @@ $(document).ready(function(){initNavTree('LasWaveformSaver_8cpp_source.html','')
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;{</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;}</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="structLasWaveformSaver.html#a7ae1f98cbf0d7f6e992d6c3a3f4a5266">   20</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="structLasWaveformSaver.html#a7ae1f98cbf0d7f6e992d6c3a3f4a5266">LasWaveformSaver::handlePoint</a>(<span class="keywordtype">size_t</span> index, laszip_point&amp; <a class="code" href="structpoint.html">point</a>)</div>
+<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="structLasWaveformSaver.html#a7ae1f98cbf0d7f6e992d6c3a3f4a5266">   20</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="structLasWaveformSaver.html#a7ae1f98cbf0d7f6e992d6c3a3f4a5266">LasWaveformSaver::handlePoint</a>(<span class="keywordtype">size_t</span> index, laszip_point&amp; point)</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;{</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    assert(index &lt; m_pointCloud.<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">size</a>());</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keyword">const</span> <a class="code" href="classccWaveform.html">ccWaveform</a>&amp; w = m_pointCloud.<a class="code" href="classccPointCloud.html#a54853e0f3d20847f592ebc01a60f8500">waveforms</a>().at(index);</div>
@@ -131,7 +122,7 @@ $(document).ready(function(){initNavTree('LasWaveformSaver_8cpp_source.html','')
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        stream &lt;&lt; w.<a class="code" href="classccWaveform.html#ac905073eb7ae58457acf59dce71a3337">beamDir</a>().<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> &lt;&lt; w.<a class="code" href="classccWaveform.html#ac905073eb7ae58457acf59dce71a3337">beamDir</a>().<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> &lt;&lt; w.<a class="code" href="classccWaveform.html#ac905073eb7ae58457acf59dce71a3337">beamDir</a>().<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    }</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    memcpy(<a class="code" href="structpoint.html">point</a>.wave_packet, m_array.constData(), 29);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    memcpy(point.wave_packet, m_array.constData(), 29);</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;}</div>
 <div class="ttc" id="aLasDetails_8h_html"><div class="ttname"><a href="LasDetails_8h.html">LasDetails.h</a></div></div>
 <div class="ttc" id="aLasWaveformSaver_8h_html"><div class="ttname"><a href="LasWaveformSaver_8h.html">LasWaveformSaver.h</a></div></div>
@@ -151,14 +142,13 @@ $(document).ready(function(){initNavTree('LasWaveformSaver_8cpp_source.html','')
 <div class="ttc" id="astructLasDetails_1_1EvlrHeader_html_a46940a00489b6cbea5958ba2930eaa59"><div class="ttname"><a href="structLasDetails_1_1EvlrHeader.html#a46940a00489b6cbea5958ba2930eaa59">LasDetails::EvlrHeader::SIZE</a></div><div class="ttdeci">static constexpr size_t SIZE</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00094">LasDetails.h:94</a></div></div>
 <div class="ttc" id="astructLasWaveformSaver_html_a7ae1f98cbf0d7f6e992d6c3a3f4a5266"><div class="ttname"><a href="structLasWaveformSaver.html#a7ae1f98cbf0d7f6e992d6c3a3f4a5266">LasWaveformSaver::handlePoint</a></div><div class="ttdeci">void handlePoint(size_t index, laszip_point &amp;point)</div><div class="ttdef"><b>Definition:</b> <a href="LasWaveformSaver_8cpp_source.html#l00020">LasWaveformSaver.cpp:20</a></div></div>
 <div class="ttc" id="astructLasWaveformSaver_html_aa9223fd0c32f077af3cae48dae4411ac"><div class="ttname"><a href="structLasWaveformSaver.html#aa9223fd0c32f077af3cae48dae4411ac">LasWaveformSaver::LasWaveformSaver</a></div><div class="ttdeci">LasWaveformSaver(const ccPointCloud &amp;pointCloud) noexcept</div><div class="ttdef"><b>Definition:</b> <a href="LasWaveformSaver_8cpp_source.html#l00014">LasWaveformSaver.cpp:14</a></div></div>
-<div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasWaveformSaver_8cpp.html">LasWaveformSaver.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

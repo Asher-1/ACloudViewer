@@ -2,7 +2,7 @@ var dir_72bfedd93659fe84bf7db07307b5bcb1 =
 [
     [ "PointData.cpp", "PointData_8cpp.html", null ],
     [ "PointData.h", "PointData_8h.html", [
-      [ "PointData", "structPointData.html", "structPointData" ]
+      [ "PointData", "classPointData.html", "classPointData" ]
     ] ],
     [ "PoissonReconLib.cpp", "PoissonReconLib_8cpp.html", "PoissonReconLib_8cpp" ],
     [ "PoissonReconLib.h", "PoissonReconLib_8h.html", [

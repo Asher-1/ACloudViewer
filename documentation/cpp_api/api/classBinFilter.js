@@ -1,13 +1,13 @@
 var classBinFilter =
 [
     [ "BinFilter", "classBinFilter.html#a054a9567da62531e240f9e12e3c0ee0e", null ],
-    [ "canSave", "classBinFilter.html#a6a2666e744bdae1367ba443f3c4a437b", null ],
+    [ "canSave", "classBinFilter.html#ac15dd7527a6cd6a9b2cad35c39d863b1", null ],
     [ "GetDefaultExtension", "classBinFilter.html#a7f1e987d72d118e8fb59aff0719dc4a8", null ],
     [ "GetFileFilter", "classBinFilter.html#ada16110e7130ef3fc206ebc027952105", null ],
-    [ "GetLastSavedFileVersion", "classBinFilter.html#a1fdd972b362430acf213f5d7e090250e", null ],
-    [ "loadFile", "classBinFilter.html#ae711716d3f26ce30ed2fb3fdce9493e6", null ],
-    [ "LoadFileV1", "classBinFilter.html#ade7e1fef322dac78ccb0aa39b8d4090a", null ],
-    [ "LoadFileV2", "classBinFilter.html#aed4e6543a41f3df489d78ce701d2aec3", null ],
-    [ "SaveFileV2", "classBinFilter.html#acf8645eda8e755c02a9cbe702f46e4de", null ],
-    [ "saveToFile", "classBinFilter.html#a8f3c0afd0d1af537276cbae2fbea96b7", null ]
+    [ "GetLastSavedFileVersion", "classBinFilter.html#a539329090805c22ed70c4403b922f87f", null ],
+    [ "loadFile", "classBinFilter.html#a410b197301d0d36bbf0d0963807314ca", null ],
+    [ "LoadFileV1", "classBinFilter.html#ac75cb6bc0be26a66c9070f6a5b9b91f5", null ],
+    [ "LoadFileV2", "classBinFilter.html#a3c99031d96d417ad2b374551441598c3", null ],
+    [ "SaveFileV2", "classBinFilter.html#ab9dfa6d83c4ee25fc54e69f4bcd3e982", null ],
+    [ "saveToFile", "classBinFilter.html#ae7a71a19e1cf8b84f1cb7ba9d39c1e3b", null ]
 ];

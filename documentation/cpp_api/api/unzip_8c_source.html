@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -168,7 +159,7 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="string_8h.html">string.h</a>&gt;</span></div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#include &quot;zlib.h&quot;</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#if (ZLIB_VERNUM &lt; 0x1270)</span></div>
@@ -178,7 +169,7 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor">#ifdef STDC</span></div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#  include &lt;stddef.h&gt;</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#  include &lt;string.h&gt;</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#  include &lt;<a class="code" href="string_8h.html">string.h</a>&gt;</span></div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#  include &lt;stdlib.h&gt;</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#ifdef NO_ERRNO_H</span></div>
@@ -342,19 +333,19 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                             voidpf filestream,</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                             uLong *pX)</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;{</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    uLong x ;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    uLong <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> ;</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <span class="keywordtype">int</span> i = 0;</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    <span class="keywordtype">int</span> err;</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160; </div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    x = (uLong)i;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = (uLong)i;</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    x |= ((uLong)i)&lt;&lt;8;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((uLong)i)&lt;&lt;8;</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        *pX = x;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        *pX = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        *pX = 0;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keywordflow">return</span> err;</div>
@@ -369,27 +360,27 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                            voidpf filestream,</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                            uLong *pX)</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;{</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    uLong x ;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    uLong <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> ;</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="keywordtype">int</span> i = 0;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    <span class="keywordtype">int</span> err;</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    x = (uLong)i;</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = (uLong)i;</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    x |= ((uLong)i)&lt;&lt;8;</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((uLong)i)&lt;&lt;8;</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    x |= ((uLong)i)&lt;&lt;16;</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((uLong)i)&lt;&lt;16;</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160; </div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    x += ((uLong)i)&lt;&lt;24;</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> += ((uLong)i)&lt;&lt;24;</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160; </div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        *pX = x;</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        *pX = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        *pX = 0;</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    <span class="keywordflow">return</span> err;</div>
@@ -405,43 +396,43 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;                            voidpf filestream,</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                            <a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a> *pX)</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;{</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a> x ;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> ;</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="keywordtype">int</span> i = 0;</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    <span class="keywordtype">int</span> err;</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    x = (<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i;</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = (<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i;</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;8;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;8;</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;16;</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;16;</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160; </div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;24;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;24;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;32;</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;32;</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;40;</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;40;</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;48;</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;48;</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        err = <a class="code" href="unzip_8c.html#a25e6c6413117acc85f65ab2a085e0c49">unz64local_getByte</a>(pzlib_filefunc_def,filestream,&amp;i);</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    x |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;56;</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> |= ((<a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a>)i)&lt;&lt;56;</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160; </div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;    <span class="keywordflow">if</span> (err==<a class="code" href="unzip_8h.html#ada043545f95ccd4dae93fa44d95e39a8">UNZ_OK</a>)</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        *pX = x;</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        *pX = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        *pX = 0;</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    <span class="keywordflow">return</span> err;</div>
@@ -2258,8 +2249,10 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div class="ttc" id="aioapi_8h_html_ace27d6d19b1005424d1fb4bd0c7c9602"><div class="ttname"><a href="ioapi_8h.html#ace27d6d19b1005424d1fb4bd0c7c9602">ZLIB_FILEFUNC_SEEK_END</a></div><div class="ttdeci">#define ZLIB_FILEFUNC_SEEK_END</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00111">ioapi.h:111</a></div></div>
 <div class="ttc" id="aioapi_8h_html_ae7bc575ca0cef5d90c7d5d093137d901"><div class="ttname"><a href="ioapi_8h.html#ae7bc575ca0cef5d90c7d5d093137d901">ZLIB_FILEFUNC_MODE_READ</a></div><div class="ttdeci">#define ZLIB_FILEFUNC_MODE_READ</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00114">ioapi.h:114</a></div></div>
 <div class="ttc" id="aioapi_8h_html_afffed08ed7f2413fa38e12a223ae0e72"><div class="ttname"><a href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a></div><div class="ttdeci">unsigned long long int ZPOS64_T</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00097">ioapi.h:97</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_a0d112bae8fd35be772185b6ec6bcbe64"><div class="ttname"><a href="qioapi_8cpp.html#a0d112bae8fd35be772185b6ec6bcbe64">SEEK_SET</a></div><div class="ttdeci">#define SEEK_SET</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00038">qioapi.cpp:38</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_a791fffcedf2d2c9dabd67232dafe447b"><div class="ttname"><a href="qioapi_8cpp.html#a791fffcedf2d2c9dabd67232dafe447b">fill_qiodevice64_filefunc</a></div><div class="ttdeci">void fill_qiodevice64_filefunc(zlib_filefunc64_def *pzlib_filefunc_def)</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00307">qioapi.cpp:307</a></div></div>
+<div class="ttc" id="astring_8h_html"><div class="ttname"><a href="string_8h.html">string.h</a></div></div>
 <div class="ttc" id="astructfile__in__zip64__read__info__s_html"><div class="ttname"><a href="structfile__in__zip64__read__info__s.html">file_in_zip64_read_info_s</a></div><div class="ttdef"><b>Definition:</b> <a href="unzip_8c_source.html#l00136">unzip.c:137</a></div></div>
 <div class="ttc" id="astructfile__in__zip64__read__info__s_html_a1826c0c38a41cfc6233e2e1e723d4cac"><div class="ttname"><a href="structfile__in__zip64__read__info__s.html#a1826c0c38a41cfc6233e2e1e723d4cac">file_in_zip64_read_info_s::stream</a></div><div class="ttdeci">z_stream stream</div><div class="ttdef"><b>Definition:</b> <a href="unzip_8c_source.html#l00139">unzip.c:139</a></div></div>
 <div class="ttc" id="astructfile__in__zip64__read__info__s_html_a1f67bddec6376276633b43042f367167"><div class="ttname"><a href="structfile__in__zip64__read__info__s.html#a1f67bddec6376276633b43042f367167">file_in_zip64_read_info_s::total_out_64</a></div><div class="ttdeci">ZPOS64_T total_out_64</div><div class="ttdef"><b>Definition:</b> <a href="unzip_8c_source.html#l00151">unzip.c:151</a></div></div>
@@ -2433,7 +2426,7 @@ $(document).ready(function(){initNavTree('unzip_8c_source.html',''); initResizab
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="unzip_8c.html">unzip.c</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

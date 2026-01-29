@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -133,7 +124,7 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keyword">inline</span> QuaGzipFilePrivate(<span class="keyword">const</span> QString &amp;fileName)</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        : fileName(fileName), gzd(<a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) {}</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> FileId&gt;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">open</a>(FileId <span class="keywordtype">id</span>, QIODevice::OpenMode mode, QString &amp;<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">open</a>(FileId <span class="keywordtype">id</span>, QIODevice::OpenMode mode, QString &amp;error);</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    gzFile <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">open</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">char</span> *modeString);</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    gzFile <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">open</a>(<span class="keyword">const</span> QString &amp;<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <span class="keyword">const</span> <span class="keywordtype">char</span> *modeString);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;};</div>
@@ -149,18 +140,18 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> FileId&gt;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keywordtype">bool</span> QuaGzipFilePrivate::open(FileId <span class="keywordtype">id</span>,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                              QIODevice::OpenMode mode,</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                              QString &amp;<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                              QString &amp;error) {</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordtype">char</span> modeString[2];</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    modeString[0] = modeString[1] = <span class="charliteral">&#39;\0&#39;</span>;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordflow">if</span> ((mode &amp; <a class="code" href="namespacecloudViewer_1_1core.html#a72ce6622f68828767b6ef09cc1ed5127">QIODevice::Append</a>) != 0) {</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = QString::fromUtf8(</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        error = QString::fromUtf8(</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                <span class="stringliteral">&quot;QIODevice::Append is not &quot;</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                <span class="stringliteral">&quot;supported for GZIP&quot;</span>);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    }</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">if</span> ((mode &amp; QIODevice::ReadOnly) != 0 &amp;&amp;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        (mode &amp; QIODevice::WriteOnly) != 0) {</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = QString::fromUtf8(</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        error = QString::fromUtf8(</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                <span class="stringliteral">&quot;Opening gzip for both reading&quot;</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                <span class="stringliteral">&quot; and writing is not supported&quot;</span>);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -169,14 +160,14 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> ((mode &amp; QIODevice::WriteOnly) != 0) {</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        modeString[0] = <span class="charliteral">&#39;w&#39;</span>;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = QString::fromUtf8(</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        error = QString::fromUtf8(</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                <span class="stringliteral">&quot;You can open a gzip either for reading&quot;</span></div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                <span class="stringliteral">&quot; or for writing. Which is it?&quot;</span>);</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    }</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    gzd = <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">open</a>(<span class="keywordtype">id</span>, modeString);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">if</span> (gzd == <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) {</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = QString::fromUtf8(<span class="stringliteral">&quot;Could not gzopen() file&quot;</span>);</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        error = QString::fromUtf8(<span class="stringliteral">&quot;Could not gzopen() file&quot;</span>);</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    }</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -191,7 +182,7 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    : QIODevice(parent), d(new QuaGzipFilePrivate(fileName)) {}</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a1200bc76f36bb2e1991e1e0467befbf2">   96</a></span>&#160;<a class="code" href="classQuaGzipFile.html#a1200bc76f36bb2e1991e1e0467befbf2">QuaGzipFile::~QuaGzipFile</a>() {</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a>()) {</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keywordflow">if</span> (isOpen()) {</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <a class="code" href="classQuaGzipFile.html#a273205350b1235a242a1eb5cbf586434">close</a>();</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    }</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">delete</span> d;</div>
@@ -206,18 +197,18 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="line"><a name="l00109"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a5f5389ecd85c38b1feda88a83ad0b256">  109</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classQuaGzipFile.html#a5f5389ecd85c38b1feda88a83ad0b256">QuaGzipFile::isSequential</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <span class="keyword">true</span>; }</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
 <div class="line"><a name="l00111"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">  111</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">QuaGzipFile::open</a>(QIODevice::OpenMode mode) {</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    QString <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keywordflow">if</span> (!d-&gt;open(d-&gt;fileName, mode, <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>)) {</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        setErrorString(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    QString error;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keywordflow">if</span> (!d-&gt;open(d-&gt;fileName, mode, error)) {</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        setErrorString(error);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    }</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keywordflow">return</span> QIODevice::open(mode);</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;}</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
 <div class="line"><a name="l00120"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#adf5a954bb9bfda2d33cd336a213e2549">  120</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classQuaGzipFile.html#a1d560babdfff3a3441d704099a5bc1e4">QuaGzipFile::open</a>(<span class="keywordtype">int</span> fd, QIODevice::OpenMode mode) {</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    QString <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordflow">if</span> (!d-&gt;open(fd, mode, <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>)) {</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        setErrorString(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    QString error;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordflow">if</span> (!d-&gt;open(fd, mode, error)) {</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        setErrorString(error);</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    }</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="keywordflow">return</span> QIODevice::open(mode);</div>
@@ -230,13 +221,13 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    gzclose(d-&gt;gzd);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;}</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
-<div class="line"><a name="l00136"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a9eab41b46367e63e0c269c42ca883d82">  136</a></span>&#160;qint64 <a class="code" href="classQuaGzipFile.html#a9eab41b46367e63e0c269c42ca883d82">QuaGzipFile::readData</a>(<span class="keywordtype">char</span> *data, qint64 maxSize) {</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordflow">return</span> gzread(d-&gt;gzd, (voidp)data, (<span class="keywordtype">unsigned</span>)maxSize);</div>
+<div class="line"><a name="l00136"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a9eab41b46367e63e0c269c42ca883d82">  136</a></span>&#160;qint64 <a class="code" href="classQuaGzipFile.html#a9eab41b46367e63e0c269c42ca883d82">QuaGzipFile::readData</a>(<span class="keywordtype">char</span> *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, qint64 maxSize) {</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordflow">return</span> gzread(d-&gt;gzd, (voidp)<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, (<span class="keywordtype">unsigned</span>)maxSize);</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;}</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
-<div class="line"><a name="l00140"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a6dd09d41d8a51c96b0f2134eff37f676">  140</a></span>&#160;qint64 <a class="code" href="classQuaGzipFile.html#a6dd09d41d8a51c96b0f2134eff37f676">QuaGzipFile::writeData</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *data, qint64 maxSize) {</div>
+<div class="line"><a name="l00140"></a><span class="lineno"><a class="line" href="classQuaGzipFile.html#a6dd09d41d8a51c96b0f2134eff37f676">  140</a></span>&#160;qint64 <a class="code" href="classQuaGzipFile.html#a6dd09d41d8a51c96b0f2134eff37f676">QuaGzipFile::writeData</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, qint64 maxSize) {</div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    <span class="keywordflow">if</span> (maxSize == 0) <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <span class="keywordtype">int</span> written = gzwrite(d-&gt;gzd, (voidp)data, (<span class="keywordtype">unsigned</span>)maxSize);</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <span class="keywordtype">int</span> written = gzwrite(d-&gt;gzd, (voidp)<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, (<span class="keywordtype">unsigned</span>)maxSize);</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keywordflow">if</span> (written == 0)</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordflow">else</span></div>
@@ -255,17 +246,16 @@ $(document).ready(function(){initNavTree('quagzipfile_8cpp_source.html',''); ini
 <div class="ttc" id="aclassQuaGzipFile_html_a709608207b41ca81d5beed2b34982809"><div class="ttname"><a href="classQuaGzipFile.html#a709608207b41ca81d5beed2b34982809">QuaGzipFile::QuaGzipFile</a></div><div class="ttdeci">QuaGzipFile()</div><div class="ttdoc">Empty constructor.</div><div class="ttdef"><b>Definition:</b> <a href="quagzipfile_8cpp_source.html#l00088">quagzipfile.cpp:88</a></div></div>
 <div class="ttc" id="aclassQuaGzipFile_html_a9eab41b46367e63e0c269c42ca883d82"><div class="ttname"><a href="classQuaGzipFile.html#a9eab41b46367e63e0c269c42ca883d82">QuaGzipFile::readData</a></div><div class="ttdeci">virtual qint64 readData(char *data, qint64 maxSize)</div><div class="ttdoc">Implementation of QIODevice::readData().</div><div class="ttdef"><b>Definition:</b> <a href="quagzipfile_8cpp_source.html#l00136">quagzipfile.cpp:136</a></div></div>
 <div class="ttc" id="aclassQuaGzipFile_html_ab745f345b727c81abbc3eb5af4dca844"><div class="ttname"><a href="classQuaGzipFile.html#ab745f345b727c81abbc3eb5af4dca844">QuaGzipFile::flush</a></div><div class="ttdeci">virtual bool flush()</div><div class="ttdoc">Flushes data to file.</div><div class="ttdef"><b>Definition:</b> <a href="quagzipfile_8cpp_source.html#l00129">quagzipfile.cpp:129</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a72ce6622f68828767b6ef09cc1ed5127"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a72ce6622f68828767b6ef09cc1ed5127">cloudViewer::core::Append</a></div><div class="ttdeci">Tensor Append(const Tensor &amp;self, const Tensor &amp;other, const utility::optional&lt; int64_t &gt; &amp;axis)</div><div class="ttdoc">Appends the two tensors, along the given axis into a new tensor. Both the tensors must have same data...</div><div class="ttdef"><b>Definition:</b> <a href="TensorFunction_8cpp_source.html#l00118">TensorFunction.cpp:118</a></div></div>
 <div class="ttc" id="aquagzipfile_8h_html"><div class="ttname"><a href="quagzipfile_8h.html">quagzipfile.h</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_a51d2a93170930afe9fc7357f19792d9f"><div class="ttname"><a href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a></div><div class="ttdeci">#define isOpen(pFd)</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l52420">sqlite3.c:52420</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="quagzipfile_8cpp.html">quagzipfile.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

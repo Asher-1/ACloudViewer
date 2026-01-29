@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -121,16 +112,16 @@ $(document).ready(function(){initNavTree('Messages_8h_source.html',''); initResi
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">namespace </span>messages {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#ac546f599016b7be32023bf7ad2699c1b">   24</a></span>&#160;<span class="keyword">inline</span> std::string <a class="code" href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#ac546f599016b7be32023bf7ad2699c1b">EndiannessStr</a>() {</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keyword">auto</span> IsLittleEndian = []() -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        uint32_t a = 1;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keyword">auto</span> <a class="code" href="namespacecolmap.html#a2d5ac84a6ec5a23fe682dd9b8474558f">IsLittleEndian</a> = []() -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        uint32_t <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = 1;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        uint8_t b;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <span class="comment">// Use memcpy as a reliable way to access a single byte.</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        <span class="comment">// Other approaches, e.g. union, often rely on undefined behaviour.</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        std::memcpy(&amp;b, &amp;a, <span class="keyword">sizeof</span>(uint8_t));</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        std::memcpy(&amp;b, &amp;<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, <span class="keyword">sizeof</span>(uint8_t));</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;        <span class="keywordflow">return</span> b == 1;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    };</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">return</span> IsLittleEndian() ? <span class="stringliteral">&quot;&lt;&quot;</span> : <span class="stringliteral">&quot;&gt;&quot;</span>;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacecolmap.html#a2d5ac84a6ec5a23fe682dd9b8474558f">IsLittleEndian</a>() ? <span class="stringliteral">&quot;&lt;&quot;</span> : <span class="stringliteral">&quot;&gt;&quot;</span>;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;}</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
@@ -197,14 +188,14 @@ $(document).ready(function(){initNavTree('Messages_8h_source.html',''); initResi
 <div class="line"><a name="l00125"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html#a324227b6de4fcd8f5b8ac95cd47d3947">  125</a></span>&#160;    <span class="keyword">static</span> <a class="code" href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html">Array</a> <a class="code" href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html#a324227b6de4fcd8f5b8ac95cd47d3947">FromTensor</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; tensor) {</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <span class="comment">// We require the tensor to be contiguous and to use the CPU.</span></div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <span class="keyword">auto</span> t = tensor.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">To</a>(<a class="code" href="classcloudViewer_1_1core_1_1Device.html">core::Device</a>(<span class="stringliteral">&quot;CPU:0&quot;</span>)).<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a0ab8e78386e37c7c9d20c69f1837e3fc">Contiguous</a>();</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keyword">auto</span> a = <a class="code" href="Dispatch_8h.html#a6962a4c5efaa3a2c4cb6e1515743790e">DISPATCH_DTYPE_TO_TEMPLATE</a>(t.GetDtype(), [&amp;]() {</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keyword">auto</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <a class="code" href="Dispatch_8h.html#a6962a4c5efaa3a2c4cb6e1515743790e">DISPATCH_DTYPE_TO_TEMPLATE</a>(t.GetDtype(), [&amp;]() {</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            auto arr = messages::Array::FromPtr(</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;                    (scalar_t*)t.GetDataPtr(),</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                    static_cast&lt;std::vector&lt;int64_t&gt;&gt;(t.GetShape()));</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;            arr.tensor_ = t;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            return arr;</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        });</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordflow">return</span> a;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    }</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160; </div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="comment">// Object for keeping a reference to the tensor. not meant to be serialized.</span></div>
@@ -549,6 +540,7 @@ $(document).ready(function(){initNavTree('Messages_8h_source.html',''); initResi
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_a0ab8e78386e37c7c9d20c69f1837e3fc"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#a0ab8e78386e37c7c9d20c69f1837e3fc">cloudViewer::core::Tensor::Contiguous</a></div><div class="ttdeci">Tensor Contiguous() const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00772">Tensor.cpp:772</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aefba3173ede176f74574d8372f5dfc2e"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">cloudViewer::core::Tensor::To</a></div><div class="ttdeci">Tensor To(Dtype dtype, bool copy=false) const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00739">Tensor.cpp:739</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_a3179ab0e30a814dcd9b3845162539d5f"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#a3179ab0e30a814dcd9b3845162539d5f">cloudViewer::io::rpc::messages::TypeStr</a></div><div class="ttdeci">std::string TypeStr()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00040">Messages.h:40</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_a36f710b59c77a7fe89705600157b1be2"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#a36f710b59c77a7fe89705600157b1be2">cloudViewer::io::rpc::messages::TypeStr&lt; float &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; float &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00044">Messages.h:44</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_a3b8bdaed67837d581d27df5722c66034"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#a3b8bdaed67837d581d27df5722c66034">cloudViewer::io::rpc::messages::TypeStr&lt; int16_t &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; int16_t &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00056">Messages.h:56</a></div></div>
@@ -561,7 +553,8 @@ $(document).ready(function(){initNavTree('Messages_8h_source.html',''); initResi
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_abaf9d05bd336e89987a5efdc7f43a0c3"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#abaf9d05bd336e89987a5efdc7f43a0c3">cloudViewer::io::rpc::messages::TypeStr&lt; uint8_t &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; uint8_t &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00068">Messages.h:68</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_ac4735a64dba522396ea4fb78057de641"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#ac4735a64dba522396ea4fb78057de641">cloudViewer::io::rpc::messages::TypeStr&lt; int64_t &gt;</a></div><div class="ttdeci">std::string TypeStr&lt; int64_t &gt;()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00064">Messages.h:64</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_1_1rpc_1_1messages_html_ac546f599016b7be32023bf7ad2699c1b"><div class="ttname"><a href="namespacecloudViewer_1_1io_1_1rpc_1_1messages.html#ac546f599016b7be32023bf7ad2699c1b">cloudViewer::io::rpc::messages::EndiannessStr</a></div><div class="ttdeci">std::string EndiannessStr()</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00024">Messages.h:24</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="anamespacecolmap_html_a2d5ac84a6ec5a23fe682dd9b8474558f"><div class="ttname"><a href="namespacecolmap.html#a2d5ac84a6ec5a23fe682dd9b8474558f">colmap::IsLittleEndian</a></div><div class="ttdeci">bool IsLittleEndian()</div><div class="ttdef"><b>Definition:</b> <a href="endian_8h_source.html#l00058">endian.h:58</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html">cloudViewer::io::rpc::messages::Array</a></div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00104">Messages.h:104</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array_html_a0173b66c287d26f2fea34f53d54e2c6d"><div class="ttname"><a href="structcloudViewer_1_1io_1_1rpc_1_1messages_1_1Array.html#a0173b66c287d26f2fea34f53d54e2c6d">cloudViewer::io::rpc::messages::Array::CheckRank</a></div><div class="ttdeci">bool CheckRank(const std::vector&lt; int &gt; &amp;expected_ranks, std::string &amp;errstr) const</div><div class="ttdef"><b>Definition:</b> <a href="Messages_8h_source.html#l00152">Messages.h:152</a></div></div>
@@ -675,7 +668,7 @@ $(document).ready(function(){initNavTree('Messages_8h_source.html',''); initResi
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_1289b311b7a3197348dd9698cec970c0.html">io</a></li><li class="navelem"><a class="el" href="dir_7e40b8d96613604dd45c533531c5d6a5.html">rpc</a></li><li class="navelem"><a class="el" href="Messages_8h.html">Messages.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

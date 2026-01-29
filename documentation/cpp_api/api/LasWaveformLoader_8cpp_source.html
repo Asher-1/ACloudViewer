@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -117,8 +108,8 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    }</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="keyword">auto</span>        data = QByteArray::fromRawData(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(vlr.data), vlr.record_length_after_header);</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    QDataStream stream(data);</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="keyword">auto</span>        <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a> = QByteArray::fromRawData(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(vlr.data), vlr.record_length_after_header);</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    QDataStream stream(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    stream.setByteOrder(QDataStream::ByteOrder::LittleEndian);</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    uint8_t compressionType;</div>
@@ -273,8 +264,8 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    }</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <span class="keyword">auto</span>        data = QByteArray::fromRawData(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(currentPoint.wave_packet), 29);</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    QDataStream stream(data);</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <span class="keyword">auto</span>        <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a> = QByteArray::fromRawData(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(currentPoint.wave_packet), 29);</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    QDataStream stream(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>);</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    stream.setByteOrder(QDataStream::ByteOrder::LittleEndian);</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; </div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    uint8_t  descriptorIndex     = 0;</div>
@@ -351,10 +342,11 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div class="ttc" id="aclassccWaveform_html_a2045d637ba55138a3f02dc40c558c2bc"><div class="ttname"><a href="classccWaveform.html#a2045d637ba55138a3f02dc40c558c2bc">ccWaveform::setReturnIndex</a></div><div class="ttdeci">void setReturnIndex(uint8_t index)</div><div class="ttdoc">Sets the return index.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00143">ecvWaveform.h:143</a></div></div>
 <div class="ttc" id="aclassccWaveform_html_a2c957a004b5f9b18a963fcf4277133d8"><div class="ttname"><a href="classccWaveform.html#a2c957a004b5f9b18a963fcf4277133d8">ccWaveform::setDescriptorID</a></div><div class="ttdeci">void setDescriptorID(uint8_t id)</div><div class="ttdoc">Sets the associated descriptor (ID)</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00070">ecvWaveform.h:70</a></div></div>
 <div class="ttc" id="aclassccWaveform_html_a500dbb14cd1a2d7ebe4367dd389d11a0"><div class="ttname"><a href="classccWaveform.html#a500dbb14cd1a2d7ebe4367dd389d11a0">ccWaveform::setBeamDir</a></div><div class="ttdeci">void setBeamDir(const CCVector3f &amp;dir)</div><div class="ttdoc">Sets the beam direction.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00126">ecvWaveform.h:126</a></div></div>
-<div class="ttc" id="aclassccWaveform_html_ae2dcb6b6238fd6d51b29ec5759574b67"><div class="ttname"><a href="classccWaveform.html#ae2dcb6b6238fd6d51b29ec5759574b67">ccWaveform::setDataDescription</a></div><div class="ttdeci">void setDataDescription(uint64_t dataOffset, uint32_t byteCount)</div><div class="ttdoc">Describes the waveform data.</div></div>
+<div class="ttc" id="aclassccWaveform_html_ae2dcb6b6238fd6d51b29ec5759574b67"><div class="ttname"><a href="classccWaveform.html#ae2dcb6b6238fd6d51b29ec5759574b67">ccWaveform::setDataDescription</a></div><div class="ttdeci">void setDataDescription(uint64_t dataOffset, uint32_t byteCount)</div><div class="ttdoc">Describes the waveform data.</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8cpp_source.html#l00078">ecvWaveform.cpp:78</a></div></div>
 <div class="ttc" id="aclassccWaveform_html_afb445195515b66c50f9e996ee7d03aac"><div class="ttname"><a href="classccWaveform.html#afb445195515b66c50f9e996ee7d03aac">ccWaveform::setEchoTime_ps</a></div><div class="ttdeci">void setEchoTime_ps(float time_ps)</div><div class="ttdoc">Set the echo time (in picoseconds)</div><div class="ttdef"><b>Definition:</b> <a href="ecvWaveform_8h_source.html#l00132">ecvWaveform.h:132</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ace959b35a8944a33a452771331ca336d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ace959b35a8944a33a452771331ca336d">cloudViewer::PointCloudTpl::capacity</a></div><div class="ttdeci">unsigned capacity() const</div><div class="ttdoc">Returns cloud capacity (i.e. reserved size)</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00540">PointCloudTpl.h:540</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a79d353ab08a42449ce0aa5f95810f2fc"><div class="ttname"><a href="qCanupoTools_8cpp.html#a79d353ab08a42449ce0aa5f95810f2fc">descriptors</a></div><div class="ttdeci">CorePointDescSet * descriptors</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00039">qCanupoTools.cpp:39</a></div></div>
 <div class="ttc" id="astructLasDetails_1_1EvlrHeader_html"><div class="ttname"><a href="structLasDetails_1_1EvlrHeader.html">LasDetails::EvlrHeader</a></div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00092">LasDetails.h:93</a></div></div>
 <div class="ttc" id="astructLasDetails_1_1EvlrHeader_html_a46940a00489b6cbea5958ba2930eaa59"><div class="ttname"><a href="structLasDetails_1_1EvlrHeader.html#a46940a00489b6cbea5958ba2930eaa59">LasDetails::EvlrHeader::SIZE</a></div><div class="ttdeci">static constexpr size_t SIZE</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00094">LasDetails.h:94</a></div></div>
@@ -372,7 +364,7 @@ $(document).ready(function(){initNavTree('LasWaveformLoader_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasWaveformLoader_8cpp.html">LasWaveformLoader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

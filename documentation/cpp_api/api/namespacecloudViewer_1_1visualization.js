@@ -1,7 +1,6 @@
 var namespacecloudViewer_1_1visualization =
 [
     [ "app", "namespacecloudViewer_1_1visualization_1_1app.html", [
-      [ "pybind_app", "namespacecloudViewer_1_1visualization_1_1app.html#a9a5e5277cd94dc7ca357e392fe5f61d5", null ],
       [ "RunViewer", "namespacecloudViewer_1_1visualization_1_1app.html#abdf640c2bc50a4e9e7eb15383ddacee5", null ],
       [ "height", "namespacecloudViewer_1_1visualization_1_1app.html#ac0ab62bfdb573e43c17b72b0d57e2de7", null ],
       [ "usage", "namespacecloudViewer_1_1visualization_1_1app.html#a488c83e42df2d6cfeb79f7918125af4b", null ],
@@ -79,23 +78,9 @@ var namespacecloudViewer_1_1visualization =
     [ "DrawGeometriesWithVertexSelection", "namespacecloudViewer_1_1visualization.html#a2e164acc93cf17e6e59d5e012b9c98f1", null ],
     [ "GetGlobalColorMap", "namespacecloudViewer_1_1visualization.html#a34ae3065383cd7c71d2afccae44c4c75", null ],
     [ "MakeSlider", "namespacecloudViewer_1_1visualization.html#aaf391405163dbcb0ead2dbd66bd3cb1e", null ],
-    [ "pybind_o3dvisualizer", "namespacecloudViewer_1_1visualization.html#a61435b8beef81bedf6f0d1b29e3ade52", null ],
-    [ "pybind_renderoption", "namespacecloudViewer_1_1visualization.html#ad0cfd181581000482d9b7f8a7a4f1e0d", null ],
-    [ "pybind_renderoption_method", "namespacecloudViewer_1_1visualization.html#afb539008da364a56370a9b32b9652a9d", null ],
-    [ "pybind_viewcontrol", "namespacecloudViewer_1_1visualization.html#a9236f9d5257d014dab6575951d7424ad", null ],
-    [ "pybind_viewcontrol_method", "namespacecloudViewer_1_1visualization.html#a9763212ba52a54f33f0bbb1ea9a60983", null ],
-    [ "pybind_visualization", "namespacecloudViewer_1_1visualization.html#a6ad2ff8dc3f87920368ea30506ffe658", null ],
-    [ "pybind_visualization_utility", "namespacecloudViewer_1_1visualization.html#a0645c1e61a5317da74b0aedf7d06e205", null ],
-    [ "pybind_visualization_utility_methods", "namespacecloudViewer_1_1visualization.html#a61ed5d86397fa83654ff60ae8979579e", null ],
-    [ "pybind_visualizer", "namespacecloudViewer_1_1visualization.html#a7b72745afa223d70bb1d57668f40c3fa", null ],
-    [ "pybind_visualizer_method", "namespacecloudViewer_1_1visualization.html#a67214b736fa36a2c0d35c05a5b33aa20", null ],
     [ "SetGlobalColorMap", "namespacecloudViewer_1_1visualization.html#a6cabcad03a9dea05151e2a1de519d9f2", null ],
-    [ "TakeOwnership", "namespacecloudViewer_1_1visualization.html#a506c93aa9bf7ebf4eca12621a900f6df", null ],
     [ "CUSTOM_LIGHTING", "namespacecloudViewer_1_1visualization.html#ae813fd856ebe970364ba9d2e2917c820", null ],
     [ "INSPECT_MODEL_NAME", "namespacecloudViewer_1_1visualization.html#ad163ec4ecdb4c4d2f87f85f66c93105f", null ],
-    [ "map_shared_argument_docstrings", "namespacecloudViewer_1_1visualization.html#aa0e8c6635c7c44cae33ff424d0206c61", null ],
-    [ "map_view_control_docstrings", "namespacecloudViewer_1_1visualization.html#a379422d8c78559dac2c44ee2a99f9572", null ],
-    [ "map_visualizer_docstrings", "namespacecloudViewer_1_1visualization.html#a8b9c6dc1a7630f146acc5af07fcd5fff", null ],
     [ "MODEL_NAME", "namespacecloudViewer_1_1visualization.html#af7d3113245991ed281875fc7f67124b9", null ],
     [ "WIREFRAME_NAME", "namespacecloudViewer_1_1visualization.html#a0ab8fac65f4bee80a6d431c3cca1266c", null ]
 ];

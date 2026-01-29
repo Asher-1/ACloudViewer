@@ -16,7 +16,7 @@ var qM3C2Tools_8cpp =
     [ "orientationCloud", "qM3C2Tools_8cpp.html#a4ee6c017bec50fe79c6e84792121750b", null ],
     [ "processCanceled", "qM3C2Tools_8cpp.html#a7201047e3880eb704a53c553812d17e6", null ],
     [ "radii", "qM3C2Tools_8cpp.html#a4a60dc25cd8a2f67fad91d8f7f34080b", null ],
-    [ "s_corePointsNormalsParams", "qM3C2Tools_8cpp.html#a13997b2c16893301db02922ca6242742", null ],
-    [ "s_normOriWithCloud", "qM3C2Tools_8cpp.html#a3f15fa3e0e6055235f60825893e4f7f4", null ],
+    [ "s_corePointsNormalsParams", "qM3C2Tools_8cpp.html#ae8e03ade3dd90ebf9f2746ea434beae4", null ],
+    [ "s_normOriWithCloud", "qM3C2Tools_8cpp.html#a53897b61da18e00638fe1c1a805564bc", null ],
     [ "sourceCloud", "qM3C2Tools_8cpp.html#af712bdf54ab7ccd9bcb817178d7426b7", null ]
 ];

@@ -1,0 +1,28 @@
+var classQCPItemAnchor =
+[
+    [ "QCPItemAnchor", "classQCPItemAnchor.html#a32573023c6fa65b4496f1f995e5bfa5f", null ],
+    [ "~QCPItemAnchor", "classQCPItemAnchor.html#a1868559407600688ee4d1a4621e81ceb", null ],
+    [ "QCPItemAnchor", "classQCPItemAnchor.html#aeb6b681d2bf324db40a915d32ec5624f", null ],
+    [ "~QCPItemAnchor", "classQCPItemAnchor.html#a2238425fc4ea48013659f9a18aef48a1", null ],
+    [ "addChildX", "classQCPItemAnchor.html#aef15daa640debfb11b0aeaa2116c6fbc", null ],
+    [ "addChildX", "classQCPItemAnchor.html#aef15daa640debfb11b0aeaa2116c6fbc", null ],
+    [ "addChildY", "classQCPItemAnchor.html#af05dc56f24536f0c7a9a0f57b58cea67", null ],
+    [ "addChildY", "classQCPItemAnchor.html#af05dc56f24536f0c7a9a0f57b58cea67", null ],
+    [ "name", "classQCPItemAnchor.html#aad37cdf5a3f63428f61be739014e212e", null ],
+    [ "name", "classQCPItemAnchor.html#aad37cdf5a3f63428f61be739014e212e", null ],
+    [ "pixelPoint", "classQCPItemAnchor.html#ae1a21d9471d1d788624cad297e1b8d6f", null ],
+    [ "pixelPosition", "classQCPItemAnchor.html#a06dcfb7220d26eee93eef56ae66582cb", null ],
+    [ "removeChildX", "classQCPItemAnchor.html#a230b1d494cda63458e289bbe1b642599", null ],
+    [ "removeChildX", "classQCPItemAnchor.html#a230b1d494cda63458e289bbe1b642599", null ],
+    [ "removeChildY", "classQCPItemAnchor.html#aa2394911d8fff3bd958b9f4f1994b64d", null ],
+    [ "removeChildY", "classQCPItemAnchor.html#aa2394911d8fff3bd958b9f4f1994b64d", null ],
+    [ "toQCPItemPosition", "classQCPItemAnchor.html#ac54b20120669950255a63587193dbb86", null ],
+    [ "toQCPItemPosition", "classQCPItemAnchor.html#a688325bfb121b71b7c8260a6aec6d67f", null ],
+    [ "QCPItemPosition", "classQCPItemAnchor.html#aa03816fbd8b000db6f53b236deefc96f", null ],
+    [ "mAnchorId", "classQCPItemAnchor.html#a00c62070333e8345976b579676ad3997", null ],
+    [ "mChildrenX", "classQCPItemAnchor.html#ae53b06f4e0d46b9f7fb4fad33d8a9cc2", null ],
+    [ "mChildrenY", "classQCPItemAnchor.html#a77bc4bcb35851865119c51c285093cb6", null ],
+    [ "mName", "classQCPItemAnchor.html#a23ad4d0ab0d2cbb41a7baf05bcf996ec", null ],
+    [ "mParentItem", "classQCPItemAnchor.html#a71b931e61fa168e3538d6fd416f75bb2", null ],
+    [ "mParentPlot", "classQCPItemAnchor.html#a953cb4eb7b11197f740a06cd3a053e12", null ]
+];

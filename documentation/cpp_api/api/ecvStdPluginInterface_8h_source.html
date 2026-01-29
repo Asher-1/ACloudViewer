@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -139,7 +130,7 @@ $(document).ready(function(){initNavTree('ecvStdPluginInterface_8h_source.html',
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>) {</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            <span class="comment">// we use the same &#39;unique ID&#39; generator in plugins as in the main</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;            <span class="comment">// application (otherwise we&#39;ll have issues with &#39;unique IDs&#39;!)</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <a class="code" href="classccObject.html#aee8cf7c88b3c7a54ff52f45722e45f07">ccObject::SetUniqueIDGenerator</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#aceee486903737891d0c60f8e3b6e5436">getUniqueIDGenerator</a>());</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <a class="code" href="classccObject.html#ad24103ec99ffc6ffc72dc0f92ebbc974">ccObject::SetUniqueIDGenerator</a>(<a class="code" href="classccStdPluginInterface.html#af46bcfd10da04c21300a7f1a59b29d86">m_app</a>-&gt;<a class="code" href="classecvMainAppInterface.html#aceee486903737891d0c60f8e3b6e5436">getUniqueIDGenerator</a>());</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        }</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    }</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
@@ -172,7 +163,7 @@ $(document).ready(function(){initNavTree('ecvStdPluginInterface_8h_source.html',
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                    <span class="stringliteral">&quot;edf.rd.cloudviewer.ccStdPluginInterface/1.5&quot;</span>)</div>
 <div class="ttc" id="aclassccDefaultPluginInterface_html"><div class="ttname"><a href="classccDefaultPluginInterface.html">ccDefaultPluginInterface</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvDefaultPluginInterface_8h_source.html#l00016">ecvDefaultPluginInterface.h:16</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
-<div class="ttc" id="aclassccObject_html_aee8cf7c88b3c7a54ff52f45722e45f07"><div class="ttname"><a href="classccObject.html#aee8cf7c88b3c7a54ff52f45722e45f07">ccObject::SetUniqueIDGenerator</a></div><div class="ttdeci">static void SetUniqueIDGenerator(ccUniqueIDGenerator::Shared generator)</div><div class="ttdoc">Sets the unique ID generator.</div></div>
+<div class="ttc" id="aclassccObject_html_ad24103ec99ffc6ffc72dc0f92ebbc974"><div class="ttname"><a href="classccObject.html#ad24103ec99ffc6ffc72dc0f92ebbc974">ccObject::SetUniqueIDGenerator</a></div><div class="ttdeci">static void SetUniqueIDGenerator(ccUniqueIDGenerator::Shared generator)</div><div class="ttdoc">Sets the unique ID generator.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8cpp_source.html#l00067">ecvObject.cpp:67</a></div></div>
 <div class="ttc" id="aclassccStdPluginInterface_html"><div class="ttname"><a href="classccStdPluginInterface.html">ccStdPluginInterface</a></div><div class="ttdoc">Standard ECV plugin interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00031">ecvStdPluginInterface.h:31</a></div></div>
 <div class="ttc" id="aclassccStdPluginInterface_html_a20b4bf8734bbab25b6115616ba472c2c"><div class="ttname"><a href="classccStdPluginInterface.html#a20b4bf8734bbab25b6115616ba472c2c">ccStdPluginInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ecvMainAppInterface::ConsoleMessageLevel level=ecvMainAppInterface::STD_CONSOLE_MESSAGE)</div><div class="ttdoc">Shortcut to ecvMainAppInterface::dispToConsole.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00074">ecvStdPluginInterface.h:74</a></div></div>
 <div class="ttc" id="aclassccStdPluginInterface_html_a45874923d7f525e48c277247af9eb1cb"><div class="ttname"><a href="classccStdPluginInterface.html#a45874923d7f525e48c277247af9eb1cb">ccStdPluginInterface::ccStdPluginInterface</a></div><div class="ttdeci">ccStdPluginInterface(const QString &amp;resourcePath=QString())</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="ecvStdPluginInterface_8h_source.html#l00034">ecvStdPluginInterface.h:34</a></div></div>
@@ -200,7 +191,7 @@ $(document).ready(function(){initNavTree('ecvStdPluginInterface_8h_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_5a7eaa8e1d284ba79b3b752c634e8202.html">CVPluginStub</a></li><li class="navelem"><a class="el" href="dir_472667c49f60e48ce27aca097a0abd27.html">include</a></li><li class="navelem"><a class="el" href="ecvStdPluginInterface_8h.html">ecvStdPluginInterface.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:41 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

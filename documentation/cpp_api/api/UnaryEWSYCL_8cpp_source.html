@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,7 +95,7 @@ $(document).ready(function(){initNavTree('UnaryEWSYCL_8cpp_source.html',''); ini
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;cmath&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;cstring&gt;</span></div>
@@ -170,7 +161,7 @@ $(document).ready(function(){initNavTree('UnaryEWSYCL_8cpp_source.html',''); ini
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Cos, sycl::cos);</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Exp, sycl::exp);</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">// TODO: Use sycl::abs for integers (no casting)</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Abs, <a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">sycl::fabs</a>);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Abs, sycl::fabs);</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Floor, <a class="code" href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">sycl::floor</a>);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Ceil, <a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">sycl::ceil</a>);</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<a class="code" href="UnaryEWSYCL_8cpp.html#a81c51c31aaaecb135b9c3510c8701af2">UNARY_ELEMENT_KERNEL</a>(Round, sycl::round);</div>
@@ -308,7 +299,7 @@ $(document).ready(function(){initNavTree('UnaryEWSYCL_8cpp_source.html',''); ini
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                ParallelForSYCL&lt;LogicalNotElementKernel&lt;scalar_t, scalar_t&gt;&gt;(</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                        device, <a class="code" href="UnaryEWSYCL_8cpp.html#a28fae7b94805be49944b5f56fac8ed42">indexer</a>);</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            });</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (dst_dtype == <a class="code" href="sqlite3_8c.html#a2f520588d7cfd47c237231e103dbeb78">Bool</a>) {</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (dst_dtype == <a class="code" href="namespacecloudViewer_1_1core.html#a4e1d953f2457acb806f3714c4696f4cd">Bool</a>) {</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;            <a class="code" href="classcloudViewer_1_1core_1_1Indexer.html">Indexer</a> <a class="code" href="UnaryEWSYCL_8cpp.html#a28fae7b94805be49944b5f56fac8ed42">indexer</a>({src}, dst, <a class="code" href="namespacecloudViewer_1_1core.html#a7d6af70b0fa825b5644efbc88001b0cca8f6150e7964fc3f3684102016a61aced">DtypePolicy::INPUT_SAME_OUTPUT_BOOL</a>);</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            <a class="code" href="Dispatch_8h.html#a3ee6afe384b00f5089b6b736add667e4">DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL</a>(src_dtype, [&amp;]() {</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                ParallelForSYCL&lt;LogicalNotElementKernel&lt;scalar_t, bool&gt;&gt;(</div>
@@ -426,8 +417,6 @@ $(document).ready(function(){initNavTree('UnaryEWSYCL_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1sy_1_1SYCLContext_html_a1d55cc98c90938fd2481defadcb6dca4"><div class="ttname"><a href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#a1d55cc98c90938fd2481defadcb6dca4">cloudViewer::core::sy::SYCLContext::GetInstance</a></div><div class="ttdeci">static SYCLContext &amp; GetInstance()</div><div class="ttdoc">Get singleton instance.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8cpp_source.html#l00025">SYCLContext.cpp:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1sy_1_1SYCLContext_html_aa8fa687c457e1c7642d01ef7a6679b28"><div class="ttname"><a href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#aa8fa687c457e1c7642d01ef7a6679b28">cloudViewer::core::sy::SYCLContext::GetDefaultQueue</a></div><div class="ttdeci">sycl::queue GetDefaultQueue(const Device &amp;device)</div><div class="ttdoc">Get the default SYCL queue given an CloudViewer device.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8cpp_source.html#l00043">SYCLContext.cpp:43</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aad6a2701675cd2a4bc1b1da7b79948ae"><div class="ttname"><a href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a></div><div class="ttdeci">__host__ __device__ float2 fabs(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01254">cutil_math.h:1254</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a785a26803d416f7b3bcada3df891da8b"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a785a26803d416f7b3bcada3df891da8b">cloudViewer::core::kernel::UnaryEWSYCL</a></div><div class="ttdeci">void UnaryEWSYCL(const Tensor &amp;src, Tensor &amp;dst, UnaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="UnaryEWSYCL_8cpp_source.html#l00199">UnaryEWSYCL.cpp:199</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a86afc3665e8ec52b945870800cad6a23"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a86afc3665e8ec52b945870800cad6a23">cloudViewer::core::kernel::UnaryEWOpCode</a></div><div class="ttdeci">UnaryEWOpCode</div><div class="ttdef"><b>Definition:</b> <a href="UnaryEW_8h_source.html#l00018">UnaryEW.h:18</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a86afc3665e8ec52b945870800cad6a23a0986d137604183312e6d3599578bc6cd"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a86afc3665e8ec52b945870800cad6a23a0986d137604183312e6d3599578bc6cd">cloudViewer::core::kernel::UnaryEWOpCode::Sin</a></div><div class="ttdeci">@ Sin</div></div>
@@ -445,20 +434,20 @@ $(document).ready(function(){initNavTree('UnaryEWSYCL_8cpp_source.html',''); ini
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a86afc3665e8ec52b945870800cad6a23afb278fa5defd7e699fcbc930c3e76ccd"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a86afc3665e8ec52b945870800cad6a23afb278fa5defd7e699fcbc930c3e76ccd">cloudViewer::core::kernel::UnaryEWOpCode::Neg</a></div><div class="ttdeci">@ Neg</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a86afc3665e8ec52b945870800cad6a23affca562be079b9e4e41ea9d6a86c582b"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a86afc3665e8ec52b945870800cad6a23affca562be079b9e4e41ea9d6a86c582b">cloudViewer::core::kernel::UnaryEWOpCode::Cos</a></div><div class="ttdeci">@ Cos</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ac3c72f8b3d0bebb0836691096a8b6719"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ac3c72f8b3d0bebb0836691096a8b6719">cloudViewer::core::kernel::CopySYCL</a></div><div class="ttdeci">void CopySYCL(const Tensor &amp;src, Tensor &amp;dst)</div><div class="ttdef"><b>Definition:</b> <a href="UnaryEWSYCL_8cpp_source.html#l00131">UnaryEWSYCL.cpp:131</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1core_html_a4e1d953f2457acb806f3714c4696f4cd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a4e1d953f2457acb806f3714c4696f4cd">cloudViewer::core::Bool</a></div><div class="ttdeci">const Dtype Bool</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00052">Dtype.cpp:52</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a7d6af70b0fa825b5644efbc88001b0cca6c737633db91e7dbce8336adda104de5"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a7d6af70b0fa825b5644efbc88001b0cca6c737633db91e7dbce8336adda104de5">cloudViewer::core::DtypePolicy::ALL_SAME</a></div><div class="ttdeci">@ ALL_SAME</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a7d6af70b0fa825b5644efbc88001b0cca8f6150e7964fc3f3684102016a61aced"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a7d6af70b0fa825b5644efbc88001b0cca8f6150e7964fc3f3684102016a61aced">cloudViewer::core::DtypePolicy::INPUT_SAME_OUTPUT_BOOL</a></div><div class="ttdeci">@ INPUT_SAME_OUTPUT_BOOL</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a7d6af70b0fa825b5644efbc88001b0ccab50339a10e1de285ac99d4c3990b8693"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a7d6af70b0fa825b5644efbc88001b0ccab50339a10e1de285ac99d4c3990b8693">cloudViewer::core::DtypePolicy::NONE</a></div><div class="ttdeci">@ NONE</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa2763013e3ec9c4434c6f9a82d2752fc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">cloudViewer::utility::floor</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; floor(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00075">MiniVec.h:75</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_a2f520588d7cfd47c237231e103dbeb78"><div class="ttname"><a href="sqlite3_8c.html#a2f520588d7cfd47c237231e103dbeb78">Bool</a></div><div class="ttdeci">unsigned Bool</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l20710">sqlite3.c:20710</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_45b440cfe532bda991cb85e5a82a2a21.html">kernel</a></li><li class="navelem"><a class="el" href="UnaryEWSYCL_8cpp.html">UnaryEWSYCL.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

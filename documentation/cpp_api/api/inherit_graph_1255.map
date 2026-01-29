@@ -1,3 +1,25 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structRowSetChunk.html" title=" " alt="" coords="5,5,117,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,477,91,504"/>
+<area shape="rect" id="node2" href="$classvtkCameraManipulator.html" title=" " alt="" coords="172,208,344,235"/>
+<area shape="rect" id="node14" href="$classvtkCameraManipulatorGUIHelper.html" title=" " alt="" coords="139,259,377,285"/>
+<area shape="rect" id="node15" href="$classvtkCommandOptions.html" title=" " alt="" coords="178,309,338,336"/>
+<area shape="rect" id="node16" href="$classvtkFileSequenceParser.html" title=" " alt="" coords="173,360,343,387"/>
+<area shape="rect" id="node17" href="$classvtkMultiProcessControllerHelper.html" title=" " alt="" coords="163,411,353,453"/>
+<area shape="rect" id="node18" href="$classvtkPVTestUtilities.html" title=" " alt="" coords="189,477,327,504"/>
+<area shape="rect" id="node19" href="$classvtkPVXMLElement.html" title=" " alt="" coords="187,528,329,555"/>
+<area shape="rect" id="node20" href="$classvtkStringList.html" title=" " alt="" coords="206,579,310,605"/>
+<area shape="rect" id="node21" href="$classvtkUndoElement.html" title=" " alt="" coords="193,629,323,656"/>
+<area shape="rect" id="node22" href="$classvtkUndoSet.html" title=" " alt="" coords="209,680,307,707"/>
+<area shape="rect" id="node23" href="$classvtkUndoStack.html" title=" " alt="" coords="201,731,315,757"/>
+<area shape="rect" id="node3" href="$classvtkPVJoystickFly.html" title=" " alt="" coords="457,31,588,57"/>
+<area shape="rect" id="node6" href="$classvtkPVTrackballMoveActor.html" title=" " alt="" coords="429,81,617,108"/>
+<area shape="rect" id="node7" href="$classvtkPVTrackballMultiRotate.html" title=" " alt="" coords="425,132,620,159"/>
+<area shape="rect" id="node8" href="$classvtkPVTrackballPan.html" title=" " alt="" coords="452,183,593,209"/>
+<area shape="rect" id="node9" href="$classvtkPVTrackballRoll.html" title=" " alt="" coords="451,233,594,260"/>
+<area shape="rect" id="node10" href="$classvtkPVTrackballRotate.html" title=" " alt="" coords="442,284,603,311"/>
+<area shape="rect" id="node11" href="$classvtkPVTrackballZoom.html" title=" " alt="" coords="445,335,601,361"/>
+<area shape="rect" id="node13" href="$classvtkTrackballPan.html" title=" " alt="" coords="461,385,585,412"/>
+<area shape="rect" id="node4" href="$classvtkPVJoystickFlyIn.html" title=" " alt="" coords="703,5,846,32"/>
+<area shape="rect" id="node5" href="$classvtkPVJoystickFlyOut.html" title=" " alt="" coords="697,56,852,83"/>
+<area shape="rect" id="node12" href="$classvtkPVTrackballZoomToMouse.html" title=" " alt="" coords="668,335,881,361"/>
 </map>

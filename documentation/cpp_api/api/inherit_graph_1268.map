@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structSelect.html" title=" " alt="" coords="5,5,68,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,201,32"/>
+<area shape="rect" id="node2" href="$classvtkPVCompositeDataPipeline.html" title=" " alt="" coords="249,5,463,32"/>
+<area shape="rect" id="node3" href="$classvtkPVPostFilterExecutive.html" title=" " alt="" coords="511,5,695,32"/>
 </map>

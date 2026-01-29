@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -108,7 +99,7 @@ $(document).ready(function(){initNavTree('VisualizerWithCustomAnimation_8cpp_sou
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;IJsonConvertibleIO.h&gt;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;thread&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
@@ -355,30 +346,30 @@ $(document).ready(function(){initNavTree('VisualizerWithCustomAnimation_8cpp_sou
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;}</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
 <div class="line"><a name="l00258"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a79c04c746094876ab847edd09afab6e4">  258</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a79c04c746094876ab847edd09afab6e4">VisualizerWithCustomAnimation::MouseMoveCallback</a>(GLFWwindow *window,</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                                                      <span class="keywordtype">double</span> x,</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                                                      <span class="keywordtype">double</span> y) {</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                                                      <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>,</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                                                      <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) {</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keyword">auto</span> &amp;view_control = (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html">ViewControlWithCustomAnimation</a> &amp;)(*<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ac62fcda27e3495610574689a8669b16d">view_control_ptr_</a>);</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    <span class="keywordflow">if</span> (view_control.IsPreviewing()) {</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (view_control.IsPlaying()) {</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a86d36bf875820d9ace96d68f2ce7e458">Visualizer::MouseMoveCallback</a>(window, x, y);</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a86d36bf875820d9ace96d68f2ce7e458">Visualizer::MouseMoveCallback</a>(window, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    }</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;}</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160; </div>
 <div class="line"><a name="l00269"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#af2cd7bcbd882cb2c6fbbd47ba0902a5b">  269</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#af2cd7bcbd882cb2c6fbbd47ba0902a5b">VisualizerWithCustomAnimation::MouseScrollCallback</a>(GLFWwindow *window,</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                                                        <span class="keywordtype">double</span> x,</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                                                        <span class="keywordtype">double</span> y) {</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                                                        <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>,</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                                                        <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) {</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keyword">auto</span> &amp;view_control = (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html">ViewControlWithCustomAnimation</a> &amp;)(*<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ac62fcda27e3495610574689a8669b16d">view_control_ptr_</a>);</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    <span class="keywordflow">if</span> (view_control.IsPreviewing()) {</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordflow">if</span> (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            view_control.Step(y);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            view_control.Step(<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a744a62a8f85e7a6a8636e057bdc4d068">is_redraw_required_</a> = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html#a34419fa34d32e96e013e3ac1b2d48b44">UpdateWindowTitle</a>();</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        }</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (view_control.IsPlaying()) {</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a5c8be6e2812f7ac97fd2b8608e99dea3">Visualizer::MouseScrollCallback</a>(window, x, y);</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a5c8be6e2812f7ac97fd2b8608e99dea3">Visualizer::MouseScrollCallback</a>(window, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;    }</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;}</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160; </div>
@@ -441,17 +432,18 @@ $(document).ready(function(){initNavTree('VisualizerWithCustomAnimation_8cpp_sou
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a0fea3e9d6cec35df3a68bb3d096c3428"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible</a></div><div class="ttdeci">bool WriteIJsonConvertible(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a0fea3e9d6cec35df3a68bb3d096c3428"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible</a></div><div class="ttdeci">bool WriteIJsonConvertible(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00144">IJsonConvertibleIO.cpp:144</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a5d9af191de0dc57cce1e8eb1693d2534"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">cloudViewer::utility::filesystem::MakeDirectoryHierarchy</a></div><div class="ttdeci">bool MakeDirectoryHierarchy(const std::string &amp;directory)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00499">FileSystem.cpp:499</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="VisualizerWithCustomAnimation_8cpp.html">VisualizerWithCustomAnimation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -2,8 +2,8 @@ var classccBox =
 [
     [ "ccBox", "classccBox.html#a1b3d53ad46c1333169208487b6a05313", null ],
     [ "ccBox", "classccBox.html#aedd6fb7de8cc96534bf9629222fb0ae6", null ],
-    [ "buildUp", "classccBox.html#aac3193f370899f5ba7de97c564f15b25", null ],
-    [ "clone", "classccBox.html#a118b736c8e9d05740a646c7155cc0cf0", null ],
+    [ "buildUp", "classccBox.html#aa903210f9120889ee0227ea79d291df8", null ],
+    [ "clone", "classccBox.html#ab6bb7db578ad8242d42f415ff394ce2d", null ],
     [ "fromFile_MeOnly", "classccBox.html#a3fa7517d6b048d22296642ee79214b69", null ],
     [ "getClassID", "classccBox.html#a03ba729dc9d49e8761b83d0e12919430", null ],
     [ "getDimensions", "classccBox.html#a89c7ff840ba40ad160d5a4f1576f4f4f", null ],

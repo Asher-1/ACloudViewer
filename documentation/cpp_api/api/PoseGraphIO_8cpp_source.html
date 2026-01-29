@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -108,7 +99,7 @@ $(document).ready(function(){initNavTree('PoseGraphIO_8cpp_source.html',''); ini
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CV__io_2include_2IJsonConvertibleIO_8h.html">IJsonConvertibleIO.h</a>&gt;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;unordered_map&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
@@ -206,22 +197,21 @@ $(document).ready(function(){initNavTree('PoseGraphIO_8cpp_source.html',''); ini
 <div class="ttc" id="aPoseGraphIO_8h_html"><div class="ttname"><a href="PoseGraphIO_8h.html">PoseGraphIO.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1PoseGraph_html"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html">cloudViewer::pipelines::registration::PoseGraph</a></div><div class="ttdoc">Data structure defining the pose graph.</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraph_8h_source.html#l00096">PoseGraph.h:96</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a001b4b5c079b93ecfb66e0918e0d9839"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a001b4b5c079b93ecfb66e0918e0d9839">cloudViewer::io::ReadPoseGraph</a></div><div class="ttdeci">bool ReadPoseGraph(const std::string &amp;filename, pipelines::registration::PoseGraph &amp;pose_graph)</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraphIO_8cpp_source.html#l00060">PoseGraphIO.cpp:60</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a47b866c8991b74c54a393fd9f631299c"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a47b866c8991b74c54a393fd9f631299c">cloudViewer::io::CreatePoseGraphFromFile</a></div><div class="ttdeci">std::shared_ptr&lt; pipelines::registration::PoseGraph &gt; CreatePoseGraphFromFile(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraphIO_8cpp_source.html#l00053">PoseGraphIO.cpp:53</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a951051b314ead9560c6efe818162cdbc"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a951051b314ead9560c6efe818162cdbc">cloudViewer::io::WriteIJsonConvertibleToJSON</a></div><div class="ttdeci">bool WriteIJsonConvertibleToJSON(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_ac621f7b55c7bc721bb1674ccb210d5e6"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#ac621f7b55c7bc721bb1674ccb210d5e6">cloudViewer::io::ReadIJsonConvertible</a></div><div class="ttdeci">bool ReadIJsonConvertible(const std::string &amp;filename, cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a951051b314ead9560c6efe818162cdbc"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a951051b314ead9560c6efe818162cdbc">cloudViewer::io::WriteIJsonConvertibleToJSON</a></div><div class="ttdeci">bool WriteIJsonConvertibleToJSON(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00092">IJsonConvertibleIO.cpp:92</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_ac621f7b55c7bc721bb1674ccb210d5e6"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#ac621f7b55c7bc721bb1674ccb210d5e6">cloudViewer::io::ReadIJsonConvertible</a></div><div class="ttdeci">bool ReadIJsonConvertible(const std::string &amp;filename, cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00122">IJsonConvertibleIO.cpp:122</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_af5835c0fd719a7e8b79157b24a97db91"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#af5835c0fd719a7e8b79157b24a97db91">cloudViewer::io::WritePoseGraph</a></div><div class="ttdeci">bool WritePoseGraph(const std::string &amp;filename, const pipelines::registration::PoseGraph &amp;pose_graph)</div><div class="ttdef"><b>Definition:</b> <a href="PoseGraphIO_8cpp_source.html#l00081">PoseGraphIO.cpp:81</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1slac_html_a20fc66afaa84ab5d3e5cb415a8aa6d2c"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a20fc66afaa84ab5d3e5cb415a8aa6d2c">cloudViewer::t::pipelines::slac::PoseGraph</a></div><div class="ttdeci">cloudViewer::pipelines::registration::PoseGraph PoseGraph</div><div class="ttdef"><b>Definition:</b> <a href="SLACOptimizer_8h_source.html#l00022">SLACOptimizer.h:22</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aa97d5d06ded25c88b7e456fbdb4bd46c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aa97d5d06ded25c88b7e456fbdb4bd46c">cloudViewer::utility::filesystem::GetFileExtensionInLowerCase</a></div><div class="ttdeci">std::string GetFileExtensionInLowerCase(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00281">FileSystem.cpp:281</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_1289b311b7a3197348dd9698cec970c0.html">io</a></li><li class="navelem"><a class="el" href="PoseGraphIO_8cpp.html">PoseGraphIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

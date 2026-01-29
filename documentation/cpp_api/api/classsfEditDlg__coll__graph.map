@@ -1,21 +1,45 @@
 <map id="sfEditDlg" name="sfEditDlg">
-<area shape="rect" id="node1" title="GUI scalar field interactor for properties list dialog." alt="" coords="1268,161,1349,188"/>
-<area shape="rect" id="node2" title=" " alt="" coords="957,111,1036,137"/>
-<area shape="rect" id="node3" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="639,304,746,331"/>
-<area shape="rect" id="node11" href="$classccHistogramWindow.html" title="Histogram widget." alt="" coords="919,161,1075,188"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="246,224,427,251"/>
-<area shape="rect" id="node5" title=" " alt="" coords="5,223,196,249"/>
-<area shape="rect" id="node6" href="$classCCShareable.html" title=" " alt="" coords="48,273,153,300"/>
-<area shape="rect" id="node7" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="259,275,414,301"/>
-<area shape="rect" id="node8" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="245,325,428,352"/>
-<area shape="rect" id="node9" title=" " alt="" coords="11,325,191,352"/>
-<area shape="rect" id="node10" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="259,384,415,411"/>
-<area shape="rect" id="node12" title=" " alt="" coords="639,5,746,32"/>
-<area shape="rect" id="node13" href="$classQCPColoredBars.html" title="QCustomPlot: colored histogram." alt="" coords="629,56,757,83"/>
-<area shape="rect" id="node14" title=" " alt="" coords="297,107,376,133"/>
-<area shape="rect" id="node18" href="$classQCPBarsWithText.html" title="QCustomPlot: vertical bar with text along side." alt="" coords="625,107,760,133"/>
-<area shape="rect" id="node15" href="$classQCPArrow.html" title="QCustomPlot: small arrows at the bottom." alt="" coords="649,165,736,192"/>
-<area shape="rect" id="node16" href="$classQCPSelectableCursor.html" title="QCustomPlot: selectable cursor interface." alt="" coords="257,171,416,197"/>
-<area shape="rect" id="node19" href="$classQCPHiddenArea.html" title="QCustomPlot: greyed areas." alt="" coords="630,219,755,245"/>
-<area shape="rect" id="node17" title=" " alt="" coords="21,171,181,197"/>
+<area shape="rect" id="node1" title="GUI scalar field interactor for properties list dialog." alt="" coords="3079,773,3160,800"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,347,84,373"/>
+<area shape="rect" id="node12" href="$classQCustomPlot.html" title="The central class of the library. This is the QWidget which displays the plot and interacts with the ..." alt="" coords="133,347,240,373"/>
+<area shape="rect" id="node3" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="2450,1248,2557,1275"/>
+<area shape="rect" id="node11" href="$classccHistogramWindow.html" title="Histogram widget." alt="" coords="2729,773,2885,800"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="2057,1219,2238,1245"/>
+<area shape="rect" id="node5" title=" " alt="" coords="1667,1269,1857,1296"/>
+<area shape="rect" id="node6" href="$classCCShareable.html" title=" " alt="" coords="1709,1219,1815,1245"/>
+<area shape="rect" id="node7" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="2070,1269,2225,1296"/>
+<area shape="rect" id="node8" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="2056,1320,2239,1347"/>
+<area shape="rect" id="node9" title=" " alt="" coords="1672,1320,1852,1347"/>
+<area shape="rect" id="node10" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="2069,1375,2225,1401"/>
+<area shape="rect" id="node13" href="$classQCPLayer.html" title="A layer that may contain objects, to control the rendering order." alt="" coords="405,459,491,485"/>
+<area shape="rect" id="node18" href="$classQCPLayerable.html" title="Base class for all drawable objects." alt="" coords="675,511,788,537"/>
+<area shape="rect" id="node36" href="$classQCPBarsGroup.html" title="Groups multiple QCPBars together so they appear side by side." alt="" coords="389,701,507,728"/>
+<area shape="rect" id="node14" title=" " alt="" coords="149,589,224,616"/>
+<area shape="rect" id="node15" href="$classQCPLayoutGrid.html" title="A layout that arranges child elements in a grid." alt="" coords="1702,223,1822,249"/>
+<area shape="rect" id="node26" href="$classQCPLegend.html" title="Manages a legend inside a QCustomPlot." alt="" coords="2099,217,2195,244"/>
+<area shape="rect" id="node16" href="$classQCPLayout.html" title="The abstract base class for layouts." alt="" coords="1351,364,1444,391"/>
+<area shape="rect" id="node17" href="$classQCPLayoutElement.html" title="The abstract base class for all objects that form the layout system." alt="" coords="954,395,1101,421"/>
+<area shape="rect" id="node25" href="$classQCPLayoutInset.html" title="A layout that places child elements aligned to the border or arbitrarily positioned." alt="" coords="1699,377,1825,404"/>
+<area shape="rect" id="node24" href="$classQCPAxisRect.html" title="Holds multiple axes and arranges them in a rectangular shape." alt="" coords="2095,336,2200,363"/>
+<area shape="rect" id="node43" href="$classQCPTextElement.html" title="A layout element displaying a text." alt="" coords="1511,445,1642,472"/>
+<area shape="rect" id="node19" href="$classQCPSelectionRect.html" title="Provides rect/rubber&#45;band data selection and range zoom interaction." alt="" coords="958,335,1097,361"/>
+<area shape="rect" id="node20" href="$classQCPAxis.html" title="Manages a single axis inside a QCustomPlot." alt="" coords="2465,359,2541,385"/>
+<area shape="rect" id="node23" href="$classQCPGrid.html" title="Responsible for drawing the grid of a QCPAxis." alt="" coords="2769,480,2845,507"/>
+<area shape="rect" id="node30" href="$classQCPAbstractPlottable.html" title="The abstract base class for all data representing objects in a plot." alt="" coords="947,775,1107,801"/>
+<area shape="rect" id="node21" href="$classQCPRange.html" title="Represents the range an axis is encompassing." alt="" coords="1717,121,1807,148"/>
+<area shape="rect" id="node22" title=" " alt="" coords="2064,285,2231,312"/>
+<area shape="rect" id="node27" href="$classQCPColoredBars.html" title="QCustomPlot: colored histogram." alt="" coords="2439,847,2567,873"/>
+<area shape="rect" id="node28" href="$classQCPBars.html" title="A plottable representing a bar chart in a plot." alt="" coords="2108,821,2187,848"/>
+<area shape="rect" id="node41" href="$classQCPBarsWithText.html" title="QCustomPlot: vertical bar with text along side." alt="" coords="2436,796,2571,823"/>
+<area shape="rect" id="node29" href="$classQCPAbstractPlottable1D.html" title=" " alt="" coords="1673,969,1851,1010"/>
+<area shape="rect" id="node32" href="$classQCPSelectionDecorator.html" title="Controls how a plottable&#39;s data selection is drawn." alt="" coords="1311,729,1484,756"/>
+<area shape="rect" id="node35" href="$classQCPAbstractPlottable1D.html" title="A template base class for plottables with one&#45;dimensional data." alt="" coords="1308,1034,1487,1075"/>
+<area shape="rect" id="node38" href="$classQCPSelectableCursor.html" title="QCustomPlot: selectable cursor interface." alt="" coords="2068,691,2227,717"/>
+<area shape="rect" id="node39" href="$classQCPGraph.html" title="A plottable representing a graph in a plot." alt="" coords="2103,995,2191,1021"/>
+<area shape="rect" id="node40" href="$classQCPAbstractPlottable1D.html" title=" " alt="" coords="1673,1070,1851,1111"/>
+<area shape="rect" id="node31" href="$classQCPDataSelection.html" title="Describes a data set by holding multiple QCPDataRange instances." alt="" coords="661,775,801,801"/>
+<area shape="rect" id="node33" href="$classQCPScatterStyle.html" title="Represents the visual appearance of scatter points." alt="" coords="963,1072,1091,1099"/>
+<area shape="rect" id="node34" href="$classQCPPlottableInterface1D.html" title="Defines an abstract interface for one&#45;dimensional plottables." alt="" coords="936,1168,1119,1195"/>
+<area shape="rect" id="node37" href="$classQCPArrow.html" title="QCustomPlot: small arrows at the bottom." alt="" coords="2460,691,2547,717"/>
+<area shape="rect" id="node42" href="$classQCPHiddenArea.html" title="QCustomPlot: greyed areas." alt="" coords="2441,743,2566,769"/>
 </map>

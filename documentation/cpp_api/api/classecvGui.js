@@ -1,9 +1,9 @@
 var classecvGui =
 [
     [ "ParamStruct", "structecvGui_1_1ParamStruct.html", "structecvGui_1_1ParamStruct" ],
-    [ "Parameters", "classecvGui.html#adf428fb09f1ab3d90990d923903fc972", null ],
-    [ "ReleaseInstance", "classecvGui.html#a2df5495a688472c0847464c1a7db5143", null ],
-    [ "Set", "classecvGui.html#a0e58969d2d2fc43e38823c44f19d684e", null ],
-    [ "UpdateParameters", "classecvGui.html#ae4e1213822da3afc3f111f51618022e9", null ],
+    [ "Parameters", "classecvGui.html#a596cb05c0aed40be28607cb1cf28c848", null ],
+    [ "ReleaseInstance", "classecvGui.html#a42f7ee8be881e28b3b439f01a82115ea", null ],
+    [ "Set", "classecvGui.html#a307d2483e1e307f770357d2c0f596d0c", null ],
+    [ "UpdateParameters", "classecvGui.html#adbc2370c2e42286c022f881dc629a9d8", null ],
     [ "params", "classecvGui.html#a1305460956aabf6cf63773b098100a8d", null ]
 ];

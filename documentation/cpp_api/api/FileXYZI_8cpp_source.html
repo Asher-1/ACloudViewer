@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -105,7 +96,7 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ProgressReporters_8h.html">ProgressReporters.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;cstdio&gt;</span></div>
@@ -128,7 +119,7 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#ab96c565875e2cabc164c48cc446133d5">   29</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#ab96c565875e2cabc164c48cc446133d5">ReadPointCloudFromXYZI</a>(</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;        <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html">geometry::PointCloud</a> &amp;pointcloud,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a> &amp;<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) {</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a> &amp;params) {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html">cloudViewer::utility::filesystem::CFile</a> file;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <span class="keywordflow">if</span> (!file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a53f191f47cd6b28657689be32bb0ea97">Open</a>(<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <span class="stringliteral">&quot;r&quot;</span>)) {</div>
@@ -137,7 +128,7 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        }</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">cloudViewer::utility::CountingProgressReporter</a> reporter(</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.update_progress);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                params.<a class="code" href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html#a51e1abb3e68819b5aa987d2f0ff01305">update_progress</a>);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a05a638f260949a15767476618c66a66a">SetTotal</a>(file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#aaba12d07a5f472e06b20cd02cae1f23d">GetFileSize</a>());</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        int64_t num_points = file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#add4ad4d81e4393142d2d1b22a5e316d4">GetNumLines</a>();</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
@@ -148,13 +139,13 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordtype">double</span> *intensities_ptr = intensities.GetDataPtr&lt;<span class="keywordtype">double</span>&gt;();</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordtype">int</span> i = 0;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keywordtype">double</span> x, y, z, I;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>, <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>, I;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *line_buffer;</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keywordflow">while</span> ((line_buffer = file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8babed860eb48a002126cb624246b4cd">ReadLine</a>())) {</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keywordflow">if</span> (sscanf(line_buffer, <span class="stringliteral">&quot;%lf %lf %lf %lf&quot;</span>, &amp;x, &amp;y, &amp;z, &amp;I) == 4) {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                points_ptr[3 * i + 0] = x;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                points_ptr[3 * i + 1] = y;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                points_ptr[3 * i + 2] = z;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keywordflow">if</span> (sscanf(line_buffer, <span class="stringliteral">&quot;%lf %lf %lf %lf&quot;</span>, &amp;<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, &amp;<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>, &amp;<a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>, &amp;I) == 4) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                points_ptr[3 * i + 0] = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                points_ptr[3 * i + 1] = <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                points_ptr[3 * i + 2] = <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>;</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                intensities_ptr[i] = I;</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            }</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            <span class="keywordflow">if</span> (++i % 1000 == 0) {</div>
@@ -166,9 +157,9 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a7f7a938d992ccc60b28c5fee39946560">Finish</a>();</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;e) {</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">cloudViewer::utility::LogWarning</a>(<span class="stringliteral">&quot;Read XYZ failed with exception: {}&quot;</span>,</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                                         e.what());</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                                         <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    }</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;}</div>
@@ -176,7 +167,7 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a631f94805d4e6f54dcdf01ba14244650">   77</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a631f94805d4e6f54dcdf01ba14244650">WritePointCloudToXYZI</a>(</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html">geometry::PointCloud</a> &amp;pointcloud,</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html">cloudViewer::io::WritePointCloudOption</a> &amp;<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) {</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html">cloudViewer::io::WritePointCloudOption</a> &amp;params) {</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keywordflow">if</span> (!pointcloud.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a3215924ca427bbbd930adc57fa063ce4">HasPointAttr</a>(<span class="stringliteral">&quot;intensities&quot;</span>)) {</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    }</div>
@@ -189,7 +180,7 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        }</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">cloudViewer::utility::CountingProgressReporter</a> reporter(</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.update_progress);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                params.<a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#a7574ecf738f7ec484d015bc2fccdea0c">update_progress</a>);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> &amp;<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a> = pointcloud.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a455003a15464c00a7f86b660a89d68f3">GetPoints</a>();</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>.GetShape().IsCompatible(</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    {cloudViewer::utility::nullopt, 3})) {</div>
@@ -227,9 +218,9 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        }</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a7f7a938d992ccc60b28c5fee39946560">Finish</a>();</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;e) {</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">cloudViewer::utility::LogWarning</a>(<span class="stringliteral">&quot;Write XYZI failed with exception: {}&quot;</span>,</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                                         e.what());</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                                         <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    }</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;}</div>
@@ -243,7 +234,6 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="ttc" id="aFileIOFactory_8cpp_html_af7f8f4a4e39e09fdb5e9f02330ecabef"><div class="ttname"><a href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a></div><div class="ttdeci">int points</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00144">FileIOFactory.cpp:144</a></div></div>
 <div class="ttc" id="aFileSystem_8h_html"><div class="ttname"><a href="FileSystem_8h.html">FileSystem.h</a></div></div>
 <div class="ttc" id="aProgressReporters_8h_html"><div class="ttname"><a href="ProgressReporters_8h.html">ProgressReporters.h</a></div></div>
-<div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aTensorList_8h_html"><div class="ttname"><a href="TensorList_8h.html">TensorList.h</a></div></div>
 <div class="ttc" id="aTensor_8h_html"><div class="ttname"><a href="Tensor_8h.html">Tensor.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
@@ -268,7 +258,10 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_aaba12d07a5f472e06b20cd02cae1f23d"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#aaba12d07a5f472e06b20cd02cae1f23d">cloudViewer::utility::filesystem::CFile::GetFileSize</a></div><div class="ttdeci">int64_t GetFileSize()</div><div class="ttdoc">Returns the file size in bytes.</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00772">FileSystem.cpp:772</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_add4ad4d81e4393142d2d1b22a5e316d4"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#add4ad4d81e4393142d2d1b22a5e316d4">cloudViewer::utility::filesystem::CFile::GetNumLines</a></div><div class="ttdeci">int64_t GetNumLines()</div><div class="ttdoc">Returns the number of lines in the file.</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00793">FileSystem.cpp:793</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a98156be7bd5bb4bfe78e2541d057cab6"><div class="ttname"><a href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a></div><div class="ttdeci">normal_z z</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ac3cffb00a043ee494bd2887c4a6fba78"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ac3cffb00a043ee494bd2887c4a6fba78">cloudViewer::core::Float64</a></div><div class="ttdeci">const Dtype Float64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00043">Dtype.cpp:43</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a4d7f758c9f9290458e36f3602288bcec"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a4d7f758c9f9290458e36f3602288bcec">cloudViewer::io::FileGeometry</a></div><div class="ttdeci">FileGeometry</div><div class="ttdef"><b>Definition:</b> <a href="FileFormatIO_8h_source.html#l00015">FileFormatIO.h:15</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a4d7f758c9f9290458e36f3602288bcecabc54c8fa41b98b15f5f972fa08868992"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a4d7f758c9f9290458e36f3602288bcecabc54c8fa41b98b15f5f972fa08868992">cloudViewer::io::CONTAINS_POINTS</a></div><div class="ttdeci">@ CONTAINS_POINTS</div><div class="ttdef"><b>Definition:</b> <a href="FileFormatIO_8h_source.html#l00017">FileFormatIO.h:17</a></div></div>
@@ -276,9 +269,11 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a452076d486fead23ae6f2cdb7f0d4879"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a452076d486fead23ae6f2cdb7f0d4879">cloudViewer::t::io::ReadFileGeometryTypeXYZI</a></div><div class="ttdeci">cloudViewer::io::FileGeometry ReadFileGeometryTypeXYZI(const std::string &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="FileXYZI_8cpp_source.html#l00024">FileXYZI.cpp:24</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a631f94805d4e6f54dcdf01ba14244650"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a631f94805d4e6f54dcdf01ba14244650">cloudViewer::t::io::WritePointCloudToXYZI</a></div><div class="ttdeci">bool WritePointCloudToXYZI(const std::string &amp;filename, const geometry::PointCloud &amp;pointcloud, const cloudViewer::io::WritePointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="FileXYZI_8cpp_source.html#l00077">FileXYZI.cpp:77</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ab96c565875e2cabc164c48cc446133d5"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ab96c565875e2cabc164c48cc446133d5">cloudViewer::t::io::ReadPointCloudFromXYZI</a></div><div class="ttdeci">bool ReadPointCloudFromXYZI(const std::string &amp;filename, geometry::PointCloud &amp;pointcloud, const cloudViewer::io::ReadPointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="FileXYZI_8cpp_source.html#l00029">FileXYZI.cpp:29</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a></div><div class="ttdoc">Optional parameters to ReadPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00039">FileIO.h:39</a></div></div>
+<div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html_a51e1abb3e68819b5aa987d2f0ff01305"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html#a51e1abb3e68819b5aa987d2f0ff01305">cloudViewer::io::ReadPointCloudOption::update_progress</a></div><div class="ttdeci">std::function&lt; bool(double)&gt; update_progress</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00072">FileIO.h:72</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1WritePointCloudOption_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1WritePointCloudOption.html">cloudViewer::io::WritePointCloudOption</a></div><div class="ttdoc">Optional parameters to WritePointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00077">FileIO.h:77</a></div></div>
+<div class="ttc" id="astructcloudViewer_1_1io_1_1WritePointCloudOption_html_a7574ecf738f7ec484d015bc2fccdea0c"><div class="ttname"><a href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#a7574ecf738f7ec484d015bc2fccdea0c">cloudViewer::io::WritePointCloudOption::update_progress</a></div><div class="ttdeci">std::function&lt; bool(double)&gt; update_progress</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00135">FileIO.h:135</a></div></div>
 <div class="ttc" id="at_2io_2PointCloudIO_8h_html"><div class="ttname"><a href="t_2io_2PointCloudIO_8h.html">PointCloudIO.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -286,7 +281,7 @@ $(document).ready(function(){initNavTree('FileXYZI_8cpp_source.html',''); initRe
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_b02e663b84a5466686fe36f6d8e707d1.html">file_format</a></li><li class="navelem"><a class="el" href="FileXYZI_8cpp.html">FileXYZI.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -155,8 +146,8 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="comment">// total volume</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordtype">double</span> Vtotal = 0.0;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> origin, upperCorner;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    mesh-&gt;<a class="code" href="classcloudViewer_1_1GenericMesh.html#a55213f9f6c05c6cc7766ede41239bf64">getBoundingBox</a>(origin, upperCorner);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>, upperCorner;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    mesh-&gt;<a class="code" href="classcloudViewer_1_1GenericMesh.html#a55213f9f6c05c6cc7766ede41239bf64">getBoundingBox</a>(<a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>, upperCorner);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    mesh-&gt;<a class="code" href="classcloudViewer_1_1GenericMesh.html#ad24beb13c85a002ef4c0ddb496452141">placeIteratorAtBeginning</a>();</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> n = 0; n &lt; mesh-&gt;<a class="code" href="classcloudViewer_1_1GenericMesh.html#a0ca723078d1f8194be24861cd6e1d7c8">size</a>(); ++n) {</div>
@@ -164,9 +155,9 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="comment">// vertices (expressed in the local mesh ref. so as to avoid numerical</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="comment">// inaccuracies)</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> A = *tri-&gt;<a class="code" href="classcloudViewer_1_1GenericTriangle.html#a05daf220ca75c5201c22019459f015c3">_getA</a>() - origin;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> B = *tri-&gt;<a class="code" href="classcloudViewer_1_1GenericTriangle.html#af32e76478a64667415f7c3f827af15f5">_getB</a>() - origin;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> C = *tri-&gt;<a class="code" href="classcloudViewer_1_1GenericTriangle.html#af170e0b439cf53e84332fa97dd3c3fc1">_getC</a>() - origin;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> A = *tri-&gt;<a class="code" href="classcloudViewer_1_1GenericTriangle.html#a05daf220ca75c5201c22019459f015c3">_getA</a>() - <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> B = *tri-&gt;<a class="code" href="classcloudViewer_1_1GenericTriangle.html#af32e76478a64667415f7c3f827af15f5">_getB</a>() - <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> C = *tri-&gt;<a class="code" href="classcloudViewer_1_1GenericTriangle.html#af170e0b439cf53e84332fa97dd3c3fc1">_getC</a>() - <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <span class="comment">// see &quot;EFFICIENT FEATURE EXTRACTION FOR 2D/3D OBJECTS IN MESH</span></div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="comment">// REPRESENTATION&quot; by Cha Zhang and Tsuhan Chen (2001) We compute the</span></div>
@@ -183,7 +174,7 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        Vtotal += signedVol;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    }</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(Vtotal);  <span class="comment">// in case the triangles are in the wrong order!</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">return</span> std::abs(Vtotal);  <span class="comment">// in case the triangles are in the wrong order!</span></div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;}</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
 <div class="line"><a name="l00090"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1MeshSamplingTools.html#a222106205918c29220b4876ec87e0b7b">   90</a></span>&#160;<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> <a class="code" href="classcloudViewer_1_1MeshSamplingTools.html#a222106205918c29220b4876ec87e0b7b">MeshSamplingTools::ComputeEdgeKey</a>(<span class="keywordtype">unsigned</span> i1, <span class="keywordtype">unsigned</span> i2) {</div>
@@ -389,7 +380,7 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <span class="keywordtype">unsigned</span> addedPoints = 0;</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    std::random_device rd;   <span class="comment">// non-deterministic generator</span></div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    std::mt19937 gen(rd());  <span class="comment">// to seed mersenne twister.</span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    std::uniform_real_distribution&lt;double&gt; <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(0, 1);</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    std::uniform_real_distribution&lt;double&gt; dist(0, 1);</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160; </div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="comment">// for each triangle</span></div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    mesh-&gt;<a class="code" href="classcloudViewer_1_1GenericMesh.html#ad24beb13c85a002ef4c0ddb496452141">placeIteratorAtBeginning</a>();</div>
@@ -417,7 +408,7 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <span class="keywordtype">double</span> fracPart = fPointsToAdd - <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(pointsToAdd);</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <span class="keywordflow">if</span> (fracPart &gt; 0) {</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            <span class="comment">// we add a point with the same probability as its (relative) area</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(gen) &lt;= fracPart) pointsToAdd += 1;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            <span class="keywordflow">if</span> (dist(gen) &lt;= fracPart) pointsToAdd += 1;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        }</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160; </div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        <span class="keywordflow">if</span> (pointsToAdd) {</div>
@@ -455,17 +446,17 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                <span class="comment">//&#39;Greg Turk. Generating random points in triangles. In A. S.</span></div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                <span class="comment">// Glassner, editor, Graphics Gems, pages 24-28. Academic Press,</span></div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                <span class="comment">// 1990.&#39;</span></div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;                <span class="keywordtype">double</span> x = <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(gen);</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                <span class="keywordtype">double</span> y = <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(gen);</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;                <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = dist(gen);</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = dist(gen);</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                <span class="comment">// we test if the generated point lies on the right side of (AB)</span></div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                <span class="keywordflow">if</span> (x + y &gt; 1.0) {</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                    x = 1.0 - x;</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                    y = 1.0 - y;</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> + <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> &gt; 1.0) {</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                    <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = 1.0 - <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                    <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = 1.0 - <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;                }</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160; </div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                <a class="code" href="classVector3Tpl.html">CCVector3</a> P = (*O) + <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(x) * u +</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                              <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(y) * v;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                <a class="code" href="classVector3Tpl.html">CCVector3</a> P = (*O) + <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) * u +</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                              <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) * v;</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160; </div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;                sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">addPoint</a>(P);</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;                <span class="keywordflow">if</span> (triIndices) triIndices-&gt;push_back(n);</div>
@@ -499,6 +490,7 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="ttc" id="aGenericTriangle_8h_html"><div class="ttname"><a href="GenericTriangle_8h.html">GenericTriangle.h</a></div></div>
 <div class="ttc" id="aMeshSamplingTools_8h_html"><div class="ttname"><a href="MeshSamplingTools_8h.html">MeshSamplingTools.h</a></div></div>
 <div class="ttc" id="aScalarField_8h_html"><div class="ttname"><a href="ScalarField_8h.html">ScalarField.h</a></div></div>
+<div class="ttc" id="aVoxelGridIO_8cpp_html_ae4f3d20f086a53c39a1810193667374f"><div class="ttname"><a href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a></div><div class="ttdeci">Eigen::Vector3d origin</div><div class="ttdef"><b>Definition:</b> <a href="VoxelGridIO_8cpp_source.html#l00026">VoxelGridIO.cpp:26</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_a64cc8e49fc845aff7a2a0592c5610447"><div class="ttname"><a href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">Tuple3Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_ac8d05ce413d7659429e2e7243b8a8257"><div class="ttname"><a href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">Tuple3Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_aea57f32b7c87f9388205c027216ba132"><div class="ttname"><a href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">Tuple3Tpl::z</a></div><div class="ttdeci">Type z</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
@@ -546,11 +538,11 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a078acc10755088a704d18d575482d0ec"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a078acc10755088a704d18d575482d0ec">cloudViewer::ScalarField::computeMinAndMax</a></div><div class="ttdeci">virtual void computeMinAndMax()</div><div class="ttdoc">Determines the min and max values.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00123">ScalarField.h:123</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a4f659aa5dd4563ab557c7f154bc3fcae"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a4f659aa5dd4563ab557c7f154bc3fcae">cloudViewer::ScalarField::setValue</a></div><div class="ttdeci">void setValue(std::size_t index, ScalarType value)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00096">ScalarField.h:96</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_ad0a32b55c4f410c2c4c4949483c2cf8a"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#ad0a32b55c4f410c2c4c4949483c2cf8a">cloudViewer::ScalarField::currentSize</a></div><div class="ttdeci">unsigned currentSize() const</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00100">ScalarField.h:100</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a3ad6422d3fb0907abb608368ee88a0c3"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a3ad6422d3fb0907abb608368ee88a0c3">cloudViewer::geometry::PointCloud</a></div><div class="ttdeci">::ccPointCloud PointCloud</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2PointCloud_8h_source.html#l00019">PointCloud.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_aeb8a3b0235e7f430fd7de83a10580b2d"><div class="ttname"><a href="namespacecloudViewer.html#aeb8a3b0235e7f430fd7de83a10580b2d">cloudViewer::LessThanEpsilon</a></div><div class="ttdeci">bool LessThanEpsilon(float x)</div><div class="ttdoc">Test a floating point number against our epsilon (a very small number).</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00023">CVMath.h:23</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1MeshSamplingTools_1_1EdgeConnectivityStats_html"><div class="ttname"><a href="structcloudViewer_1_1MeshSamplingTools_1_1EdgeConnectivityStats.html">cloudViewer::MeshSamplingTools::EdgeConnectivityStats</a></div><div class="ttdoc">Statistics on the edges connectivty of a mesh.</div><div class="ttdef"><b>Definition:</b> <a href="MeshSamplingTools_8h_source.html#l00043">MeshSamplingTools.h:43</a></div></div>
@@ -566,7 +558,7 @@ $(document).ready(function(){initNavTree('MeshSamplingTools_8cpp_source.html',''
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="MeshSamplingTools_8cpp.html">MeshSamplingTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

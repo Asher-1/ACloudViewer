@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -117,10 +108,10 @@ $(document).ready(function(){initNavTree('WeibullDistribution_8h_source.html',''
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html">WeibullDistribution</a>();</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html">WeibullDistribution</a>(ScalarType a, ScalarType b, ScalarType valueShift = 0);</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <a class="code" href="classcloudViewer_1_1WeibullDistribution.html">WeibullDistribution</a>(ScalarType <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, ScalarType b, ScalarType valueShift = 0);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keywordtype">bool</span> getParameters(ScalarType&amp; a, ScalarType&amp; b) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keywordtype">bool</span> getParameters(ScalarType&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, ScalarType&amp; b) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">bool</span> getOtherParameters(ScalarType&amp; mu, ScalarType&amp; sigma2) <span class="keyword">const</span>;</div>
@@ -129,7 +120,7 @@ $(document).ready(function(){initNavTree('WeibullDistribution_8h_source.html',''
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordtype">double</span> computeSkewness() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordtype">bool</span> setParameters(ScalarType a, ScalarType b, ScalarType valueShift = 0);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordtype">bool</span> setParameters(ScalarType <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, ScalarType b, ScalarType valueShift = 0);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordtype">void</span> setValueShift(ScalarType vs);</div>
@@ -138,8 +129,8 @@ $(document).ready(function(){initNavTree('WeibullDistribution_8h_source.html',''
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="comment">// inherited methods (see GenericDistribution)</span></div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordtype">bool</span> computeParameters(<span class="keyword">const</span> ScalarContainer&amp; values) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">double</span> computeP(ScalarType x) <span class="keyword">const override</span>;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordtype">double</span> computePfromZero(ScalarType x) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">double</span> computeP(ScalarType <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordtype">double</span> computePfromZero(ScalarType <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) <span class="keyword">const override</span>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">double</span> computeP(ScalarType x1, ScalarType x2) <span class="keyword">const override</span>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordtype">double</span> computeChi2Dist(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericCloud.html">GenericCloud</a>* cloud,</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                           <span class="keywordtype">unsigned</span> numberOfClasses,</div>
@@ -163,7 +154,7 @@ $(document).ready(function(){initNavTree('WeibullDistribution_8h_source.html',''
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> ComputeG(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html#ae807579e1ca11d7effdb12c4b720e735">ScalarContainer</a>&amp; values,</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                           <span class="keywordtype">double</span> a,</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                           <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                           ScalarType valueShift,</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                           <span class="keywordtype">double</span> valueRange);</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">double</span> FindGRoot(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html#ae807579e1ca11d7effdb12c4b720e735">ScalarContainer</a>&amp; values,</div>
@@ -187,14 +178,16 @@ $(document).ready(function(){initNavTree('WeibullDistribution_8h_source.html',''
 <div class="ttc" id="aclasscloudViewer_1_1WeibullDistribution_html_ad159da03be8f044550f6d8e8254d21ba"><div class="ttname"><a href="classcloudViewer_1_1WeibullDistribution.html#ad159da03be8f044550f6d8e8254d21ba">cloudViewer::WeibullDistribution::m_b</a></div><div class="ttdeci">ScalarType m_b</div><div class="ttdoc">Weibull distribution parameter b (lambda)</div><div class="ttdef"><b>Definition:</b> <a href="WeibullDistribution_8h_source.html#l00096">WeibullDistribution.h:96</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1WeibullDistribution_html_ad70c3ab670eac438c6f08e64fc3aa7cc"><div class="ttname"><a href="classcloudViewer_1_1WeibullDistribution.html#ad70c3ab670eac438c6f08e64fc3aa7cc">cloudViewer::WeibullDistribution::chi2ClassesPositions</a></div><div class="ttdeci">std::vector&lt; ScalarType &gt; chi2ClassesPositions</div><div class="ttdoc">Chi2 classes limits.</div><div class="ttdef"><b>Definition:</b> <a href="WeibullDistribution_8h_source.html#l00089">WeibullDistribution.h:89</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1WeibullDistribution_html_ae2bdb8e3eefed34df93a9b313c3d8bfb"><div class="ttname"><a href="classcloudViewer_1_1WeibullDistribution.html#ae2bdb8e3eefed34df93a9b313c3d8bfb">cloudViewer::WeibullDistribution::getName</a></div><div class="ttdeci">const char * getName() const override</div><div class="ttdoc">Returns distribution name.</div><div class="ttdef"><b>Definition:</b> <a href="WeibullDistribution_8h_source.html#l00075">WeibullDistribution.h:75</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="WeibullDistribution_8h.html">WeibullDistribution.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

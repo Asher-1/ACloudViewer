@@ -1,0 +1,27 @@
+var classAnnotaions =
+[
+    [ "Annotaions", "classAnnotaions.html#a10ded5ba88f5577e2806d8c8c09c803f", null ],
+    [ "add", "classAnnotaions.html#a316b443dcd0f68c0ba4c152c271b3321", null ],
+    [ "clear", "classAnnotaions.html#a2d9823897bf29c0f55bd135615371873", null ],
+    [ "getAnnotation", "classAnnotaions.html#adde9940f53e6260b356290f50d6761af", null ],
+    [ "getAnnotation", "classAnnotaions.html#a6f4125da0fbb8f11200ee73bec0bf5ee", null ],
+    [ "getAnnotationIndex", "classAnnotaions.html#aef974500c08e067e2cfc39c1260e1573", null ],
+    [ "getAnnotations", "classAnnotaions.html#ad3d9846981743d5a7098dce367052fe0", null ],
+    [ "getAnnotations", "classAnnotaions.html#a672d6e81a2c9077bca1e5a850fdcc165", null ],
+    [ "getAnnotations", "classAnnotaions.html#a498cb02cea17ddf6a1fce34ca2f83a34", null ],
+    [ "getLabelByIndex", "classAnnotaions.html#a0162fc99ab5551802d6c279eef00e8ae", null ],
+    [ "getSize", "classAnnotaions.html#a0b94b4dcac5e71ebd475d0acbef1228d", null ],
+    [ "loadAnnotations", "classAnnotaions.html#a1bbad94178fe3e95c5dedce56e65f8a3", null ],
+    [ "preserve", "classAnnotaions.html#a8e997f36cf103c30f97f4e7253f3f3f5", null ],
+    [ "release", "classAnnotaions.html#a48fbdc6a53c7dceb306fe09665df9982", null ],
+    [ "remove", "classAnnotaions.html#a8c1d2eeb004c9c735665ac30b6f4a50e", null ],
+    [ "saveAnnotations", "classAnnotaions.html#a6fd8a5a35f3de31a4077fc6a395c2722", null ],
+    [ "updateBalloonByAnno", "classAnnotaions.html#abab09fbbbbbbfdd6634a552d106ff8bb", null ],
+    [ "updateBalloonByIndex", "classAnnotaions.html#a4d78d664a79226458b052db420d1f217", null ],
+    [ "updateLabels", "classAnnotaions.html#aa16917c77e6388115f2d3f435e08e9d1", null ],
+    [ "m_annotations", "classAnnotaions.html#a57b3a24936fbb552dec30a882f46bfbe", null ],
+    [ "m_balloonWidget", "classAnnotaions.html#a7f65a9ff2902eb3e8ca8d60a86fd71ce", null ],
+    [ "m_capacity", "classAnnotaions.html#a4e9d4c8f504eab59e1028cb0fffcabf4", null ],
+    [ "m_interactor", "classAnnotaions.html#ae311ea89c1522d30495cd998dd16311c", null ],
+    [ "m_labeledCloudIndex", "classAnnotaions.html#ad559beb75c40691a5cc39db3f3a17c47", null ]
+];

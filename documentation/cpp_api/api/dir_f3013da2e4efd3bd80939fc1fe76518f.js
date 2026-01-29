@@ -4,7 +4,7 @@ var dir_f3013da2e4efd3bd80939fc1fe76518f =
     [ "BallQuery.cuh", "BallQuery_8cuh.html", null ],
     [ "Cloud.cpp", "Cloud_8cpp.html", "Cloud_8cpp" ],
     [ "Cloud.h", "Cloud_8h.html", "Cloud_8h" ],
-    [ "contrib_nns.cpp", "cloudViewer_2ml_2contrib_2contrib__nns_8cpp.html", "cloudViewer_2ml_2contrib_2contrib__nns_8cpp" ],
+    [ "contrib_nns.cpp", "contrib__nns_8cpp.html", "contrib__nns_8cpp" ],
     [ "contrib_nns.h", "contrib__nns_8h.html", "contrib__nns_8h" ],
     [ "cuda_utils.h", "cuda__utils_8h.html", "cuda__utils_8h" ],
     [ "GridSubsampling.cpp", "GridSubsampling_8cpp.html", "GridSubsampling_8cpp" ],

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -179,7 +170,7 @@ $(document).ready(function(){initNavTree('StdGPUHashBackend_8h_source.html','');
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">using</span> InternalStdGPUHashBackend =</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        stdgpu::unordered_map&lt;Key,</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                              <a class="code" href="namespacecloudViewer_1_1core.html#a3e373c34b1bddbf35d76c7df69079fb4">buf_index_t</a>,</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                              <a class="code" href="sqlite3_8c.html#abe8fc99d29c0275271cbacd81d67ee07">Hash</a>,</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                              Hash,</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                              Eq,</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                              <a class="code" href="classcloudViewer_1_1core_1_1StdGPUAllocator.html">InternalStdGPUHashBackendAllocator&lt;Key&gt;</a>&gt;;</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
@@ -335,8 +326,8 @@ $(document).ready(function(){initNavTree('StdGPUHashBackend_8h_source.html','');
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
 <div class="line"><a name="l00254"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1core_1_1ValueExtractor.html">  254</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcloudViewer_1_1core_1_1ValueExtractor.html">ValueExtractor</a> {</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <a class="code" href="CUDAUtils_8h.html#a98e7224ab0ae53973931604d50dca927">CLOUDVIEWER_HOST_DEVICE</a> <a class="code" href="namespacecloudViewer_1_1core.html#a3e373c34b1bddbf35d76c7df69079fb4">buf_index_t</a></div>
-<div class="line"><a name="l00256"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1core_1_1ValueExtractor.html#a14cd2d9972604713fca6548d40ae8416">  256</a></span>&#160;    <a class="code" href="structcloudViewer_1_1core_1_1ValueExtractor.html#a14cd2d9972604713fca6548d40ae8416">operator()</a>(<span class="keyword">const</span> stdgpu::pair&lt;Key, buf_index_t&gt;&amp; x)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="keywordflow">return</span> x.second;</div>
+<div class="line"><a name="l00256"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1core_1_1ValueExtractor.html#a14cd2d9972604713fca6548d40ae8416">  256</a></span>&#160;    <a class="code" href="structcloudViewer_1_1core_1_1ValueExtractor.html#a14cd2d9972604713fca6548d40ae8416">operator()</a>(<span class="keyword">const</span> stdgpu::pair&lt;Key, buf_index_t&gt;&amp; <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>.second;</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    }</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;};</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
@@ -557,6 +548,7 @@ $(document).ready(function(){initNavTree('StdGPUHashBackend_8h_source.html','');
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_a77fbd3bcb55e9c1f6246edfc00d55831"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">cloudViewer::core::Tensor::GetDataPtr</a></div><div class="ttdeci">T * GetDataPtr()</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01144">Tensor.h:1144</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="ahashmap_2Dispatch_8h_html"><div class="ttname"><a href="hashmap_2Dispatch_8h.html">Dispatch.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1cuda_html_a84c8eb9b59fbeed7230b494b892b2675"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1cuda.html#a84c8eb9b59fbeed7230b494b892b2675">cloudViewer::core::cuda::Synchronize</a></div><div class="ttdeci">void Synchronize()</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8cpp_source.html#l00059">CUDAUtils.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a19bb9e4e18c48601b3881656b1531220"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a19bb9e4e18c48601b3881656b1531220">cloudViewer::core::Free</a></div><div class="ttdeci">void Free(benchmark::State &amp;state, int size, const Device &amp;device, const MemoryManagerBackend &amp;backend)</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2core_2MemoryManager_8cpp_source.html#l00075">MemoryManager.cpp:75</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a2cdab92a2904539307d1b4460f5c753e"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a2cdab92a2904539307d1b4460f5c753e">cloudViewer::core::STDGPUFindKernel</a></div><div class="ttdeci">__global__ void STDGPUFindKernel(InternalStdGPUHashBackend&lt; Key, Hash, Eq &gt; map, CUDAHashBackendBufferAccessor buffer_accessor, const Key *input_keys, buf_index_t *output_buf_indices, bool *output_masks, int64_t count)</div><div class="ttdef"><b>Definition:</b> <a href="StdGPUHashBackend_8h_source.html#l00178">StdGPUHashBackend.h:178</a></div></div>
@@ -564,8 +556,7 @@ $(document).ready(function(){initNavTree('StdGPUHashBackend_8h_source.html','');
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a886874543f9249a9015b50207381cf45"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a886874543f9249a9015b50207381cf45">cloudViewer::core::STDGPUEraseKernel</a></div><div class="ttdeci">__global__ void STDGPUEraseKernel(InternalStdGPUHashBackend&lt; Key, Hash, Eq &gt; map, CUDAHashBackendBufferAccessor buffer_accessor, const Key *input_keys, buf_index_t *output_buf_indices, bool *output_masks, int64_t count)</div><div class="ttdef"><b>Definition:</b> <a href="StdGPUHashBackend_8h_source.html#l00211">StdGPUHashBackend.h:211</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aedaeda1b0a61b8b67540bb735bd48bbb"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aedaeda1b0a61b8b67540bb735bd48bbb">cloudViewer::core::Int32</a></div><div class="ttdeci">const Dtype Int32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00046">Dtype.cpp:46</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aef70c2a9a068d3578f93d838942eb8a6"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aef70c2a9a068d3578f93d838942eb8a6">cloudViewer::core::STDGPUInsertKernel</a></div><div class="ttdeci">__global__ void STDGPUInsertKernel(InternalStdGPUHashBackend&lt; Key, Hash, Eq &gt; map, CUDAHashBackendBufferAccessor buffer_accessor, const Key *input_keys, const void *const *input_values_soa, buf_index_t *output_buf_indices, bool *output_masks, int64_t count, int64_t n_values)</div><div class="ttdef"><b>Definition:</b> <a href="StdGPUHashBackend_8h_source.html#l00305">StdGPUHashBackend.h:305</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_abe8fc99d29c0275271cbacd81d67ee07"><div class="ttname"><a href="sqlite3_8c.html#abe8fc99d29c0275271cbacd81d67ee07">Hash</a></div><div class="ttdeci">struct Hash Hash</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l12671">sqlite3.c:13845</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1ValueExtractor_html"><div class="ttname"><a href="structcloudViewer_1_1core_1_1ValueExtractor.html">cloudViewer::core::ValueExtractor</a></div><div class="ttdef"><b>Definition:</b> <a href="StdGPUHashBackend_8h_source.html#l00254">StdGPUHashBackend.h:254</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1ValueExtractor_html_a14cd2d9972604713fca6548d40ae8416"><div class="ttname"><a href="structcloudViewer_1_1core_1_1ValueExtractor.html#a14cd2d9972604713fca6548d40ae8416">cloudViewer::core::ValueExtractor::operator()</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE buf_index_t operator()(const stdgpu::pair&lt; Key, buf_index_t &gt; &amp;x) const</div><div class="ttdef"><b>Definition:</b> <a href="StdGPUHashBackend_8h_source.html#l00256">StdGPUHashBackend.h:256</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -574,7 +565,7 @@ $(document).ready(function(){initNavTree('StdGPUHashBackend_8h_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_11cd595bc1a6cf95c72762161b00a494.html">hashmap</a></li><li class="navelem"><a class="el" href="dir_504ab8c9a99707ffea18b00a9599e93c.html">CUDA</a></li><li class="navelem"><a class="el" href="StdGPUHashBackend_8h.html">StdGPUHashBackend.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

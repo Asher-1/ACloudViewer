@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -125,7 +116,7 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;ipp/iw++/iw_image_transform.hpp&gt;</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Dispatch_8h.html">cloudViewer/core/Dispatch.h</a>&quot;</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Dtype_8h.html">cloudViewer/core/Dtype.h</a>&quot;</span></div>
@@ -161,9 +152,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        ::ipp::iwiScale(ipp_src_im, ipp_dst_im, scale, <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    }</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
@@ -184,9 +175,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        ::ipp::iwiColorConvert(ipp_src_im, ::ipp::iwiColorRGB, ipp_dst_im,</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                               ::ipp::iwiColorGray);</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    }</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;}</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
@@ -223,9 +214,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        ::ipp::iwiResize(ipp_src_im, ipp_dst_im, it-&gt;second);</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    }</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;}</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
@@ -260,9 +251,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                ipp_src_im, ipp_dst_im, ::ipp::iwiMorphDilate, ipp_mask_im,</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                ::ipp::IwDefault(), <span class="comment">/* Do not use IwiFilterMorphologyParams() */</span></div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                ippBorderRepl);</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    }</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;}</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160; </div>
@@ -292,9 +283,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        ::ipp::iwiFilter(ipp_src_im, ipp_dst_im, ipp_kernel);</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    }</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;};</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
@@ -323,9 +314,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        ::ipp::iwiFilterBilateral(ipp_src_im, ipp_dst_im, kernel_size / 2,</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                                  value_sigma * value_sigma,</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                                  distance_sigma * distance_sigma);</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    }</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;}</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
@@ -351,9 +342,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        ::ipp::iwiFilterGaussian(ipp_src_im, ipp_dst_im, kernel_size, sigma);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    }</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;}</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
@@ -399,9 +390,9 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="comment">// https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing/filtering-functions-2/fixed-filters/filtersobel.html</span></div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        <span class="comment">// so we need to negate it in-place.</span></div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;        dst_im_dx.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a3e0cc1a46df612347330071902791c66">Neg_</a>();</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;e) {</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    } <span class="keywordflow">catch</span> (const ::ipp::IwException &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="comment">// See comments in ipp/ipptypes.h for m_status meaning</span></div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, e.m_status, e.m_string);</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;IPP-IW error {}: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_status, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.m_string);</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    }</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;}</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160; </div>
@@ -511,7 +502,7 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1Image_html_a0ca5d0ee6178d97362fd87b7027db455aec6b5414eb175379ff9efc9b3eef5814"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1Image.html#a0ca5d0ee6178d97362fd87b7027db455aec6b5414eb175379ff9efc9b3eef5814">cloudViewer::t::geometry::Image::InterpType::Cubic</a></div><div class="ttdeci">@ Cubic</div><div class="ttdoc">Bicubic interpolation.</div></div>
 <div class="ttc" id="acloudViewer_2t_2geometry_2Image_8h_html"><div class="ttname"><a href="cloudViewer_2t_2geometry_2Image_8h.html">Image.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a67a7a5bd403bf14004573511c1e75165"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a67a7a5bd403bf14004573511c1e75165">cloudViewer::core::UInt8</a></div><div class="ttdeci">const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00048">Dtype.cpp:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1ipp_html_a10bfb9b05b053183deab621083326499"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1ipp.html#a10bfb9b05b053183deab621083326499">cloudViewer::t::geometry::ipp::To</a></div><div class="ttdeci">void To(const core::Tensor &amp;src_im, core::Tensor &amp;dst_im, double scale, double offset)</div><div class="ttdef"><b>Definition:</b> <a href="IPPImage_8cpp_source.html#l00042">IPPImage.cpp:42</a></div></div>
@@ -523,14 +514,14 @@ $(document).ready(function(){initNavTree('IPPImage_8cpp_source.html',''); initRe
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1ipp_html_ae512311b4ad2c26e79254adce27c4356"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1ipp.html#ae512311b4ad2c26e79254adce27c4356">cloudViewer::t::geometry::ipp::RGBToGray</a></div><div class="ttdeci">void RGBToGray(const core::Tensor &amp;src_im, core::Tensor &amp;dst_im)</div><div class="ttdef"><b>Definition:</b> <a href="IPPImage_8cpp_source.html#l00071">IPPImage.cpp:71</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1ipp_html_aee1e3f82627643ae8355c38bcdec182d"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1ipp.html#aee1e3f82627643ae8355c38bcdec182d">cloudViewer::t::geometry::ipp::FilterGaussian</a></div><div class="ttdeci">void FilterGaussian(const core::Tensor &amp;src_im, core::Tensor &amp;dst_im, int kernel_size, float sigma)</div><div class="ttdef"><b>Definition:</b> <a href="IPPImage_8cpp_source.html#l00233">IPPImage.cpp:233</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1ipp_html_af9cf1aac5bc1a348175efb4197363dde"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1ipp.html#af9cf1aac5bc1a348175efb4197363dde">cloudViewer::t::geometry::ipp::FilterSobel</a></div><div class="ttdeci">void FilterSobel(const core::Tensor &amp;src_im, core::Tensor &amp;dst_im_dx, core::Tensor &amp;dst_im_dy, int kernel_size)</div><div class="ttdef"><b>Definition:</b> <a href="IPPImage_8cpp_source.html#l00261">IPPImage.cpp:261</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="IPPImage_8cpp.html">IPPImage.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

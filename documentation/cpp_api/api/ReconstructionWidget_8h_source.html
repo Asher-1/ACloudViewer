@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -123,28 +114,28 @@ $(document).ready(function(){initNavTree('ReconstructionWidget_8h_source.html','
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ReconstructionManagerWidget_8h.html">ReconstructionManagerWidget.h</a>&quot;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ReconstructionStatsWidget_8h.html">ReconstructionStatsWidget.h</a>&quot;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="UndistortionWidget_8h.html">UndistortionWidget.h</a>&quot;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;base/reconstruction.h&quot;</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;base/reconstruction_manager.h&quot;</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;controllers/incremental_mapper.h&quot;</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &quot;util/bitmap.h&quot;</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;util/option_manager.h&quot;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="reconstruction_8h.html">base/reconstruction.h</a>&quot;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="reconstruction__manager_8h.html">base/reconstruction_manager.h</a>&quot;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="controllers_2incremental__mapper_8h.html">controllers/incremental_mapper.h</a>&quot;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="bitmap_8h.html">util/bitmap.h</a>&quot;</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="option__manager_8h.html">util/option_manager.h</a>&quot;</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">class </span><a class="code" href="classMainWindow.html">MainWindow</a>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">// Directly use colmap&#39;s types</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#ad5776dc466ee54353149a24c06176b7a">   38</a></span>&#160;<span class="keyword">using</span> <a class="code" href="namespacecloudViewer.html#ad5776dc466ee54353149a24c06176b7a">IncrementalMapperController</a> = <a class="code" href="namespacecloudViewer.html#ad5776dc466ee54353149a24c06176b7a">colmap::IncrementalMapperController</a>;</div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a18842283153c25b2cf19213047cbfecc">   39</a></span>&#160;<span class="keyword">using</span> <a class="code" href="namespacecloudViewer.html#a18842283153c25b2cf19213047cbfecc">IncrementalMapperOptions</a> = <a class="code" href="namespacecloudViewer.html#a18842283153c25b2cf19213047cbfecc">colmap::IncrementalMapperOptions</a>;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">using</span> <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">OptionManager</a> = <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">colmap::OptionManager</a>;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">using</span> <a class="code" href="namespacecloudViewer.html#a22f69e64e95aaa023fc18e2edb892a9a">RenderOptions</a> = <a class="code" href="namespacecloudViewer.html#a22f69e64e95aaa023fc18e2edb892a9a">colmap::RenderOptions</a>;</div>
+<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#ad5776dc466ee54353149a24c06176b7a">   38</a></span>&#160;<span class="keyword">using</span> <a class="code" href="classcolmap_1_1IncrementalMapperController.html">IncrementalMapperController</a> = <a class="code" href="namespacecloudViewer.html#ad5776dc466ee54353149a24c06176b7a">colmap::IncrementalMapperController</a>;</div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a18842283153c25b2cf19213047cbfecc">   39</a></span>&#160;<span class="keyword">using</span> <a class="code" href="structcolmap_1_1IncrementalMapperOptions.html">IncrementalMapperOptions</a> = <a class="code" href="namespacecloudViewer.html#a18842283153c25b2cf19213047cbfecc">colmap::IncrementalMapperOptions</a>;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">using</span> <a class="code" href="classcolmap_1_1OptionManager.html">OptionManager</a> = <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">colmap::OptionManager</a>;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">using</span> <a class="code" href="structcolmap_1_1RenderOptions.html">RenderOptions</a> = <a class="code" href="namespacecloudViewer.html#a22f69e64e95aaa023fc18e2edb892a9a">colmap::RenderOptions</a>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1RenderOptionsWidget.html">RenderOptionsWidget</a>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1ReconstructionOptionsWidget.html">ReconstructionOptionsWidget</a>;</div>
 <div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ReconstructionWidget.html">   45</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1ReconstructionWidget.html">ReconstructionWidget</a> : <span class="keyword">public</span> QWidget {</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    Q_OBJECT</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classcloudViewer_1_1ReconstructionWidget.html#a8b4cb46e6398325467f071c5080cb7d4">ReconstructionWidget</a>(<a class="code" href="classMainWindow.html">MainWindow</a>* app);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">explicit</span> <a class="code" href="classcloudViewer_1_1ReconstructionWidget.html#a8b4cb46e6398325467f071c5080cb7d4">ReconstructionWidget</a>(<a class="code" href="classcolmap_1_1MainWindow.html">MainWindow</a>* app);</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1ReconstructionWidget.html#a26cf5992ca2fdf98fba9c5761ad07e37">ImportReconstruction</a>(<span class="keyword">const</span> std::string&amp; <a class="code" href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">path</a>);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
@@ -206,7 +197,7 @@ $(document).ready(function(){initNavTree('ReconstructionWidget_8h_source.html','
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keywordtype">void</span> ReconstructionNormalize();</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordtype">bool</span> ReconstructionOverwrite();</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordtype">void</span> BundleAdjustment();</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer.html#ac77c819af40cdd1f3c3959482728e660">BundleAdjustment</a>();</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keywordtype">void</span> DenseReconstruction();</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keywordtype">void</span> Render();</div>
@@ -237,14 +228,14 @@ $(document).ready(function(){initNavTree('ReconstructionWidget_8h_source.html','
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keywordtype">void</span> EnableBlockingActions();</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    <span class="keywordtype">void</span> DisableBlockingActions();</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    <a class="code" href="classMainWindow.html">MainWindow</a>* app_;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    <a class="code" href="classcolmap_1_1MainWindow.html">MainWindow</a>* app_;</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">OptionManager</a> options_;</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <a class="code" href="classcolmap_1_1OptionManager.html">OptionManager</a> options_;</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    colmap::ReconstructionManager reconstruction_manager_;</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <a class="code" href="classcolmap_1_1ReconstructionManager.html">colmap::ReconstructionManager</a> reconstruction_manager_;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    std::unique_ptr&lt;IncrementalMapperController&gt; mapper_controller_;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    colmap::Timer timer_;</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <a class="code" href="classcolmap_1_1Timer.html">colmap::Timer</a> timer_;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <a class="code" href="classcloudViewer_1_1ModelViewerWidget.html">ModelViewerWidget</a>* model_viewer_widget_;</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <a class="code" href="classcloudViewer_1_1ProjectWidget.html">ProjectWidget</a>* project_widget_;</div>
@@ -335,6 +326,7 @@ $(document).ready(function(){initNavTree('ReconstructionWidget_8h_source.html','
 <div class="ttc" id="aReconstructionManagerWidget_8h_html"><div class="ttname"><a href="ReconstructionManagerWidget_8h.html">ReconstructionManagerWidget.h</a></div></div>
 <div class="ttc" id="aReconstructionStatsWidget_8h_html"><div class="ttname"><a href="ReconstructionStatsWidget_8h.html">ReconstructionStatsWidget.h</a></div></div>
 <div class="ttc" id="aUndistortionWidget_8h_html"><div class="ttname"><a href="UndistortionWidget_8h.html">UndistortionWidget.h</a></div></div>
+<div class="ttc" id="abitmap_8h_html"><div class="ttname"><a href="bitmap_8h.html">bitmap.h</a></div></div>
 <div class="ttc" id="aclassMainWindow_html"><div class="ttname"><a href="classMainWindow.html">MainWindow</a></div><div class="ttdef"><b>Definition:</b> <a href="MainWindow_8h_source.html#l00117">MainWindow.h:119</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1AutomaticReconstructionWidget_html"><div class="ttname"><a href="classcloudViewer_1_1AutomaticReconstructionWidget.html">cloudViewer::AutomaticReconstructionWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionWidget_8h_source.html#l00019">AutomaticReconstructionWidget.h:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BundleAdjustmentWidget_html"><div class="ttname"><a href="classcloudViewer_1_1BundleAdjustmentWidget.html">cloudViewer::BundleAdjustmentWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="BundleAdjustmentWidget_8h_source.html#l00023">BundleAdjustmentWidget.h:23</a></div></div>
@@ -366,19 +358,31 @@ $(document).ready(function(){initNavTree('ReconstructionWidget_8h_source.html','
 <div class="ttc" id="aclasscloudViewer_1_1RenderOptionsWidget_html"><div class="ttname"><a href="classcloudViewer_1_1RenderOptionsWidget.html">cloudViewer::RenderOptionsWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="RenderOptionsWidget_8h_source.html#l00024">RenderOptionsWidget.h:24</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ThreadControlWidget_html"><div class="ttname"><a href="classcloudViewer_1_1ThreadControlWidget.html">cloudViewer::ThreadControlWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="ThreadControlWidget_8h_source.html#l00019">ThreadControlWidget.h:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1UndistortionWidget_html"><div class="ttname"><a href="classcloudViewer_1_1UndistortionWidget.html">cloudViewer::UndistortionWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="UndistortionWidget_8h_source.html#l00027">UndistortionWidget.h:27</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1IncrementalMapperController_html"><div class="ttname"><a href="classcolmap_1_1IncrementalMapperController.html">colmap::IncrementalMapperController</a></div><div class="ttdef"><b>Definition:</b> <a href="controllers_2incremental__mapper_8h_source.html#l00135">incremental_mapper.h:135</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1MainWindow_html"><div class="ttname"><a href="classcolmap_1_1MainWindow.html">colmap::MainWindow</a></div><div class="ttdef"><b>Definition:</b> <a href="main__window_8h_source.html#l00036">main_window.h:36</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionManager_html"><div class="ttname"><a href="classcolmap_1_1OptionManager.html">colmap::OptionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="option__manager_8h_source.html#l00038">option_manager.h:38</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManager_html"><div class="ttname"><a href="classcolmap_1_1ReconstructionManager.html">colmap::ReconstructionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager_8h_source.html#l00016">reconstruction_manager.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1Timer_html"><div class="ttname"><a href="classcolmap_1_1Timer.html">colmap::Timer</a></div><div class="ttdef"><b>Definition:</b> <a href="timer_8h_source.html#l00014">timer.h:14</a></div></div>
+<div class="ttc" id="acontrollers_2incremental__mapper_8h_html"><div class="ttname"><a href="controllers_2incremental__mapper_8h.html">incremental_mapper.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a18842283153c25b2cf19213047cbfecc"><div class="ttname"><a href="namespacecloudViewer.html#a18842283153c25b2cf19213047cbfecc">cloudViewer::IncrementalMapperOptions</a></div><div class="ttdeci">colmap::IncrementalMapperOptions IncrementalMapperOptions</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionWidget_8h_source.html#l00039">ReconstructionWidget.h:39</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a22f69e64e95aaa023fc18e2edb892a9a"><div class="ttname"><a href="namespacecloudViewer.html#a22f69e64e95aaa023fc18e2edb892a9a">cloudViewer::RenderOptions</a></div><div class="ttdeci">colmap::RenderOptions RenderOptions</div><div class="ttdef"><b>Definition:</b> <a href="ModelViewerWidget_8h_source.html#l00035">ModelViewerWidget.h:35</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html_ac77c819af40cdd1f3c3959482728e660"><div class="ttname"><a href="namespacecloudViewer.html#ac77c819af40cdd1f3c3959482728e660">cloudViewer::BundleAdjustment</a></div><div class="ttdeci">int BundleAdjustment(const std::string &amp;input_path, const std::string &amp;output_path, const colmap::BundleAdjustmentOptions &amp;bundle_adjustment_options)</div><div class="ttdef"><b>Definition:</b> <a href="sfm_8cpp_source.html#l00058">sfm.cpp:58</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_acbdc2fe5d0d56b055e4a87639b627d31"><div class="ttname"><a href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">cloudViewer::OptionManager</a></div><div class="ttdeci">colmap::OptionManager OptionManager</div><div class="ttdef"><b>Definition:</b> <a href="BundleAdjustmentWidget_8h_source.html#l00019">BundleAdjustmentWidget.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_ad5776dc466ee54353149a24c06176b7a"><div class="ttname"><a href="namespacecloudViewer.html#ad5776dc466ee54353149a24c06176b7a">cloudViewer::IncrementalMapperController</a></div><div class="ttdeci">colmap::IncrementalMapperController IncrementalMapperController</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionWidget_8h_source.html#l00038">ReconstructionWidget.h:38</a></div></div>
+<div class="ttc" id="aoption__manager_8h_html"><div class="ttname"><a href="option__manager_8h.html">option_manager.h</a></div></div>
+<div class="ttc" id="areconstruction_8h_html"><div class="ttname"><a href="reconstruction_8h.html">reconstruction.h</a></div></div>
+<div class="ttc" id="areconstruction__manager_8h_html"><div class="ttname"><a href="reconstruction__manager_8h.html">reconstruction_manager.h</a></div></div>
+<div class="ttc" id="astructcolmap_1_1IncrementalMapperOptions_html"><div class="ttname"><a href="structcolmap_1_1IncrementalMapperOptions.html">colmap::IncrementalMapperOptions</a></div><div class="ttdef"><b>Definition:</b> <a href="controllers_2incremental__mapper_8h_source.html#l00016">incremental_mapper.h:16</a></div></div>
+<div class="ttc" id="astructcolmap_1_1RenderOptions_html"><div class="ttname"><a href="structcolmap_1_1RenderOptions.html">colmap::RenderOptions</a></div><div class="ttdef"><b>Definition:</b> <a href="render__options_8h_source.html#l00014">render_options.h:14</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="ReconstructionWidget_8h.html">ReconstructionWidget.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -3,7 +3,7 @@ var classccDisc =
     [ "ccDisc", "classccDisc.html#a0b9d830e3eee123edd9903a8be56833e", null ],
     [ "ccDisc", "classccDisc.html#a9f66a2e501b349e66549c5fb6aa892c6", null ],
     [ "buildUp", "classccDisc.html#a8f138668d05f5788f5acd33bb6531fcd", null ],
-    [ "clone", "classccDisc.html#a7a700b3560f78d8c548ac9356623ea37", null ],
+    [ "clone", "classccDisc.html#ade2a4e22fdec542a580fa531b873b030", null ],
     [ "fromFile_MeOnly", "classccDisc.html#a8ec271ab276a8e93e38c1df6cae14526", null ],
     [ "getClassID", "classccDisc.html#af850983e60159fcde445fb764b06b239", null ],
     [ "getOwnFitBB", "classccDisc.html#a0ca199dbfe92b40ae0a973a906cde00d", null ],

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -107,7 +98,7 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NumberEdit_8h.html">visualization/gui/NumberEdit.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;imgui.h&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span>  <span class="comment">// for snprintf</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="string_8h.html">string.h</a>&gt;</span>  <span class="comment">// for snprintf</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span>  <span class="comment">// for min, max</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;cmath&gt;</span></div>
@@ -169,7 +160,7 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        impl_-&gt;min_value_ = min_value;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        impl_-&gt;max_value_ = min_value;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    }</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    impl_-&gt;value_ = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(max_value, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(min_value, impl_-&gt;value_));</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    impl_-&gt;value_ = std::min(max_value, std::max(min_value, impl_-&gt;value_));</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
 <div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a3a7ffc65af0039e6e5d798a3b10a3b6a">   76</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a3a7ffc65af0039e6e5d798a3b10a3b6a">NumberEdit::GetDecimalPrecision</a>() { <span class="keywordflow">return</span> impl_-&gt;num_decimal_digits_; }</div>
@@ -189,10 +180,10 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="line"><a name="l00090"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a42ed3e44776f02cd215224a2a94932cb">   90</a></span>&#160;<a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Size.html">Size</a> <a class="code" href="classcloudViewer_1_1visualization_1_1gui_1_1NumberEdit.html#a42ed3e44776f02cd215224a2a94932cb">NumberEdit::CalcPreferredSize</a>(<span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">LayoutContext</a>&amp; <a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a>,</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                                   <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1visualization_1_1gui_1_1Widget_1_1Constraints.html">Constraints</a>&amp; constraints)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordtype">int</span> num_min_digits =</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(std::log10(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(impl_-&gt;min_value_))));</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(std::log10(std::abs(impl_-&gt;min_value_))));</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordtype">int</span> num_max_digits =</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(std::log10(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(impl_-&gt;max_value_))));</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordtype">int</span> num_digits = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(6, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(num_min_digits, num_max_digits));</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            int(<a class="code" href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">std::ceil</a>(std::log10(std::abs(impl_-&gt;max_value_))));</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordtype">int</span> num_digits = std::max(6, std::max(num_min_digits, num_max_digits));</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keywordflow">if</span> (impl_-&gt;min_value_ &lt; 0) {</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        num_digits += 1;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    }</div>
@@ -316,15 +307,13 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_a99324f03e30cd674761dafc88448f391a8493617dd77e400daa81294925a52201"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391a8493617dd77e400daa81294925a52201">cloudViewer::visualization::gui::Widget::DrawResult::REDRAW</a></div><div class="ttdeci">@ REDRAW</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#a99324f03e30cd674761dafc88448f391ab50339a10e1de285ac99d4c3990b8693">cloudViewer::visualization::gui::Widget::DrawResult::NONE</a></div><div class="ttdeci">@ NONE</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1gui_1_1Widget_html_af28e1765c4a30741c6c50ec397562ce1"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1gui_1_1Widget.html#af28e1765c4a30741c6c50ec397562ce1">cloudViewer::visualization::gui::Widget::DrawImGuiPushEnabledState</a></div><div class="ttdeci">void DrawImGuiPushEnabledState()</div><div class="ttdef"><b>Definition:</b> <a href="Widget_8cpp_source.html#l00111">Widget.cpp:111</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8cpp_html_a0fc46c2cc73ed5bf25b870a781a2d18e"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp.html#a0fc46c2cc73ed5bf25b870a781a2d18e">context</a></div><div class="ttdeci">ImGuiContext * context</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2visualization_2gui_2Window_8cpp_source.html#l00076">Window.cpp:76</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gui_html_aca9fc6fdaa1ee91a03470ca0ed4735a3"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gui.html#aca9fc6fdaa1ee91a03470ca0ed4735a3">cloudViewer::visualization::gui::colorToImgui</a></div><div class="ttdeci">ImVec4 colorToImgui(const Color &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="Util_8cpp_source.html#l00020">Util.cpp:20</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacefmt_html"><div class="ttname"><a href="namespacefmt.html">fmt</a></div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8h_source.html#l00086">IJsonConvertible.h:86</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
+<div class="ttc" id="astring_8h_html"><div class="ttname"><a href="string_8h.html">string.h</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1DrawContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1DrawContext.html">cloudViewer::visualization::gui::DrawContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00037">Widget.h:37</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1LayoutContext_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1LayoutContext.html">cloudViewer::visualization::gui::LayoutContext</a></div><div class="ttdef"><b>Definition:</b> <a href="Widget_8h_source.html#l00032">Widget.h:32</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1gui_1_1NumberEdit_1_1Impl_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1gui_1_1NumberEdit_1_1Impl.html">cloudViewer::visualization::gui::NumberEdit::Impl</a></div><div class="ttdef"><b>Definition:</b> <a href="NumberEdit_8cpp_source.html#l00028">NumberEdit.cpp:28</a></div></div>
@@ -344,7 +333,7 @@ $(document).ready(function(){initNavTree('NumberEdit_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_016d0f202ff0280a7e5050aeab20bc2e.html">gui</a></li><li class="navelem"><a class="el" href="NumberEdit_8cpp.html">NumberEdit.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:29 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

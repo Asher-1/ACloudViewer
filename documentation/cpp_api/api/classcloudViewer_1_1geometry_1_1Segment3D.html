@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -150,15 +141,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aee13340803650da10bb799b9b5792523"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classccBBox.html">ccBBox</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#aee13340803650da10bb799b9b5792523">GetBoundingBox</a> () const</td></tr>
 <tr class="memdesc:aee13340803650da10bb799b9b5792523"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an axis-aligned bounding box representing the enclosed volume of the line segment.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#aee13340803650da10bb799b9b5792523">More...</a><br /></td></tr>
 <tr class="separator:aee13340803650da10bb799b9b5792523"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e99d0bf850e7f97d9d57d46ea7d7cfa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a3e99d0bf850e7f97d9d57d46ea7d7cfa">IntersectionParameter</a> (const Eigen::Hyperplane&lt; double, 3 &gt; &amp;plane) const override</td></tr>
-<tr class="memdesc:a3e99d0bf850e7f97d9d57d46ea7d7cfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the intersection parameter between the line and a plane taking into account segment semantics. Returns an empty result if there is no intersection. On a <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a> this means that intersections behind the origin and beyond the endpoint are invalid.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#a3e99d0bf850e7f97d9d57d46ea7d7cfa">More...</a><br /></td></tr>
-<tr class="separator:a3e99d0bf850e7f97d9d57d46ea7d7cfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac61daae45e74b71eda6008986bfabf30"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#ac61daae45e74b71eda6008986bfabf30">SlabAABB</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;box) const override</td></tr>
-<tr class="memdesc:ac61daae45e74b71eda6008986bfabf30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the lower intersection parameter for a segment with an axis aligned bounding box or empty if no intersection. Uses the slab method, see warning below.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#ac61daae45e74b71eda6008986bfabf30">More...</a><br /></td></tr>
-<tr class="separator:ac61daae45e74b71eda6008986bfabf30"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a724063c96ebb94549d83d8cd79a35f2c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a724063c96ebb94549d83d8cd79a35f2c">ExactAABB</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;box) const override</td></tr>
-<tr class="memdesc:a724063c96ebb94549d83d8cd79a35f2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the lower intersection parameter for a segment with an axis aligned bounding box or empty if no intersection. This method is about 20x slower than the slab method, see details to know when to use.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#a724063c96ebb94549d83d8cd79a35f2c">More...</a><br /></td></tr>
-<tr class="separator:a724063c96ebb94549d83d8cd79a35f2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e9633b8f54466cc7e2761eca936336d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a1e9633b8f54466cc7e2761eca936336d">IntersectionParameter</a> (const Eigen::Hyperplane&lt; double, 3 &gt; &amp;plane) const override</td></tr>
+<tr class="memdesc:a1e9633b8f54466cc7e2761eca936336d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the intersection parameter between the line and a plane taking into account segment semantics. Returns an empty result if there is no intersection. On a <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a> this means that intersections behind the origin and beyond the endpoint are invalid.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#a1e9633b8f54466cc7e2761eca936336d">More...</a><br /></td></tr>
+<tr class="separator:a1e9633b8f54466cc7e2761eca936336d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d74689a5ba0c915172cc43c9580f4cd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a1d74689a5ba0c915172cc43c9580f4cd">SlabAABB</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;box) const override</td></tr>
+<tr class="memdesc:a1d74689a5ba0c915172cc43c9580f4cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the lower intersection parameter for a segment with an axis aligned bounding box or empty if no intersection. Uses the slab method, see warning below.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#a1d74689a5ba0c915172cc43c9580f4cd">More...</a><br /></td></tr>
+<tr class="separator:a1d74689a5ba0c915172cc43c9580f4cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad9f226edd64854baa7a832d008d88ec"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#aad9f226edd64854baa7a832d008d88ec">ExactAABB</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;box) const override</td></tr>
+<tr class="memdesc:aad9f226edd64854baa7a832d008d88ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the lower intersection parameter for a segment with an axis aligned bounding box or empty if no intersection. This method is about 20x slower than the slab method, see details to know when to use.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#aad9f226edd64854baa7a832d008d88ec">More...</a><br /></td></tr>
+<tr class="separator:aad9f226edd64854baa7a832d008d88ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acd5e18e444a8030157b90cc26aebb578"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#acd5e18e444a8030157b90cc26aebb578">ClampParameter</a> (double parameter) const override</td></tr>
 <tr class="memdesc:acd5e18e444a8030157b90cc26aebb578"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clamps/bounds a parameter value to the closest valid place where the entity exists. On a <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a>, the value will be unchanged, on a <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and...">Ray3D</a> a negative value will be made 0, and on a <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a> a negative value will be made 0 and a positive value greater than <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a10ad9bb6e58b85ac348cdcb4fcbb7039" title="Get the scalar length of the segment as the distance between the start point (origin) and the end poi...">Length()</a> will take the value of <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html#a10ad9bb6e58b85ac348cdcb4fcbb7039" title="Get the scalar length of the segment as the distance between the start point (origin) and the end poi...">Length()</a>  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#acd5e18e444a8030157b90cc26aebb578">More...</a><br /></td></tr>
 <tr class="separator:acd5e18e444a8030157b90cc26aebb578"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -166,7 +157,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a0a5dc51b2261829ce8b436e4800a4182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifies that a given parameter value is valid for the semantics of the line object. For lines, any parameter is valid, for rays any positive parameter is valid, and for segments any parameter between 0 and the segment length is valid.  <a href="classcloudViewer_1_1geometry_1_1Segment3D.html#a0a5dc51b2261829ce8b436e4800a4182">More...</a><br /></td></tr>
 <tr class="separator:a0a5dc51b2261829ce8b436e4800a4182"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classcloudViewer_1_1geometry_1_1Line3D')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">cloudViewer::geometry::Line3D</a></td></tr>
-<tr class="memitem:ae357b0a0c2239dcefa6f0d8b89507c19 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#ae357b0a0c2239dcefa6f0d8b89507c19">Line3D</a> (const Eigen::Vector3d &amp;origin, const Eigen::Vector3d &amp;direction)</td></tr>
+<tr class="memitem:ae357b0a0c2239dcefa6f0d8b89507c19 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#ae357b0a0c2239dcefa6f0d8b89507c19">Line3D</a> (const Eigen::Vector3d &amp;<a class="el" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>, const Eigen::Vector3d &amp;direction)</td></tr>
 <tr class="memdesc:ae357b0a0c2239dcefa6f0d8b89507c19 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default user constructor.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#ae357b0a0c2239dcefa6f0d8b89507c19">More...</a><br /></td></tr>
 <tr class="separator:ae357b0a0c2239dcefa6f0d8b89507c19 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25211f324794490cdea8df0bf84272e5 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a25211f324794490cdea8df0bf84272e5">~Line3D</a> ()=default</td></tr>
@@ -183,18 +174,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a98f067791e6becc94bdba3250645d2b3 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">const Eigen::ParametrizedLine&lt; double, 3 &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a98f067791e6becc94bdba3250645d2b3">Line</a> () const</td></tr>
 <tr class="memdesc:a98f067791e6becc94bdba3250645d2b3 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a const reference to the underlying Eigen::ParametrizedLine object.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a98f067791e6becc94bdba3250645d2b3">More...</a><br /></td></tr>
 <tr class="separator:a98f067791e6becc94bdba3250645d2b3 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ff15f4d1754fddc34ed5659964edee1 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a8ff15f4d1754fddc34ed5659964edee1">ProjectionParameter</a> (const Eigen::Vector3d &amp;<a class="el" href="structpoint.html">point</a>) const</td></tr>
+<tr class="memitem:a8ff15f4d1754fddc34ed5659964edee1 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a8ff15f4d1754fddc34ed5659964edee1">ProjectionParameter</a> (const Eigen::Vector3d &amp;point) const</td></tr>
 <tr class="memdesc:a8ff15f4d1754fddc34ed5659964edee1 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the parameter of a point projected onto the line taking into account special semantics.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a8ff15f4d1754fddc34ed5659964edee1">More...</a><br /></td></tr>
 <tr class="separator:a8ff15f4d1754fddc34ed5659964edee1 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a783cfb6b83624bd1a225c7f5512e92dd inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">virtual Eigen::Vector3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a783cfb6b83624bd1a225c7f5512e92dd">Projection</a> (const Eigen::Vector3d &amp;<a class="el" href="structpoint.html">point</a>) const</td></tr>
-<tr class="memdesc:a783cfb6b83624bd1a225c7f5512e92dd inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates a point projected onto the line, taking into account special semantics.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a783cfb6b83624bd1a225c7f5512e92dd">More...</a><br /></td></tr>
-<tr class="separator:a783cfb6b83624bd1a225c7f5512e92dd inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f3976bfe958d4531e955ad774b9fda9 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">std::pair&lt; double, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a6f3976bfe958d4531e955ad774b9fda9">ClosestParameters</a> (const <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">Line3D</a> &amp;other) const</td></tr>
-<tr class="memdesc:a6f3976bfe958d4531e955ad774b9fda9 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the two corresponding parameters of the closest distance between two <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> objects, including derived types <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and...">Ray3D</a> and <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a>, respecting the semantics of the line type.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a6f3976bfe958d4531e955ad774b9fda9">More...</a><br /></td></tr>
-<tr class="separator:a6f3976bfe958d4531e955ad774b9fda9 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1d5b81f2cb3cf5b414a789861154e3df inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">std::pair&lt; Eigen::Vector3d, Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a1d5b81f2cb3cf5b414a789861154e3df">ClosestPoints</a> (const <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">Line3D</a> &amp;other) const</td></tr>
-<tr class="memdesc:a1d5b81f2cb3cf5b414a789861154e3df inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the two closest points between this <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> object and the other, including of derived types <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and...">Ray3D</a> and <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a>, respecting the semantics of the line types.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a1d5b81f2cb3cf5b414a789861154e3df">More...</a><br /></td></tr>
-<tr class="separator:a1d5b81f2cb3cf5b414a789861154e3df inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c727d4bd17af300cbbeee2eec70e762 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">virtual Eigen::Vector3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a3c727d4bd17af300cbbeee2eec70e762">Projection</a> (const Eigen::Vector3d &amp;point) const</td></tr>
+<tr class="memdesc:a3c727d4bd17af300cbbeee2eec70e762 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates a point projected onto the line, taking into account special semantics.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a3c727d4bd17af300cbbeee2eec70e762">More...</a><br /></td></tr>
+<tr class="separator:a3c727d4bd17af300cbbeee2eec70e762 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5806da886c198c1a1ffa6a107ea722b2 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">std::pair&lt; double, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a5806da886c198c1a1ffa6a107ea722b2">ClosestParameters</a> (const <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">Line3D</a> &amp;other) const</td></tr>
+<tr class="memdesc:a5806da886c198c1a1ffa6a107ea722b2 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the two corresponding parameters of the closest distance between two <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> objects, including derived types <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and...">Ray3D</a> and <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a>, respecting the semantics of the line type.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a5806da886c198c1a1ffa6a107ea722b2">More...</a><br /></td></tr>
+<tr class="separator:a5806da886c198c1a1ffa6a107ea722b2 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4435fc8861ee684f8270fad00e19be43 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">std::pair&lt; Eigen::Vector3d, Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a4435fc8861ee684f8270fad00e19be43">ClosestPoints</a> (const <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">Line3D</a> &amp;other) const</td></tr>
+<tr class="memdesc:a4435fc8861ee684f8270fad00e19be43 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the two closest points between this <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> object and the other, including of derived types <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and...">Ray3D</a> and <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a>, respecting the semantics of the line types.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a4435fc8861ee684f8270fad00e19be43">More...</a><br /></td></tr>
+<tr class="separator:a4435fc8861ee684f8270fad00e19be43 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3df81b3aa144be8c67e516a5327bf267 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a3df81b3aa144be8c67e516a5327bf267">DistanceTo</a> (const <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">Line3D</a> &amp;other) const</td></tr>
 <tr class="memdesc:a3df81b3aa144be8c67e516a5327bf267 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the closest distance between two <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html" title="Line3D is a class which derives from Eigen::ParametrizedLine&lt;double, 3&gt; in order to capture the seman...">Line3D</a> objects, including derived types <a class="el" href="classcloudViewer_1_1geometry_1_1Ray3D.html" title="A ray is a semantic interpretation of Eigen::ParametrizedLine which has an origin and a direction and...">Ray3D</a> and <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a>, respecting the semantics of the line type.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a3df81b3aa144be8c67e516a5327bf267">More...</a><br /></td></tr>
 <tr class="separator:a3df81b3aa144be8c67e516a5327bf267 inherit pub_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,12 +210,12 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memdesc:a3edd6c057f6671b34227419be6c10db6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specifies different semantic interpretations of 3d lines.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a3edd6c057f6671b34227419be6c10db6">More...</a><br /></td></tr>
 <tr class="separator:a3edd6c057f6671b34227419be6c10db6 inherit pub_types_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classcloudViewer_1_1geometry_1_1Line3D')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html">cloudViewer::geometry::Line3D</a></td></tr>
-<tr class="memitem:ab9d14b6ba32440212839cbdaa363f9c3 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#ab9d14b6ba32440212839cbdaa363f9c3">Line3D</a> (const Eigen::Vector3d &amp;origin, const Eigen::Vector3d &amp;direction, <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a3edd6c057f6671b34227419be6c10db6">LineType</a> <a class="el" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>)</td></tr>
+<tr class="memitem:ab9d14b6ba32440212839cbdaa363f9c3 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#ab9d14b6ba32440212839cbdaa363f9c3">Line3D</a> (const Eigen::Vector3d &amp;<a class="el" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>, const Eigen::Vector3d &amp;direction, <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a3edd6c057f6671b34227419be6c10db6">LineType</a> <a class="el" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>)</td></tr>
 <tr class="memdesc:ab9d14b6ba32440212839cbdaa363f9c3 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Internal constructor for inherited classes that allows the setting of the LineType.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#ab9d14b6ba32440212839cbdaa363f9c3">More...</a><br /></td></tr>
 <tr class="separator:ab9d14b6ba32440212839cbdaa363f9c3 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adeb7c2198ec690fcbbda61f97013aee9 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">std::pair&lt; double, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#adeb7c2198ec690fcbbda61f97013aee9">SlabAABBBase</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;box) const</td></tr>
-<tr class="memdesc:adeb7c2198ec690fcbbda61f97013aee9 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the common t_min and t_max values of the slab <a class="el" href="structAABB.html" title="Simple axis aligned box structure.">AABB</a> intersection method. These values are computed identically for any semantic interpretation of the line, it's up to the derived classes to use them in conjunction with other information to determine what the intersection parameter is.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#adeb7c2198ec690fcbbda61f97013aee9">More...</a><br /></td></tr>
-<tr class="separator:adeb7c2198ec690fcbbda61f97013aee9 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a6067fb3d9f5c901907a6e3fc17ceb2 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memItemLeft" align="right" valign="top">std::pair&lt; double, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a8a6067fb3d9f5c901907a6e3fc17ceb2">SlabAABBBase</a> (const <a class="el" href="classccBBox.html">ccBBox</a> &amp;box) const</td></tr>
+<tr class="memdesc:a8a6067fb3d9f5c901907a6e3fc17ceb2 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the common t_min and t_max values of the slab <a class="el" href="structAABB.html" title="Simple axis aligned box structure.">AABB</a> intersection method. These values are computed identically for any semantic interpretation of the line, it's up to the derived classes to use them in conjunction with other information to determine what the intersection parameter is.  <a href="classcloudViewer_1_1geometry_1_1Line3D.html#a8a6067fb3d9f5c901907a6e3fc17ceb2">More...</a><br /></td></tr>
+<tr class="separator:a8a6067fb3d9f5c901907a6e3fc17ceb2 inherit pro_methods_classcloudViewer_1_1geometry_1_1Line3D"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint and exists finitely between them. </p>
@@ -266,6 +257,8 @@ Additional Inherited Members</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00323">323</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
+
 </div>
 </div>
 <a id="a6b93e3f2ec50449e20aeb2fa8c7ea3b6"></a>
@@ -293,6 +286,8 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Takes a std::pair of points, the first to be used as the start point/origin and the second to be the end point. </p>
+
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00331">331</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
 
 </div>
 </div>
@@ -327,8 +322,6 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00415">415</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
-<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>, and <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>.</p>
-
 </div>
 </div>
 <a id="a08f45cba0fddacafe9f2b16423b1332e"></a>
@@ -360,8 +353,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a724063c96ebb94549d83d8cd79a35f2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a724063c96ebb94549d83d8cd79a35f2c">&#9670;&nbsp;</a></span>ExactAABB()</h2>
+<a id="aad9f226edd64854baa7a832d008d88ec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad9f226edd64854baa7a832d008d88ec">&#9670;&nbsp;</a></span>ExactAABB()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -370,7 +363,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt;double&gt; cloudViewer::geometry::Segment3D::ExactAABB </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; double &gt; cloudViewer::geometry::Segment3D::ExactAABB </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td>
           <td class="paramname"><em>box</em></td><td>)</td>
@@ -388,7 +381,11 @@ Additional Inherited Members</h2></td></tr>
 <p>Calculates the lower intersection parameter of a parameterized segment with an axis aligned bounding box. The intersection point can be recovered with .<a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a98f067791e6becc94bdba3250645d2b3" title="Returns a const reference to the underlying Eigen::ParametrizedLine object.">Line()</a>.pointAt(...). If the segment does not intersect the box the return value will be empty.</p>
 <p>This implementation is a naive exact method that considers intersections with all six bounding box planes. It is not optimized for speed and should only be used when a problem is conditioned such that the slab method is unacceptable. Use this when a segment is likely to lie exactly in one of the <a class="el" href="structAABB.html" title="Simple axis aligned box structure.">AABB</a> planes and false negatives are unacceptable. Typically this will only happen when segments are axis-aligned and both segments and bounding volumes are regularly spaced, and every intersection is important. In such cases if performance is important, a simple custom implementation based on the problem directionality will likely outperform even the slab method. </p>
 
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#ae4a1a6edb4a4b21d218a46d9522c9990">cloudViewer::geometry::Line3D</a>.</p>
+<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#afe300ef2eb825c95627526bb1fa7ac7f">cloudViewer::geometry::Line3D</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00361">361</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="Line3D_8cpp_source.html#l00079">cloudViewer::geometry::Line3D::ExactAABB()</a>, and <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>.</p>
 
 </div>
 </div>
@@ -409,10 +406,14 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Get an axis-aligned bounding box representing the enclosed volume of the line segment. </p>
 
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00370">370</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="VoxelGridIO_8cpp_source.html#l00026">origin</a>, <a class="el" href="my__point__types_8h_source.html#l00165">x</a>, <a class="el" href="my__point__types_8h_source.html#l00168">y</a>, and <a class="el" href="my__point__types_8h_source.html#l00165">z</a>.</p>
+
 </div>
 </div>
-<a id="a3e99d0bf850e7f97d9d57d46ea7d7cfa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e99d0bf850e7f97d9d57d46ea7d7cfa">&#9670;&nbsp;</a></span>IntersectionParameter()</h2>
+<a id="a1e9633b8f54466cc7e2761eca936336d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e9633b8f54466cc7e2761eca936336d">&#9670;&nbsp;</a></span>IntersectionParameter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -421,7 +422,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt;double&gt; cloudViewer::geometry::Segment3D::IntersectionParameter </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; double &gt; cloudViewer::geometry::Segment3D::IntersectionParameter </td>
           <td>(</td>
           <td class="paramtype">const Eigen::Hyperplane&lt; double, 3 &gt; &amp;&#160;</td>
           <td class="paramname"><em>plane</em></td><td>)</td>
@@ -437,7 +438,11 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Calculates the intersection parameter between the line and a plane taking into account segment semantics. Returns an empty result if there is no intersection. On a <a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html" title="A segment is a semantic interpretation of Eigen::ParametrizedLine which has an origin and an endpoint...">Segment3D</a> this means that intersections behind the origin and beyond the endpoint are invalid. </p>
 
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#ab531e9eae25dfbd0805c76c60a3f925f">cloudViewer::geometry::Line3D</a>.</p>
+<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#aab58b1294f131a07b9a2c012254f9f9d">cloudViewer::geometry::Line3D</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00381">381</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00100">cloudViewer::geometry::Line3D::Line()</a>, and <a class="el" href="VtkUtils_8cpp_source.html#l00076">result</a>.</p>
 
 </div>
 </div>
@@ -531,10 +536,12 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="CV__db_2include_2Line3D_8h_source.html#l00343">343</a> of file <a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a>.</p>
 
+<p class="reference">References <a class="el" href="VoxelGridIO_8cpp_source.html#l00026">origin</a>.</p>
+
 </div>
 </div>
-<a id="ac61daae45e74b71eda6008986bfabf30"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac61daae45e74b71eda6008986bfabf30">&#9670;&nbsp;</a></span>SlabAABB()</h2>
+<a id="a1d74689a5ba0c915172cc43c9580f4cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d74689a5ba0c915172cc43c9580f4cd">&#9670;&nbsp;</a></span>SlabAABB()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -543,7 +550,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a>&lt;double&gt; cloudViewer::geometry::Segment3D::SlabAABB </td>
+          <td class="memname"><a class="el" href="classcloudViewer_1_1utility_1_1optional.html">utility::optional</a>&lt; double &gt; cloudViewer::geometry::Segment3D::SlabAABB </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classccBBox.html">ccBBox</a> &amp;&#160;</td>
           <td class="paramname"><em>box</em></td><td>)</td>
@@ -562,7 +569,11 @@ Additional Inherited Members</h2></td></tr>
 <p>This implementation is based off of Tavian Barnes' optimized branchless slab method. <a href="https://tavianator.com/2011/segment_box.html">https://tavianator.com/2011/segment_box.html</a>. It runs in roughly 5% of the time as the the naive exact method, but can degenerate in specific conditions where a segment lies exactly in one of the <a class="el" href="structAABB.html" title="Simple axis aligned box structure.">AABB</a>'s planes.</p>
 <dl class="section warning"><dt>Warning</dt><dd>A segment that lies exactly in one of the <a class="el" href="structAABB.html" title="Simple axis aligned box structure.">AABB</a>'s planes within the double floating point precision will not intersect correctly by this method </dd></dl>
 
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a22df519c0304b2c63fde2c5805703c43">cloudViewer::geometry::Line3D</a>.</p>
+<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a64d0846f41af8114229c56f0909cda29">cloudViewer::geometry::Line3D</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00339">339</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="Line3D_8cpp_source.html#l00042">cloudViewer::geometry::Line3D::SlabAABBBase()</a>.</p>
 
 </div>
 </div>
@@ -632,12 +643,15 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Transform the segment by the given matrix. </p>
 
-<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a50424a242ad306460f77e5928aff4ed1">cloudViewer::geometry::Line3D</a>.</p>
+<p>Reimplemented from <a class="el" href="classcloudViewer_1_1geometry_1_1Line3D.html#a055e1489a72f21fab5c3dd85493f8748">cloudViewer::geometry::Line3D</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="Line3D_8cpp_source.html#l00334">334</a> of file <a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="CV__db_2include_2Line3D_8h_source.html">Line3D.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/src/<a class="el" href="Line3D_8cpp_source.html">Line3D.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -645,7 +659,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1geometry.html">geometry</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1geometry_1_1Segment3D.html">Segment3D</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:16 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:57:00 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

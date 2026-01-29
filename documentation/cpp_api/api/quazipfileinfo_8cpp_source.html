@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -190,13 +181,13 @@ $(document).ready(function(){initNavTree('quazipfileinfo_8cpp_source.html',''); 
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                         <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(extra.at(i + 1)))</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                 &lt;&lt; 8);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        i += 2;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordtype">unsigned</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> =</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordtype">unsigned</span> length =</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(extra.at(i))) |</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                (<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                         <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(extra.at(i + 1)))</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                 &lt;&lt; 8);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        i += 2;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a> == <a class="code" href="quazip__global_8h.html#abc8b7bc552eb31b821be7fc1a16ba10f">QUAZIP_EXTRA_NTFS_MAGIC</a> &amp;&amp; <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> &gt;= 32) {</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a> == <a class="code" href="quazip__global_8h.html#abc8b7bc552eb31b821be7fc1a16ba10f">QUAZIP_EXTRA_NTFS_MAGIC</a> &amp;&amp; length &gt;= 32) {</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            i += 4;  <span class="comment">// reserved</span></div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <span class="keywordflow">while</span> (i &lt;= extra.size() - 4) {</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                <span class="keywordtype">unsigned</span> tag =</div>
@@ -251,7 +242,7 @@ $(document).ready(function(){initNavTree('quazipfileinfo_8cpp_source.html',''); 
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                }</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            }</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            i += <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>;</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            i += length;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        }</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    }</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keywordflow">if</span> (fineTicks != <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a> &amp;&amp; dateTime.isNull()) {</div>
@@ -274,7 +265,6 @@ $(document).ready(function(){initNavTree('quazipfileinfo_8cpp_source.html',''); 
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_ad0325471d482a632d8854fcc0614b217"><div class="ttname"><a href="LineSetBuffers_8cpp.html#ad0325471d482a632d8854fcc0614b217">position</a></div><div class="ttdeci">math::float3 position</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00044">LineSetBuffers.cpp:44</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
 <div class="ttc" id="aquazip__global_8h_html_a0b4c9a70d0b0a7cc86a0d1f76a35d750"><div class="ttname"><a href="quazip__global_8h.html#a0b4c9a70d0b0a7cc86a0d1f76a35d750">QUAZIP_EXTRA_NTFS_TIME_MAGIC</a></div><div class="ttdeci">#define QUAZIP_EXTRA_NTFS_TIME_MAGIC</div><div class="ttdef"><b>Definition:</b> <a href="quazip__global_8h_source.html#l00057">quazip_global.h:57</a></div></div>
 <div class="ttc" id="aquazip__global_8h_html_abc8b7bc552eb31b821be7fc1a16ba10f"><div class="ttname"><a href="quazip__global_8h.html#abc8b7bc552eb31b821be7fc1a16ba10f">QUAZIP_EXTRA_NTFS_MAGIC</a></div><div class="ttdeci">#define QUAZIP_EXTRA_NTFS_MAGIC</div><div class="ttdef"><b>Definition:</b> <a href="quazip__global_8h_source.html#l00056">quazip_global.h:56</a></div></div>
 <div class="ttc" id="aquazipfileinfo_8cpp_html_a184e1eff12e7014b554df9d3821291c5"><div class="ttname"><a href="quazipfileinfo_8cpp.html#a184e1eff12e7014b554df9d3821291c5">permissionsFromExternalAttr</a></div><div class="ttdeci">static QFile::Permissions permissionsFromExternalAttr(quint32 externalAttr)</div><div class="ttdef"><b>Definition:</b> <a href="quazipfileinfo_8cpp_source.html#l00027">quazipfileinfo.cpp:27</a></div></div>
@@ -321,7 +311,7 @@ $(document).ready(function(){initNavTree('quazipfileinfo_8cpp_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="quazipfileinfo_8cpp.html">quazipfileinfo.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

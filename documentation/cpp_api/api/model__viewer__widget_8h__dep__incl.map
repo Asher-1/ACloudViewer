@@ -1,0 +1,14 @@
+<map id="/root/ACloudViewer/libs/Reconstruction/src/ui/model_viewer_widget.h" name="/root/ACloudViewer/libs/Reconstruction/src/ui/model_viewer_widget.h">
+<area shape="rect" id="node1" title=" " alt="" coords="231,5,388,76"/>
+<area shape="rect" id="node2" href="$image__viewer__widget_8cc.html" title=" " alt="" coords="5,124,163,195"/>
+<area shape="rect" id="node3" href="$main__window_8h.html" title=" " alt="" coords="478,250,645,306"/>
+<area shape="rect" id="node8" href="$model__viewer__widget_8cc.html" title=" " alt="" coords="83,361,240,432"/>
+<area shape="rect" id="node9" href="$movie__grabber__widget_8cc.html" title=" " alt="" coords="288,124,451,195"/>
+<area shape="rect" id="node10" href="$point__viewer__widget_8cc.html" title=" " alt="" coords="475,124,626,195"/>
+<area shape="rect" id="node11" href="$render__options__widget_8h.html" title=" " alt="" coords="651,124,813,195"/>
+<area shape="rect" id="node4" href="$automatic__reconstruction__widget_8cc.html" title=" " alt="" coords="903,361,1134,432"/>
+<area shape="rect" id="node5" href="$bundle__adjustment__widget_8cc.html" title=" " alt="" coords="265,361,455,432"/>
+<area shape="rect" id="node6" href="$dense__reconstruction__widget_8cc.html" title=" " alt="" coords="479,361,683,432"/>
+<area shape="rect" id="node7" href="$main__window_8cc.html" title=" " alt="" coords="707,369,879,425"/>
+<area shape="rect" id="node12" href="$render__options__widget_8cc.html" title=" " alt="" coords="669,243,832,313"/>
+</map>

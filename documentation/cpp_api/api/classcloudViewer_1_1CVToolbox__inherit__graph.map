@@ -16,4 +16,5 @@
 <area shape="rect" id="node12" href="$classcloudViewer_1_1HornRegistrationTools.html" title="Horn point cloud registration algorithm." alt="" coords="532,515,752,556"/>
 <area shape="rect" id="node13" href="$classcloudViewer_1_1ICPRegistrationTools.html" title="ICP point cloud registration algorithm (Besl et al.)." alt="" coords="537,580,747,621"/>
 <area shape="rect" id="node17" href="$classecvDisplayTools.html" title=" " alt="" coords="579,711,705,738"/>
+<area shape="rect" id="node18" href="$classPCLDisplayTools.html" title="CC to PCL cloud converter." alt="" coords="801,711,929,738"/>
 </map>

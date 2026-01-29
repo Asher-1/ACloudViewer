@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -193,7 +184,7 @@ Additional Inherited Members</h2></td></tr>
 <p>Only the first color and depth streams from the bag file will be read.</p><ul>
 <li>The streams must have the same frame rate.</li>
 <li>The color stream must have RGB 8 bit (RGB8/BGR8) pixel format</li>
-<li>The depth stream must have 16 bit unsigned int (Z16) pixel format The output is synchronized color and depth frame pairs with the depth frame aligned to the color frame. Unsynchronized frames will be dropped. <a class="el" href="structWith.html">With</a> alignment, the depth and color frames have the same viewpoint and resolution. See <a href="https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7">https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7</a> for format documentation</li>
+<li>The depth stream must have 16 bit unsigned int (Z16) pixel format The output is synchronized color and depth frame pairs with the depth frame aligned to the color frame. Unsynchronized frames will be dropped. With alignment, the depth and color frames have the same viewpoint and resolution. See <a href="https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7">https://intelrealsense.github.io/librealsense/doxygen/rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7</a> for format documentation</li>
 </ul>
 <p>Note: A few frames may be dropped if user code takes a long time (&gt;10 frame intervals) to process a frame. </p>
 
@@ -319,7 +310,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8cpp_source.html#l00077">77</a> of file <a class="el" href="RSBagReader_8cpp_source.html">RSBagReader.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="RSBagReader_8cpp_source.html#l00044">Open()</a>, <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>, and <a class="el" href="RSBagReader_8cpp_source.html#l00040">~RSBagReader()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="RSBagReader_8cpp_source.html#l00044">Open()</a>, and <a class="el" href="RSBagReader_8cpp_source.html#l00040">~RSBagReader()</a>.</p>
 
 </div>
 </div>
@@ -382,8 +373,6 @@ Additional Inherited Members</h2></td></tr>
 <p>Implements <a class="el" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#a6a3bbf70ded42b42f45a21d5429fa840">cloudViewer::t::io::RGBDVideoReader</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8h_source.html#l00078">78</a> of file <a class="el" href="RSBagReader_8h_source.html">RSBagReader.h</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
 
 </div>
 </div>
@@ -449,8 +438,6 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="reference">References <a class="el" href="RSBagReader_8h_source.html#l00064">IsOpened()</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
-
 </div>
 </div>
 <a id="a3ea458a0f99400017a75b5e2068f01f4"></a>
@@ -481,8 +468,6 @@ Additional Inherited Members</h2></td></tr>
 <p>Implements <a class="el" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoReader.html#a2615005db13f2e61965ddb2374cafe41">cloudViewer::t::io::RGBDVideoReader</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8cpp_source.html#l00167">167</a> of file <a class="el" href="RSBagReader_8cpp_source.html">RSBagReader.cpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
 
 </div>
 </div>
@@ -515,7 +500,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8h_source.html#l00064">64</a> of file <a class="el" href="RSBagReader_8h_source.html">RSBagReader.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="RSBagReader_8cpp_source.html#l00211">GetTimestamp()</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00169">NextFrame()</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00044">Open()</a>, <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00192">SeekTimestamp()</a>, and <a class="el" href="RSBagReader_8cpp_source.html#l00040">~RSBagReader()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="RSBagReader_8cpp_source.html#l00211">GetTimestamp()</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00169">NextFrame()</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00044">Open()</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00192">SeekTimestamp()</a>, and <a class="el" href="RSBagReader_8cpp_source.html#l00040">~RSBagReader()</a>.</p>
 
 </div>
 </div>
@@ -549,8 +534,6 @@ Additional Inherited Members</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8cpp_source.html#l00169">169</a> of file <a class="el" href="RSBagReader_8cpp_source.html">RSBagReader.cpp</a>.</p>
 
 <p class="reference">References <a class="el" href="RGBDVideoMetadata_8h_source.html#l00060">cloudViewer::t::io::RGBDVideoMetadata::fps_</a>, <a class="el" href="RSBagReader_8h_source.html#l00064">IsOpened()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00060">LogError</a>, and <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
 
 </div>
 </div>
@@ -589,9 +572,9 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8cpp_source.html#l00044">44</a> of file <a class="el" href="RSBagReader_8cpp_source.html">RSBagReader.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="RSBagReader_8cpp_source.html#l00077">Close()</a>, <a class="el" href="RGBDVideoMetadata_8cpp_source.html#l00035">cloudViewer::t::io::RGBDVideoMetadata::ConvertFromJsonValue()</a>, <a class="el" href="lsd_8c_source.html#l00159">error()</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="RealSenseSensorConfig_8cpp_source.html#l00224">cloudViewer::t::io::RealSenseSensorConfig::GetMetadataJson()</a>, <a class="el" href="RealSenseSensorConfig_8cpp_source.html#l00204">cloudViewer::t::io::RealSenseSensorConfig::GetPixelDtypes()</a>, <a class="el" href="RSBagReader_8h_source.html#l00064">IsOpened()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, and <a class="el" href="O3DVisualizer_8cpp_source.html#l00271">profile</a>.</p>
+<p class="reference">References <a class="el" href="RSBagReader_8cpp_source.html#l00077">Close()</a>, <a class="el" href="RGBDVideoMetadata_8cpp_source.html#l00035">cloudViewer::t::io::RGBDVideoMetadata::ConvertFromJsonValue()</a>, <a class="el" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp_source.html#l00047">filename</a>, <a class="el" href="RealSenseSensorConfig_8cpp_source.html#l00224">cloudViewer::t::io::RealSenseSensorConfig::GetMetadataJson()</a>, <a class="el" href="RealSenseSensorConfig_8cpp_source.html#l00204">cloudViewer::t::io::RealSenseSensorConfig::GetPixelDtypes()</a>, <a class="el" href="RSBagReader_8h_source.html#l00064">IsOpened()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00081">LogInfo</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, and <a class="el" href="O3DVisualizer_8cpp_source.html#l00271">profile</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>, and <a class="el" href="RSBagReader_8cpp_source.html#l00192">SeekTimestamp()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="RSBagReader_8cpp_source.html#l00192">SeekTimestamp()</a>.</p>
 
 </div>
 </div>
@@ -644,8 +627,6 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="RGBDVideoReader_8cpp_source.html#l00062">62</a> of file <a class="el" href="RGBDVideoReader_8cpp_source.html">RGBDVideoReader.cpp</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
-
 </div>
 </div>
 <a id="a12e1d59c31ac1da233351058b933c8c1"></a>
@@ -685,8 +666,6 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="reference">References <a class="el" href="RSBagReader_8h_source.html#l00064">IsOpened()</a>, <a class="el" href="core_2include_2Logging_8h_source.html#l00072">LogWarning</a>, <a class="el" href="RSBagReader_8cpp_source.html#l00044">Open()</a>, and <a class="el" href="RGBDVideoMetadata_8h_source.html#l00049">cloudViewer::t::io::RGBDVideoMetadata::stream_length_usec_</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
-
 </div>
 </div>
 <a id="acff1490aeb7c8ad1dd72579f5b090993"></a>
@@ -704,8 +683,6 @@ Additional Inherited Members</h2></td></tr>
 <p>Text description. </p>
 
 <p class="definition">Definition at line <a class="el" href="RGBDVideoReader_8cpp_source.html#l00070">70</a> of file <a class="el" href="RGBDVideoReader_8cpp_source.html">RGBDVideoReader.cpp</a>.</p>
-
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
 
 </div>
 </div>
@@ -732,8 +709,6 @@ Additional Inherited Members</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="RSBagReader_8h_source.html#l00051">51</a> of file <a class="el" href="RSBagReader_8h_source.html">RSBagReader.h</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="t_2io_2sensor_8cpp_source.html#l00026">cloudViewer::t::io::pybind_sensor()</a>.</p>
-
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
@@ -746,7 +721,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1t.html">t</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1t_1_1io.html">io</a></li><li class="navelem"><a class="el" href="classcloudViewer_1_1t_1_1io_1_1RSBagReader.html">RSBagReader</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:17 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:57:01 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -118,8 +109,8 @@ $(document).ready(function(){initNavTree('ecvDepthBuffer_8h_source.html',''); in
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html">   25</a></span>&#160;<span class="keyword">class </span><a class="code" href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a> <a class="code" href="classccDepthBuffer.html">ccDepthBuffer</a> {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a3458a2dd23e3cc97fe616d9e74f049c9">   28</a></span>&#160;    <a class="code" href="classccDepthBuffer.html#a3458a2dd23e3cc97fe616d9e74f049c9">ccDepthBuffer</a>();</div>
-<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a8e4bb5b0e36d8ab866862596f1f7ee0a">   30</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classccDepthBuffer.html#a8e4bb5b0e36d8ab866862596f1f7ee0a">~ccDepthBuffer</a>();</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="classccDepthBuffer.html">ccDepthBuffer</a>();</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classccDepthBuffer.html">ccDepthBuffer</a>();</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a555d675b04eb286aa0f1079e1af326ee">   33</a></span>&#160;    std::vector&lt;PointCoordinateType&gt; <a class="code" href="classccDepthBuffer.html#a555d675b04eb286aa0f1079e1af326ee">zBuff</a>;</div>
 <div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a831262451faa83e19c9071edab768fa9">   35</a></span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="classccDepthBuffer.html#a831262451faa83e19c9071edab768fa9">deltaPhi</a>;</div>
@@ -127,32 +118,28 @@ $(document).ready(function(){initNavTree('ecvDepthBuffer_8h_source.html',''); in
 <div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a849b6218a82dd883a49c3ff1dd1c675e">   39</a></span>&#160;    <span class="keywordtype">unsigned</span> <a class="code" href="classccDepthBuffer.html#a849b6218a82dd883a49c3ff1dd1c675e">width</a>;</div>
 <div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a425883d8a83c1abc0f0f2a0db58d5f25">   41</a></span>&#160;    <span class="keywordtype">unsigned</span> <a class="code" href="classccDepthBuffer.html#a425883d8a83c1abc0f0f2a0db58d5f25">height</a>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a66e58d092d5c41a6f4e4a34889b9d764">   44</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classccDepthBuffer.html#a66e58d092d5c41a6f4e4a34889b9d764">clear</a>();</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">void</span> clear();</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classccDepthBuffer.html#a5351163095b99b25f8d245c5219f9735">   52</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classccDepthBuffer.html#a5351163095b99b25f8d245c5219f9735">fillHoles</a>();</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordtype">int</span> fillHoles();</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;};</div>
 <div class="ttc" id="aCVGeom_8h_html"><div class="ttname"><a href="CVGeom_8h.html">CVGeom.h</a></div></div>
 <div class="ttc" id="aCVTypes_8h_html_a25840190c028987d81b49d2addf2cc9d"><div class="ttname"><a href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a></div><div class="ttdeci">float PointCoordinateType</div><div class="ttdoc">Type of the coordinates of a (N-D) point.</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00016">CVTypes.h:16</a></div></div>
 <div class="ttc" id="aCV__db_8h_html"><div class="ttname"><a href="CV__db_8h.html">CV_db.h</a></div></div>
 <div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aclassccDepthBuffer_html"><div class="ttname"><a href="classccDepthBuffer.html">ccDepthBuffer</a></div><div class="ttdoc">Sensor &quot;depth map&quot;.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDepthBuffer_8h_source.html#l00025">ecvDepthBuffer.h:25</a></div></div>
-<div class="ttc" id="aclassccDepthBuffer_html_a3458a2dd23e3cc97fe616d9e74f049c9"><div class="ttname"><a href="classccDepthBuffer.html#a3458a2dd23e3cc97fe616d9e74f049c9">ccDepthBuffer::ccDepthBuffer</a></div><div class="ttdeci">ccDepthBuffer()</div><div class="ttdoc">Default constructor.</div></div>
 <div class="ttc" id="aclassccDepthBuffer_html_a425883d8a83c1abc0f0f2a0db58d5f25"><div class="ttname"><a href="classccDepthBuffer.html#a425883d8a83c1abc0f0f2a0db58d5f25">ccDepthBuffer::height</a></div><div class="ttdeci">unsigned height</div><div class="ttdoc">Buffer height.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDepthBuffer_8h_source.html#l00041">ecvDepthBuffer.h:41</a></div></div>
 <div class="ttc" id="aclassccDepthBuffer_html_a4e6afc82dc0f56a6e9b3d6c9eb1464fc"><div class="ttname"><a href="classccDepthBuffer.html#a4e6afc82dc0f56a6e9b3d6c9eb1464fc">ccDepthBuffer::deltaTheta</a></div><div class="ttdeci">PointCoordinateType deltaTheta</div><div class="ttdoc">Yaw step (may differ from the sensor's)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDepthBuffer_8h_source.html#l00037">ecvDepthBuffer.h:37</a></div></div>
-<div class="ttc" id="aclassccDepthBuffer_html_a5351163095b99b25f8d245c5219f9735"><div class="ttname"><a href="classccDepthBuffer.html#a5351163095b99b25f8d245c5219f9735">ccDepthBuffer::fillHoles</a></div><div class="ttdeci">int fillHoles()</div></div>
 <div class="ttc" id="aclassccDepthBuffer_html_a555d675b04eb286aa0f1079e1af326ee"><div class="ttname"><a href="classccDepthBuffer.html#a555d675b04eb286aa0f1079e1af326ee">ccDepthBuffer::zBuff</a></div><div class="ttdeci">std::vector&lt; PointCoordinateType &gt; zBuff</div><div class="ttdoc">Z-Buffer grid.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDepthBuffer_8h_source.html#l00033">ecvDepthBuffer.h:33</a></div></div>
-<div class="ttc" id="aclassccDepthBuffer_html_a66e58d092d5c41a6f4e4a34889b9d764"><div class="ttname"><a href="classccDepthBuffer.html#a66e58d092d5c41a6f4e4a34889b9d764">ccDepthBuffer::clear</a></div><div class="ttdeci">void clear()</div><div class="ttdoc">Clears the buffer.</div></div>
 <div class="ttc" id="aclassccDepthBuffer_html_a831262451faa83e19c9071edab768fa9"><div class="ttname"><a href="classccDepthBuffer.html#a831262451faa83e19c9071edab768fa9">ccDepthBuffer::deltaPhi</a></div><div class="ttdeci">PointCoordinateType deltaPhi</div><div class="ttdoc">Pitch step (may differ from the sensor's)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDepthBuffer_8h_source.html#l00035">ecvDepthBuffer.h:35</a></div></div>
 <div class="ttc" id="aclassccDepthBuffer_html_a849b6218a82dd883a49c3ff1dd1c675e"><div class="ttname"><a href="classccDepthBuffer.html#a849b6218a82dd883a49c3ff1dd1c675e">ccDepthBuffer::width</a></div><div class="ttdeci">unsigned width</div><div class="ttdoc">Buffer width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDepthBuffer_8h_source.html#l00039">ecvDepthBuffer.h:39</a></div></div>
-<div class="ttc" id="aclassccDepthBuffer_html_a8e4bb5b0e36d8ab866862596f1f7ee0a"><div class="ttname"><a href="classccDepthBuffer.html#a8e4bb5b0e36d8ab866862596f1f7ee0a">ccDepthBuffer::~ccDepthBuffer</a></div><div class="ttdeci">virtual ~ccDepthBuffer()</div><div class="ttdoc">Destructor.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvDepthBuffer_8h.html">ecvDepthBuffer.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

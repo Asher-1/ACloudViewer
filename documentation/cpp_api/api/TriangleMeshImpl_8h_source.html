@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,7 +95,7 @@ $(document).ready(function(){initNavTree('TriangleMeshImpl_8h_source.html',''); 
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CUDAUtils_8h.html">cloudViewer/core/CUDAUtils.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Dispatch_8h.html">cloudViewer/core/Dispatch.h</a>&quot;</span></div>
@@ -140,23 +131,23 @@ $(document).ready(function(){initNavTree('TriangleMeshImpl_8h_source.html',''); 
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <a class="code" href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">core::ParallelFor</a>(<a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>.GetDevice(), n,</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                          [=] <a class="code" href="CUDAUtils_8h.html#af09d29b35640489ea4ccf1ba464dd4f8">CLOUDVIEWER_DEVICE</a>(int64_t workload_idx) {</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                              int64_t idx = 3 * workload_idx;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                              scalar_t x = ptr[idx];</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                              scalar_t y = ptr[idx + 1];</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                              scalar_t z = ptr[idx + 2];</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                              <span class="keywordflow">if</span> (isnan(x)) {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                  x = 0.0;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                  y = 0.0;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                  z = 1.0;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                              scalar_t <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = ptr[idx];</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                              scalar_t <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = ptr[idx + 1];</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                              scalar_t <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> = ptr[idx + 2];</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                              <span class="keywordflow">if</span> (isnan(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)) {</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                  <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = 0.0;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                  <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = 0.0;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                  <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> = 1.0;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                              } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                  scalar_t norm = sqrt(x * x + y * y + z * z);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                  scalar_t norm = sqrt(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> * <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> + <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> * <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> + <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> * <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                                  <span class="keywordflow">if</span> (norm &gt; 0) {</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                      x /= norm;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                                      y /= norm;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                                      z /= norm;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                      <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> /= norm;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                                      <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> /= norm;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                                      <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> /= norm;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                  }</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                  ptr[idx] = x;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                  ptr[idx + 1] = y;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                  ptr[idx + 2] = z;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                  ptr[idx] = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                  ptr[idx + 1] = <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                  ptr[idx + 2] = <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                              }</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                          });</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    });</div>
@@ -272,7 +263,9 @@ $(document).ready(function(){initNavTree('TriangleMeshImpl_8h_source.html',''); 
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_a77fbd3bcb55e9c1f6246edfc00d55831"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">cloudViewer::core::Tensor::GetDataPtr</a></div><div class="ttdeci">T * GetDataPtr()</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01144">Tensor.h:1144</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aefba3173ede176f74574d8372f5dfc2e"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">cloudViewer::core::Tensor::To</a></div><div class="ttdeci">Tensor To(Dtype dtype, bool copy=false) const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00739">Tensor.cpp:739</a></div></div>
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a98156be7bd5bb4bfe78e2541d057cab6"><div class="ttname"><a href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a></div><div class="ttdeci">normal_z z</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_a21b285d8adab226f365383e80b534dd8"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a21b285d8adab226f365383e80b534dd8">cloudViewer::core::linalg::kernel::cross_3x1</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE void cross_3x1(const scalar_t *A_3x1_input, const scalar_t *B_3x1_input, scalar_t *C_3x1_output)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00062">Matrix.h:62</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_a22c1c01c7959f5d1c16eb5ff79b5fac9"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a22c1c01c7959f5d1c16eb5ff79b5fac9">cloudViewer::core::linalg::kernel::cross_mag_3x1</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t cross_mag_3x1(const scalar_t *A_3x1_input, const scalar_t *B_3x1_input)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00076">Matrix.h:76</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0793177dbf31e47ea65bb4bbaa85700c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">cloudViewer::core::ParallelFor</a></div><div class="ttdeci">void ParallelFor(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00111">ParallelFor.h:111</a></div></div>
@@ -280,7 +273,7 @@ $(document).ready(function(){initNavTree('TriangleMeshImpl_8h_source.html',''); 
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1trianglemesh_html_a0eb2ff1b54ae7debfc43f816a00d684d"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1trianglemesh.html#a0eb2ff1b54ae7debfc43f816a00d684d">cloudViewer::t::geometry::kernel::trianglemesh::ComputeTriangleNormalsCPU</a></div><div class="ttdeci">void ComputeTriangleNormalsCPU(const core::Tensor &amp;vertices, const core::Tensor &amp;triangles, core::Tensor &amp;normals)</div><div class="ttdef"><b>Definition:</b> <a href="TriangleMeshImpl_8h_source.html#l00069">TriangleMeshImpl.h:71</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1trianglemesh_html_a8278694c209b69ce9f6d09cd45d4d59b"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1trianglemesh.html#a8278694c209b69ce9f6d09cd45d4d59b">cloudViewer::t::geometry::kernel::trianglemesh::NormalizeNormalsCPU</a></div><div class="ttdeci">void NormalizeNormalsCPU(core::Tensor &amp;normals)</div><div class="ttdef"><b>Definition:</b> <a href="TriangleMeshImpl_8h_source.html#l00032">TriangleMeshImpl.h:34</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1trianglemesh_html_ac4f4bf75728f1c3b5267315272d38c4f"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1trianglemesh.html#ac4f4bf75728f1c3b5267315272d38c4f">cloudViewer::t::geometry::kernel::trianglemesh::ComputeTriangleAreasCPU</a></div><div class="ttdeci">void ComputeTriangleAreasCPU(const core::Tensor &amp;vertices, const core::Tensor &amp;triangles, core::Tensor &amp;triangle_areas)</div><div class="ttdef"><b>Definition:</b> <a href="TriangleMeshImpl_8h_source.html#l00114">TriangleMeshImpl.h:116</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="at_2geometry_2kernel_2TriangleMesh_8h_html"><div class="ttname"><a href="t_2geometry_2kernel_2TriangleMesh_8h.html">TriangleMesh.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -288,7 +281,7 @@ $(document).ready(function(){initNavTree('TriangleMeshImpl_8h_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="TriangleMeshImpl_8h.html">TriangleMeshImpl.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

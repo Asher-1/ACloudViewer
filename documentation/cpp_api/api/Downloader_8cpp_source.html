@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -113,7 +104,7 @@ $(document).ready(function(){initNavTree('Downloader_8cpp_source.html',''); init
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;QDesktopServices&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;QNetworkAccessManager&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;math.h&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="math_8h.html">math.h</a>&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Downloader_8h.html">QSimpleUpdater/include/Downloader.h</a>&quot;</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
@@ -398,7 +389,7 @@ $(document).ready(function(){initNavTree('Downloader_8cpp_source.html',''); init
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160; </div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;<span class="keywordtype">void</span> Downloader::calculateTimeRemaining(qint64 received, qint64 total)</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;{</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;   <a class="code" href="cutil__math_8h.html#a91ad9478d81a7aaf2593e8d9c3d06a14">uint</a> difference = QDateTime::currentDateTime().toSecsSinceEpoch() - m_startTime;</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;   uint difference = QDateTime::currentDateTime().toSecsSinceEpoch() - m_startTime;</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;   <span class="keywordflow">if</span> (difference &gt; 0)</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;   {</div>
@@ -429,10 +420,10 @@ $(document).ready(function(){initNavTree('Downloader_8cpp_source.html',''); init
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160; </div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;      <span class="keywordflow">else</span> <span class="keywordflow">if</span> (timeRemaining &lt;= 60)</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;      {</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;         <span class="keywordtype">int</span> <a class="code" href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a> = int(timeRemaining + 0.5);</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;         <span class="keywordtype">int</span> seconds = int(timeRemaining + 0.5);</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160; </div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;         <span class="keywordflow">if</span> (<a class="code" href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a> &gt; 1)</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;            timeString = tr(<span class="stringliteral">&quot;%1 seconds&quot;</span>).arg(<a class="code" href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a>);</div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;         <span class="keywordflow">if</span> (seconds &gt; 1)</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;            timeString = tr(<span class="stringliteral">&quot;%1 seconds&quot;</span>).arg(seconds);</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;         <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;            timeString = tr(<span class="stringliteral">&quot;1 second&quot;</span>);</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;      }</div>
@@ -480,16 +471,15 @@ $(document).ready(function(){initNavTree('Downloader_8cpp_source.html',''); init
 <div class="ttc" id="aclassDownloader_html_ac9dfbf5fa7815a8e2f82a5149aabad5a"><div class="ttname"><a href="classDownloader.html#ac9dfbf5fa7815a8e2f82a5149aabad5a">Downloader::setMandatoryUpdate</a></div><div class="ttdeci">void setMandatoryUpdate(const bool mandatory_update)</div><div class="ttdef"><b>Definition:</b> <a href="Downloader_8cpp_source.html#l00426">Downloader.cpp:426</a></div></div>
 <div class="ttc" id="aclassDownloader_html_aca404552ae7000a642670e3fe86c71f1"><div class="ttname"><a href="classDownloader.html#aca404552ae7000a642670e3fe86c71f1">Downloader::setUseCustomInstallProcedures</a></div><div class="ttdeci">void setUseCustomInstallProcedures(const bool custom)</div><div class="ttdef"><b>Definition:</b> <a href="Downloader_8cpp_source.html#l00438">Downloader.cpp:438</a></div></div>
 <div class="ttc" id="aclassDownloader_html_af88dab8c5e1b9acbcc5f1ce1b2c0a526"><div class="ttname"><a href="classDownloader.html#af88dab8c5e1b9acbcc5f1ce1b2c0a526">Downloader::setUrlId</a></div><div class="ttdeci">void setUrlId(const QString &amp;url)</div><div class="ttdef"><b>Definition:</b> <a href="Downloader_8cpp_source.html#l00080">Downloader.cpp:80</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a91ad9478d81a7aaf2593e8d9c3d06a14"><div class="ttname"><a href="cutil__math_8h.html#a91ad9478d81a7aaf2593e8d9c3d06a14">uint</a></div><div class="ttdeci">unsigned int uint</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00028">cutil_math.h:28</a></div></div>
+<div class="ttc" id="amath_8h_html"><div class="ttname"><a href="math_8h.html">math.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a72ce6622f68828767b6ef09cc1ed5127"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a72ce6622f68828767b6ef09cc1ed5127">cloudViewer::core::Append</a></div><div class="ttdeci">Tensor Append(const Tensor &amp;self, const Tensor &amp;other, const utility::optional&lt; int64_t &gt; &amp;axis)</div><div class="ttdoc">Appends the two tensors, along the given axis into a new tensor. Both the tensors must have same data...</div><div class="ttdef"><b>Definition:</b> <a href="TensorFunction_8cpp_source.html#l00118">TensorFunction.cpp:118</a></div></div>
-<div class="ttc" id="arename_8h_html_a2b73533e20044db29705dbccbd100714"><div class="ttname"><a href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a></div><div class="ttdeci">#define seconds</div><div class="ttdef"><b>Definition:</b> <a href="rename_8h_source.html#l00375">rename.h:375</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_58ba022c201de9d1274ebc144ceba4a6.html">QSimpleUpdater</a></li><li class="navelem"><a class="el" href="dir_48bebea1ffeba33175d1b83be77febf6.html">src</a></li><li class="navelem"><a class="el" href="Downloader_8cpp.html">Downloader.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

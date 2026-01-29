@@ -8,7 +8,7 @@ var classPlyOpenDlg =
     [ "canBeSkipped", "classPlyOpenDlg.html#a5ace9311797444f91b0fbe1b4ff4dd39", null ],
     [ "fullyAccepted", "classPlyOpenDlg.html#a8ea6956c953ce8c3293d543a8f52ff80", null ],
     [ "isValid", "classPlyOpenDlg.html#a13ace74f9e57ce8bd9b836ec834adf72", null ],
-    [ "ResetApplyAll", "classPlyOpenDlg.html#a3093c17ca52d8e98529f3090f286e48a", null ],
+    [ "ResetApplyAll", "classPlyOpenDlg.html#a4b4ecb8e77b5111c74f8f6e82156d3bb", null ],
     [ "restoreContext", "classPlyOpenDlg.html#a816c143b06e161f30533d5a37b00f97b", null ],
     [ "restorePreviousContext", "classPlyOpenDlg.html#a73de60b7645e58e131af1f4ca4237c94", null ],
     [ "saveContext", "classPlyOpenDlg.html#a4b60ab2e6e356558b8551aba2a34ba92", null ],

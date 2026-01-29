@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -187,7 +178,7 @@ Typedefs</h2></td></tr>
 <tr class="separator:aac5efc75e78d34dcbfdc05cb2f840bdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0822f3e13f9aae2c8ca45a352c346b9e"><td class="memItemLeft" align="right" valign="top">typedef boost::geometry::model::multi_polygon&lt; <a class="el" href="TreeIso_8cpp.html#a55eddc0d99772bffbc2b4d05161bf307">polygon</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a0822f3e13f9aae2c8ca45a352c346b9e">multi_polygon</a></td></tr>
 <tr class="separator:a0822f3e13f9aae2c8ca45a352c346b9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac96477e82a10dac1ca0aed83d9d4c97a"><td class="memItemLeft" align="right" valign="top">typedef std::vector&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a></td></tr>
+<tr class="memitem:ac96477e82a10dac1ca0aed83d9d4c97a"><td class="memItemLeft" align="right" valign="top">typedef std::vector&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a></td></tr>
 <tr class="separator:ac96477e82a10dac1ca0aed83d9d4c97a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
@@ -195,11 +186,11 @@ Functions</h2></td></tr>
 <tr class="memitem:a5e99e56377a57b65ffdcb873bbf4759a"><td class="memTemplParams" colspan="2">template&lt;class result_t  = std::chrono::milliseconds, class clock_t  = std::chrono::steady_clock, class duration_t  = std::chrono::milliseconds&gt; </td></tr>
 <tr class="memitem:a5e99e56377a57b65ffdcb873bbf4759a"><td class="memTemplItemLeft" align="right" valign="top">static auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a5e99e56377a57b65ffdcb873bbf4759a">Since</a> (std::chrono::time_point&lt; clock_t, duration_t &gt; const &amp;start)</td></tr>
 <tr class="separator:a5e99e56377a57b65ffdcb873bbf4759a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dfa3ff5725502a11ea89c65975e7dd5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a0dfa3ff5725502a11ea89c65975e7dd5">knn_cpp_build</a> (<a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; float, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; float &gt;&gt; &amp;kdtree, unsigned n_thread)</td></tr>
+<tr class="memitem:a0dfa3ff5725502a11ea89c65975e7dd5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a0dfa3ff5725502a11ea89c65975e7dd5">knn_cpp_build</a> (<a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&gt; &amp;kdtree, unsigned n_thread)</td></tr>
 <tr class="separator:a0dfa3ff5725502a11ea89c65975e7dd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a17c6289608096120988fed22454f1eae"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a17c6289608096120988fed22454f1eae">knn_cpp_query</a> (<a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; float, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; float &gt;&gt; &amp;kdtree, Eigen::MatrixXf &amp;query_points, size_t k, std::vector&lt; std::vector&lt; size_t &gt;&gt; &amp;res_idx, std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;res_dists)</td></tr>
+<tr class="memitem:a17c6289608096120988fed22454f1eae"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a17c6289608096120988fed22454f1eae">knn_cpp_query</a> (<a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&gt; &amp;kdtree, Eigen::MatrixXf &amp;query_points, size_t k, std::vector&lt; std::vector&lt; size_t &gt;&gt; &amp;res_idx, std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;res_dists)</td></tr>
 <tr class="separator:a17c6289608096120988fed22454f1eae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70b4f536a0f0ec77f620ad3e476cb2cc"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a70b4f536a0f0ec77f620ad3e476cb2cc">knn_cpp_query_min_d</a> (<a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; float, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; float &gt;&gt; &amp;kdtree, Eigen::MatrixXf &amp;query_points, size_t k)</td></tr>
+<tr class="memitem:a70b4f536a0f0ec77f620ad3e476cb2cc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a70b4f536a0f0ec77f620ad3e476cb2cc">knn_cpp_query_min_d</a> (<a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&gt; &amp;kdtree, Eigen::MatrixXf &amp;query_points, size_t k)</td></tr>
 <tr class="separator:a70b4f536a0f0ec77f620ad3e476cb2cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe3eab543b2ca4d0e3f83b9776278726"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#abe3eab543b2ca4d0e3f83b9776278726">knn_cpp_nearest_neighbors</a> (const std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;dataset, size_t k, std::vector&lt; std::vector&lt; uint32_t &gt;&gt; &amp;res_idx, std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;res_dists, unsigned n_thread)</td></tr>
 <tr class="separator:abe3eab543b2ca4d0e3f83b9776278726"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -225,11 +216,11 @@ Functions</h2></td></tr>
 <tr class="memitem:a156bf32691b3f7d034db03e132b3a056"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a156bf32691b3f7d034db03e132b3a056">get_subset</a> (<a class="el" href="classccPointCloud.html">ccPointCloud</a> *pcd, std::vector&lt; T2 &gt; &amp;indices, std::vector&lt; std::vector&lt; T1 &gt;&gt; &amp;arr_sub)</td></tr>
 <tr class="separator:a156bf32691b3f7d034db03e132b3a056"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8868eba12a7372d8e119a15c5a6fc276"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a8868eba12a7372d8e119a15c5a6fc276"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a8868eba12a7372d8e119a15c5a6fc276">toTranslatedVector</a> (const <a class="el" href="classccPointCloud.html">ccPointCloud</a> *pc, std::vector&lt; std::vector&lt; T &gt;&gt; &amp;y)</td></tr>
+<tr class="memitem:a8868eba12a7372d8e119a15c5a6fc276"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a8868eba12a7372d8e119a15c5a6fc276">toTranslatedVector</a> (const <a class="el" href="classccPointCloud.html">ccPointCloud</a> *pc, std::vector&lt; std::vector&lt; T &gt;&gt; &amp;<a class="el" href="my__point__types_8h.html#a80afdb9f99c0a129c93e8bbe7b41e2dc">y</a>)</td></tr>
 <tr class="separator:a8868eba12a7372d8e119a15c5a6fc276"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31f33ff58ca7ca060f930adac1cea99a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a31f33ff58ca7ca060f930adac1cea99a">perform_cut_pursuit</a> (const uint32_t K, const float regStrength, const std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;pc, std::vector&lt; float &gt; &amp;edgeWeight, std::vector&lt; uint32_t &gt; &amp;Eu, std::vector&lt; uint32_t &gt; &amp;Ev, std::vector&lt; uint32_t &gt; &amp;in_component, std::vector&lt; std::vector&lt; uint32_t &gt;&gt; &amp;components)</td></tr>
+<tr class="memitem:a31f33ff58ca7ca060f930adac1cea99a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a31f33ff58ca7ca060f930adac1cea99a">perform_cut_pursuit</a> (const uint32_t K, const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> regStrength, const std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;pc, std::vector&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt; &amp;edgeWeight, std::vector&lt; uint32_t &gt; &amp;Eu, std::vector&lt; uint32_t &gt; &amp;Ev, std::vector&lt; uint32_t &gt; &amp;in_component, std::vector&lt; std::vector&lt; uint32_t &gt;&gt; &amp;components)</td></tr>
 <tr class="separator:a31f33ff58ca7ca060f930adac1cea99a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3633721d5128a160e14a3d1ca8aeb28a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a3633721d5128a160e14a3d1ca8aeb28a">perform_cut_pursuit2d</a> (const uint32_t K, const float regStrength, const std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;pc_vec, <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &amp;edgeWeight, std::vector&lt; uint32_t &gt; &amp;Eu, std::vector&lt; uint32_t &gt; &amp;Ev, std::vector&lt; uint32_t &gt; &amp;in_component)</td></tr>
+<tr class="memitem:a3633721d5128a160e14a3d1ca8aeb28a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#a3633721d5128a160e14a3d1ca8aeb28a">perform_cut_pursuit2d</a> (const uint32_t K, const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> regStrength, const std::vector&lt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &gt; &amp;pc_vec, <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a> &amp;edgeWeight, std::vector&lt; uint32_t &gt; &amp;Eu, std::vector&lt; uint32_t &gt; &amp;Ev, std::vector&lt; uint32_t &gt; &amp;in_component)</td></tr>
 <tr class="separator:a3633721d5128a160e14a3d1ca8aeb28a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade81fcadb7e653aaaa1e632580066605"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ade81fcadb7e653aaaa1e632580066605"><td class="memTemplItemLeft" align="right" valign="top">size_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="TreeIso_8cpp.html#ade81fcadb7e653aaaa1e632580066605">arg_min_col</a> (std::vector&lt; T &gt; &amp;arr)</td></tr>
@@ -352,7 +343,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">typedef std::vector&lt;float&gt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a></td>
+          <td class="memname">typedef std::vector&lt;<a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&gt; <a class="el" href="TreeIso_8cpp.html#ac96477e82a10dac1ca0aed83d9d4c97a">Vec3d</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -382,6 +373,8 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01393">1393</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
 
+<p class="reference">References <a class="el" href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00111">Utils::distance()</a>.</p>
+
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>.</p>
 
 </div>
@@ -405,6 +398,8 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01386">1386</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00111">Utils::distance()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>.</p>
 
@@ -619,7 +614,7 @@ template&lt;typename T1 , typename T2 &gt; </div>
         <tr>
           <td class="memname">void knn_cpp_build </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; float, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; float &gt;&gt; &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&gt; &amp;&#160;</td>
           <td class="paramname"><em>kdtree</em>, </td>
         </tr>
         <tr>
@@ -703,7 +698,7 @@ template&lt;typename T1 , typename T2 &gt; </div>
         <tr>
           <td class="memname">void knn_cpp_query </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; float, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; float &gt;&gt; &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&gt; &amp;&#160;</td>
           <td class="paramname"><em>kdtree</em>, </td>
         </tr>
         <tr>
@@ -751,9 +746,9 @@ template&lt;typename T1 , typename T2 &gt; </div>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float knn_cpp_query_min_d </td>
+          <td class="memname"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> knn_cpp_query_min_d </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; float, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; float &gt;&gt; &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="namespaceknncpp.html#a2a295df2bed627fc611a788b395374c8">knncpp::KDTreeMinkowskiX</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>, <a class="el" href="structknncpp_1_1EuclideanDistance.html">knncpp::EuclideanDistance</a>&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt;&gt; &amp;&#160;</td>
           <td class="paramname"><em>kdtree</em>, </td>
         </tr>
         <tr>
@@ -811,8 +806,6 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01464">1464</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
-
-<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l00048">max()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>.</p>
 
@@ -930,8 +923,6 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01400">1400</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l00053">min()</a>.</p>
-
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l01501">decimate_vec()</a>, and <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>.</p>
 
 </div>
@@ -980,6 +971,8 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01453">1453</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
 
+<p class="reference">References <a class="el" href="essential__matrix__poly_8h_source.html#l00019">a</a>.</p>
+
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>.</p>
 
 </div>
@@ -999,7 +992,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const float&#160;</td>
+          <td class="paramtype">const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td>
           <td class="paramname"><em>regStrength</em>, </td>
         </tr>
         <tr>
@@ -1011,7 +1004,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &gt; &amp;&#160;</td>
           <td class="paramname"><em>edgeWeight</em>, </td>
         </tr>
         <tr>
@@ -1048,7 +1041,7 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01245">1245</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="TreeIso_8cpp_source.html#l00995">knn_cpp_nearest_neighbors()</a>.</p>
+<p class="reference">References <a class="el" href="TreeIso_8cpp_source.html#l00995">knn_cpp_nearest_neighbors()</a>, and <a class="el" href="my__point__types_8h_source.html#l00168">y</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00058">TreeIso::Init_seg_pcd()</a>.</p>
 
@@ -1069,7 +1062,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const float&#160;</td>
+          <td class="paramtype">const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td>
           <td class="paramname"><em>regStrength</em>, </td>
         </tr>
         <tr>
@@ -1112,7 +1105,7 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01319">1319</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="TreeIso_8cpp_source.html#l00995">knn_cpp_nearest_neighbors()</a>.</p>
+<p class="reference">References <a class="el" href="TreeIso_8cpp_source.html#l00995">knn_cpp_nearest_neighbors()</a>, and <a class="el" href="my__point__types_8h_source.html#l00168">y</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00143">TreeIso::Intermediate_seg_pcd()</a>.</p>
 
@@ -1260,7 +1253,7 @@ template&lt;typename T &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="TreeIso_8cpp_source.html#l01218">1218</a> of file <a class="el" href="TreeIso_8cpp_source.html">TreeIso.cpp</a>.</p>
 
-<p class="reference">References <a class="el" href="PointCloudTpl_8h_source.html#l00143">cloudViewer::PointCloudTpl&lt; T &gt;::getPoint()</a>, <a class="el" href="TreeIso_8cpp_source.html#l01423">mean_col()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00038">cloudViewer::PointCloudTpl&lt; T &gt;::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
+<p class="reference">References <a class="el" href="PointCloudTpl_8h_source.html#l00143">cloudViewer::PointCloudTpl&lt; T &gt;::getPoint()</a>, <a class="el" href="TreeIso_8cpp_source.html#l01423">mean_col()</a>, <a class="el" href="PointCloudTpl_8h_source.html#l00038">cloudViewer::PointCloudTpl&lt; T &gt;::size()</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, <a class="el" href="my__point__types_8h_source.html#l00168">y</a>, and <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="TreeIso_8cpp_source.html#l00413">TreeIso::Final_seg_pcd()</a>, <a class="el" href="TreeIso_8cpp_source.html#l00058">TreeIso::Init_seg_pcd()</a>, and <a class="el" href="TreeIso_8cpp_source.html#l00143">TreeIso::Intermediate_seg_pcd()</a>.</p>
 
@@ -1515,7 +1508,7 @@ template&lt;typename T &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4b928928a8ba753e3642cd3e99306298.html">qTreeIso</a></li><li class="navelem"><a class="el" href="dir_5812e1d64c3eab9730bae5fbd6e5d65b.html">src</a></li><li class="navelem"><a class="el" href="TreeIso_8cpp.html">TreeIso.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

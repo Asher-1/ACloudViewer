@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -111,7 +102,7 @@ $(document).ready(function(){initNavTree('Parallel_8cpp_source.html',''); initRe
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CPUInfo_8h.html">CPUInfo.h</a>&gt;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
@@ -160,18 +151,17 @@ $(document).ready(function(){initNavTree('Parallel_8cpp_source.html',''); initRe
 <div class="ttc" id="aParallel_8h_html"><div class="ttname"><a href="Parallel_8h.html">Parallel.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1CPUInfo_html_a3ee51a45d672c7207889c03d6924e173"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1CPUInfo.html#a3ee51a45d672c7207889c03d6924e173">cloudViewer::utility::CPUInfo::GetInstance</a></div><div class="ttdeci">static CPUInfo &amp; GetInstance()</div><div class="ttdef"><b>Definition:</b> <a href="CPUInfo_8cpp_source.html#l00174">CPUInfo.cpp:174</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1CPUInfo_html_a40882bff0d6c8fb31fbdb1bfaecfa2b1"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1CPUInfo.html#a40882bff0d6c8fb31fbdb1bfaecfa2b1">cloudViewer::utility::CPUInfo::NumCores</a></div><div class="ttdeci">int NumCores() const</div><div class="ttdef"><b>Definition:</b> <a href="CPUInfo_8cpp_source.html#l00179">CPUInfo.cpp:179</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a57573066388b6fab4e5f0bed57eb17ea"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a57573066388b6fab4e5f0bed57eb17ea">cloudViewer::utility::InParallel</a></div><div class="ttdeci">bool InParallel()</div><div class="ttdoc">Returns true if in an parallel section.</div><div class="ttdef"><b>Definition:</b> <a href="Parallel_8cpp_source.html#l00048">Parallel.cpp:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6c3bbb412c07c125cf6d4868d38ecb2c"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6c3bbb412c07c125cf6d4868d38ecb2c">cloudViewer::utility::EstimateMaxThreads</a></div><div class="ttdeci">int EstimateMaxThreads()</div><div class="ttdoc">Estimate the maximum number of threads to be used in a parallel region.</div><div class="ttdef"><b>Definition:</b> <a href="Parallel_8cpp_source.html#l00031">Parallel.cpp:31</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a7cdb33aaa2bf6603b51235c703934768"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a7cdb33aaa2bf6603b51235c703934768">cloudViewer::utility::GetEnvVar</a></div><div class="ttdeci">static std::string GetEnvVar(const std::string &amp;name)</div><div class="ttdef"><b>Definition:</b> <a href="Parallel_8cpp_source.html#l00023">Parallel.cpp:23</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="Parallel_8cpp.html">Parallel.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

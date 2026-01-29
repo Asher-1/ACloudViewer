@@ -1,6 +1,7 @@
 <map id="cloudViewer::ExtractionWidget" name="cloudViewer::ExtractionWidget">
-<area shape="rect" id="node1" title=" " alt="" coords="5,185,228,212"/>
-<area shape="rect" id="node2" title=" " alt="" coords="8,89,183,115"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1ThreadControlWidget.html" title=" " alt="" coords="207,81,410,123"/>
-<area shape="rect" id="node4" title=" " alt="" coords="269,5,348,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="195,185,417,212"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1OptionsWidget.html" title=" " alt="" coords="5,89,180,115"/>
+<area shape="rect" id="node3" title=" " alt="" coords="159,5,237,32"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1ThreadControlWidget.html" title=" " alt="" coords="205,81,407,123"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1OptionManager.html" title=" " alt="" coords="431,89,610,115"/>
 </map>

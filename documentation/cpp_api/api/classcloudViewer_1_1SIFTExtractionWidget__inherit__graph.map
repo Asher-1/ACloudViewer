@@ -1,5 +1,6 @@
 <map id="cloudViewer::SIFTExtractionWidget" name="cloudViewer::SIFTExtractionWidget">
-<area shape="rect" id="node1" title=" " alt="" coords="15,155,218,196"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1ExtractionWidget.html" title=" " alt="" coords="5,80,228,107"/>
-<area shape="rect" id="node3" title=" " alt="" coords="29,5,204,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="15,229,218,271"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1ExtractionWidget.html" title=" " alt="" coords="5,155,228,181"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1OptionsWidget.html" title=" " alt="" coords="29,80,204,107"/>
+<area shape="rect" id="node4" title=" " alt="" coords="77,5,156,32"/>
 </map>

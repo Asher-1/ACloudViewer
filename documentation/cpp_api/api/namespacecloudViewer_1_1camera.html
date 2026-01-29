@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -95,8 +86,7 @@ $(document).ready(function(){initNavTree('namespacecloudViewer_1_1camera.html','
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#enum-members">Enumerations</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#enum-members">Enumerations</a>  </div>
   <div class="headertitle">
 <div class="title">cloudViewer::camera Namespace Reference</div>  </div>
 </div><!--header-->
@@ -121,13 +111,6 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:a07d1f92f7ad1185830933e0f3b5b5a73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets default camera intrinsic parameters for sensors.  <a href="namespacecloudViewer_1_1camera.html#a07d1f92f7ad1185830933e0f3b5b5a73">More...</a><br /></td></tr>
 <tr class="separator:a07d1f92f7ad1185830933e0f3b5b5a73"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:ab18d678c92aac0fa8cdadac559b536ad"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1camera.html#ab18d678c92aac0fa8cdadac559b536ad">pybind_camera_classes</a> (py::module &amp;m)</td></tr>
-<tr class="separator:ab18d678c92aac0fa8cdadac559b536ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeff28667fffb64712547ff1a26a751b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1camera.html#aeff28667fffb64712547ff1a26a751b1">pybind_camera</a> (py::module &amp;m)</td></tr>
-<tr class="separator:aeff28667fffb64712547ff1a26a751b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a07d1f92f7ad1185830933e0f3b5b5a73"></a>
@@ -164,56 +147,13 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="aeff28667fffb64712547ff1a26a751b1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeff28667fffb64712547ff1a26a751b1">&#9670;&nbsp;</a></span>pybind_camera()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void cloudViewer::camera::pybind_camera </td>
-          <td>(</td>
-          <td class="paramtype">py::module &amp;&#160;</td>
-          <td class="paramname"><em>m</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="reference">Referenced by <a class="el" href="cloudViewer__pybind_8cpp_source.html#l00027">cloudViewer::PYBIND11_MODULE()</a>.</p>
-
-</div>
-</div>
-<a id="ab18d678c92aac0fa8cdadac559b536ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab18d678c92aac0fa8cdadac559b536ad">&#9670;&nbsp;</a></span>pybind_camera_classes()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void cloudViewer::camera::pybind_camera_classes </td>
-          <td>(</td>
-          <td class="paramtype">py::module &amp;&#160;</td>
-          <td class="paramname"><em>m</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="camera_8cpp_source.html#l00017">17</a> of file <a class="el" href="camera_8cpp_source.html">camera.cpp</a>.</p>
-
-<p class="reference">References <a class="el" href="docstring_8cpp_source.html#l00027">cloudViewer::docstring::ClassMethodDocInject()</a>, <a class="el" href="PinholeCameraParameters_8h_source.html#l00037">cloudViewer::camera::PinholeCameraParameters::extrinsic_</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00087">cloudViewer::camera::PinholeCameraIntrinsic::GetFocalLength()</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00093">cloudViewer::camera::PinholeCameraIntrinsic::GetPrincipalPoint()</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00098">cloudViewer::camera::PinholeCameraIntrinsic::GetSkew()</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00110">cloudViewer::camera::PinholeCameraIntrinsic::height_</a>, <a class="el" href="PinholeCameraParameters_8h_source.html#l00035">cloudViewer::camera::PinholeCameraParameters::intrinsic_</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00116">cloudViewer::camera::PinholeCameraIntrinsic::intrinsic_matrix_</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00101">cloudViewer::camera::PinholeCameraIntrinsic::IsValid()</a>, <a class="el" href="namespacecloudViewer_1_1camera.html#a07d1f92f7ad1185830933e0f3b5b5a73a8937a4c2862b60361e40878aa06eced3">Kinect2ColorCameraDefault</a>, <a class="el" href="namespacecloudViewer_1_1camera.html#a07d1f92f7ad1185830933e0f3b5b5a73a4d2e2a8ef843aaf15e15f208e3614339">Kinect2DepthCameraDefault</a>, <a class="el" href="PinholeCameraTrajectory_8h_source.html#l00035">cloudViewer::camera::PinholeCameraTrajectory::parameters_</a>, <a class="el" href="namespacecloudViewer_1_1camera.html#a07d1f92f7ad1185830933e0f3b5b5a73a1b4af7cb8d6df3561d7447f42f7fdfc0">PrimeSenseDefault</a>, <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00075">cloudViewer::camera::PinholeCameraIntrinsic::SetIntrinsics()</a>, <a class="el" href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">patch::to_string()</a>, and <a class="el" href="PinholeCameraIntrinsic_8h_source.html#l00108">cloudViewer::camera::PinholeCameraIntrinsic::width_</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecloudViewer.html">cloudViewer</a></li><li class="navelem"><a class="el" href="namespacecloudViewer_1_1camera.html">camera</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:15 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

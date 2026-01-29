@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -154,7 +145,7 @@ $(document).ready(function(){initNavTree('SVD_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (device.IsCUDA()) {</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#ifdef BUILD_CUDA_MODULE</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1CUDAScopedDevice.html">CUDAScopedDevice</a> scoped_device(device);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> superb = <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">Tensor::Empty</a>({<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(m, n) - 1}, dtype, device);</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> superb = <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">Tensor::Empty</a>({std::min(m, n) - 1}, dtype, device);</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <span class="keywordtype">void</span> *superb_data = superb.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">GetDataPtr</a>();</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <a class="code" href="namespacecloudViewer_1_1core.html#aff10b532a13121cb7a209697b10845b4">SVDCUDA</a>(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                device);</div>
@@ -162,7 +153,7 @@ $(document).ready(function(){initNavTree('SVD_8cpp_source.html',''); initResizab
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Unimplemented device.&quot;</span>);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> superb = <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">Tensor::Empty</a>({<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(m, n) - 1}, dtype, device);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">Tensor</a> superb = <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">Tensor::Empty</a>({std::min(m, n) - 1}, dtype, device);</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordtype">void</span> *superb_data = superb.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">GetDataPtr</a>();</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <a class="code" href="namespacecloudViewer_1_1core.html#abf9de6e94c37fa3b896a5cdd6334aa5f">SVDCPU</a>(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;               device);</div>
@@ -189,21 +180,20 @@ $(document).ready(function(){initNavTree('SVD_8cpp_source.html',''); initResizab
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ad70864269871ee67c753328bc1a6082b"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ad70864269871ee67c753328bc1a6082b">cloudViewer::core::Tensor::GetShape</a></div><div class="ttdeci">SizeVector GetShape() const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01127">Tensor.h:1127</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ad8be302c368042e7c32400daac0fd732"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ad8be302c368042e7c32400daac0fd732">cloudViewer::core::Tensor::T</a></div><div class="ttdeci">Tensor T() const</div><div class="ttdoc">Expects input to be &lt;= 2-D Tensor by swapping dimension 0 and 1.</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l01079">Tensor.cpp:1079</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a5430911d014e8407d70f4e1671ec7def"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a5430911d014e8407d70f4e1671ec7def">cloudViewer::core::SVD</a></div><div class="ttdeci">void SVD(const Tensor &amp;A, Tensor &amp;U, Tensor &amp;S, Tensor &amp;VT)</div><div class="ttdef"><b>Definition:</b> <a href="SVD_8cpp_source.html#l00017">SVD.cpp:17</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_abf9de6e94c37fa3b896a5cdd6334aa5f"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#abf9de6e94c37fa3b896a5cdd6334aa5f">cloudViewer::core::SVDCPU</a></div><div class="ttdeci">void SVDCPU(const void *A_data, void *U_data, void *S_data, void *VT_data, void *superb_data, int64_t m, int64_t n, Dtype dtype, const Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="SVDCPU_8cpp_source.html#l00015">SVDCPU.cpp:15</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ac3cffb00a043ee494bd2887c4a6fba78"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ac3cffb00a043ee494bd2887c4a6fba78">cloudViewer::core::Float64</a></div><div class="ttdeci">const Dtype Float64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00043">Dtype.cpp:43</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_af3035a52d708ce88f7ad5710026de676"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#af3035a52d708ce88f7ad5710026de676">cloudViewer::core::SVDSYCL</a></div><div class="ttdeci">void SVDSYCL(const void *A_data, void *U_data, void *S_data, void *VT_data, int64_t m, int64_t n, Dtype dtype, const Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="SVDSYCL_8cpp_source.html#l00019">SVDSYCL.cpp:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aff10b532a13121cb7a209697b10845b4"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aff10b532a13121cb7a209697b10845b4">cloudViewer::core::SVDCUDA</a></div><div class="ttdeci">void SVDCUDA(const void *A_data, void *U_data, void *S_data, void *VT_data, void *superb_data, int64_t m, int64_t n, Dtype dtype, const Device &amp;device)</div><div class="ttdef"><b>Definition:</b> <a href="SVDCUDA_8cpp_source.html#l00016">SVDCUDA.cpp:16</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_34199ad14a26b2602fe4e831eacaf8df.html">linalg</a></li><li class="navelem"><a class="el" href="SVD_8cpp.html">SVD.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

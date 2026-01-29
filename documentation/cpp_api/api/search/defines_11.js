@@ -1,14 +1,9 @@
 var searchData=
 [
-  ['qdate_63909',['QDATE',['../ecvHead_8h.html#a2d34e900d22a92da957325f45d8117be',1,'ecvHead.h']]],
-  ['qglbuffer_63910',['QGLBuffer',['../ecvPointCloud_8h.html#afa4d71b8d9895e7e8e8d220e5ae48c17',1,'ecvPointCloud.h']]],
-  ['qsu_5fdecl_63911',['QSU_DECL',['../QSimpleUpdater_8h.html#a4b7c811d104f3aaed82125e817a20155',1,'QSimpleUpdater.h']]],
-  ['qtcompat_5fendl_63912',['QTCOMPAT_ENDL',['../QtCompat_8h.html#a6feb9759c5c905dc0713ddaef3c6ca5e',1,'QtCompat.h']]],
-  ['qtcompat_5ffontmetrics_5fwidth_63913',['QTCOMPAT_FONTMETRICS_WIDTH',['../QtCompat_8h.html#acd513ac8001a355e651f484ce9daf9bc',1,'QtCompat.h']]],
-  ['qtime_63914',['QTIME',['../ecvHead_8h.html#ae40a1e5aa560de6e09c80491394083aa',1,'ecvHead.h']]],
-  ['quazio_5finbufsize_63915',['QUAZIO_INBUFSIZE',['../quaziodevice_8cpp.html#ae13b100a248e870771d63d7724961412',1,'quaziodevice.cpp']]],
-  ['quazio_5foutbufsize_63916',['QUAZIO_OUTBUFSIZE',['../quaziodevice_8cpp.html#ae8ba10541ebf3928f703c320acff91e8',1,'quaziodevice.cpp']]],
-  ['quazip_5fexport_63917',['QUAZIP_EXPORT',['../quazip__global_8h.html#aa6a0e4d2629cd63664ecbf9fa8eccdf4',1,'quazip_global.h']]],
-  ['quazip_5fextra_5fntfs_5fmagic_63918',['QUAZIP_EXTRA_NTFS_MAGIC',['../quazip__global_8h.html#abc8b7bc552eb31b821be7fc1a16ba10f',1,'quazip_global.h']]],
-  ['quazip_5fextra_5fntfs_5ftime_5fmagic_63919',['QUAZIP_EXTRA_NTFS_TIME_MAGIC',['../quazip__global_8h.html#a0b4c9a70d0b0a7cc86a0d1f76a35d750',1,'quazip_global.h']]]
+  ['radius_5fparameters_59841',['RADIUS_PARAMETERS',['../FixedRadiusIndex_8cpp.html#aefabe4f761ce0f9b069ae3ee04d620a1',1,'FixedRadiusIndex.cpp']]],
+  ['reinterpret_5fcast_59842',['REINTERPRET_CAST',['../dbfopen_8c.html#a90c06e21d2c08495940dc4546c1276da',1,'REINTERPRET_CAST():&#160;dbfopen.c'],['../shptree_8c.html#a90c06e21d2c08495940dc4546c1276da',1,'REINTERPRET_CAST():&#160;shptree.c']]],
+  ['remove_5fpyscript_5ficon_5fpath_59843',['REMOVE_PYSCRIPT_ICON_PATH',['../Resources_8h.html#a32cf4713da0b2ae8a915e90be2d3b1d2',1,'Resources.h']]],
+  ['repl_5ficon_5fpath_59844',['REPL_ICON_PATH',['../Resources_8h.html#a05e5e364b77ab6caf051d675eedf2d85',1,'Resources.h']]],
+  ['rotate_59845',['ROTATE',['../Jacobi_8h.html#a4d48db51350a8c2c6086c09771f782df',1,'Jacobi.h']]],
+  ['runner_5ficon_5fpath_59846',['RUNNER_ICON_PATH',['../Resources_8h.html#a75611f64bd7b461781d549738d1e4fc4',1,'Resources.h']]]
 ];

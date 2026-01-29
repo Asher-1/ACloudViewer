@@ -1,9 +1,8 @@
 <map id="PdmsTools::PdmsCommands::Orientation" name="PdmsTools::PdmsCommands::Orientation">
-<area shape="rect" id="node1" title=" " alt="" coords="1416,54,1625,96"/>
-<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsCommands_1_1Command.html" title=" " alt="" coords="181,116,391,157"/>
-<area shape="rect" id="node4" href="$classPdmsTools_1_1PdmsCommands_1_1Coordinates.html" title=" " alt="" coords="1083,98,1292,140"/>
-<area shape="rect" id="node6" href="$classPdmsTools_1_1PdmsCommands_1_1NumericalValue.html" title=" " alt="" coords="519,157,728,198"/>
-<area shape="rect" id="node7" href="$classPdmsTools_1_1PdmsCommands_1_1Reference.html" title=" " alt="" coords="519,274,728,316"/>
-<area shape="rect" id="node3" href="$structToken.html" title=" " alt="" coords="5,223,64,250"/>
-<area shape="rect" id="node5" href="$classPdmsTools_1_1PdmsCommands_1_1DistanceValue.html" title=" " alt="" coords="777,157,987,198"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1369,54,1579,95"/>
+<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsCommands_1_1Command.html" title=" " alt="" coords="5,98,215,139"/>
+<area shape="rect" id="node3" href="$classPdmsTools_1_1PdmsCommands_1_1Coordinates.html" title=" " alt="" coords="1036,98,1245,139"/>
+<area shape="rect" id="node5" href="$classPdmsTools_1_1PdmsCommands_1_1NumericalValue.html" title=" " alt="" coords="264,157,473,198"/>
+<area shape="rect" id="node6" href="$classPdmsTools_1_1PdmsCommands_1_1Reference.html" title=" " alt="" coords="497,215,707,257"/>
+<area shape="rect" id="node4" href="$classPdmsTools_1_1PdmsCommands_1_1DistanceValue.html" title=" " alt="" coords="731,157,940,198"/>
 </map>

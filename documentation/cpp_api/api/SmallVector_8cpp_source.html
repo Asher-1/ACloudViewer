@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -197,7 +188,7 @@ $(document).ready(function(){initNavTree('SmallVector_8cpp_source.html',''); ini
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment">// Note: Moving this function into the header may cause performance regression.</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> Size_T&gt;</div>
 <div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1core.html#ab08a9476e0a39b1fccbedf5e471cfb46">  104</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">size_t</span> <a class="code" href="namespacecloudViewer_1_1core.html#ab08a9476e0a39b1fccbedf5e471cfb46">getNewCapacity</a>(<span class="keywordtype">size_t</span> MinSize, <span class="keywordtype">size_t</span> TSize, <span class="keywordtype">size_t</span> OldCapacity) {</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    constexpr <span class="keywordtype">size_t</span> MaxSize = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;Size_T&gt;::max</a>();</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    constexpr <span class="keywordtype">size_t</span> MaxSize = std::numeric_limits&lt;Size_T&gt;::max();</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="comment">// Ensure we can fit the new capacity.</span></div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="comment">// This is only going to be applicable when the capacity is 32 bit.</span></div>
@@ -212,7 +203,7 @@ $(document).ready(function(){initNavTree('SmallVector_8cpp_source.html',''); ini
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="comment">// In theory 2*capacity can overflow if the capacity is 64 bit, but the</span></div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="comment">// original capacity would never be large enough for this to be a problem.</span></div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keywordtype">size_t</span> NewCapacity = 2 * OldCapacity + 1;  <span class="comment">// Always grow.</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(NewCapacity, MinSize), MaxSize);</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keywordflow">return</span> std::min(std::max(NewCapacity, MinSize), MaxSize);</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;}</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="comment">// Note: Moving this function into the header may cause performance regression.</span></div>
@@ -270,15 +261,13 @@ $(document).ready(function(){initNavTree('SmallVector_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1SmallVectorBase_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1SmallVectorBase.html">cloudViewer::core::SmallVectorBase</a></div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l00094">SmallVector.h:94</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1SmallVectorBase_html_a334436ed59e431c9b022038a61ad9be7"><div class="ttname"><a href="classcloudViewer_1_1core_1_1SmallVectorBase.html#a334436ed59e431c9b022038a61ad9be7">cloudViewer::core::SmallVectorBase::mallocForGrow</a></div><div class="ttdeci">void * mallocForGrow(size_t MinSize, size_t TSize, size_t &amp;NewCapacity)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00125">SmallVector.cpp:125</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1SmallVectorBase_html_aab53d77a8365180ad782a18493b0c0ec"><div class="ttname"><a href="classcloudViewer_1_1core_1_1SmallVectorBase.html#aab53d77a8365180ad782a18493b0c0ec">cloudViewer::core::SmallVectorBase::grow_pod</a></div><div class="ttdeci">void grow_pod(void *FirstEl, size_t MinSize, size_t TSize)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00134">SmallVector.cpp:134</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a1a8065e203b2cc81115f1d05828617a3"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a1a8065e203b2cc81115f1d05828617a3">cloudViewer::core::safe_malloc</a></div><div class="ttdeci">void * safe_malloc(size_t Sz)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l00058">SmallVector.h:58</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a32d584ad76dc3927ef452a156b76071b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a32d584ad76dc3927ef452a156b76071b">cloudViewer::core::SmallVectorSizeType</a></div><div class="ttdeci">typename std::conditional&lt; sizeof(T)&lt; 4 &amp;&amp;sizeof(void *) &gt;=8, uint64_t, uint32_t &gt;::type SmallVectorSizeType</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l00136">SmallVector.h:139</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a8cbba3f02832d128b90a8df0c0711d91"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a8cbba3f02832d128b90a8df0c0711d91">cloudViewer::core::report_at_maximum_capacity</a></div><div class="ttdeci">static void report_at_maximum_capacity(size_t MaxSize)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00091">SmallVector.cpp:91</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a951525939ca7649eb6d7781d16b8a107"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a951525939ca7649eb6d7781d16b8a107">cloudViewer::core::report_size_overflow</a></div><div class="ttdeci">static void report_size_overflow(size_t MinSize, size_t MaxSize)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00076">SmallVector.cpp:76</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ab08a9476e0a39b1fccbedf5e471cfb46"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ab08a9476e0a39b1fccbedf5e471cfb46">cloudViewer::core::getNewCapacity</a></div><div class="ttdeci">static size_t getNewCapacity(size_t MinSize, size_t TSize, size_t OldCapacity)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8cpp_source.html#l00104">SmallVector.cpp:104</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aee7a28188abb458470eb098fe496af0f"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aee7a28188abb458470eb098fe496af0f">cloudViewer::core::safe_realloc</a></div><div class="ttdeci">void * safe_realloc(void *Ptr, size_t Sz)</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l00070">SmallVector.h:70</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -286,7 +275,7 @@ $(document).ready(function(){initNavTree('SmallVector_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="SmallVector_8cpp.html">SmallVector.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:25 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

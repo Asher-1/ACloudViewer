@@ -1,0 +1,6 @@
+<map id="colmap::Sampler" name="colmap::Sampler">
+<area shape="rect" id="node1" title=" " alt="" coords="283,5,415,32"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1CombinationSampler.html" title=" " alt="" coords="5,80,220,107"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1ProgressiveSampler.html" title=" " alt="" coords="245,80,453,107"/>
+<area shape="rect" id="node4" href="$classcolmap_1_1RandomSampler.html" title=" " alt="" coords="477,80,663,107"/>
+</map>

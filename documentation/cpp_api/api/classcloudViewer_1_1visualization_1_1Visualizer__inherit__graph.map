@@ -1,9 +1,8 @@
 <map id="cloudViewer::visualization::Visualizer" name="cloudViewer::visualization::Visualizer">
-<area shape="rect" id="node1" title="The main Visualizer class." alt="" coords="5,169,199,211"/>
-<area shape="rect" id="node2" href="$classPyVisualizer.html" title=" " alt="" coords="277,5,458,47"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1VisualizerForAlignment.html" title=" " alt="" coords="270,71,465,112"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html" title=" " alt="" coords="247,136,488,177"/>
-<area shape="rect" id="node5" href="$classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html" title="Visualizer with editing capabilities." alt="" coords="271,201,464,243"/>
-<area shape="rect" id="node6" href="$classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html" title="Visualizer with custom key callack capabilities." alt="" coords="265,267,469,308"/>
-<area shape="rect" id="node7" href="$classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html" title=" " alt="" coords="254,332,481,373"/>
+<area shape="rect" id="node1" title="The main Visualizer class." alt="" coords="5,136,199,177"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1VisualizerForAlignment.html" title=" " alt="" coords="270,5,465,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1VisualizerWithCustomAnimation.html" title=" " alt="" coords="247,71,488,112"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1VisualizerWithEditing.html" title="Visualizer with editing capabilities." alt="" coords="271,136,464,177"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1visualization_1_1VisualizerWithKeyCallback.html" title="Visualizer with custom key callack capabilities." alt="" coords="265,201,469,243"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1visualization_1_1VisualizerWithVertexSelection.html" title=" " alt="" coords="254,267,481,308"/>
 </map>

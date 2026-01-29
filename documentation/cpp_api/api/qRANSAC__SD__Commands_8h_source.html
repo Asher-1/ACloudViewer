@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -157,7 +148,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                         <span class="stringliteral">&quot;[cloud filename]\&quot; before \&quot;-%2\&quot;)&quot;</span>)</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                     .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a5f7f2105b5bf6016e6d4fdd6f1651a7b">COMMAND_RANSAC</a>));</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        }</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        qRansacSD::RansacParams <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        qRansacSD::RansacParams params;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        QStringList paramNames =</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                QStringList()</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                &lt;&lt; <a class="code" href="qRANSAC__SD__Commands_8h.html#aca54fa8f8c30ad57969e765ea7a35c2f">EPSILON_ABSOLUTE</a> &lt;&lt; <a class="code" href="qRANSAC__SD__Commands_8h.html#a880c8c8fec897d1ac65c0b844e336912">EPSILON_PERCENTAGE_OF_SCALE</a></div>
@@ -183,12 +174,12 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordtype">float</span> epsilonPercentage = -1.0f;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keywordtype">float</span> bitmapEpsilonABS = -1.0f;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordtype">float</span> bitmapEpsilonPercentage = -1.0f;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.epsilon = -1.0f;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.bitmapEpsilon = -1.0f;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.randomColor = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        params.epsilon = -1.0f;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        params.bitmapEpsilon = -1.0f;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        params.randomColor = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> k = 0; k &lt; 5; ++k) {</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[k] = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;            params.primEnabled[k] = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        }</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">if</span> (!cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
@@ -271,7 +262,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                                <span class="stringliteral">&quot;Invalid number of for support points!&quot;</span>);</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;                    }</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tsupport points: %1&quot;</span>).arg(<a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>));</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.supportPoints = <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>;</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                    params.supportPoints = <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>;</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#afe6e79d3b51af749601637e7ced75326">MAX_NORMAL_DEV</a>) {</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
@@ -287,7 +278,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                    }</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tMax Normal Deviation : %1&quot;</span>)</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                                      .arg(val));</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.maxNormalDev_deg = val;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                    params.maxNormalDev_deg = val;</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#ad94aac794cab7867bd3ea1f1d0c4bb23">PROBABILITY</a>) {</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                    <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(</div>
@@ -301,9 +292,9 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                        <span class="keywordflow">return</span> cmd.<a class="code" href="classccCommandLineInterface.html#a9a953ad222bfd53b84b0de847dbd9649">error</a>(<span class="stringliteral">&quot;Invalid number for Probability!&quot;</span>);</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                    }</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                    cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tProbability : %1&quot;</span>).arg(val));</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.probability = val;</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                    params.probability = val;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#a3057ceb2e1bc7a8f41c154c70e7a8c1e">OUT_RANDOM_COLOR</a>) {</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                    <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.randomColor = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                    params.randomColor = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (param == <a class="code" href="qRANSAC__SD__Commands_8h.html#acf7cc932a7728c9a4f73b243c3cb4fc8">OUT_CLOUD_DIR</a>) {</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                    <span class="keywordflow">if</span> (!<a class="code" href="structCommandRANSAC.html#adc825fba7058b142f80dcc0bb445ea33">makePathIfPossible</a>(cmd, param, &amp;outputCloudsDir,</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                                            &amp;outputIndividualClouds)) {</div>
@@ -343,19 +334,19 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    <span class="keywordtype">unsigned</span> primCount = 0;</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                    <span class="keywordflow">while</span> (primitiveNames.contains(prim)) {</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                        <span class="keywordflow">if</span> (prim == <a class="code" href="qRANSAC__SD__Commands_8h.html#a52381fac3056cf034afd0b2cf0f46a31">PRIM_PLANE</a>) {</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_PLANE] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                            params.primEnabled[qRansacSD::RPT_PLANE] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                            primCount++;</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (prim == <a class="code" href="qRANSAC__SD__Commands_8h.html#a902c9576a969e8b87305ceff1f7a7eec">PRIM_SPHERE</a>) {</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_SPHERE] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                            params.primEnabled[qRansacSD::RPT_SPHERE] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                            primCount++;</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (prim == <a class="code" href="qRANSAC__SD__Commands_8h.html#a35eb6cbb92e597dcacb8d5eac179a56a">PRIM_CYLINDER</a>) {</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_CYLINDER] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                            params.primEnabled[qRansacSD::RPT_CYLINDER] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                            primCount++;</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (prim == <a class="code" href="qRANSAC__SD__Commands_8h.html#a9fc57325587c3db81289b357fcf767f7">PRIM_CONE</a>) {</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_CONE] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                            params.primEnabled[qRansacSD::RPT_CONE] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                            primCount++;</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (prim == <a class="code" href="qRANSAC__SD__Commands_8h.html#a5f548f67ddac42319f677a319b2015ea">PRIM_TORUS</a>) {</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_TORUS] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                            params.primEnabled[qRansacSD::RPT_TORUS] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                            primCount++;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                        }</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                        <span class="keywordflow">if</span> (cmd.<a class="code" href="classccCommandLineInterface.html#a3093b9e593b44c94eea9c2b3cb9f907e">arguments</a>().empty()) {</div>
@@ -385,12 +376,12 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        }</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> primCount = 0;</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> k = 0; k &lt; 5; ++k) {</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            primCount += <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[k]);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            primCount += <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(params.primEnabled[k]);</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        }</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;        <span class="keywordflow">if</span> (primCount == 0) {</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            cmd.<a class="code" href="classccCommandLineInterface.html#a799045461ab3a9f94ef83a0e23c59ba2">print</a>(QObject::tr(<span class="stringliteral">&quot;\tDefault Shape Search == %1&quot;</span>)</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                              .arg(<a class="code" href="qRANSAC__SD__Commands_8h.html#a52381fac3056cf034afd0b2cf0f46a31">PRIM_PLANE</a>));</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;            <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.primEnabled[qRansacSD::RPT_PLANE] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;            params.primEnabled[qRansacSD::RPT_PLANE] = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        }</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keywordflow">if</span> (!outputIndividualClouds &amp;&amp; !outputIndividualPrimitives &amp;&amp;</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            !outputGrouped &amp;&amp; !outputIndividualPairs) {</div>
@@ -403,27 +394,27 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> bbMin, bbMax;</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;            clCloud.pc-&gt;getBoundingBox(bbMin, bbMax);</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> diff = bbMax - bbMin;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            <span class="keywordtype">float</span> scale = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(diff[0], diff[1]), diff[2]);</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            <span class="keywordtype">float</span> scale = std::max(std::max(diff[0], diff[1]), diff[2]);</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;            <span class="keywordflow">if</span> (epsilonPercentage &gt; 0.0f) {</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.epsilon = (epsilonPercentage * scale);</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                params.epsilon = (epsilonPercentage * scale);</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            }</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;            <span class="keywordflow">if</span> (bitmapEpsilonPercentage &gt; 0.0f) {</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.bitmapEpsilon = (bitmapEpsilonPercentage * scale);</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                params.bitmapEpsilon = (bitmapEpsilonPercentage * scale);</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            }</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            <span class="keywordflow">if</span> (epsilonABS &gt; 0.0f) {</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.epsilon = epsilonABS;</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                params.epsilon = epsilonABS;</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            }</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            <span class="keywordflow">if</span> (bitmapEpsilonABS &gt; 0.0f) {</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.bitmapEpsilon = bitmapEpsilonABS;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                params.bitmapEpsilon = bitmapEpsilonABS;</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            }</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.epsilon &lt; 0.0f) {</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.epsilon = (0.005f * scale);</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            <span class="keywordflow">if</span> (params.epsilon &lt; 0.0f) {</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                params.epsilon = (0.005f * scale);</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;            }</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.bitmapEpsilon &lt; 0.0f) {</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.bitmapEpsilon = (0.01f * scale);</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;            <span class="keywordflow">if</span> (params.bitmapEpsilon &lt; 0.0f) {</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                params.bitmapEpsilon = (0.01f * scale);</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;            }</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            <a class="code" href="classccHObject.html">ccHObject</a>* group = qRansacSD::executeRANSAC(clCloud.pc, <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>,</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            <a class="code" href="classccHObject.html">ccHObject</a>* group = qRansacSD::executeRANSAC(clCloud.pc, params,</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                                                        cmd.<a class="code" href="classccCommandLineInterface.html#aaa609c127c610a7f6401920e5cc8a861">silentMode</a>());</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;            <span class="keywordflow">if</span> (group) {</div>
@@ -454,7 +445,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                    <span class="keywordtype">unsigned</span> torusCount = 1;</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                    <span class="keywordflow">for</span> (<span class="keyword">auto</span> meshObj : meshGroup) {</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                        <span class="keyword">auto</span> mesh = <a class="code" href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh</a>(meshObj);</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                        <span class="keyword">auto</span> mesh = <a class="code" href="classccHObjectCaster.html#ab1c7961413ed9ec2ce7580eba615134e">ccHObjectCaster::ToMesh</a>(meshObj);</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;                        <span class="keywordflow">if</span> (mesh) {</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                            QString suffix;</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;                            <span class="keywordflow">if</span> (meshObj-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434ad89e61f49ccbd601731478eb22f71bde">CV_TYPES::PLANE</a>)) {</div>
@@ -483,7 +474,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;                                                      QChar(<span class="charliteral">&#39;0&#39;</span>));</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;                                torusCount++;</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                            }</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                            <span class="keyword">auto</span> cld = <a class="code" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a>(</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                            <span class="keyword">auto</span> cld = <a class="code" href="classccHObjectCaster.html#afccaad08ccff7e3317c65aee63c2c760">ccHObjectCaster::ToPointCloud</a>(</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                                    mesh-&gt;getParent());</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                            <span class="keywordflow">if</span> (outputIndividualPairs) {</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;                                <a class="code" href="structCLGroupDesc.html">CLGroupDesc</a> clPair(</div>
@@ -578,7 +569,6 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;    }</div>
 <div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;};</div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
-<div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccCommandLineInterface_html"><div class="ttname"><a href="classccCommandLineInterface.html">ccCommandLineInterface</a></div><div class="ttdoc">Command line interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00112">ecvCommandLineInterface.h:112</a></div></div>
 <div class="ttc" id="aclassccCommandLineInterface_html_a102617beac0bd98b5218dc3f877fc97d"><div class="ttname"><a href="classccCommandLineInterface.html#a102617beac0bd98b5218dc3f877fc97d">ccCommandLineInterface::autoSaveMode</a></div><div class="ttdeci">bool autoSaveMode() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00155">ecvCommandLineInterface.cpp:155</a></div></div>
@@ -591,13 +581,12 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div class="ttc" id="aclassccCommandLineInterface_html_ab316d9264021cf61d01a21f25c8905b2"><div class="ttname"><a href="classccCommandLineInterface.html#ab316d9264021cf61d01a21f25c8905b2">ccCommandLineInterface::meshes</a></div><div class="ttdeci">virtual std::vector&lt; CLMeshDesc &gt; &amp; meshes()</div><div class="ttdoc">Currently opened meshes and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00139">ecvCommandLineInterface.cpp:139</a></div></div>
 <div class="ttc" id="aclassccCommandLineInterface_html_aba219ed1125f79c2d7ef5018857ea4c4"><div class="ttname"><a href="classccCommandLineInterface.html#aba219ed1125f79c2d7ef5018857ea4c4">ccCommandLineInterface::ExportOption</a></div><div class="ttdeci">ExportOption</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8h_source.html#l00119">ecvCommandLineInterface.h:119</a></div></div>
 <div class="ttc" id="aclassccCommandLineInterface_html_aff5c07ec8e7f1e8b40330262ea21fb17"><div class="ttname"><a href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">ccCommandLineInterface::clouds</a></div><div class="ttdeci">virtual std::vector&lt; CLCloudDesc &gt; &amp; clouds()</div><div class="ttdoc">Currently opened point clouds and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00133">ecvCommandLineInterface.cpp:133</a></div></div>
-<div class="ttc" id="aclassccHObjectCaster_html_a00270441cbe35d7592ce95829ccd429f"><div class="ttname"><a href="classccHObjectCaster.html#a00270441cbe35d7592ce95829ccd429f">ccHObjectCaster::ToMesh</a></div><div class="ttdeci">static ccMesh * ToMesh(ccHObject *obj)</div><div class="ttdoc">Converts current object to ccMesh (if possible)</div></div>
-<div class="ttc" id="aclassccHObjectCaster_html_a2d4a33e040e7e3e654aa5aebadad83a9"><div class="ttname"><a href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a></div><div class="ttdeci">static ccPointCloud * ToPointCloud(ccHObject *obj, bool *isLockedVertices=nullptr)</div><div class="ttdoc">Converts current object to 'equivalent' ccPointCloud.</div></div>
+<div class="ttc" id="aclassccHObjectCaster_html_ab1c7961413ed9ec2ce7580eba615134e"><div class="ttname"><a href="classccHObjectCaster.html#ab1c7961413ed9ec2ce7580eba615134e">ccHObjectCaster::ToMesh</a></div><div class="ttdeci">static ccMesh * ToMesh(ccHObject *obj)</div><div class="ttdoc">Converts current object to ccMesh (if possible)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObjectCaster_8cpp_source.html#l00129">ecvHObjectCaster.cpp:129</a></div></div>
+<div class="ttc" id="aclassccHObjectCaster_html_afccaad08ccff7e3317c65aee63c2c760"><div class="ttname"><a href="classccHObjectCaster.html#afccaad08ccff7e3317c65aee63c2c760">ccHObjectCaster::ToPointCloud</a></div><div class="ttdeci">static ccPointCloud * ToPointCloud(ccHObject *obj, bool *isLockedVertices=nullptr)</div><div class="ttdoc">Converts current object to 'equivalent' ccPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObjectCaster_8cpp_source.html#l00054">ecvHObjectCaster.cpp:54</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="aclassccHObject_html_ad233ad9f6c85ff1617dc5a2f51b6671b"><div class="ttname"><a href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">ccHObject::filterChildren</a></div><div class="ttdeci">unsigned filterChildren(Container &amp;filteredChildren, bool recursive=false, CV_CLASS_ENUM filter=CV_TYPES::OBJECT, bool strict=false) const</div><div class="ttdoc">Collects the children corresponding to a certain pattern.</div></div>
+<div class="ttc" id="aclassccHObject_html_ad233ad9f6c85ff1617dc5a2f51b6671b"><div class="ttname"><a href="classccHObject.html#ad233ad9f6c85ff1617dc5a2f51b6671b">ccHObject::filterChildren</a></div><div class="ttdeci">unsigned filterChildren(Container &amp;filteredChildren, bool recursive=false, CV_CLASS_ENUM filter=CV_TYPES::OBJECT, bool strict=false) const</div><div class="ttdoc">Collects the children corresponding to a certain pattern.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00611">ecvHObject.cpp:611</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
 <div class="ttc" id="aclassccObject_html_a51a9dd33f5ee0c27f1d09dbc9c3136e4"><div class="ttname"><a href="classccObject.html#a51a9dd33f5ee0c27f1d09dbc9c3136e4">ccObject::getName</a></div><div class="ttdeci">virtual QString getName() const</div><div class="ttdoc">Returns object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00072">ecvObject.h:72</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvCommandLineInterface_8h_html"><div class="ttname"><a href="ecvCommandLineInterface_8h.html">ecvCommandLineInterface.h</a></div></div>
 <div class="ttc" id="aecvGenericMesh_8h_html"><div class="ttname"><a href="ecvGenericMesh_8h.html">ecvGenericMesh.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
@@ -646,7 +635,7 @@ $(document).ready(function(){initNavTree('qRANSAC__SD__Commands_8h_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_b63d785a9b8f5adc38b5a828fbc08a5c.html">qRANSAC_SD</a></li><li class="navelem"><a class="el" href="dir_cd23edd8092b0208d475635b3e355a9f.html">include</a></li><li class="navelem"><a class="el" href="qRANSAC__SD__Commands_8h.html">qRANSAC_SD_Commands.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

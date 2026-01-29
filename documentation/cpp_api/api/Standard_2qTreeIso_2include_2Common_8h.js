@@ -5,7 +5,7 @@ var Standard_2qTreeIso_2include_2Common_8h =
     [ "ComponentsFusion", "structComponentsFusion.html", "structComponentsFusion" ],
     [ "lessComponentsFusion", "structlessComponentsFusion.html", "structlessComponentsFusion" ],
     [ "VectorOfCentroids", "classVectorOfCentroids.html", "classVectorOfCentroids" ],
-    [ "Point3D", "structPoint3D.html", "structPoint3D" ],
+    [ "Point3D", "classPoint3D.html", "classPoint3D" ],
     [ "lessPoint3D", "structlessPoint3D.html", "structlessPoint3D" ],
     [ "fidelityType", "Standard_2qTreeIso_2include_2Common_8h.html#aab8523effdad1f4411604615d22fabab", [
       [ "L2", "Standard_2qTreeIso_2include_2Common_8h.html#aab8523effdad1f4411604615d22fababa0adffb24dae0c41be5b803f4d444f066", null ],

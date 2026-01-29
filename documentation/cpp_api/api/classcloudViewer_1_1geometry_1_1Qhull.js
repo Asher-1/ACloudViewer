@@ -1,7 +1,7 @@
 var classcloudViewer_1_1geometry_1_1Qhull =
 [
-    [ "ComputeConvexHull", "classcloudViewer_1_1geometry_1_1Qhull.html#af8c6586e53e5af916e9d601c11bbcb4c", null ],
-    [ "ComputeConvexHull", "classcloudViewer_1_1geometry_1_1Qhull.html#a2475e47f86ba43cc72b6050694cc8abd", null ],
-    [ "ComputeDelaunayTetrahedralization", "classcloudViewer_1_1geometry_1_1Qhull.html#a8e14483135ac73e9cf27d2a848961c86", null ],
-    [ "ComputeDelaunayTetrahedralization", "classcloudViewer_1_1geometry_1_1Qhull.html#a73bba0c908ea83838b9214ecebd98cff", null ]
+    [ "ComputeConvexHull", "classcloudViewer_1_1geometry_1_1Qhull.html#a13b8072727688767814aefb3eff9abaa", null ],
+    [ "ComputeConvexHull", "classcloudViewer_1_1geometry_1_1Qhull.html#a9ac3c91a9a4b27213766f9e742cf4dda", null ],
+    [ "ComputeDelaunayTetrahedralization", "classcloudViewer_1_1geometry_1_1Qhull.html#a28890de8391eca3ed847d9db6fc16d26", null ],
+    [ "ComputeDelaunayTetrahedralization", "classcloudViewer_1_1geometry_1_1Qhull.html#acc17a0ad237b2d9a3e2751a58fa10e65", null ]
 ];

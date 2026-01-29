@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -139,7 +130,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        m_planeSize = <span class="keyword">new</span> QLineEdit(<span class="stringliteral">&quot;2.0&quot;</span>);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        m_planeSize-&gt;setValidator(<span class="keyword">new</span> QDoubleValidator(</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                0.01, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;double&gt;::max</a>(), 6));</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                0.01, std::numeric_limits&lt;double&gt;::max(), 6));</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        QDialogButtonBox* buttonBox = <span class="keyword">new</span> QDialogButtonBox(</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                QDialogButtonBox::Ok | QDialogButtonBox::Cancel);</div>
@@ -250,7 +241,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                        .arg(<span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(dip), 2, 10, QChar(<span class="charliteral">&#39;0&#39;</span>))</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                        .arg(<span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(dipdir), 3, 10, QChar(<span class="charliteral">&#39;0&#39;</span>)));</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        plane-&gt;<a class="code" href="classccDrawableObject.html#a9307c1167687a5632946af60758c7fd1">showNameIn3D</a>(<span class="keyword">true</span>);</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        cld-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(plane);</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        cld-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(plane);</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(plane, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> N = plane-&gt;<a class="code" href="classccPlane.html#a43f5e2e60bd2cd3584b90c7b10a568c7">getNormal</a>();</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> C = plane-&gt;<a class="code" href="classccPlane.html#a437b6ad24c21a766489b94ba59368059">getCenter</a>();</div>
@@ -258,12 +249,12 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="comment">// figure out transform (blatantly stolen from</span></div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="comment">// ccPlaneEditDlg::updatePlane())</span></div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> Nd =</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                <a class="code" href="classccNormalVectors.html#a1678a489db80df681a3be7803eb4f361">ccNormalVectors::ConvertDipAndDipDirToNormal</a>(dip, dipdir, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                <a class="code" href="classccNormalVectors.html#a99121dd3515f65d080f6625ae47f72ed">ccNormalVectors::ConvertDipAndDipDirToNormal</a>(dip, dipdir, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <a class="code" href="classccGLMatrix.html">ccGLMatrix</a> trans;</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <span class="keywordtype">bool</span> needToApplyTrans = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordtype">bool</span> needToApplyRot = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        needToApplyRot = (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(N.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(Nd) - <a class="code" href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a>) &gt;</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        needToApplyRot = (std::abs(N.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(Nd) - <a class="code" href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a>) &gt;</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                          std::numeric_limits&lt;PointCoordinateType&gt;::epsilon());</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        needToApplyTrans = needToApplyRot || ((C - Cd).norm2d() != 0);</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
@@ -272,9 +263,9 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            needToApplyTrans = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        }</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="keywordflow">if</span> (needToApplyRot) {</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <a class="code" href="classccGLMatrix.html">ccGLMatrix</a> rotation;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <a class="code" href="classccGLMatrix.html">ccGLMatrix</a> <a class="code" href="VoxelGridIO_8cpp.html#aa4d7213777947b34f4d4ca010a6dc51b">rotation</a>;</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            <span class="comment">// special case: plane parallel to XY</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(N.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>) &gt;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            <span class="keywordflow">if</span> (std::abs(N.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>) &gt;</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                <a class="code" href="CVConst_8h.html#a42350ac42d88ac01bd50195c36f27789">PC_ONE</a> - std::numeric_limits&lt;PointCoordinateType&gt;::epsilon()) {</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                <a class="code" href="classccGLMatrix.html">ccGLMatrix</a> rotX;</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                rotX.<a class="code" href="classccGLMatrixTpl.html#adfd8bd2124b063cea0dd277587f79672">initFromParameters</a>(<a class="code" href="namespacecloudViewer.html#a6286aab37e15a37234bcb5ba345062e2">cloudViewer::DegreesToRadians</a>(-dip),</div>
@@ -285,12 +276,12 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                rotZ.<a class="code" href="classccGLMatrixTpl.html#adfd8bd2124b063cea0dd277587f79672">initFromParameters</a>(<a class="code" href="namespacecloudViewer.html#a6286aab37e15a37234bcb5ba345062e2">cloudViewer::DegreesToRadians</a>(dipdir),</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                                        <a class="code" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>(0, 0, -1),</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                                        <a class="code" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>(0, 0, 0));</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                rotation = rotZ * rotX;</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                <a class="code" href="VoxelGridIO_8cpp.html#aa4d7213777947b34f4d4ca010a6dc51b">rotation</a> = rotZ * rotX;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            } <span class="keywordflow">else</span>  <span class="comment">// general case</span></div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            {</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                rotation = <a class="code" href="classccGLMatrixTpl.html#a410e6e6f60f3cefb8505ebc5c1993461">ccGLMatrix::FromToRotation</a>(N, Nd);</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                <a class="code" href="VoxelGridIO_8cpp.html#aa4d7213777947b34f4d4ca010a6dc51b">rotation</a> = <a class="code" href="classccGLMatrixTpl.html#a410e6e6f60f3cefb8505ebc5c1993461">ccGLMatrix::FromToRotation</a>(N, Nd);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            }</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;            trans = rotation * trans;</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;            trans = <a class="code" href="VoxelGridIO_8cpp.html#aa4d7213777947b34f4d4ca010a6dc51b">rotation</a> * trans;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        }</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="keywordflow">if</span> (needToApplyTrans) {</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;            trans.<a class="code" href="classccGLMatrixTpl.html#ab64c91ea24377b87c35a7ff87f4452ee">setTranslation</a>(trans.<a class="code" href="classccGLMatrixTpl.html#a11a1cded5f73277b4f96fca30722f3c6">getTranslationAsVec3D</a>() + Cd);</div>
@@ -378,14 +369,14 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        <span class="comment">// create lineation graphic</span></div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        <a class="code" href="classccLineation.html">ccLineation</a>* lineation = <span class="keyword">new</span> <a class="code" href="classccLineation.html">ccLineation</a>(<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>);</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        lineation-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>);</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        lineation-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(<a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        lineation-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(0);</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        lineation-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(1);</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        lineation-&gt;<a class="code" href="classccLineation.html#a184dc8af829603c7ad4447aa3e8120f3">updateMetadata</a>();</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        lineation-&gt;<a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(QStringLiteral(<span class="stringliteral">&quot;%1-&gt;%2&quot;</span>)</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                                   .arg(qRound(plunge))</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                                   .arg(qRound(trend)));</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        cld-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(lineation);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        cld-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(lineation);</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        app-&gt;<a class="code" href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">addToDB</a>(lineation, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    }</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;}</div>
@@ -396,6 +387,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="ttc" id="aCVMath_8h_html"><div class="ttname"><a href="CVMath_8h.html">CVMath.h</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_af7f8f4a4e39e09fdb5e9f02330ecabef"><div class="ttname"><a href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a></div><div class="ttdeci">int points</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00144">FileIOFactory.cpp:144</a></div></div>
+<div class="ttc" id="aVoxelGridIO_8cpp_html_aa4d7213777947b34f4d4ca010a6dc51b"><div class="ttname"><a href="VoxelGridIO_8cpp.html#aa4d7213777947b34f4d4ca010a6dc51b">rotation</a></div><div class="ttdeci">Eigen::Matrix3d rotation</div><div class="ttdef"><b>Definition:</b> <a href="VoxelGridIO_8cpp_source.html#l00027">VoxelGridIO.cpp:27</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
 <div class="ttc" id="accCompassImport_8h_html"><div class="ttname"><a href="ccCompassImport_8h.html">ccCompassImport.h</a></div></div>
 <div class="ttc" id="accLineation_8h_html"><div class="ttname"><a href="ccLineation_8h.html">ccLineation.h</a></div></div>
@@ -408,11 +400,11 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="ttc" id="aclassccGLMatrixTpl_html_ab64c91ea24377b87c35a7ff87f4452ee"><div class="ttname"><a href="classccGLMatrixTpl.html#ab64c91ea24377b87c35a7ff87f4452ee">ccGLMatrixTpl::setTranslation</a></div><div class="ttdeci">void setTranslation(const Vector3Tpl&lt; float &gt; &amp;Tr)</div><div class="ttdoc">Sets translation (float version)</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrixTpl_8h_source.html#l00836">ecvGLMatrixTpl.h:836</a></div></div>
 <div class="ttc" id="aclassccGLMatrixTpl_html_adfd8bd2124b063cea0dd277587f79672"><div class="ttname"><a href="classccGLMatrixTpl.html#adfd8bd2124b063cea0dd277587f79672">ccGLMatrixTpl::initFromParameters</a></div><div class="ttdeci">void initFromParameters(T alpha_rad, const Vector3Tpl&lt; T &gt; &amp;axis3D, const Vector3Tpl&lt; T &gt; &amp;t3D)</div><div class="ttdoc">Inits transformation from a rotation axis, an angle and a translation.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrixTpl_8h_source.html#l00648">ecvGLMatrixTpl.h:648</a></div></div>
 <div class="ttc" id="aclassccGLMatrix_html"><div class="ttname"><a href="classccGLMatrix.html">ccGLMatrix</a></div><div class="ttdoc">Float version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00019">ecvGLMatrix.h:19</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a7b0f94f7822c8e6a544b06cce3d03fb1"><div class="ttname"><a href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">ccHObject::applyGLTransformation_recursive</a></div><div class="ttdeci">void applyGLTransformation_recursive(const ccGLMatrix *trans=nullptr)</div><div class="ttdoc">Applies the active OpenGL transformation to the entity (recursive)</div></div>
-<div class="ttc" id="aclassccHObject_html_a7ee62cff1282c3f7d99acdabfa709fc0"><div class="ttname"><a href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div></div>
+<div class="ttc" id="aclassccHObject_html_a7b0f94f7822c8e6a544b06cce3d03fb1"><div class="ttname"><a href="classccHObject.html#a7b0f94f7822c8e6a544b06cce3d03fb1">ccHObject::applyGLTransformation_recursive</a></div><div class="ttdeci">void applyGLTransformation_recursive(const ccGLMatrix *trans=nullptr)</div><div class="ttdoc">Applies the active OpenGL transformation to the entity (recursive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00948">ecvHObject.cpp:948</a></div></div>
+<div class="ttc" id="aclassccHObject_html_ad618a89e257a6b831543fcd1192fc733"><div class="ttname"><a href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00534">ecvHObject.cpp:534</a></div></div>
 <div class="ttc" id="aclassccLineation_html"><div class="ttname"><a href="classccLineation.html">ccLineation</a></div><div class="ttdef"><b>Definition:</b> <a href="ccLineation_8h_source.html#l00017">ccLineation.h:17</a></div></div>
 <div class="ttc" id="aclassccLineation_html_a184dc8af829603c7ad4447aa3e8120f3"><div class="ttname"><a href="classccLineation.html#a184dc8af829603c7ad4447aa3e8120f3">ccLineation::updateMetadata</a></div><div class="ttdeci">void updateMetadata() override</div><div class="ttdef"><b>Definition:</b> <a href="ccLineation_8cpp_source.html#l00020">ccLineation.cpp:20</a></div></div>
-<div class="ttc" id="aclassccNormalVectors_html_a1678a489db80df681a3be7803eb4f361"><div class="ttname"><a href="classccNormalVectors.html#a1678a489db80df681a3be7803eb4f361">ccNormalVectors::ConvertDipAndDipDirToNormal</a></div><div class="ttdeci">static CCVector3 ConvertDipAndDipDirToNormal(PointCoordinateType dip_deg, PointCoordinateType dipDir_deg, bool upward=true)</div></div>
+<div class="ttc" id="aclassccNormalVectors_html_a99121dd3515f65d080f6625ae47f72ed"><div class="ttname"><a href="classccNormalVectors.html#a99121dd3515f65d080f6625ae47f72ed">ccNormalVectors::ConvertDipAndDipDirToNormal</a></div><div class="ttdeci">static CCVector3 ConvertDipAndDipDirToNormal(PointCoordinateType dip_deg, PointCoordinateType dipDir_deg, bool upward=true)</div><div class="ttdef"><b>Definition:</b> <a href="ecvNormalVectors_8cpp_source.html#l00892">ecvNormalVectors.cpp:892</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccPlane_html"><div class="ttname"><a href="classccPlane.html">ccPlane</a></div><div class="ttdoc">Plane (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00017">ecvPlane.h:18</a></div></div>
 <div class="ttc" id="aclassccPlane_html_a437b6ad24c21a766489b94ba59368059"><div class="ttname"><a href="classccPlane.html#a437b6ad24c21a766489b94ba59368059">ccPlane::getCenter</a></div><div class="ttdeci">CCVector3 getCenter() const</div><div class="ttdoc">Returns the center.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00056">ecvPlane.h:56</a></div></div>
@@ -434,8 +426,6 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div class="ttc" id="aclassecvMainAppInterface_html_a9349b3615d4550d424c39fb6a9e31b62"><div class="ttname"><a href="classecvMainAppInterface.html#a9349b3615d4550d424c39fb6a9e31b62">ecvMainAppInterface::getSelectedEntities</a></div><div class="ttdeci">virtual const ccHObject::Container &amp; getSelectedEntities() const =0</div><div class="ttdoc">Returns currently selected entities (&quot;read only&quot;)</div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_ab07beb6c1798c54473140cdb5ba4dd89"><div class="ttname"><a href="classecvMainAppInterface.html#ab07beb6c1798c54473140cdb5ba4dd89">ecvMainAppInterface::addToDB</a></div><div class="ttdeci">virtual void addToDB(ccHObject *obj, bool updateZoom=false, bool autoExpandDBTree=true, bool checkDimensions=false, bool autoRedraw=true)=0</div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_acbeb805bc1c0f536ff3b5db287609b62"><div class="ttname"><a href="classecvMainAppInterface.html#acbeb805bc1c0f536ff3b5db287609b62">ecvMainAppInterface::dispToConsole</a></div><div class="ttdeci">virtual void dispToConsole(QString message, ConsoleMessageLevel level=STD_CONSOLE_MESSAGE)=0</div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPlane_8h_html"><div class="ttname"><a href="ecvPlane_8h.html">ecvPlane.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
@@ -450,7 +440,7 @@ $(document).ready(function(){initNavTree('ccCompassImport_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccCompassImport_8cpp.html">ccCompassImport.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -178,12 +169,12 @@ $(document).ready(function(){initNavTree('GLHelper_8cpp_source.html',''); initRe
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordflow">return</span> mat.cast&lt;GLfloat&gt;();</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#aa5d4cc46f7c497dbd81bc61707cec936">   82</a></span>&#160;Eigen::Vector3d <a class="code" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#aa5d4cc46f7c497dbd81bc61707cec936">Project</a>(<span class="keyword">const</span> Eigen::Vector3d &amp;<a class="code" href="structpoint.html">point</a>,</div>
+<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#aa5d4cc46f7c497dbd81bc61707cec936">   82</a></span>&#160;Eigen::Vector3d <a class="code" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#aa5d4cc46f7c497dbd81bc61707cec936">Project</a>(<span class="keyword">const</span> Eigen::Vector3d &amp;point,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                        <span class="keyword">const</span> <a class="code" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#a3f4c6e774d89c10a76ca31ccb551631e">GLMatrix4f</a> &amp;mvp_matrix,</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>,</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                        <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>) {</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    Eigen::Vector4d pos = mvp_matrix.cast&lt;<span class="keywordtype">double</span>&gt;() *</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                          Eigen::Vector4d(<a class="code" href="structpoint.html">point</a>(0), <a class="code" href="structpoint.html">point</a>(1), <a class="code" href="structpoint.html">point</a>(2), 1.0);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                          Eigen::Vector4d(point(0), point(1), point(2), 1.0);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordflow">if</span> (pos(3) == 0.0) {</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">return</span> Eigen::Vector3d::Zero();</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    }</div>
@@ -197,16 +188,16 @@ $(document).ready(function(){initNavTree('GLHelper_8cpp_source.html',''); initRe
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                          <span class="keyword">const</span> <a class="code" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#a3f4c6e774d89c10a76ca31ccb551631e">GLMatrix4f</a> &amp;mvp_matrix,</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                          <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>,</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                          <span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>) {</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    Eigen::Vector4d <a class="code" href="structpoint.html">point</a> =</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    Eigen::Vector4d point =</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            mvp_matrix.cast&lt;<span class="keywordtype">double</span>&gt;().inverse() *</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            Eigen::Vector4d(screen_point(0) / (<span class="keywordtype">double</span>)<a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a> * 2.0 - 1.0,</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                            screen_point(1) / (<span class="keywordtype">double</span>)<a class="code" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a> * 2.0 - 1.0,</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                            screen_point(2) * 2.0 - 1.0, 1.0);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="structpoint.html">point</a>(3) == 0.0) {</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">if</span> (point(3) == 0.0) {</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">return</span> Eigen::Vector3d::Zero();</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    }</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <a class="code" href="structpoint.html">point</a> /= <a class="code" href="structpoint.html">point</a>(3);</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="structpoint.html">point</a>.block&lt;3, 1&gt;(0, 0);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    point /= point(3);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordflow">return</span> point.block&lt;3, 1&gt;(0, 0);</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;}</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
 <div class="line"><a name="l00113"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#ad90b557b08482b92d8ae25740fabe3e3">  113</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer_1_1visualization_1_1gl__util.html#ad90b557b08482b92d8ae25740fabe3e3">ColorCodeToPickIndex</a>(<span class="keyword">const</span> <a class="code" href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">Eigen::Vector4i</a> &amp;<a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>) {</div>
@@ -236,16 +227,15 @@ $(document).ready(function(){initNavTree('GLHelper_8cpp_source.html',''); initRe
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gl__util_html_aaa09fccd8ca451a8f48b9232be2e8be7"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gl__util.html#aaa09fccd8ca451a8f48b9232be2e8be7">cloudViewer::visualization::gl_util::texture_format_map_</a></div><div class="ttdeci">static const std::unordered_map&lt; int, unsigned int &gt; texture_format_map_</div><div class="ttdef"><b>Definition:</b> <a href="GLHelper_8cpp_source.html#l00017">GLHelper.cpp:17</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gl__util_html_ad90b557b08482b92d8ae25740fabe3e3"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gl__util.html#ad90b557b08482b92d8ae25740fabe3e3">cloudViewer::visualization::gl_util::ColorCodeToPickIndex</a></div><div class="ttdeci">int ColorCodeToPickIndex(const Eigen::Vector4i &amp;color)</div><div class="ttdef"><b>Definition:</b> <a href="GLHelper_8cpp_source.html#l00113">GLHelper.cpp:113</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gl__util_html_add241a6bd08f20d275c76e102d90a8f1"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gl__util.html#add241a6bd08f20d275c76e102d90a8f1">cloudViewer::visualization::gl_util::Ortho</a></div><div class="ttdeci">GLMatrix4f Ortho(double left, double right, double bottom, double top, double z_near, double z_far)</div><div class="ttdef"><b>Definition:</b> <a href="GLHelper_8cpp_source.html#l00065">GLHelper.cpp:65</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a6b4ea2e2b0f41835c2a18d0a21c55608"><div class="ttname"><a href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">knncpp::Vector4i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 4, 1 &gt; Vector4i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00031">knncpp.h:31</a></div></div>
-<div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_3813838e783a632dc71c37aff8ac20d2.html">utility</a></li><li class="navelem"><a class="el" href="GLHelper_8cpp.html">GLHelper.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

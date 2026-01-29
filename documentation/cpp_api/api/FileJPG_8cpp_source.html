@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -111,7 +102,7 @@ $(document).ready(function(){initNavTree('FileJPG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// clang-format on</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="cloudViewer_2t_2io_2ImageIO_8h.html">cloudViewer/t/io/ImageIO.h</a>&quot;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
@@ -153,7 +144,7 @@ $(document).ready(function(){initNavTree('FileJPG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        jerr.error_exit = jpeg_error_throw;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        jpeg_create_decompress(&amp;cinfo);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        jpeg_stdio_src(&amp;cinfo, file_in);</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        jpeg_read_header(&amp;cinfo, <a class="code" href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        jpeg_read_header(&amp;cinfo, <a class="code" href="dbfopen_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="comment">// We only support two channel types: gray, and RGB.</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordtype">int</span> num_of_channels = 3;</div>
@@ -250,8 +241,8 @@ $(document).ready(function(){initNavTree('FileJPG_8cpp_source.html',''); initRes
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        cinfo.in_color_space =</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                (cinfo.input_components == 1 ? JCS_GRAYSCALE : JCS_RGB);</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        jpeg_set_defaults(&amp;cinfo);</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        jpeg_set_quality(&amp;cinfo, quality, <a class="code" href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>);</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        jpeg_start_compress(&amp;cinfo, <a class="code" href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>);</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        jpeg_set_quality(&amp;cinfo, quality, <a class="code" href="dbfopen_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>);</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        jpeg_start_compress(&amp;cinfo, <a class="code" href="dbfopen_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>);</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keywordtype">int</span> row_stride = <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.GetCols() * <a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.GetChannels();</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="keyword">const</span> uint8_t *pdata = <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>uint8_t *<span class="keyword">&gt;</span>(<a class="code" href="FilamentRenderer_8cpp.html#a60b0c69b08810766e366c4b90031cd0d">image</a>.GetDataPtr());</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        std::vector&lt;uint8_t&gt; buffer(row_stride);</div>
@@ -285,21 +276,20 @@ $(document).ready(function(){initNavTree('FileJPG_8cpp_source.html',''); initRes
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1Image_html"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1Image.html">cloudViewer::t::geometry::Image</a></div><div class="ttdoc">The Image class stores image with customizable rows, cols, channels, dtype and device.</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2t_2geometry_2Image_8h_source.html#l00029">Image.h:29</a></div></div>
 <div class="ttc" id="acloudViewer_2t_2io_2ImageIO_8h_html"><div class="ttname"><a href="cloudViewer_2t_2io_2ImageIO_8h.html">ImageIO.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="alsd_8c_html_aa8cecfc5c5c054d2875c03e77b7be15d"><div class="ttname"><a href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a></div><div class="ttdeci">#define TRUE</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00119">lsd.c:119</a></div></div>
+<div class="ttc" id="adbfopen_8c_html_aa8cecfc5c5c054d2875c03e77b7be15d"><div class="ttname"><a href="dbfopen_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a></div><div class="ttdeci">#define TRUE</div><div class="ttdef"><b>Definition:</b> <a href="dbfopen_8c_source.html#l00236">dbfopen.c:236</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a67a7a5bd403bf14004573511c1e75165"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a67a7a5bd403bf14004573511c1e75165">cloudViewer::core::UInt8</a></div><div class="ttdeci">const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00048">Dtype.cpp:48</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a277ccf2b804e6ce151171efccec02659"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a277ccf2b804e6ce151171efccec02659">cloudViewer::t::io::kCloudViewerImageIODefaultQuality</a></div><div class="ttdeci">constexpr int kCloudViewerImageIODefaultQuality</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2t_2io_2ImageIO_8h_source.html#l00033">ImageIO.h:33</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ad1e11e5a436370da46fa4bff570efd01"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ad1e11e5a436370da46fa4bff570efd01">cloudViewer::t::io::WriteImageToJPG</a></div><div class="ttdeci">bool WriteImageToJPG(const std::string &amp;filename, const geometry::Image &amp;image, int quality)</div><div class="ttdef"><b>Definition:</b> <a href="FileJPG_8cpp_source.html#l00113">FileJPG.cpp:113</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_adfe1cfc25014aa1b9c0c2aa777235316"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#adfe1cfc25014aa1b9c0c2aa777235316">cloudViewer::t::io::ReadImageFromJPG</a></div><div class="ttdeci">bool ReadImageFromJPG(const std::string &amp;filename, geometry::Image &amp;image)</div><div class="ttdef"><b>Definition:</b> <a href="FileJPG_8cpp_source.html#l00041">FileJPG.cpp:41</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_ad587bec3df2a7d15b97d6b6f7299b051"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#ad587bec3df2a7d15b97d6b6f7299b051">cloudViewer::utility::filesystem::FOpen</a></div><div class="ttdeci">FILE * FOpen(const std::string &amp;filename, const std::string &amp;mode)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00609">FileSystem.cpp:609</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_b02e663b84a5466686fe36f6d8e707d1.html">file_format</a></li><li class="navelem"><a class="el" href="FileJPG_8cpp.html">FileJPG.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

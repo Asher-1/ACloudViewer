@@ -1,7 +1,16 @@
 <map id="/root/ACloudViewer/app/reconstruction/ReconstructionOptionsWidget.h" name="/root/ACloudViewer/app/reconstruction/ReconstructionOptionsWidget.h">
-<area shape="rect" id="node1" title=" " alt="" coords="98,5,329,61"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,109,72,136"/>
-<area shape="rect" id="node3" title=" " alt="" coords="96,109,187,136"/>
-<area shape="rect" id="node4" title=" " alt="" coords="211,109,360,136"/>
-<area shape="rect" id="node5" title=" " alt="" coords="385,109,549,136"/>
+<area shape="rect" id="node1" title=" " alt="" coords="114,5,345,61"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,184,72,211"/>
+<area shape="rect" id="node3" title=" " alt="" coords="245,184,336,211"/>
+<area shape="rect" id="node4" href="$options__widget_8h.html" title=" " alt="" coords="89,109,239,136"/>
+<area shape="rect" id="node6" href="$option__manager_8h.html" title=" " alt="" coords="459,109,623,136"/>
+<area shape="rect" id="node5" title=" " alt="" coords="97,184,221,211"/>
+<area shape="rect" id="node7" title=" " alt="" coords="360,184,560,211"/>
+<area shape="rect" id="node8" title=" " alt="" coords="584,184,661,211"/>
+<area shape="rect" id="node9" href="$logging_8h.html" title=" " alt="" coords="685,184,792,211"/>
+<area shape="rect" id="node10" title=" " alt="" coords="560,259,675,285"/>
+<area shape="rect" id="node11" title=" " alt="" coords="699,259,779,285"/>
+<area shape="rect" id="node12" href="$string_8h.html" title=" " alt="" coords="803,259,899,285"/>
+<area shape="rect" id="node13" title=" " alt="" coords="779,333,837,360"/>
+<area shape="rect" id="node14" title=" " alt="" coords="862,333,925,360"/>
 </map>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -125,7 +116,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>,</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                     <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_block_coords,</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                     <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> voxel_grid_resolution,</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                     <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                     <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                     <span class="keywordtype">float</span> sdf_trunc);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#ab09b1738007f16b6d2ae692d45be6fe3">DepthTouch</a>(std::shared_ptr&lt;core::HashMap&gt;&amp; hashmap,</div>
@@ -134,7 +125,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsic,</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_block_coords,</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> voxel_grid_resolution,</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                <span class="keywordtype">float</span> sdf_trunc,</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                <span class="keywordtype">float</span> depth_max,</div>
@@ -145,7 +136,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                                            <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_coords,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                            <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; flattened_indices,</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                            <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                            <span class="keywordtype">float</span> voxel_size);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                            <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#a1a65eb656db6f3c8d86a69cf7bc3177c">Integrate</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; depth,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;               <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>,</div>
@@ -156,7 +147,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;               <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; color_intrinsic,</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;               <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsic,</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;               <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> resolution,</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;               <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;               <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;               <span class="keywordtype">float</span> sdf_trunc,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;               <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;               <span class="keywordtype">float</span> depth_max);</div>
@@ -169,7 +160,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                   <span class="keywordtype">int</span> w,</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                   <span class="keywordtype">int</span> down_factor,</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                   int64_t block_resolution,</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                   <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                   <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                   <span class="keywordtype">float</span> depth_min,</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                   <span class="keywordtype">float</span> depth_max,</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                   <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; fragment_buffer);</div>
@@ -183,7 +174,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;             <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> h,</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;             <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> w,</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;             <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;             <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;             <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;             <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;             <span class="keywordtype">float</span> depth_min,</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;             <span class="keywordtype">float</span> depth_max,</div>
@@ -200,7 +191,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                       <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>,</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                       <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                       <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                       <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                       <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                       <span class="keywordtype">float</span> weight_threshold,</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                       <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a>&amp; valid_size);</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
@@ -215,7 +206,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                         <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; vertex_normals,</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                         <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; vertex_colors,</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                         <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                         <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                         <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                         <span class="keywordtype">float</span> weight_threshold,</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                         <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a>&amp; vertex_count);</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
@@ -223,7 +214,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>,</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_block_coords,</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                        <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> voxel_grid_resolution,</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                        <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                        <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                        <span class="keywordtype">float</span> sdf_trunc);</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#a2da2c96037e675ad2ebbb3ac901764c0">DepthTouchCPU</a>(std::shared_ptr&lt;core::HashMap&gt;&amp; hashmap,</div>
@@ -232,7 +223,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                   <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsic,</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                   <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_block_coords,</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;                   <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> voxel_grid_resolution,</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                   <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                   <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                   <span class="keywordtype">float</span> sdf_trunc,</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                   <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                   <span class="keywordtype">float</span> depth_max,</div>
@@ -243,7 +234,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                                               <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_coords,</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                                               <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; flattened_indices,</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                                               <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                                               <span class="keywordtype">float</span> voxel_size);</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                                               <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>);</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> input_depth_t,</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;          <span class="keyword">typename</span> input_color_t,</div>
@@ -259,7 +250,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                  <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; color_intrinsic,</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                  <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsic,</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                  <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> resolution,</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                  <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                  <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                  <span class="keywordtype">float</span> sdf_trunc,</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                  <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                  <span class="keywordtype">float</span> depth_max);</div>
@@ -272,7 +263,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                      <span class="keywordtype">int</span> w,</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;                      <span class="keywordtype">int</span> down_factor,</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                      int64_t block_resolution,</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                      <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                      <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                      <span class="keywordtype">float</span> depth_min,</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                      <span class="keywordtype">float</span> depth_max,</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                      <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; fragment_buffer);</div>
@@ -287,7 +278,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> h,</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> w,</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                <span class="keywordtype">float</span> depth_min,</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                <span class="keywordtype">float</span> depth_max,</div>
@@ -305,7 +296,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                          <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>,</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                          <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                          <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                          <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                          <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                          <span class="keywordtype">float</span> weight_threshold,</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                          <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a>&amp; valid_size);</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160; </div>
@@ -321,7 +312,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                            <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; vertex_normals,</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                            <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; vertex_colors,</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                            <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                            <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                            <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;                            <span class="keywordtype">float</span> weight_threshold,</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;                            <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a>&amp; vertex_count);</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160; </div>
@@ -330,7 +321,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                         <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>,</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                         <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_block_coords,</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                         <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> voxel_grid_resolution,</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                         <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                         <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                         <span class="keywordtype">float</span> sdf_trunc);</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;<span class="keywordtype">void</span> DepthTouchCUDA(std::shared_ptr&lt;core::HashMap&gt;&amp; hashmap,</div>
@@ -339,7 +330,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                    <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsic,</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                    <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_block_coords,</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                    <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> voxel_grid_resolution,</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                    <span class="keywordtype">float</span> sdf_trunc,</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                    <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                    <span class="keywordtype">float</span> depth_max,</div>
@@ -350,7 +341,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                                                <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; voxel_coords,</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                                                <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; flattened_indices,</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                                                <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                                                <span class="keywordtype">float</span> voxel_size);</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                                                <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>);</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> input_depth_t,</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;          <span class="keyword">typename</span> input_color_t,</div>
@@ -366,7 +357,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                   <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; color_intrinsic,</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                   <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; extrinsic,</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                   <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> resolution,</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                   <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                   <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                   <span class="keywordtype">float</span> sdf_trunc,</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                   <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                   <span class="keywordtype">float</span> depth_max);</div>
@@ -379,7 +370,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                       <span class="keywordtype">int</span> w,</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                       <span class="keywordtype">int</span> down_factor,</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                       int64_t block_resolution,</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                       <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                       <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                       <span class="keywordtype">float</span> depth_min,</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                       <span class="keywordtype">float</span> depth_max,</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                       <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; fragment_buffer);</div>
@@ -394,7 +385,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                 <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> h,</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                 <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> w,</div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                 <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                 <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                 <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;                 <span class="keywordtype">float</span> depth_scale,</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                 <span class="keywordtype">float</span> depth_min,</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                 <span class="keywordtype">float</span> depth_max,</div>
@@ -412,7 +403,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                           <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a>,</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                           <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; <a class="code" href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a>,</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                           <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                           <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                           <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                           <span class="keywordtype">float</span> weight_threshold,</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                           <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a>&amp; valid_size);</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
@@ -428,7 +419,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;                             <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; vertex_normals,</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                             <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; vertex_colors,</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                             <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a> block_resolution,</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                             <span class="keywordtype">float</span> voxel_size,</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                             <span class="keywordtype">float</span> <a class="code" href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a>,</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                             <span class="keywordtype">float</span> weight_threshold,</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                             <a class="code" href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">index_t</a>&amp; vertex_count);</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160; </div>
@@ -445,6 +436,7 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="ttc" id="aTensorMap_8h_html"><div class="ttname"><a href="TensorMap_8h.html">TensorMap.h</a></div></div>
 <div class="ttc" id="aTensor_8h_html"><div class="ttname"><a href="Tensor_8h.html">Tensor.h</a></div></div>
 <div class="ttc" id="aTriangleMeshBuffers_8cpp_html_a3f19cd85df5258a38e4618a89bd5ff46"><div class="ttname"><a href="TriangleMeshBuffers_8cpp.html#a3f19cd85df5258a38e4618a89bd5ff46">stride</a></div><div class="ttdeci">size_t stride</div><div class="ttdef"><b>Definition:</b> <a href="TriangleMeshBuffers_8cpp_source.html#l00166">TriangleMeshBuffers.cpp:166</a></div></div>
+<div class="ttc" id="aVoxelGridIO_8cpp_html_ad118a11bb72422d15842daa074486186"><div class="ttname"><a href="VoxelGridIO_8cpp.html#ad118a11bb72422d15842daa074486186">voxel_size</a></div><div class="ttdeci">double voxel_size</div><div class="ttdef"><b>Definition:</b> <a href="VoxelGridIO_8cpp_source.html#l00028">VoxelGridIO.cpp:28</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1TensorMap_html"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1TensorMap.html">cloudViewer::t::geometry::TensorMap</a></div><div class="ttdef"><b>Definition:</b> <a href="TensorMap_8h_source.html#l00031">TensorMap.h:31</a></div></div>
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a567da34081d0e17107546aa55edd6c04"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a></div><div class="ttdeci">double colors[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00053">TriangleMeshIO.cpp:53</a></div></div>
@@ -466,14 +458,14 @@ $(document).ready(function(){initNavTree('kernel_2VoxelBlockGrid_8h_source.html'
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid_html_ae263854fb98dfa9e3935017179e24781"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#ae263854fb98dfa9e3935017179e24781">cloudViewer::t::geometry::kernel::voxel_grid::ExtractTriangleMesh</a></div><div class="ttdeci">void ExtractTriangleMesh(const core::Tensor &amp;block_indices, const core::Tensor &amp;inv_block_indices, const core::Tensor &amp;nb_block_indices, const core::Tensor &amp;nb_block_masks, const core::Tensor &amp;block_keys, const TensorMap &amp;block_value_map, core::Tensor &amp;vertices, core::Tensor &amp;triangles, core::Tensor &amp;vertex_normals, core::Tensor &amp;vertex_colors, index_t block_resolution, float voxel_size, float weight_threshold, int &amp;vertex_count)</div><div class="ttdef"><b>Definition:</b> <a href="kernel_2VoxelBlockGrid_8cpp_source.html#l00334">VoxelBlockGrid.cpp:334</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid_html_af00f6d278d096777e4605d2271168dde"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#af00f6d278d096777e4605d2271168dde">cloudViewer::t::geometry::kernel::voxel_grid::index_t</a></div><div class="ttdeci">int index_t</div><div class="ttdef"><b>Definition:</b> <a href="kernel_2VoxelBlockGrid_8h_source.html#l00023">VoxelBlockGrid.h:23</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid_html_afccc3f44635d25e0bdfea986fc19b4fe"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1voxel__grid.html#afccc3f44635d25e0bdfea986fc19b4fe">cloudViewer::t::geometry::kernel::voxel_grid::EstimateRange</a></div><div class="ttdeci">void EstimateRange(const core::Tensor &amp;block_keys, core::Tensor &amp;range_minmax_map, const core::Tensor &amp;intrinsics, const core::Tensor &amp;extrinsics, int h, int w, int down_factor, int64_t block_resolution, float voxel_size, float depth_min, float depth_max, core::Tensor &amp;fragment_buffer)</div><div class="ttdef"><b>Definition:</b> <a href="kernel_2VoxelBlockGrid_8cpp_source.html#l00194">VoxelBlockGrid.cpp:194</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="kernel_2VoxelBlockGrid_8h.html">VoxelBlockGrid.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

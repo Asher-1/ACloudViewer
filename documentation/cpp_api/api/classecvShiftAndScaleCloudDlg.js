@@ -2,7 +2,7 @@ var classecvShiftAndScaleCloudDlg =
 [
     [ "ecvShiftAndScaleCloudDlg", "classecvShiftAndScaleCloudDlg.html#a06353848aa455396517aa3d58e3a78f0", null ],
     [ "ecvShiftAndScaleCloudDlg", "classecvShiftAndScaleCloudDlg.html#af4b5a1b322b8a3d0e0b3815706af0328", null ],
-    [ "~ecvShiftAndScaleCloudDlg", "classecvShiftAndScaleCloudDlg.html#a37257ee57fc3f2705b85b5cd621a07c3", null ],
+    [ "~ecvShiftAndScaleCloudDlg", "classecvShiftAndScaleCloudDlg.html#a37d8e132b7bf79e6315711ad6ead5078", null ],
     [ "addFileInfo", "classecvShiftAndScaleCloudDlg.html#ab1bc3612d8f140f8954475605c0deb9f", null ],
     [ "addShiftInfo", "classecvShiftAndScaleCloudDlg.html#a4afbc3180a123a5b7ddbfbe0fb1f257f", null ],
     [ "addShiftInfo", "classecvShiftAndScaleCloudDlg.html#a3833ff9aa7455b39c3116c02019c7dab", null ],

@@ -1,52 +1,52 @@
 <map id="/root/ACloudViewer/plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp" name="/root/ACloudViewer/plugins/core/Standard/qPCL/PclAlgorithms/Features/ExtractSIFT.cpp">
-<area shape="rect" id="node1" title=" " alt="" coords="2474,5,2686,76"/>
-<area shape="rect" id="node2" href="$ExtractSIFT_8h.html" title=" " alt="" coords="5,199,112,225"/>
-<area shape="rect" id="node17" title=" " alt="" coords="544,572,624,599"/>
-<area shape="rect" id="node28" title=" " alt="" coords="2694,124,2805,151"/>
-<area shape="rect" id="node29" title=" " alt="" coords="2829,124,2939,151"/>
-<area shape="rect" id="node30" title=" " alt="" coords="2963,124,3130,151"/>
-<area shape="rect" id="node31" href="$SIFTExtractDlg_8h.html" title=" " alt="" coords="2490,124,2670,151"/>
-<area shape="rect" id="node34" href="$ecvPointCloud_8h.html" title=" " alt="" coords="2389,348,2515,375"/>
-<area shape="rect" id="node47" href="$ecvMainAppInterface_8h.html" title=" " alt="" coords="1074,124,1246,151"/>
-<area shape="rect" id="node50" title=" " alt="" coords="3154,124,3270,151"/>
-<area shape="rect" id="node3" href="$BasePclModule_8h.html" title=" " alt="" coords="238,273,383,300"/>
-<area shape="rect" id="node6" title=" " alt="" coords="33,423,103,449"/>
-<area shape="rect" id="node4" title=" " alt="" coords="464,423,523,449"/>
-<area shape="rect" id="node5" title=" " alt="" coords="128,423,203,449"/>
-<area shape="rect" id="node7" href="$ecvHObject_8h.html" title=" " alt="" coords="1163,348,1272,375"/>
-<area shape="rect" id="node24" href="$ecvPluginInterface_8h.html" title=" " alt="" coords="285,348,440,375"/>
-<area shape="rect" id="node8" href="$BoundingBox_8h.html" title=" " alt="" coords="2193,497,2313,524"/>
-<area shape="rect" id="node15" href="$ecvColorTypes_8h.html" title=" " alt="" coords="947,497,1075,524"/>
-<area shape="rect" id="node18" href="$ecvDrawableObject_8h.html" title=" " alt="" coords="1479,423,1641,449"/>
-<area shape="rect" id="node19" href="$ecvGLMatrix_8h.html" title=" " alt="" coords="1611,497,1727,524"/>
-<area shape="rect" id="node20" href="$ecvGenericDisplayTools_8h.html" title=" " alt="" coords="597,423,787,449"/>
-<area shape="rect" id="node21" href="$ecvObject_8h.html" title=" " alt="" coords="1173,423,1272,449"/>
-<area shape="rect" id="node9" href="$SquareMatrix_8h.html" title=" " alt="" coords="1885,572,2006,599"/>
-<area shape="rect" id="node11" title=" " alt="" coords="1443,721,1528,748"/>
-<area shape="rect" id="node13" title=" " alt="" coords="2172,572,2313,599"/>
-<area shape="rect" id="node14" title=" " alt="" coords="2031,572,2097,599"/>
-<area shape="rect" id="node10" href="$CVGeom_8h.html" title=" " alt="" coords="1801,647,1892,673"/>
-<area shape="rect" id="node12" title=" " alt="" coords="2415,721,2478,748"/>
-<area shape="rect" id="node16" href="$CV__db_8h.html" title=" " alt="" coords="1247,572,1321,599"/>
-<area shape="rect" id="node22" href="$ecvSerializableObject_8h.html" title=" " alt="" coords="1751,497,1926,524"/>
-<area shape="rect" id="node23" title=" " alt="" coords="1099,497,1221,524"/>
-<area shape="rect" id="node25" title=" " alt="" coords="801,497,855,524"/>
-<area shape="rect" id="node26" title=" " alt="" coords="333,423,389,449"/>
-<area shape="rect" id="node27" title=" " alt="" coords="227,423,309,449"/>
-<area shape="rect" id="node32" title=" " alt="" coords="3101,199,3249,225"/>
-<area shape="rect" id="node33" title=" " alt="" coords="3273,199,3348,225"/>
-<area shape="rect" id="node35" href="$PointCloudTpl_8h.html" title=" " alt="" coords="2390,423,2514,449"/>
-<area shape="rect" id="node38" href="$ecvColorScale_8h.html" title=" " alt="" coords="1022,423,1149,449"/>
-<area shape="rect" id="node40" href="$ecvKDTreeSearchParam_8h.html" title=" " alt="" coords="1347,497,1535,524"/>
-<area shape="rect" id="node41" href="$ecvNormalVectors_8h.html" title=" " alt="" coords="2731,572,2885,599"/>
-<area shape="rect" id="node44" href="$ecvWaveform_8h.html" title=" " alt="" coords="1953,423,2077,449"/>
-<area shape="rect" id="node46" title=" " alt="" coords="2539,423,2661,449"/>
-<area shape="rect" id="node36" href="$GenericIndexedCloudPersist_8h.html" title=" " alt="" coords="2439,497,2655,524"/>
-<area shape="rect" id="node37" href="$ScalarField_8h.html" title=" " alt="" coords="2439,647,2545,673"/>
-<area shape="rect" id="node39" title=" " alt="" coords="880,497,923,524"/>
-<area shape="rect" id="node42" href="$GeometricalAnalysisTools_8h.html" title=" " alt="" coords="2569,647,2772,673"/>
-<area shape="rect" id="node43" href="$ecvGenericPointCloud_8h.html" title=" " alt="" coords="2847,647,3025,673"/>
-<area shape="rect" id="node45" title=" " alt="" coords="2053,497,2118,524"/>
-<area shape="rect" id="node48" href="$ecvHObjectCaster_8h.html" title=" " alt="" coords="1029,199,1179,225"/>
-<area shape="rect" id="node49" href="$CV__db_2include_2Octree_8h.html" title=" " alt="" coords="1263,273,1340,300"/>
+<area shape="rect" id="node1" title=" " alt="" coords="3063,5,3275,76"/>
+<area shape="rect" id="node2" href="$ExtractSIFT_8h.html" title=" " alt="" coords="135,124,242,151"/>
+<area shape="rect" id="node5" href="$cc2sm_8h.html" title=" " alt="" coords="783,124,893,151"/>
+<area shape="rect" id="node16" href="$sm2cc_8h.html" title=" " alt="" coords="1056,124,1167,151"/>
+<area shape="rect" id="node17" href="$PCLModules_8h.html" title=" " alt="" coords="3085,124,3252,151"/>
+<area shape="rect" id="node46" href="$SIFTExtractDlg_8h.html" title=" " alt="" coords="3427,124,3607,151"/>
+<area shape="rect" id="node47" href="$ecvPointCloud_8h.html" title=" " alt="" coords="3276,124,3403,151"/>
+<area shape="rect" id="node48" href="$ecvMainAppInterface_8h.html" title=" " alt="" coords="427,124,599,151"/>
+<area shape="rect" id="node49" title=" " alt="" coords="3631,124,3747,151"/>
+<area shape="rect" id="node50" title=" " alt="" coords="3771,124,3851,151"/>
+<area shape="rect" id="node3" href="$BasePclModule_8h.html" title=" " alt="" coords="5,206,151,233"/>
+<area shape="rect" id="node4" title=" " alt="" coords="179,288,249,315"/>
+<area shape="rect" id="node6" href="$PCLCloud_8h.html" title=" " alt="" coords="1169,206,1299,233"/>
+<area shape="rect" id="node7" title=" " alt="" coords="1167,288,1301,315"/>
+<area shape="rect" id="node8" href="$qPCL_8h.html" title=" " alt="" coords="1078,206,1145,233"/>
+<area shape="rect" id="node9" href="$ecvMaterial_8h.html" title=" " alt="" coords="943,206,1053,233"/>
+<area shape="rect" id="node10" title=" " alt="" coords="3845,288,3908,315"/>
+<area shape="rect" id="node11" title=" " alt="" coords="440,206,572,233"/>
+<area shape="rect" id="node12" title=" " alt="" coords="596,206,699,233"/>
+<area shape="rect" id="node13" title=" " alt="" coords="277,206,415,233"/>
+<area shape="rect" id="node14" title=" " alt="" coords="875,206,918,233"/>
+<area shape="rect" id="node15" title=" " alt="" coords="895,288,954,315"/>
+<area shape="rect" id="node18" href="$PCLConv_8h.html" title=" " alt="" coords="2205,206,2329,233"/>
+<area shape="rect" id="node19" href="$CVLog_8h.html" title=" " alt="" coords="1323,206,1398,233"/>
+<area shape="rect" id="node20" href="$CVMath_8h.html" title=" " alt="" coords="2354,206,2439,233"/>
+<area shape="rect" id="node21" href="$Eigen_8h.html" title=" " alt="" coords="6011,206,6081,233"/>
+<area shape="rect" id="node22" href="$Parallel_8h.html" title=" " alt="" coords="2463,206,2546,233"/>
+<area shape="rect" id="node23" title=" " alt="" coords="2571,206,2745,233"/>
+<area shape="rect" id="node24" title=" " alt="" coords="2770,206,2879,233"/>
+<area shape="rect" id="node25" title=" " alt="" coords="2904,206,3079,233"/>
+<area shape="rect" id="node26" title=" " alt="" coords="3103,206,3234,233"/>
+<area shape="rect" id="node27" title=" " alt="" coords="3258,206,3447,233"/>
+<area shape="rect" id="node28" title=" " alt="" coords="3471,206,3631,233"/>
+<area shape="rect" id="node29" title=" " alt="" coords="3655,206,3839,233"/>
+<area shape="rect" id="node30" title=" " alt="" coords="3915,199,4047,240"/>
+<area shape="rect" id="node31" title=" " alt="" coords="4071,199,4229,240"/>
+<area shape="rect" id="node32" title=" " alt="" coords="4254,206,4411,233"/>
+<area shape="rect" id="node33" title=" " alt="" coords="4436,199,4568,240"/>
+<area shape="rect" id="node34" title=" " alt="" coords="4593,206,4771,233"/>
+<area shape="rect" id="node35" title=" " alt="" coords="4795,199,4926,240"/>
+<area shape="rect" id="node36" title=" " alt="" coords="4951,199,5101,240"/>
+<area shape="rect" id="node37" title=" " alt="" coords="5125,199,5263,240"/>
+<area shape="rect" id="node38" title=" " alt="" coords="5287,206,5453,233"/>
+<area shape="rect" id="node39" title=" " alt="" coords="5477,199,5663,240"/>
+<area shape="rect" id="node40" title=" " alt="" coords="5688,199,5825,240"/>
+<area shape="rect" id="node41" title=" " alt="" coords="5850,199,5986,240"/>
+<area shape="rect" id="node42" title=" " alt="" coords="1473,206,1627,233"/>
+<area shape="rect" id="node43" title=" " alt="" coords="1651,206,1835,233"/>
+<area shape="rect" id="node44" title=" " alt="" coords="1859,206,2006,233"/>
+<area shape="rect" id="node45" title=" " alt="" coords="2031,199,2181,240"/>
 </map>

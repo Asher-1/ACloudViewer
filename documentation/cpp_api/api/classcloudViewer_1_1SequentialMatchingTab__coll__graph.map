@@ -1,6 +1,8 @@
 <map id="cloudViewer::SequentialMatchingTab" name="cloudViewer::SequentialMatchingTab">
-<area shape="rect" id="node1" title=" " alt="" coords="5,261,267,288"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1FeatureMatchingTab.html" title=" " alt="" coords="15,185,257,212"/>
-<area shape="rect" id="node3" title=" " alt="" coords="91,5,170,32"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1ThreadControlWidget.html" title=" " alt="" coords="152,81,355,123"/>
+<area shape="rect" id="node1" title=" " alt="" coords="832,68,1093,95"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1FeatureMatchingTab.html" title=" " alt="" coords="541,68,783,95"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,42,84,68"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1ThreadControlWidget.html" title=" " alt="" coords="133,34,336,76"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1OptionsWidget.html" title=" " alt="" coords="147,100,322,127"/>
+<area shape="rect" id="node6" href="$classcolmap_1_1OptionManager.html" title=" " alt="" coords="145,151,324,178"/>
 </map>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -131,7 +122,7 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NumpyIO_8h.html">cloudViewer/t/io/NumpyIO.h</a>&quot;</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#include &lt;zlib.h&gt;</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
@@ -224,8 +215,8 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;};</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
 <div class="line"><a name="l00127"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a711632c191427983519639d309eb97a9">  127</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">char</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a711632c191427983519639d309eb97a9">BigEndianChar</a>() {</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">int</span> x = 1;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordflow">return</span> ((<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(&amp;x))[0]) ? <span class="charliteral">&#39;&lt;&#39;</span> : <span class="charliteral">&#39;&gt;&#39;</span>;</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = 1;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordflow">return</span> ((<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(&amp;<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>))[0]) ? <span class="charliteral">&#39;&lt;&#39;</span> : <span class="charliteral">&#39;&gt;&#39;</span>;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;}</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
 <div class="line"><a name="l00132"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a9b9b56e9196ba1a1eb54428db8017918">  132</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">char</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a9b9b56e9196ba1a1eb54428db8017918">DtypeToChar</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">core::Dtype</a>&amp; dtype) {</div>
@@ -460,7 +451,7 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;                              <span class="keyword">const</span> std::string&amp; tensor_name,</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                              <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a>&amp; tensor,</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                              <span class="keywordtype">bool</span> append) {</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">void</span>* data = tensor.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">GetDataPtr</a>();</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">void</span>* <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a> = tensor.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">GetDataPtr</a>();</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1SizeVector.html">core::SizeVector</a> shape = tensor.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ad70864269871ee67c753328bc1a6082b">GetShape</a>();</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">core::Dtype</a> dtype = tensor.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">GetDtype</a>();</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    <span class="keyword">const</span> int64_t element_byte_size = dtype.<a class="code" href="classcloudViewer_1_1core_1_1Dtype.html#ab1f8bfcfc78b61d136d0e93c6358456f">ByteSize</a>();</div>
@@ -505,7 +496,7 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    <span class="comment">// Get the CRC of the data to be added.</span></div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    uint32_t crc = crc32(0L, <span class="keyword">reinterpret_cast&lt;</span>uint8_t*<span class="keyword">&gt;</span>(npy_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aff20100b98b7b029c781b15eb41eb896">Data</a>()),</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                         npy_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aa10a246d4acfa7b618fe2f48912c1f80">Size</a>());</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    crc = crc32(crc, <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>uint8_t*<span class="keyword">&gt;</span>(data),</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    crc = crc32(crc, <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>uint8_t*<span class="keyword">&gt;</span>(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>),</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;                nels * element_byte_size);</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160; </div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    <span class="comment">// The &quot;.npy&quot; suffix will be removed when npz is read.</span></div>
@@ -559,7 +550,7 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;    <span class="comment">// Write everything.</span></div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;    fwrite(local_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aff20100b98b7b029c781b15eb41eb896">Data</a>(), <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>), local_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aa10a246d4acfa7b618fe2f48912c1f80">Size</a>(), fp);</div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;    fwrite(npy_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aff20100b98b7b029c781b15eb41eb896">Data</a>(), <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>), npy_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aa10a246d4acfa7b618fe2f48912c1f80">Size</a>(), fp);</div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    fwrite(data, element_byte_size, nels, fp);</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    fwrite(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, element_byte_size, nels, fp);</div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    fwrite(global_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aff20100b98b7b029c781b15eb41eb896">Data</a>(), <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>), global_header.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aa10a246d4acfa7b618fe2f48912c1f80">Size</a>(), fp);</div>
 <div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    fwrite(footer.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aff20100b98b7b029c781b15eb41eb896">Data</a>(), <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>), footer.<a class="code" href="classcloudViewer_1_1t_1_1io_1_1CharVector.html#aa10a246d4acfa7b618fe2f48912c1f80">Size</a>(), fp);</div>
 <div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;}</div>
@@ -952,7 +943,8 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a53f191f47cd6b28657689be32bb0ea97"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a53f191f47cd6b28657689be32bb0ea97">cloudViewer::utility::filesystem::CFile::Open</a></div><div class="ttdeci">bool Open(const std::string &amp;filename, const std::string &amp;mode)</div><div class="ttdoc">Open a file.</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00739">FileSystem.cpp:739</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a8a395e562e2d4a29feb88b916230ec36"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8a395e562e2d4a29feb88b916230ec36">cloudViewer::utility::filesystem::CFile::GetFILE</a></div><div class="ttdeci">FILE * GetFILE()</div><div class="ttdoc">Returns the underlying C FILE pointer.</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00264">FileSystem.h:264</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1shape__util_html_ad87fd41a3eb65045e208f15edc84e153"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1shape__util.html#ad87fd41a3eb65045e208f15edc84e153">cloudViewer::core::shape_util::DefaultStrides</a></div><div class="ttdeci">SizeVector DefaultStrides(const SizeVector &amp;shape)</div><div class="ttdoc">Compute default strides for a shape when a tensor is contiguous.</div><div class="ttdef"><b>Definition:</b> <a href="ShapeUtil_8cpp_source.html#l00214">ShapeUtil.cpp:214</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a1ede84e6af3f5cb81af67e84ca784ec1"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a1ede84e6af3f5cb81af67e84ca784ec1">cloudViewer::core::Undefined</a></div><div class="ttdeci">const Dtype Undefined</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00041">Dtype.cpp:41</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a45404f3849773436ba3c4d990f420c07"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a45404f3849773436ba3c4d990f420c07">cloudViewer::core::Int8</a></div><div class="ttdeci">const Dtype Int8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00044">Dtype.cpp:44</a></div></div>
@@ -982,7 +974,7 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_adb09cfe61d80b20e882bd2ef3d681aeb"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#adb09cfe61d80b20e882bd2ef3d681aeb">cloudViewer::t::io::WriteNpy</a></div><div class="ttdeci">void WriteNpy(const std::string &amp;file_name, const core::Tensor &amp;tensor)</div><div class="ttdef"><b>Definition:</b> <a href="NumpyIO_8cpp_source.html#l00671">NumpyIO.cpp:671</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_ae18bf211c8b3aeeb09eda1527462a09e"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#ae18bf211c8b3aeeb09eda1527462a09e">cloudViewer::t::io::ParsePropertyDict</a></div><div class="ttdeci">static std::tuple&lt; core::SizeVector, char, int64_t, bool &gt; ParsePropertyDict(const std::string &amp;header)</div><div class="ttdef"><b>Definition:</b> <a href="NumpyIO_8cpp_source.html#l00207">NumpyIO.cpp:207</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_afa8692bcddfa2a9c5e8fa1d59ef47342"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#afa8692bcddfa2a9c5e8fa1d59ef47342">cloudViewer::t::io::ParseNpyHeaderFromFile</a></div><div class="ttdeci">static std::tuple&lt; core::SizeVector, char, int64_t, bool &gt; ParseNpyHeaderFromFile(FILE *fp)</div><div class="ttdef"><b>Definition:</b> <a href="NumpyIO_8cpp_source.html#l00303">NumpyIO.cpp:303</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_a0d112bae8fd35be772185b6ec6bcbe64"><div class="ttname"><a href="qioapi_8cpp.html#a0d112bae8fd35be772185b6ec6bcbe64">SEEK_SET</a></div><div class="ttdeci">#define SEEK_SET</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00038">qioapi.cpp:38</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_ad2a2e6c114780c3071efd24f16c7f7d8"><div class="ttname"><a href="qioapi_8cpp.html#ad2a2e6c114780c3071efd24f16c7f7d8">SEEK_END</a></div><div class="ttdeci">#define SEEK_END</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00034">qioapi.cpp:34</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -991,7 +983,7 @@ $(document).ready(function(){initNavTree('NumpyIO_8cpp_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="NumpyIO_8cpp.html">NumpyIO.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:28 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

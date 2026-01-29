@@ -1,16 +1,7 @@
 <map id="/root/ACloudViewer/libs/cloudViewer/core/CUDAUtils.h" name="/root/ACloudViewer/libs/cloudViewer/core/CUDAUtils.h">
-<area shape="rect" id="node1" title="Common CUDA utilities." alt="" coords="579,5,745,61"/>
-<area shape="rect" id="node2" href="$core_2include_2Logging_8h.html" title=" " alt="" coords="447,109,533,136"/>
-<area shape="rect" id="node13" href="$Device_8h.html" title=" " alt="" coords="738,109,933,136"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,184,92,211"/>
-<area shape="rect" id="node4" title=" " alt="" coords="117,184,197,211"/>
-<area shape="rect" id="node5" title=" " alt="" coords="221,184,295,211"/>
-<area shape="rect" id="node6" title=" " alt="" coords="806,184,865,211"/>
-<area shape="rect" id="node7" href="$CVCoreLib_8h.html" title=" " alt="" coords="319,184,421,211"/>
-<area shape="rect" id="node10" title=" " alt="" coords="445,184,535,211"/>
-<area shape="rect" id="node11" title=" " alt="" coords="559,184,653,211"/>
-<area shape="rect" id="node12" title=" " alt="" coords="677,184,783,211"/>
-<area shape="rect" id="node8" href="$CVCoreLibWin_8h.html" title=" " alt="" coords="307,259,433,285"/>
-<area shape="rect" id="node9" title=" " alt="" coords="306,333,434,360"/>
-<area shape="rect" id="node14" title=" " alt="" coords="889,184,952,211"/>
+<area shape="rect" id="node1" title="Common CUDA utilities." alt="" coords="47,5,212,61"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,109,91,136"/>
+<area shape="rect" id="node3" href="$Device_8h.html" title=" " alt="" coords="115,109,309,136"/>
+<area shape="rect" id="node4" title=" " alt="" coords="140,184,199,211"/>
+<area shape="rect" id="node5" title=" " alt="" coords="223,184,286,211"/>
 </map>

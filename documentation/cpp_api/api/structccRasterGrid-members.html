@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,8 +95,8 @@ $(document).ready(function(){initNavTree('structccRasterGrid.html',''); initResi
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a0be3961940fa1a143443df4356723883">clear</a>()</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#a169a308bde11c7cc159dd6a8a9822621">computeCellCenter</a>(int i, int j, unsigned char X, unsigned char Y) const</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a906f170339db10677904072f70cf39bb">computeCellPos</a>(const CCVector3 &amp;P, unsigned char X, unsigned char Y) const</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#a97190358b2794ec0a708232b53b85fd2">ComputeGridSize</a>(unsigned char Z, const ccBBox &amp;box, double gridStep, unsigned &amp;width, unsigned &amp;height)</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="structccRasterGrid.html#aade9ea87a74d77ad5bdb556fc5d26ba8">convertToCloud</a>(const std::vector&lt; ExportableFields &gt; &amp;exportedFields, bool interpolateSF, bool interpolateColors, bool resampleInputCloudXY, bool resampleInputCloudZ, ccGenericPointCloud *inputCloud, unsigned char Z, const ccBBox &amp;box, bool fillEmptyCells, double emptyCellsHeight, bool exportToOriginalCS) const</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#addbf94a2769a4be8e3b5eca53ac11336">ComputeGridSize</a>(unsigned char Z, const ccBBox &amp;box, double gridStep, unsigned &amp;width, unsigned &amp;height)</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
+  <tr><td class="entry"><a class="el" href="structccRasterGrid.html#ac34c80732226e5a54f2727f271775446">convertToCloud</a>(const std::vector&lt; ExportableFields &gt; &amp;exportedFields, bool interpolateSF, bool interpolateColors, bool resampleInputCloudXY, bool resampleInputCloudZ, ccGenericPointCloud *inputCloud, unsigned char Z, const ccBBox &amp;box, bool fillEmptyCells, double emptyCellsHeight, bool exportToOriginalCS) const</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#ace67078b8c052e07c0051ba2992a62da">EmptyCellFillOption</a> enum name</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a03914a4f14697e722f6524c59be97542">ExportableFields</a> enum name</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#ace67078b8c052e07c0051ba2992a62daa11f450a1edea55ca2c18187e39a0233b">FILL_AVERAGE_HEIGHT</a> enum value</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
@@ -114,7 +105,7 @@ $(document).ready(function(){initNavTree('structccRasterGrid.html',''); initResi
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#ace67078b8c052e07c0051ba2992a62daa18fd5994d9b75c9ee5ee750c165eb71f">FILL_MINIMUM_HEIGHT</a> enum value</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#aee1c4b948ef056ee491b41e6a1fdddfc">fillEmptyCells</a>(EmptyCellFillOption fillEmptyCellsStrategy, double customCellHeight=0)</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a63a3c2adf80d273868d39ca684897252">fillWith</a>(ccGenericPointCloud *cloud, unsigned char projectionDimension, ProjectionType projectionType, bool interpolateEmptyCells, ProjectionType sfInterpolation=INVALID_PROJECTION_TYPE, ecvProgressDialog *progressDialog=nullptr)</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#a76b5b1480b8ed3cea9053397dae2de06">GetDefaultFieldName</a>(ExportableFields field)</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#a65db8e81b11f5db84943f3782b846564">GetDefaultFieldName</a>(ExportableFields field)</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a27a879402f45a53c3b14cc462e2ae258">gridStep</a></td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#a4563cd129135f9742aa4146e7342426b">hasColors</a></td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a41a0953ee81db80740ccf209a1d04c6f">height</a></td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
@@ -159,13 +150,13 @@ $(document).ready(function(){initNavTree('structccRasterGrid.html',''); initResi
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#ae237d64b676b07de7683cf2d0755ba2e">valid</a></td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a1921c7b916ac360d34cac2c809187c04">validCellCount</a></td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="structccRasterGrid.html#abd8fedda642c95f77ccc1a22cc3d9581">width</a></td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="structccRasterGrid.html#ada8a38ce4168f5a8df67e1f13b0937a9">~ccRasterGrid</a>()</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">virtual</span></td></tr>
+  <tr><td class="entry"><a class="el" href="structccRasterGrid.html#a98ff8809be80679dbaa284dc62049ea7">~ccRasterGrid</a>()</td><td class="entry"><a class="el" href="structccRasterGrid.html">ccRasterGrid</a></td><td class="entry"><span class="mlabel">virtual</span></td></tr>
 </table></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

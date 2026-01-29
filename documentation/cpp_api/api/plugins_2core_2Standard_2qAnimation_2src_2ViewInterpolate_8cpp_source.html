@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -128,12 +119,12 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qAnimation_2s
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                                          <a class="code" href="classccPolyline.html">ccPolyline</a>* _smoothTrajectoryReversed,</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                                          <span class="keywordtype">unsigned</span> i1,</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                                          <span class="keywordtype">unsigned</span> i2,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                          <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>) {</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                          <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> length) {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    smoothTrajectory = _smoothTrajectory;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    smoothTrajectoryReversed = _smoothTrajectoryReversed;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    smoothTrajCurrentIndex = smoothTrajStartIndex = i1;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    smoothTrajStopIndex = i2;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    smoothSegmentLength = <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    smoothSegmentLength = length;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    smoothCurrentLength = 0;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;}</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
@@ -218,13 +209,12 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qAnimation_2s
 <div class="ttc" id="aclassecvViewportParameters_html_a776fba7782afcd049dc58936db48139e"><div class="ttname"><a href="classecvViewportParameters.html#a776fba7782afcd049dc58936db48139e">ecvViewportParameters::getFocalDistance</a></div><div class="ttdeci">double getFocalDistance() const</div><div class="ttdoc">Computes the 'focal' distance.</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8h_source.html#l00054">ecvViewportParameters.h:54</a></div></div>
 <div class="ttc" id="aclassecvViewportParameters_html_a970821e1ed9628d921dbbdfd073172db"><div class="ttname"><a href="classecvViewportParameters.html#a970821e1ed9628d921dbbdfd073172db">ecvViewportParameters::getCameraCenter</a></div><div class="ttdeci">const CCVector3d &amp; getCameraCenter() const</div><div class="ttdoc">Returns the camera center.</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8h_source.html#l00046">ecvViewportParameters.h:46</a></div></div>
 <div class="ttc" id="aclassecvViewportParameters_html_ab309e2ece8492b82c1c6699c0cfb61ac"><div class="ttname"><a href="classecvViewportParameters.html#ab309e2ece8492b82c1c6699c0cfb61ac">ecvViewportParameters::defaultPointSize</a></div><div class="ttdeci">float defaultPointSize</div><div class="ttdoc">Point size.</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8h_source.html#l00110">ecvViewportParameters.h:110</a></div></div>
-<div class="ttc" id="aclassecvViewportParameters_html_ab93a4196aa4cd7085be90c3f54405664"><div class="ttname"><a href="classecvViewportParameters.html#ab93a4196aa4cd7085be90c3f54405664">ecvViewportParameters::setPivotPoint</a></div><div class="ttdeci">void setPivotPoint(const CCVector3d &amp;P, bool autoUpdateFocal=true)</div><div class="ttdoc">Sets the pivot point (for object-centered view mode)</div></div>
+<div class="ttc" id="aclassecvViewportParameters_html_ab93a4196aa4cd7085be90c3f54405664"><div class="ttname"><a href="classecvViewportParameters.html#ab93a4196aa4cd7085be90c3f54405664">ecvViewportParameters::setPivotPoint</a></div><div class="ttdeci">void setPivotPoint(const CCVector3d &amp;P, bool autoUpdateFocal=true)</div><div class="ttdoc">Sets the pivot point (for object-centered view mode)</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8cpp_source.html#l00286">ecvViewportParameters.cpp:286</a></div></div>
 <div class="ttc" id="aclassecvViewportParameters_html_abe8a32ac3306b5b67518b7cd32203c5d"><div class="ttname"><a href="classecvViewportParameters.html#abe8a32ac3306b5b67518b7cd32203c5d">ecvViewportParameters::getPivotPoint</a></div><div class="ttdeci">const CCVector3d &amp; getPivotPoint() const</div><div class="ttdoc">Returns the pivot point (for object-centered view mode)</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8h_source.html#l00039">ecvViewportParameters.h:39</a></div></div>
 <div class="ttc" id="aclassecvViewportParameters_html_ac21dc4dac76075481c1c93b5c00746d2"><div class="ttname"><a href="classecvViewportParameters.html#ac21dc4dac76075481c1c93b5c00746d2">ecvViewportParameters::viewMat</a></div><div class="ttdeci">ccGLMatrixd viewMat</div><div class="ttdoc">Visualization matrix (rotation only)</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8h_source.html#l00107">ecvViewportParameters.h:107</a></div></div>
-<div class="ttc" id="aclassecvViewportParameters_html_ac4a10e21f1fc8aa1a231c7836ec17c0f"><div class="ttname"><a href="classecvViewportParameters.html#ac4a10e21f1fc8aa1a231c7836ec17c0f">ecvViewportParameters::setCameraCenter</a></div><div class="ttdeci">void setCameraCenter(const CCVector3d &amp;C, bool autoUpdateFocal=true)</div><div class="ttdoc">Sets the camera center.</div></div>
-<div class="ttc" id="aclassecvViewportParameters_html_aec970b585e9f1736f518ed1d3666359f"><div class="ttname"><a href="classecvViewportParameters.html#aec970b585e9f1736f518ed1d3666359f">ecvViewportParameters::setFocalDistance</a></div><div class="ttdeci">void setFocalDistance(double distance)</div><div class="ttdoc">Sets the 'focal' distance.</div></div>
+<div class="ttc" id="aclassecvViewportParameters_html_ac4a10e21f1fc8aa1a231c7836ec17c0f"><div class="ttname"><a href="classecvViewportParameters.html#ac4a10e21f1fc8aa1a231c7836ec17c0f">ecvViewportParameters::setCameraCenter</a></div><div class="ttdeci">void setCameraCenter(const CCVector3d &amp;C, bool autoUpdateFocal=true)</div><div class="ttdoc">Sets the camera center.</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8cpp_source.html#l00295">ecvViewportParameters.cpp:295</a></div></div>
+<div class="ttc" id="aclassecvViewportParameters_html_aec970b585e9f1736f518ed1d3666359f"><div class="ttname"><a href="classecvViewportParameters.html#aec970b585e9f1736f518ed1d3666359f">ecvViewportParameters::setFocalDistance</a></div><div class="ttdeci">void setFocalDistance(double distance)</div><div class="ttdoc">Sets the 'focal' distance.</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8cpp_source.html#l00304">ecvViewportParameters.cpp:304</a></div></div>
 <div class="ttc" id="aclassecvViewportParameters_html_aed24e35e0b672193b2bdaffabe7250e6"><div class="ttname"><a href="classecvViewportParameters.html#aed24e35e0b672193b2bdaffabe7250e6">ecvViewportParameters::zNear</a></div><div class="ttdeci">double zNear</div><div class="ttdoc">Actual perspective 'zNear' value.</div><div class="ttdef"><b>Definition:</b> <a href="ecvViewportParameters_8h_source.html#l00135">ecvViewportParameters.h:135</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
 <div class="ttc" id="aecvPolyline_8h_html"><div class="ttname"><a href="ecvPolyline_8h.html">ecvPolyline.h</a></div></div>
 <div class="ttc" id="aplugins_2core_2Standard_2qAnimation_2src_2ViewInterpolate_8cpp_html_addd59ec4ea4cc2047991b86bf6714d1a"><div class="ttname"><a href="plugins_2core_2Standard_2qAnimation_2src_2ViewInterpolate_8cpp.html#addd59ec4ea4cc2047991b86bf6714d1a">InterpolateNumber</a></div><div class="ttdeci">T InterpolateNumber(T start, T end, double interpolationFraction)</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qAnimation_2src_2ViewInterpolate_8cpp_source.html#l00043">ViewInterpolate.cpp:43</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -233,7 +223,7 @@ $(document).ready(function(){initNavTree('plugins_2core_2Standard_2qAnimation_2s
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8e0e1ff7f24769e85414f2ebafbc6cf9.html">qAnimation</a></li><li class="navelem"><a class="el" href="dir_505c055bef624d0937ac01eb6698c77a.html">src</a></li><li class="navelem"><a class="el" href="plugins_2core_2Standard_2qAnimation_2src_2ViewInterpolate_8cpp.html">ViewInterpolate.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

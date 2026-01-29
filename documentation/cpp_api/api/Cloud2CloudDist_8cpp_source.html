@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -159,7 +150,7 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                         cloth.<a class="code" href="classCloth.html#adbb53fe5b62ca9451561e9756ea7180e">getParticle</a>(col1, row1).<a class="code" href="classParticle.html#ad6585f78435cd6e16519e7d13f76f6a4">pos</a>.<a class="code" href="classVec3.html#a3f7a04fbd01d126678d0d243b3edd1bc">y</a> * subdeltaX *</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                 (1 - subdeltaZ);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            <span class="keywordtype">double</span> height_var = fxy - pc[i].y;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">std::fabs</a>(height_var) &lt; <a class="code" href="ccCSFDlg_8cpp.html#aa8f0b2a491e3381e2b9062e24caa18b5">class_threshold</a>) {</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <span class="keywordflow">if</span> (std::fabs(height_var) &lt; <a class="code" href="ccCSFDlg_8cpp.html#aa8f0b2a491e3381e2b9062e24caa18b5">class_threshold</a>) {</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                groundIndexes.push_back(i);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                offGroundIndexes.push_back(i);</div>
@@ -211,7 +202,7 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        Tree tree(points_2d.begin(), points_2d.end());</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <span class="comment">// step two  query the nearest point of cloth for each terrain point</span></div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; pc.size(); i++) {</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            Point_d query(pc[i].x, pc[i].z);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            Point_d query(pc[i].<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, pc[i].<a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            Neighbor_search search(tree, query, N);</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;            <span class="keywordtype">double</span> search_min = 0;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            <span class="keywordflow">for</span> (Neighbor_search::iterator it = search.begin();</div>
@@ -219,14 +210,14 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                std::ostringstream ostrx, ostrz;</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                ostrx &lt;&lt; it-&gt;first.x();</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                ostrz &lt;&lt; it-&gt;first.y();</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                <span class="keywordtype">double</span> y = mapstring[ostrx.str() + ostrz.str()];</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                search_min = search_min + y / N;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = mapstring[ostrx.str() + ostrz.str()];</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                search_min = search_min + <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> / N;</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                <span class="comment">// if (y &gt; search_min)</span></div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                <span class="comment">//{</span></div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                <span class="comment">//  search_min = y;</span></div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                <span class="comment">// }</span></div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            }</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">std::fabs</a>(search_min - pc[i].y) &lt; <a class="code" href="ccCSFDlg_8cpp.html#aa8f0b2a491e3381e2b9062e24caa18b5">class_threshold</a>) {</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            <span class="keywordflow">if</span> (std::fabs(search_min - pc[i].<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) &lt; <a class="code" href="ccCSFDlg_8cpp.html#aa8f0b2a491e3381e2b9062e24caa18b5">class_threshold</a>) {</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                groundIndexes.push_back(i);</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                offGroundIndexes.push_back(i);</div>
@@ -277,7 +268,7 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        cell.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html#aae27ffdfd0191367daac69f7656a7142">points</a>-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">getPoint</a>(i, nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#ad4d5ff59f05b1fe28143cc1afa5b5601">queryPoint</a>);</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="keywordtype">unsigned</span> n = particleOctree-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a311af75b349c839c87d8ccedc7567d2f">findNearestNeighborsStartingFromCell</a>(nNSS);</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        <span class="keywordtype">unsigned</span> kNN = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(N, n);</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        <span class="keywordtype">unsigned</span> kNN = std::min(N, n);</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        <span class="keywordflow">if</span> (kNN == 0) {</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;            assert(<span class="keyword">false</span>);</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;            <span class="keywordflow">continue</span>;</div>
@@ -287,8 +278,8 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        <span class="keywordtype">double</span> search_min = 0;</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> k = 0; k &lt; kNN; ++k) {</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            <span class="keywordtype">unsigned</span> particleIndex = nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#acff325118aec9be88ecfd8e59cbe92da">pointsInNeighbourhood</a>[k].pointIndex;</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keywordtype">double</span> y = cloth.<a class="code" href="classCloth.html#a1198cfef7e840d2b7209a34729bbffc3">getParticleByIndex</a>(particleIndex).<a class="code" href="classParticle.html#ad6585f78435cd6e16519e7d13f76f6a4">pos</a>.<a class="code" href="classVec3.html#a3f7a04fbd01d126678d0d243b3edd1bc">y</a>;</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            search_min += y;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = cloth.<a class="code" href="classCloth.html#a1198cfef7e840d2b7209a34729bbffc3">getParticleByIndex</a>(particleIndex).<a class="code" href="classParticle.html#ad6585f78435cd6e16519e7d13f76f6a4">pos</a>.<a class="code" href="classVec3.html#a3f7a04fbd01d126678d0d243b3edd1bc">y</a>;</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            search_min += <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        }</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        search_min /= kNN;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160; </div>
@@ -367,7 +358,7 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160; </div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="comment">// now classify the points</span></div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; pcPoints.size(); ++i) {</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">std::fabs</a>(pcPoints.getPointScalarValue(i) - pc[i].y) &lt;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;            <span class="keywordflow">if</span> (std::fabs(pcPoints.getPointScalarValue(i) - pc[i].y) &lt;</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                <a class="code" href="ccCSFDlg_8cpp.html#aa8f0b2a491e3381e2b9062e24caa18b5">class_threshold</a>) {</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                groundIndexes.push_back(i);</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;            } <span class="keywordflow">else</span> {</div>
@@ -420,8 +411,9 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ae1bc84432099435f6e9fd788aee2c2f6"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">cloudViewer::ReferenceCloud::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdoc">Returns the ith point.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00079">ReferenceCloud.h:79</a></div></div>
 <div class="ttc" id="aclasswl_1_1PointCloud_html"><div class="ttname"><a href="classwl_1_1PointCloud.html">wl::PointCloud</a></div><div class="ttdef"><b>Definition:</b> <a href="wlPointCloud_8h_source.html#l00028">wlPointCloud.h:28</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aad6a2701675cd2a4bc1b1da7b79948ae"><div class="ttname"><a href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a></div><div class="ttdeci">__host__ __device__ float2 fabs(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01254">cutil_math.h:1254</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a98156be7bd5bb4bfe78e2541d057cab6"><div class="ttname"><a href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a></div><div class="ttdeci">normal_z z</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a2c676e196711456506771bb1be8f424a"><div class="ttname"><a href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a></div><div class="ttdeci">cloudViewer::NormalizedProgress * nProgress</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00042">qCanupoTools.cpp:42</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_ad13343fa968ca77badd2bb6c22d64166"><div class="ttname"><a href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a></div><div class="ttdeci">unsigned char octreeLevel</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00038">qCanupoTools.cpp:38</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct_html"><div class="ttname"><a href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html">cloudViewer::DgmOctree::NearestNeighboursSearchStruct</a></div><div class="ttdoc">Container of in/out parameters for nearest neighbour(s) search.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00161">DgmOctree.h:161</a></div></div>
@@ -444,7 +436,7 @@ $(document).ready(function(){initNavTree('Cloud2CloudDist_8cpp_source.html','');
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html">qCSF</a></li><li class="navelem"><a class="el" href="dir_cffe619bb7a47da2969b1923c068f1d5.html">src</a></li><li class="navelem"><a class="el" href="Cloud2CloudDist_8cpp.html">Cloud2CloudDist.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

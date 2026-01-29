@@ -1,0 +1,8 @@
+<map id="/root/ACloudViewer/libs/Reconstruction/src/ui/main_window.h" name="/root/ACloudViewer/libs/Reconstruction/src/ui/main_window.h">
+<area shape="rect" id="node1" title=" " alt="" coords="493,5,660,61"/>
+<area shape="rect" id="node2" href="$automatic__reconstruction__widget_8cc.html" title=" " alt="" coords="5,109,236,180"/>
+<area shape="rect" id="node3" href="$bundle__adjustment__widget_8cc.html" title=" " alt="" coords="260,109,451,180"/>
+<area shape="rect" id="node4" href="$dense__reconstruction__widget_8cc.html" title=" " alt="" coords="475,109,679,180"/>
+<area shape="rect" id="node5" href="$main__window_8cc.html" title=" " alt="" coords="703,117,875,173"/>
+<area shape="rect" id="node6" href="$model__viewer__widget_8cc.html" title=" " alt="" coords="899,109,1057,180"/>
+</map>

@@ -1,4 +1,5 @@
 <map id="cloudViewer::AutomaticReconstructionController" name="cloudViewer::AutomaticReconstructionController">
-<area shape="rect" id="node1" title=" " alt="" coords="5,95,280,136"/>
-<area shape="rect" id="node2" title=" " alt="" coords="21,5,264,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,169,280,211"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1AutomaticReconstructionController.html" title=" " alt="" coords="21,80,264,121"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1Thread.html" title=" " alt="" coords="81,5,204,32"/>
 </map>

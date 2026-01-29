@@ -2,8 +2,8 @@ var classccDish =
 [
     [ "ccDish", "classccDish.html#a6abe70a0a94e4a3a05d966b57208928b", null ],
     [ "ccDish", "classccDish.html#a9c4f32f223c56d620cc2d1af769ab421", null ],
-    [ "buildUp", "classccDish.html#a8ecc16b7bc62276c05648360f672a37b", null ],
-    [ "clone", "classccDish.html#adeeea6ff7bb3bdff4e228d340690ff12", null ],
+    [ "buildUp", "classccDish.html#a4354012124cc56bb843beb15298d2568", null ],
+    [ "clone", "classccDish.html#a01c3a93fae3bc6fa014d7c30bd2ae67e", null ],
     [ "fromFile_MeOnly", "classccDish.html#ad14aad6abbfef87dbcaa3b7e8000aebf", null ],
     [ "getBaseRadius", "classccDish.html#a86ace62625e57cb375233fd770039a9a", null ],
     [ "getClassID", "classccDish.html#aa26f611a6d2a21305f8af308c1f8dc60", null ],

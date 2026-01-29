@@ -113,7 +113,7 @@ var structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl =
     [ "selection_sets", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#acf1ee228086728ce488d07aa5e07af19", null ],
     [ "selections_", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#a0bcfb820b3b1825db446b13da73f36e9", null ],
     [ "selections_need_update_", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#a2bdbf10941e48823346d8f6c7ca908ca", null ],
-    [ "settings", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#ae96560425e717ac89abc182cb08f2193", null ],
+    [ "settings", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#a85c507faa1459c9e6f0bba7679d6ea17", null ],
     [ "shader", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#ac6734f1887045ea0852842cc6163652f", null ],
     [ "show_axes", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#aaf0efa09b081b65589edf5d5fb457453", null ],
     [ "show_ground", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1Impl.html#a533d589f4494ef1c09800767909cc30a", null ],

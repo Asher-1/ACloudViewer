@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -253,11 +244,11 @@ $(document).ready(function(){initNavTree('ScaledIntegerNodeImpl_8cpp_source.html
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;      <span class="keywordflow">return</span> ( offset_ );</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;   }</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
-<div class="line"><a name="l00168"></a><span class="lineno"><a class="line" href="classe57_1_1ScaledIntegerNodeImpl.html#a23afe715df16da9dfd162c9eb7444bec">  168</a></span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classe57_1_1ScaledIntegerNodeImpl.html#a23afe715df16da9dfd162c9eb7444bec">ScaledIntegerNodeImpl::checkLeavesInSet</a>( <span class="keyword">const</span> <a class="code" href="namespacee57.html#aaa56719e4f5a3dd0a648fc346585ff86">StringSet</a> &amp;pathNames, <a class="code" href="namespacee57.html#a3d9f3ef04a34eebe073ceb91a1b47251">NodeImplSharedPtr</a> origin )</div>
+<div class="line"><a name="l00168"></a><span class="lineno"><a class="line" href="classe57_1_1ScaledIntegerNodeImpl.html#a23afe715df16da9dfd162c9eb7444bec">  168</a></span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classe57_1_1ScaledIntegerNodeImpl.html#a23afe715df16da9dfd162c9eb7444bec">ScaledIntegerNodeImpl::checkLeavesInSet</a>( <span class="keyword">const</span> <a class="code" href="namespacee57.html#aaa56719e4f5a3dd0a648fc346585ff86">StringSet</a> &amp;pathNames, <a class="code" href="namespacee57.html#a3d9f3ef04a34eebe073ceb91a1b47251">NodeImplSharedPtr</a> <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a> )</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;   {</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;      <span class="comment">// don&#39;t checkImageFileOpen</span></div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;      <span class="keywordflow">if</span> ( pathNames.find( <a class="code" href="classe57_1_1NodeImpl.html#a3a4269b964e43321e1797cfa3fe6dd5b">relativePathName</a>( origin ) ) == pathNames.end() )</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;      <span class="keywordflow">if</span> ( pathNames.find( <a class="code" href="classe57_1_1NodeImpl.html#a3a4269b964e43321e1797cfa3fe6dd5b">relativePathName</a>( <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a> ) ) == pathNames.end() )</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;      {</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;         <span class="keywordflow">throw</span> <a class="code" href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h.html#a538dd43df33481a93594640f7c26bd4d">E57_EXCEPTION2</a>( <a class="code" href="namespacee57.html#a77d3e5c151623b81b466776db16d94e4a676093487b47540447dfbaf771916176">E57_ERROR_NO_BUFFER_FOR_ELEMENT</a>, <span class="stringliteral">&quot;this-&gt;pathName=&quot;</span> + this-&gt;<a class="code" href="classe57_1_1NodeImpl.html#aec636276e93a267192ea780e834fa240">pathName</a>() );</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;      }</div>
@@ -327,6 +318,7 @@ $(document).ready(function(){initNavTree('ScaledIntegerNodeImpl_8cpp_source.html
 <div class="ttc" id="aFilePLY_8cpp_html_a09206911190ce91fe5bece5535717837"><div class="ttname"><a href="FilePLY_8cpp.html#a09206911190ce91fe5bece5535717837">offset_</a></div><div class="ttdeci">int offset_</div><div class="ttdef"><b>Definition:</b> <a href="FilePLY_8cpp_source.html#l00036">FilePLY.cpp:36</a></div></div>
 <div class="ttc" id="aIO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_html_a538dd43df33481a93594640f7c26bd4d"><div class="ttname"><a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h.html#a538dd43df33481a93594640f7c26bd4d">E57_EXCEPTION2</a></div><div class="ttdeci">#define E57_EXCEPTION2(ecode, context)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00068">Common.h:68</a></div></div>
 <div class="ttc" id="aScaledIntegerNodeImpl_8h_html"><div class="ttname"><a href="ScaledIntegerNodeImpl_8h.html">ScaledIntegerNodeImpl.h</a></div></div>
+<div class="ttc" id="aVoxelGridIO_8cpp_html_ae4f3d20f086a53c39a1810193667374f"><div class="ttname"><a href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a></div><div class="ttdeci">Eigen::Vector3d origin</div><div class="ttdef"><b>Definition:</b> <a href="VoxelGridIO_8cpp_source.html#l00026">VoxelGridIO.cpp:26</a></div></div>
 <div class="ttc" id="aclasse57_1_1CheckedFile_html"><div class="ttname"><a href="classe57_1_1CheckedFile.html">e57::CheckedFile</a></div><div class="ttdef"><b>Definition:</b> <a href="CheckedFile_8h_source.html#l00042">CheckedFile.h:43</a></div></div>
 <div class="ttc" id="aclasse57_1_1NodeImpl_html"><div class="ttname"><a href="classe57_1_1NodeImpl.html">e57::NodeImpl</a></div><div class="ttdef"><b>Definition:</b> <a href="NodeImpl_8h_source.html#l00037">NodeImpl.h:38</a></div></div>
 <div class="ttc" id="aclasse57_1_1NodeImpl_html_a1a4f3abb15b5b0cb9d2a0d121234d2b3"><div class="ttname"><a href="classe57_1_1NodeImpl.html#a1a4f3abb15b5b0cb9d2a0d121234d2b3">e57::NodeImpl::elementName_</a></div><div class="ttdeci">ustring elementName_</div><div class="ttdef"><b>Definition:</b> <a href="NodeImpl_8h_source.html#l00096">NodeImpl.h:96</a></div></div>
@@ -369,7 +361,7 @@ $(document).ready(function(){initNavTree('ScaledIntegerNodeImpl_8cpp_source.html
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d5815e19ad8e9536ffb8de8e09ded2ce.html">src</a></li><li class="navelem"><a class="el" href="ScaledIntegerNodeImpl_8cpp.html">ScaledIntegerNodeImpl.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('cloudViewer_2core_2kernel_2BinaryEW_8c
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="BinaryEW_8h.html">cloudViewer/core/kernel/BinaryEW.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
@@ -183,7 +174,6 @@ $(document).ready(function(){initNavTree('cloudViewer_2core_2kernel_2BinaryEW_8c
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aab2f7c39ea6aef5e733bfe1dcd1c9d7b"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aab2f7c39ea6aef5e733bfe1dcd1c9d7b">cloudViewer::core::Tensor::GetDevice</a></div><div class="ttdeci">Device GetDevice() const override</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l01435">Tensor.cpp:1435</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ad70864269871ee67c753328bc1a6082b"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ad70864269871ee67c753328bc1a6082b">cloudViewer::core::Tensor::GetShape</a></div><div class="ttdeci">SizeVector GetShape() const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01127">Tensor.h:1127</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a20f1270704949f6d20448a1984ae59a4"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a20f1270704949f6d20448a1984ae59a4">cloudViewer::core::kernel::BinaryEWCPU</a></div><div class="ttdeci">void BinaryEWCPU(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEWCPU_8cpp_source.html#l00154">BinaryEWCPU.cpp:154</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a21d8f56c737fd1d1630ad4abe8c43b10"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a21d8f56c737fd1d1630ad4abe8c43b10">cloudViewer::core::kernel::s_boolean_binary_ew_op_codes</a></div><div class="ttdeci">const std::unordered_set&lt; BinaryEWOpCode, utility::hash_enum_class &gt; s_boolean_binary_ew_op_codes</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2kernel_2BinaryEW_8cpp_source.html#l00022">BinaryEW.cpp:22</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a2a5fea461632c9cb4fe1fbbf52bd6fb7"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a2a5fea461632c9cb4fe1fbbf52bd6fb7">cloudViewer::core::kernel::BinaryEW</a></div><div class="ttdeci">void BinaryEW(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2core_2kernel_2BinaryEW_8cpp_source.html#l00030">BinaryEW.cpp:30</a></div></div>
@@ -199,14 +189,14 @@ $(document).ready(function(){initNavTree('cloudViewer_2core_2kernel_2BinaryEW_8c
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_a5bcc1c1feae3436cea4437c96d6ec132ac6a675552648c0becb8283f05c172483"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#a5bcc1c1feae3436cea4437c96d6ec132ac6a675552648c0becb8283f05c172483">cloudViewer::core::kernel::BinaryEWOpCode::Ge</a></div><div class="ttdeci">@ Ge</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_adeed5e08acdb98a60ea716b035a80550"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#adeed5e08acdb98a60ea716b035a80550">cloudViewer::core::kernel::BinaryEWSYCL</a></div><div class="ttdeci">void BinaryEWSYCL(const Tensor &amp;lhs, const Tensor &amp;rhs, Tensor &amp;dst, BinaryEWOpCode op_code)</div><div class="ttdef"><b>Definition:</b> <a href="BinaryEWSYCL_8cpp_source.html#l00116">BinaryEWSYCL.cpp:116</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1shape__util_html_a97191f8768ad73c122f9a971d6e27eee"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1shape__util.html#a97191f8768ad73c122f9a971d6e27eee">cloudViewer::core::shape_util::BroadcastedShape</a></div><div class="ttdeci">SizeVector BroadcastedShape(const SizeVector &amp;l_shape, const SizeVector &amp;r_shape)</div><div class="ttdoc">Returns the broadcasted shape of two shapes.</div><div class="ttdef"><b>Definition:</b> <a href="ShapeUtil_8cpp_source.html#l00056">ShapeUtil.cpp:56</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_45b440cfe532bda991cb85e5a82a2a21.html">kernel</a></li><li class="navelem"><a class="el" href="cloudViewer_2core_2kernel_2BinaryEW_8cpp.html">BinaryEW.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

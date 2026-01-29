@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -123,7 +114,7 @@ $(document).ready(function(){initNavTree('ConnectionBase_8h_source.html',''); in
 <div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#aed4798f1d264e051f341efdeb2dc4f00">   25</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#aed4798f1d264e051f341efdeb2dc4f00">~ConnectionBase</a>() {}</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a1bf54d9d7f3d799ef21400454f528d89">   28</a></span>&#160;    <span class="keyword">virtual</span> std::shared_ptr&lt;zmq::message_t&gt; <a class="code" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a1bf54d9d7f3d799ef21400454f528d89">Send</a>(zmq::message_t&amp; send_msg) = 0;</div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a43760ef07a5a7275e7d02a114e748c82">   29</a></span>&#160;    <span class="keyword">virtual</span> std::shared_ptr&lt;zmq::message_t&gt; <a class="code" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a43760ef07a5a7275e7d02a114e748c82">Send</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>* data,</div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a43760ef07a5a7275e7d02a114e748c82">   29</a></span>&#160;    <span class="keyword">virtual</span> std::shared_ptr&lt;zmq::message_t&gt; <a class="code" href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a43760ef07a5a7275e7d02a114e748c82">Send</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>* <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>,</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                                                 <span class="keywordtype">size_t</span> <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>) = 0;</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;};</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;}  <span class="comment">// namespace rpc</span></div>
@@ -135,7 +126,8 @@ $(document).ready(function(){initNavTree('ConnectionBase_8h_source.html',''); in
 <div class="ttc" id="aclasscloudViewer_1_1io_1_1rpc_1_1ConnectionBase_html_a43760ef07a5a7275e7d02a114e748c82"><div class="ttname"><a href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#a43760ef07a5a7275e7d02a114e748c82">cloudViewer::io::rpc::ConnectionBase::Send</a></div><div class="ttdeci">virtual std::shared_ptr&lt; zmq::message_t &gt; Send(const void *data, size_t size)=0</div></div>
 <div class="ttc" id="aclasscloudViewer_1_1io_1_1rpc_1_1ConnectionBase_html_ac815dfce7174ec577970ccd15c840986"><div class="ttname"><a href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#ac815dfce7174ec577970ccd15c840986">cloudViewer::io::rpc::ConnectionBase::ConnectionBase</a></div><div class="ttdeci">ConnectionBase()</div><div class="ttdef"><b>Definition:</b> <a href="ConnectionBase_8h_source.html#l00024">ConnectionBase.h:24</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1io_1_1rpc_1_1ConnectionBase_html_aed4798f1d264e051f341efdeb2dc4f00"><div class="ttname"><a href="classcloudViewer_1_1io_1_1rpc_1_1ConnectionBase.html#aed4798f1d264e051f341efdeb2dc4f00">cloudViewer::io::rpc::ConnectionBase::~ConnectionBase</a></div><div class="ttdeci">virtual ~ConnectionBase()</div><div class="ttdef"><b>Definition:</b> <a href="ConnectionBase_8h_source.html#l00025">ConnectionBase.h:25</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacezmq_html"><div class="ttname"><a href="namespacezmq.html">zmq</a></div><div class="ttdef"><b>Definition:</b> <a href="ConnectionBase_8h_source.html#l00012">ConnectionBase.h:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -143,7 +135,7 @@ $(document).ready(function(){initNavTree('ConnectionBase_8h_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_1289b311b7a3197348dd9698cec970c0.html">io</a></li><li class="navelem"><a class="el" href="dir_7e40b8d96613604dd45c533531c5d6a5.html">rpc</a></li><li class="navelem"><a class="el" href="ConnectionBase_8h.html">ConnectionBase.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

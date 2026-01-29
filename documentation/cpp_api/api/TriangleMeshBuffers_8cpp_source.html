@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -189,22 +180,22 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> VertexType&gt;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;std::uint32_t GetVertexPositionOffset() {</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="sqlite3_8c.html#a61da2bab632d8ccea4f9a3eddfb506e7">offsetof</a>(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#ad0325471d482a632d8854fcc0614b217">position</a>);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">return</span> offsetof(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#ad0325471d482a632d8854fcc0614b217">position</a>);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;}</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> VertexType&gt;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;std::uint32_t GetVertexTangentOffset() {</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="sqlite3_8c.html#a61da2bab632d8ccea4f9a3eddfb506e7">offsetof</a>(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#a2671527ad9b6691d6c68244aa62413ce">tangent</a>);</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordflow">return</span> offsetof(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#a2671527ad9b6691d6c68244aa62413ce">tangent</a>);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;}</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> VertexType&gt;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;std::uint32_t GetVertexColorOffset() {</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="sqlite3_8c.html#a61da2bab632d8ccea4f9a3eddfb506e7">offsetof</a>(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordflow">return</span> offsetof(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a>);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;}</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> VertexType&gt;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;std::uint32_t GetVertexUVOffset() {</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="sqlite3_8c.html#a61da2bab632d8ccea4f9a3eddfb506e7">offsetof</a>(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#a2487386ca95c95bed24e77df700cf475">uv</a>);</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordflow">return</span> offsetof(VertexType, <a class="code" href="TriangleMeshBuffers_8cpp.html#a2487386ca95c95bed24e77df700cf475">uv</a>);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;}</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> VertexType&gt;</div>
@@ -290,10 +281,10 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    }</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    index_data.stride = <span class="keyword">sizeof</span>(GeometryBuffersBuilder::IndexType);</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    index_data.byte_count = geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>() * 3 * index_data.stride;</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    index_data.byte_count = geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>() * 3 * index_data.stride;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    index_data.bytes = <span class="keyword">static_cast&lt;</span>GeometryBuffersBuilder::IndexType*<span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            malloc(index_data.byte_count));</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>(); ++i) {</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>(); ++i) {</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; triangle = geometry.<a class="code" href="classccMesh.html#ac9e762ddf771016051a0dc515a5f0095">getTriangle</a>(i);</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        index_data.bytes[3 * i] = triangle(0);</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        index_data.bytes[3 * i + 1] = triangle(1);</div>
@@ -335,10 +326,10 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    }</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    index_data.stride = <span class="keyword">sizeof</span>(GeometryBuffersBuilder::IndexType);</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    index_data.byte_count = geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>() * 3 * index_data.stride;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    index_data.byte_count = geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>() * 3 * index_data.stride;</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    index_data.bytes = <span class="keyword">static_cast&lt;</span>GeometryBuffersBuilder::IndexType*<span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            malloc(index_data.byte_count));</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>(); ++i) {</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>(); ++i) {</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; triangle = geometry.<a class="code" href="classccMesh.html#ac9e762ddf771016051a0dc515a5f0095">getTriangle</a>(i);</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        index_data.bytes[3 * i] = triangle(0);</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        index_data.bytes[3 * i + 1] = triangle(1);</div>
@@ -369,7 +360,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;        <span class="comment">// TODO: does this break sort and map?</span></div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility.html#a93af83c5f4d598f677a552955c365c9a">operator&lt;</a>(<span class="keyword">const</span> LookupKey&amp; other)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; 5; ++i) {</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                <span class="keywordtype">double</span> diff = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a>(values[i] - other.values[i]);</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                <span class="keywordtype">double</span> diff = abs(values[i] - other.values[i]);</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                <span class="keywordflow">if</span> (diff &gt; kEpsilon) {</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                    <span class="keywordflow">return</span> values[i] &lt; other.values[i];</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                }</div>
@@ -387,11 +378,11 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;            index_lookup;</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    index_data.stride = <span class="keyword">sizeof</span>(GeometryBuffersBuilder::IndexType);</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    index_data.byte_count = geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>() * 3 * index_data.stride;</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    index_data.byte_count = geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>() * 3 * index_data.stride;</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    index_data.bytes = <span class="keyword">static_cast&lt;</span>GeometryBuffersBuilder::IndexType*<span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;            malloc(index_data.byte_count));</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160; </div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    vertex_data.byte_count = geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>() * 3 * <span class="keyword">sizeof</span>(TexturedVertex);</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    vertex_data.byte_count = geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>() * 3 * <span class="keyword">sizeof</span>(TexturedVertex);</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    vertex_data.bytes = malloc(vertex_data.byte_count);</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160; </div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    GeometryBuffersBuilder::IndexType free_idx = 0;</div>
@@ -399,7 +390,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="keyword">auto</span> textured_vertices = <span class="keyword">static_cast&lt;</span>TexturedVertex*<span class="keyword">&gt;</span>(vertex_data.bytes);</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160; </div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    <span class="keyword">const</span> TexturedVertex kDefault;</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; geometry.<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>(); ++i) {</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; geometry.<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>(); ++i) {</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; triangle = geometry.<a class="code" href="classccMesh.html#ac9e762ddf771016051a0dc515a5f0095">getTriangle</a>(i);</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> j = 0; j &lt; 3; ++j) {</div>
@@ -476,7 +467,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        }</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;        <span class="comment">// Converting normals to Filament type - quaternions</span></div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">size_t</span> tangents_byte_count = n_vertices * 4 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">size_t</span> tangents_byte_count = n_vertices * 4 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        float4v_tangents =</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;                <span class="keyword">static_cast&lt;</span>math::quatf*<span class="keyword">&gt;</span>(malloc(tangents_byte_count));</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        <span class="keyword">auto</span> orientation = filament::geometry::SurfaceOrientation::Builder()</div>
@@ -548,17 +539,17 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;}</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160; </div>
 <div class="line"><a name="l00451"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1TriangleMeshBuffersBuilder.html#ac391a838cb9ed672c23d08e733f09cc8">  451</a></span>&#160;filament::Box <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1TriangleMeshBuffersBuilder.html#ac391a838cb9ed672c23d08e733f09cc8">TriangleMeshBuffersBuilder::ComputeAABB</a>() {</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    <span class="keyword">auto</span> geometry_aabb = geometry_.<a class="code" href="classccMesh.html#a8efc8a8983ed0016681e04b97118f67c">GetAxisAlignedBoundingBox</a>();</div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    <span class="keyword">auto</span> geometry_aabb = geometry_.<a class="code" href="classccMesh.html#a8c6802e327dd63b7560dd766836a70bc">GetAxisAlignedBoundingBox</a>();</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160; </div>
-<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    <span class="keyword">const</span> filament::math::float3 <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a>(geometry_aabb.minCorner().x,</div>
+<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    <span class="keyword">const</span> filament::math::float3 min(geometry_aabb.minCorner().x,</div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;                                     geometry_aabb.minCorner().y,</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;                                     geometry_aabb.minCorner().z);</div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    <span class="keyword">const</span> filament::math::float3 <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>(geometry_aabb.maxCorner().x,</div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    <span class="keyword">const</span> filament::math::float3 max(geometry_aabb.maxCorner().x,</div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                                     geometry_aabb.maxCorner().y,</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;                                     geometry_aabb.maxCorner().z);</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160; </div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;    Box aabb;</div>
-<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;    aabb.set(<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a>, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>);</div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;    aabb.set(min, max);</div>
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160; </div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    <span class="keywordflow">return</span> aabb;</div>
 <div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;}</div>
@@ -654,7 +645,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;    }</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160; </div>
 <div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;    <span class="comment">// Vertices</span></div>
-<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> vertex_array_size = n_vertices * 3 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> vertex_array_size = n_vertices * 3 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;    <span class="keywordtype">float</span>* vertex_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(vertex_array_size));</div>
 <div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;    <span class="keywordflow">if</span> (need_duplicate_vertices) {</div>
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> dup_vertices = <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>.IndexGet(</div>
@@ -669,7 +660,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;    vbuf-&gt;setBufferAt(engine, 0, std::move(pts_descriptor));</div>
 <div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160; </div>
 <div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    <span class="comment">// Prepare color array</span></div>
-<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> color_array_size = n_vertices * 3 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> color_array_size = n_vertices * 3 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;    <span class="keywordtype">float</span>* color_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(color_array_size));</div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;    <span class="keywordflow">if</span> (geometry_.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html#ae333850739ac47797691fda06ca3ff63">HasVertexColors</a>()) {</div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;        <span class="keywordflow">if</span> (need_duplicate_vertices) {</div>
@@ -699,7 +690,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;    vbuf-&gt;setBufferAt(engine, 1, std::move(color_descriptor));</div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160; </div>
 <div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;    <span class="comment">// Prepare normal array</span></div>
-<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> normal_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> normal_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;    <span class="keywordtype">float</span>* normal_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(normal_array_size));</div>
 <div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;    <span class="keywordflow">if</span> (geometry_.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html#a43a7fe29a359f87adaf92bdd283a4ab6">HasVertexNormals</a>()) {</div>
 <div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;        <span class="keywordflow">if</span> (need_duplicate_vertices) {</div>
@@ -758,7 +749,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;    vbuf-&gt;setBufferAt(engine, 2, std::move(normals_descriptor));</div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160; </div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    <span class="comment">// Prepare UV array</span></div>
-<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> uv_array_size = n_vertices * 2 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> uv_array_size = n_vertices * 2 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;    <span class="keywordtype">float</span>* uv_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(uv_array_size));</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;    <span class="keywordflow">if</span> (geometry_.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html#adc81ef89669a218322df68f0f598d612">HasVertexAttr</a>(<span class="stringliteral">&quot;texture_uvs&quot;</span>)) {</div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        <span class="keywordflow">if</span> (need_duplicate_vertices) {</div>
@@ -848,16 +839,16 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="ttc" id="aTriangleMeshBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="TriangleMeshBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="TriangleMeshBuffers_8cpp_source.html#l00058">TriangleMeshBuffers.cpp:58</a></div></div>
 <div class="ttc" id="aTriangleMeshBuffers_8cpp_html_ad0325471d482a632d8854fcc0614b217"><div class="ttname"><a href="TriangleMeshBuffers_8cpp.html#ad0325471d482a632d8854fcc0614b217">position</a></div><div class="ttdeci">math::float3 position</div><div class="ttdef"><b>Definition:</b> <a href="TriangleMeshBuffers_8cpp_source.html#l00051">TriangleMeshBuffers.cpp:51</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
+<div class="ttc" id="aclassccMesh_html_a49a432c0284fff5e8fccc51845e49cbe"><div class="ttname"><a href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">ccMesh::size</a></div><div class="ttdeci">virtual unsigned size() const override</div><div class="ttdoc">Returns the number of triangles.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02143">ecvMesh.cpp:2143</a></div></div>
 <div class="ttc" id="aclassccMesh_html_a50a8620b58cee72035eda13467dd4b1c"><div class="ttname"><a href="classccMesh.html#a50a8620b58cee72035eda13467dd4b1c">ccMesh::triangle_uvs_</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector2d &gt; triangle_uvs_</div><div class="ttdoc">List of uv coordinates per triangle.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00625">ecvMesh.h:625</a></div></div>
-<div class="ttc" id="aclassccMesh_html_a5a7153e14d319eda056a1903d3a78a7e"><div class="ttname"><a href="classccMesh.html#a5a7153e14d319eda056a1903d3a78a7e">ccMesh::hasColors</a></div><div class="ttdeci">bool hasColors() const override</div><div class="ttdoc">Returns whether colors are enabled or not.</div></div>
-<div class="ttc" id="aclassccMesh_html_a87ad72172cf967bfa070fa8e3057727a"><div class="ttname"><a href="classccMesh.html#a87ad72172cf967bfa070fa8e3057727a">ccMesh::getVertice</a></div><div class="ttdeci">Eigen::Vector3d getVertice(size_t index) const</div></div>
-<div class="ttc" id="aclassccMesh_html_a8efc8a8983ed0016681e04b97118f67c"><div class="ttname"><a href="classccMesh.html#a8efc8a8983ed0016681e04b97118f67c">ccMesh::GetAxisAlignedBoundingBox</a></div><div class="ttdeci">virtual ccBBox GetAxisAlignedBoundingBox() const override</div><div class="ttdoc">Returns an axis-aligned bounding box of the geometry.</div></div>
-<div class="ttc" id="aclassccMesh_html_a94bcea81efb85c6f30680788e8dc12d9"><div class="ttname"><a href="classccMesh.html#a94bcea81efb85c6f30680788e8dc12d9">ccMesh::getVerticeSize</a></div><div class="ttdeci">unsigned int getVerticeSize() const</div></div>
-<div class="ttc" id="aclassccMesh_html_a9db3336de8f69cbb803f40dd81c8fc16"><div class="ttname"><a href="classccMesh.html#a9db3336de8f69cbb803f40dd81c8fc16">ccMesh::getVertexColor</a></div><div class="ttdeci">Eigen::Vector3d getVertexColor(size_t index) const</div></div>
-<div class="ttc" id="aclassccMesh_html_ab99f937c52161887b7ac8f5a25762a24"><div class="ttname"><a href="classccMesh.html#ab99f937c52161887b7ac8f5a25762a24">ccMesh::hasNormals</a></div><div class="ttdeci">bool hasNormals() const override</div><div class="ttdoc">Returns whether normals are enabled or not.</div></div>
-<div class="ttc" id="aclassccMesh_html_ac7ff917d8d21843eaa1b92bb824a2c9e"><div class="ttname"><a href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">ccMesh::size</a></div><div class="ttdeci">virtual unsigned size() const override</div><div class="ttdoc">Returns the number of triangles.</div></div>
-<div class="ttc" id="aclassccMesh_html_ac9e762ddf771016051a0dc515a5f0095"><div class="ttname"><a href="classccMesh.html#ac9e762ddf771016051a0dc515a5f0095">ccMesh::getTriangle</a></div><div class="ttdeci">Eigen::Vector3i getTriangle(size_t index) const</div></div>
-<div class="ttc" id="aclassccMesh_html_ae30253bbc0ae5d1d1c91304ccdf6dfbf"><div class="ttname"><a href="classccMesh.html#ae30253bbc0ae5d1d1c91304ccdf6dfbf">ccMesh::getVertexNormal</a></div><div class="ttdeci">Eigen::Vector3d getVertexNormal(size_t index) const</div></div>
+<div class="ttc" id="aclassccMesh_html_a5a7153e14d319eda056a1903d3a78a7e"><div class="ttname"><a href="classccMesh.html#a5a7153e14d319eda056a1903d3a78a7e">ccMesh::hasColors</a></div><div class="ttdeci">bool hasColors() const override</div><div class="ttdoc">Returns whether colors are enabled or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l00221">ecvMesh.cpp:221</a></div></div>
+<div class="ttc" id="aclassccMesh_html_a87ad72172cf967bfa070fa8e3057727a"><div class="ttname"><a href="classccMesh.html#a87ad72172cf967bfa070fa8e3057727a">ccMesh::getVertice</a></div><div class="ttdeci">Eigen::Vector3d getVertice(size_t index) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02213">ecvMesh.cpp:2213</a></div></div>
+<div class="ttc" id="aclassccMesh_html_a8c6802e327dd63b7560dd766836a70bc"><div class="ttname"><a href="classccMesh.html#a8c6802e327dd63b7560dd766836a70bc">ccMesh::GetAxisAlignedBoundingBox</a></div><div class="ttdeci">virtual ccBBox GetAxisAlignedBoundingBox() const override</div><div class="ttdoc">Returns an axis-aligned bounding box of the geometry.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l00844">ecvMesh.cpp:844</a></div></div>
+<div class="ttc" id="aclassccMesh_html_a94bcea81efb85c6f30680788e8dc12d9"><div class="ttname"><a href="classccMesh.html#a94bcea81efb85c6f30680788e8dc12d9">ccMesh::getVerticeSize</a></div><div class="ttdeci">unsigned int getVerticeSize() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02336">ecvMesh.cpp:2336</a></div></div>
+<div class="ttc" id="aclassccMesh_html_a9db3336de8f69cbb803f40dd81c8fc16"><div class="ttname"><a href="classccMesh.html#a9db3336de8f69cbb803f40dd81c8fc16">ccMesh::getVertexColor</a></div><div class="ttdeci">Eigen::Vector3d getVertexColor(size_t index) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02295">ecvMesh.cpp:2295</a></div></div>
+<div class="ttc" id="aclassccMesh_html_ab99f937c52161887b7ac8f5a25762a24"><div class="ttname"><a href="classccMesh.html#ab99f937c52161887b7ac8f5a25762a24">ccMesh::hasNormals</a></div><div class="ttdeci">bool hasNormals() const override</div><div class="ttdoc">Returns whether normals are enabled or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l00225">ecvMesh.cpp:225</a></div></div>
+<div class="ttc" id="aclassccMesh_html_ac9e762ddf771016051a0dc515a5f0095"><div class="ttname"><a href="classccMesh.html#ac9e762ddf771016051a0dc515a5f0095">ccMesh::getTriangle</a></div><div class="ttdeci">Eigen::Vector3i getTriangle(size_t index) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02448">ecvMesh.cpp:2448</a></div></div>
+<div class="ttc" id="aclassccMesh_html_ae30253bbc0ae5d1d1c91304ccdf6dfbf"><div class="ttname"><a href="classccMesh.html#ae30253bbc0ae5d1d1c91304ccdf6dfbf">ccMesh::getVertexNormal</a></div><div class="ttdeci">Eigen::Vector3d getVertexNormal(size_t index) const</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02251">ecvMesh.cpp:2251</a></div></div>
 <div class="ttc" id="aclassccMesh_html_aee545cc58ac0766a9238c795ee220fc9"><div class="ttname"><a href="classccMesh.html#aee545cc58ac0766a9238c795ee220fc9">ccMesh::hasTriangleUvs</a></div><div class="ttdeci">bool hasTriangleUvs() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00717">ecvMesh.h:717</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html">cloudViewer::core::Device</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00018">Device.h:18</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
@@ -900,11 +891,9 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a567da34081d0e17107546aa55edd6c04"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a567da34081d0e17107546aa55edd6c04">colors</a></div><div class="ttdeci">double colors[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00053">TriangleMeshIO.cpp:53</a></div></div>
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvBBox_8h_html"><div class="ttname"><a href="ecvBBox_8h.html">ecvBBox.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a56ab960a5052b926148cc2c48b5d6edd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a56ab960a5052b926148cc2c48b5d6edd">cloudViewer::core::Int64</a></div><div class="ttdeci">const Dtype Int64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00047">Dtype.cpp:47</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a58063fff4201654539d9ffc8cf24d9f7"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a58063fff4201654539d9ffc8cf24d9f7">cloudViewer::core::UInt32</a></div><div class="ttdeci">const Dtype UInt32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00050">Dtype.cpp:50</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a67a7a5bd403bf14004573511c1e75165"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a67a7a5bd403bf14004573511c1e75165">cloudViewer::core::UInt8</a></div><div class="ttdeci">const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00048">Dtype.cpp:48</a></div></div>
@@ -912,9 +901,8 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a93af83c5f4d598f677a552955c365c9a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a93af83c5f4d598f677a552955c365c9a">cloudViewer::utility::operator&lt;</a></div><div class="ttdeci">constexpr bool operator&lt;(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00625">Optional.h:625</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1rendering_html_a71bbb6641237d81057c308762d1a801f"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1rendering.html#a71bbb6641237d81057c308762d1a801f">cloudViewer::visualization::rendering::IndexBufferHandle</a></div><div class="ttdeci">REHandle&lt; EntityType::IndexBuffer &gt; IndexBufferHandle</div><div class="ttdef"><b>Definition:</b> <a href="RendererHandle_8h_source.html#l00139">RendererHandle.h:139</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1rendering_html_aba45d7000d7177199d55a016b8c179b0a10461f19cdb5aadba2fc9986be6400bd"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1rendering.html#aba45d7000d7177199d55a016b8c179b0a10461f19cdb5aadba2fc9986be6400bd">cloudViewer::visualization::rendering::EntityType::VertexBuffer</a></div><div class="ttdeci">@ VertexBuffer</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacefilament_html"><div class="ttname"><a href="namespacefilament.html">filament</a></div><div class="ttdef"><b>Definition:</b> <a href="FilamentEngine_8h_source.html#l00012">FilamentEngine.h:12</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_a61da2bab632d8ccea4f9a3eddfb506e7"><div class="ttname"><a href="sqlite3_8c.html#a61da2bab632d8ccea4f9a3eddfb506e7">offsetof</a></div><div class="ttdeci">#define offsetof(STRUCTURE, FIELD)</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l14241">sqlite3.c:14241</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1rendering_1_1REHandle_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1rendering_1_1REHandle.html">cloudViewer::visualization::rendering::REHandle&lt; EntityType::VertexBuffer &gt;</a></div></div>
 <div class="ttc" id="at_2geometry_2TriangleMesh_8h_html"><div class="ttname"><a href="t_2geometry_2TriangleMesh_8h.html">TriangleMesh.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -923,7 +911,7 @@ $(document).ready(function(){initNavTree('TriangleMeshBuffers_8cpp_source.html',
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_b499a281afeca67f84e0ab4cbebb6d96.html">rendering</a></li><li class="navelem"><a class="el" href="dir_d7c0e608d18fcb568181e1612c5c2a19.html">filament</a></li><li class="navelem"><a class="el" href="TriangleMeshBuffers_8cpp.html">TriangleMeshBuffers.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

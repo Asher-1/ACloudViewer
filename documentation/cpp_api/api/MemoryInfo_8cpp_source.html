@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -139,7 +130,7 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">namespace </span>system {</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#if defined(CV_LINUX)</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1system.html#ab7c8989e5041e31c3d8b148131a9334a">   43</a></span>&#160;<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <a class="code" href="namespacecloudViewer_1_1system.html#ab7c8989e5041e31c3d8b148131a9334a">linuxGetAvailableRam</a>() {</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> linuxGetAvailableRam() {</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    std::string token;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    std::ifstream file(<span class="stringliteral">&quot;/proc/meminfo&quot;</span>);</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">while</span> (file &gt;&gt; token) {</div>
@@ -153,7 +144,7 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            }</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        }</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="comment">// ignore rest of the line</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        file.ignore(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;std::streamsize&gt;::max</a>(), <span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        file.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    }</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">return</span> 0;  <span class="comment">// nothing found</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;}</div>
@@ -180,7 +171,7 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ae5a024d9124fb2716fa7201b03d46737">totalRam</a> = sys_info.totalram * sys_info.mem_unit;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a2548d6ff2821635463d0e6a99d9df85f">freeRam</a> = sys_info.freeram * sys_info.mem_unit;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ab35806fe985b94a2b08e1b573d54f341">availableRam</a> = <a class="code" href="namespacecloudViewer_1_1system.html#ab7c8989e5041e31c3d8b148131a9334a">linuxGetAvailableRam</a>();</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ab35806fe985b94a2b08e1b573d54f341">availableRam</a> = linuxGetAvailableRam();</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordflow">if</span> (infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ab35806fe985b94a2b08e1b573d54f341">availableRam</a> == 0) infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ab35806fe985b94a2b08e1b573d54f341">availableRam</a> = infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a2548d6ff2821635463d0e6a99d9df85f">freeRam</a>;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="comment">// infos.sharedRam = sys_info.sharedram * sys_info.mem_unit;</span></div>
@@ -236,7 +227,7 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="comment">// TODO: could be done on FreeBSD too</span></div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="comment">// see https://github.com/xbmc/xbmc/blob/master/xbmc/linux/XMemUtils.cpp</span></div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ae5a024d9124fb2716fa7201b03d46737">totalRam</a> = infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a2548d6ff2821635463d0e6a99d9df85f">freeRam</a> = infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#ab35806fe985b94a2b08e1b573d54f341">availableRam</a> = infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#adbeaa4c20a47a9eb7033b8ada7dbfb89">totalSwap</a> =</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;            infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a843f5eaec4eb78fff934aebf0511a8ec">freeSwap</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;std::size_t&gt;::max</a>();</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;            infos.<a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a843f5eaec4eb78fff934aebf0511a8ec">freeSwap</a> = std::numeric_limits&lt;std::size_t&gt;::max();</div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keywordflow">return</span> infos;</div>
@@ -258,7 +249,7 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordflow">return</span> os;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;}</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
-<div class="line"><a name="l00162"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a8efec7c6c93f4335b3bd7d39b4843893">  162</a></span>&#160;std::string <a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a8efec7c6c93f4335b3bd7d39b4843893">MemoryInfo::toString</a>() {</div>
+<div class="line"><a name="l00162"></a><span class="lineno"><a class="line" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a38793340c981899da623e626e82e4648">  162</a></span>&#160;std::string <a class="code" href="structcloudViewer_1_1system_1_1MemoryInfo.html#a38793340c981899da623e626e82e4648">MemoryInfo::toString</a>() {</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    std::stringstream info;</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    info &lt;&lt; *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <span class="keywordflow">return</span> info.str();</div>
@@ -270,17 +261,15 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div class="ttc" id="aFileIOFactory_8cpp_html_ad43c3812e6d13e0518d9f8b8f463ffcf"><div class="ttname"><a href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a></div><div class="ttdeci">int count</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00132">FileIOFactory.cpp:132</a></div></div>
 <div class="ttc" id="aMemoryInfo_8h_html"><div class="ttname"><a href="MemoryInfo_8h.html">MemoryInfo.h</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1system_html_a99f817c63994bb3d3364599c0d896119"><div class="ttname"><a href="namespacecloudViewer_1_1system.html#a99f817c63994bb3d3364599c0d896119">cloudViewer::system::getMemoryInfo</a></div><div class="ttdeci">MemoryInfo getMemoryInfo()</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8cpp_source.html#l00063">MemoryInfo.cpp:63</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1system_html_ab7c8989e5041e31c3d8b148131a9334a"><div class="ttname"><a href="namespacecloudViewer_1_1system.html#ab7c8989e5041e31c3d8b148131a9334a">cloudViewer::system::linuxGetAvailableRam</a></div><div class="ttdeci">unsigned long linuxGetAvailableRam()</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8cpp_source.html#l00043">MemoryInfo.cpp:43</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1system_html_ae15ec3e0a801616b9516d46bc45dd4b7"><div class="ttname"><a href="namespacecloudViewer_1_1system.html#ae15ec3e0a801616b9516d46bc45dd4b7">cloudViewer::system::operator&lt;&lt;</a></div><div class="ttdeci">std::ostream &amp; operator&lt;&lt;(std::ostream &amp;os, const MemoryInfo &amp;infos)</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8cpp_source.html#l00146">MemoryInfo.cpp:146</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a33bbf8f3969879929056867d1f016b31"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a33bbf8f3969879929056867d1f016b31">cloudViewer::utility::swap</a></div><div class="ttdeci">void swap(optional&lt; T &gt; &amp;x, optional&lt; T &gt; &amp;y) noexcept(noexcept(x.swap(y)))</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00890">Optional.h:890</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html">cloudViewer::system::MemoryInfo</a></div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8h_source.html#l00019">MemoryInfo.h:19</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_a2548d6ff2821635463d0e6a99d9df85f"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#a2548d6ff2821635463d0e6a99d9df85f">cloudViewer::system::MemoryInfo::freeRam</a></div><div class="ttdeci">std::size_t freeRam</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8h_source.html#l00021">MemoryInfo.h:21</a></div></div>
+<div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_a38793340c981899da623e626e82e4648"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#a38793340c981899da623e626e82e4648">cloudViewer::system::MemoryInfo::toString</a></div><div class="ttdeci">std::string toString()</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8cpp_source.html#l00162">MemoryInfo.cpp:162</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_a843f5eaec4eb78fff934aebf0511a8ec"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#a843f5eaec4eb78fff934aebf0511a8ec">cloudViewer::system::MemoryInfo::freeSwap</a></div><div class="ttdeci">std::size_t freeSwap</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8h_source.html#l00026">MemoryInfo.h:26</a></div></div>
-<div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_a8efec7c6c93f4335b3bd7d39b4843893"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#a8efec7c6c93f4335b3bd7d39b4843893">cloudViewer::system::MemoryInfo::toString</a></div><div class="ttdeci">std::string toString()</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8cpp_source.html#l00162">MemoryInfo.cpp:162</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_ab35806fe985b94a2b08e1b573d54f341"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#ab35806fe985b94a2b08e1b573d54f341">cloudViewer::system::MemoryInfo::availableRam</a></div><div class="ttdeci">std::size_t availableRam</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8h_source.html#l00022">MemoryInfo.h:22</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_adbeaa4c20a47a9eb7033b8ada7dbfb89"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#adbeaa4c20a47a9eb7033b8ada7dbfb89">cloudViewer::system::MemoryInfo::totalSwap</a></div><div class="ttdeci">std::size_t totalSwap</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8h_source.html#l00025">MemoryInfo.h:25</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1system_1_1MemoryInfo_html_ae5a024d9124fb2716fa7201b03d46737"><div class="ttname"><a href="structcloudViewer_1_1system_1_1MemoryInfo.html#ae5a024d9124fb2716fa7201b03d46737">cloudViewer::system::MemoryInfo::totalRam</a></div><div class="ttdeci">std::size_t totalRam</div><div class="ttdef"><b>Definition:</b> <a href="MemoryInfo_8h_source.html#l00020">MemoryInfo.h:20</a></div></div>
@@ -290,7 +279,7 @@ $(document).ready(function(){initNavTree('MemoryInfo_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="MemoryInfo_8cpp.html">MemoryInfo.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

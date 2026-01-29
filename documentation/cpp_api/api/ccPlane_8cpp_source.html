@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -116,7 +107,7 @@ $(document).ready(function(){initNavTree('ccPlane_8cpp_source.html',''); initRes
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacepybind11.html">py</a> = <a class="code" href="namespacepybind11.html">pybind11</a>;</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">using namespace </span>pybind11::literals;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="ccPlane_8cpp.html#aad7acc321062e375cbceda2f9ab26da7">   20</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccPlane_8cpp.html#aad7acc321062e375cbceda2f9ab26da7">define_ccPlane</a>(py::module &amp;m)</div>
+<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="ccPlane_8cpp.html#aad7acc321062e375cbceda2f9ab26da7">   20</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccPlane_8cpp.html#aad7acc321062e375cbceda2f9ab26da7">define_ccPlane</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;m)</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;{</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    py::class_&lt;ccPlanarEntityInterface&gt;(m, <span class="stringliteral">&quot;ccPlanarEntityInterface&quot;</span>)</div>
@@ -167,7 +158,7 @@ $(document).ready(function(){initNavTree('ccPlane_8cpp_source.html',''); initRes
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        .def(<span class="stringliteral">&quot;setYWidth&quot;</span>, &amp;<a class="code" href="classccPlane.html#aee7e2423254e2851ba9aa96016f4ec79">ccPlane::setYWidth</a>, <span class="stringliteral">&quot;h&quot;</span>_a, <span class="stringliteral">&quot;autoUpdate&quot;</span>_a = <span class="keyword">true</span>)</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="comment">// TODO setAsTexture, will need QImage</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="comment">// TODO setQuadTexture, also needs QImage</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        .def_static(<span class="stringliteral">&quot;Fit&quot;</span>, &amp;<a class="code" href="classccPlane.html#a315c7dcddf19462821c71bd2a166fe88">ccPlane::Fit</a>, <span class="stringliteral">&quot;cloud&quot;</span>_a, <span class="stringliteral">&quot;rms&quot;</span>_a)</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        .def_static(<span class="stringliteral">&quot;Fit&quot;</span>, &amp;<a class="code" href="classccPlane.html#a7f7d843f2ff3d7cb9af49341088a9d13">ccPlane::Fit</a>, <span class="stringliteral">&quot;cloud&quot;</span>_a, <span class="stringliteral">&quot;rms&quot;</span>_a)</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        .def(<span class="stringliteral">&quot;getEquation&quot;</span>,</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;             [](<span class="keyword">const</span> <a class="code" href="classccPlane.html">ccPlane</a> &amp;<span class="keyword">self</span>)</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;             {</div>
@@ -187,22 +178,23 @@ $(document).ready(function(){initNavTree('ccPlane_8cpp_source.html',''); initRes
 <div class="ttc" id="aclassccPlanarEntityInterface_html_a72e0780c68cbdc24066c37d0d4dc58c4"><div class="ttname"><a href="classccPlanarEntityInterface.html#a72e0780c68cbdc24066c37d0d4dc58c4">ccPlanarEntityInterface::normalVectorIsShown</a></div><div class="ttdeci">bool normalVectorIsShown() const</div><div class="ttdoc">Whether normal vector is shown or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlanarEntityInterface_8h_source.html#l00027">ecvPlanarEntityInterface.h:27</a></div></div>
 <div class="ttc" id="aclassccPlanarEntityInterface_html_af89b1d69e3d5eba9a30435f61978c821"><div class="ttname"><a href="classccPlanarEntityInterface.html#af89b1d69e3d5eba9a30435f61978c821">ccPlanarEntityInterface::getNormal</a></div><div class="ttdeci">virtual CCVector3 getNormal() const =0</div><div class="ttdoc">Returns the entity normal.</div></div>
 <div class="ttc" id="aclassccPlane_html"><div class="ttname"><a href="classccPlane.html">ccPlane</a></div><div class="ttdoc">Plane (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00017">ecvPlane.h:18</a></div></div>
-<div class="ttc" id="aclassccPlane_html_a315c7dcddf19462821c71bd2a166fe88"><div class="ttname"><a href="classccPlane.html#a315c7dcddf19462821c71bd2a166fe88">ccPlane::Fit</a></div><div class="ttdeci">static ccPlane * Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double *rms=0)</div><div class="ttdoc">Fits a plane primitive on a cloud.</div></div>
 <div class="ttc" id="aclassccPlane_html_a437b6ad24c21a766489b94ba59368059"><div class="ttname"><a href="classccPlane.html#a437b6ad24c21a766489b94ba59368059">ccPlane::getCenter</a></div><div class="ttdeci">CCVector3 getCenter() const</div><div class="ttdoc">Returns the center.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00056">ecvPlane.h:56</a></div></div>
-<div class="ttc" id="aclassccPlane_html_a79432f21217b352bb4c172ba67538e8c"><div class="ttname"><a href="classccPlane.html#a79432f21217b352bb4c172ba67538e8c">ccPlane::flip</a></div><div class="ttdeci">void flip()</div><div class="ttdoc">Flips the plane.</div></div>
+<div class="ttc" id="aclassccPlane_html_a79432f21217b352bb4c172ba67538e8c"><div class="ttname"><a href="classccPlane.html#a79432f21217b352bb4c172ba67538e8c">ccPlane::flip</a></div><div class="ttdeci">void flip()</div><div class="ttdoc">Flips the plane.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8cpp_source.html#l00099">ecvPlane.cpp:99</a></div></div>
+<div class="ttc" id="aclassccPlane_html_a7f7d843f2ff3d7cb9af49341088a9d13"><div class="ttname"><a href="classccPlane.html#a7f7d843f2ff3d7cb9af49341088a9d13">ccPlane::Fit</a></div><div class="ttdeci">static ccPlane * Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double *rms=0)</div><div class="ttdoc">Fits a plane primitive on a cloud.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8cpp_source.html#l00108">ecvPlane.cpp:108</a></div></div>
 <div class="ttc" id="aclassccPlane_html_ac0050a6a1e8523409d4be8853664942f"><div class="ttname"><a href="classccPlane.html#ac0050a6a1e8523409d4be8853664942f">ccPlane::setXWidth</a></div><div class="ttdeci">void setXWidth(PointCoordinateType w, bool autoUpdate=true)</div><div class="ttdoc">Sets 'X' width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00061">ecvPlane.h:61</a></div></div>
 <div class="ttc" id="aclassccPlane_html_adb3f891a704582e010e3fe6afe972221"><div class="ttname"><a href="classccPlane.html#adb3f891a704582e010e3fe6afe972221">ccPlane::getXWidth</a></div><div class="ttdeci">PointCoordinateType getXWidth() const</div><div class="ttdoc">Returns 'X' width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00050">ecvPlane.h:50</a></div></div>
 <div class="ttc" id="aclassccPlane_html_aea5919cb61b8c4c25d4f08bcc1da8a07"><div class="ttname"><a href="classccPlane.html#aea5919cb61b8c4c25d4f08bcc1da8a07">ccPlane::getYWidth</a></div><div class="ttdeci">PointCoordinateType getYWidth() const</div><div class="ttdoc">Returns 'Y' width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00053">ecvPlane.h:53</a></div></div>
 <div class="ttc" id="aclassccPlane_html_aee7e2423254e2851ba9aa96016f4ec79"><div class="ttname"><a href="classccPlane.html#aee7e2423254e2851ba9aa96016f4ec79">ccPlane::setYWidth</a></div><div class="ttdeci">void setYWidth(PointCoordinateType h, bool autoUpdate=true)</div><div class="ttdoc">Sets 'Y' width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00067">ecvPlane.h:67</a></div></div>
 <div class="ttc" id="aecvPlane_8h_html"><div class="ttname"><a href="ecvPlane_8h.html">ecvPlane.h</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_aeae743e84fe331928171854b17029eaf"><div class="ttname"><a href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">Utils::module</a></div><div class="ttdeci">static double module(T *vector)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00105">utils.h:105</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="dir_dbcd8066c330fac67641cc3989022fe2.html">qcc_db</a></li><li class="navelem"><a class="el" href="ccPlane_8cpp.html">ccPlane.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

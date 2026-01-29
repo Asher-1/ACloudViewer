@@ -1,10 +1,14 @@
 <map id="/root/ACloudViewer/libs/CVAppCommon/include/CommonSettings.h" name="/root/ACloudViewer/libs/CVAppCommon/include/CommonSettings.h">
-<area shape="rect" id="node1" title=" " alt="" coords="297,5,503,61"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,109,163,136"/>
-<area shape="rect" id="node3" title=" " alt="" coords="187,109,322,136"/>
-<area shape="rect" id="node4" title=" " alt="" coords="382,184,498,211"/>
-<area shape="rect" id="node5" title=" " alt="" coords="397,109,483,136"/>
-<area shape="rect" id="node6" title=" " alt="" coords="507,109,578,136"/>
-<area shape="rect" id="node7" href="$ecvVersion_8h.html" title=" " alt="" coords="602,109,707,136"/>
-<area shape="rect" id="node8" href="$CVPlatform_8h.html" title=" " alt="" coords="601,184,709,211"/>
+<area shape="rect" id="node1" title=" " alt="" coords="300,5,505,61"/>
+<area shape="rect" id="node2" href="$CloudViewerConfig_8h.html" title=" " alt="" coords="8,109,165,136"/>
+<area shape="rect" id="node7" title=" " alt="" coords="190,109,325,136"/>
+<area shape="rect" id="node8" title=" " alt="" coords="383,184,499,211"/>
+<area shape="rect" id="node9" title=" " alt="" coords="400,109,485,136"/>
+<area shape="rect" id="node10" title=" " alt="" coords="510,109,581,136"/>
+<area shape="rect" id="node11" href="$ecvVersion_8h.html" title=" " alt="" coords="605,109,710,136"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,184,64,211"/>
+<area shape="rect" id="node4" href="$CVCoreLib_8h.html" title=" " alt="" coords="88,184,189,211"/>
+<area shape="rect" id="node5" href="$CVCoreLibWin_8h.html" title=" " alt="" coords="75,259,202,285"/>
+<area shape="rect" id="node6" title=" " alt="" coords="75,333,203,360"/>
+<area shape="rect" id="node12" href="$CVPlatform_8h.html" title=" " alt="" coords="603,184,711,211"/>
 </map>

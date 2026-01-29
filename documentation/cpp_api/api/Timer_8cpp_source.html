@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -108,7 +99,7 @@ $(document).ready(function(){initNavTree('Timer_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;chrono&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&quot;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;Logging.h&quot;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>utility {</div>
@@ -144,8 +135,8 @@ $(document).ready(function(){initNavTree('Timer_8cpp_source.html',''); initResiz
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">double</span> duration = <a class="code" href="classcloudViewer_1_1utility_1_1Timer.html#a58ed1f834cf601eb0c1131b2e4e15ea7">GetDurationInSecond</a>();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordtype">int</span> hours = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(duration / 3600.0);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordtype">int</span> minutes = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>((duration - hours * 3600.0) / 60.0);</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">double</span> <a class="code" href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a> = duration - hours * 3600.0 - minutes * 60.0;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordflow">return</span> std::make_tuple(hours, minutes, <a class="code" href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a>);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">double</span> seconds = duration - hours * 3600.0 - minutes * 60.0;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordflow">return</span> std::make_tuple(hours, minutes, seconds);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;}</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1Timer.html#a4964d40a97c1efeff40640b44367fd67">   52</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1utility_1_1Timer.html#a4964d40a97c1efeff40640b44367fd67">Timer::Print</a>(<span class="keyword">const</span> std::string &amp;timer_info)<span class="keyword"> const </span>{</div>
@@ -217,16 +208,14 @@ $(document).ready(function(){initNavTree('Timer_8cpp_source.html',''); initResiz
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_ad200705b3d1b1c46283e859f5b51636e"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#ad200705b3d1b1c46283e859f5b51636e">cloudViewer::utility::Timer::~Timer</a></div><div class="ttdeci">~Timer()</div><div class="ttdef"><b>Definition:</b> <a href="Timer_8cpp_source.html#l00020">Timer.cpp:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1Timer_html_af4e9896472c44c917584316f3ccf23de"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1Timer.html#af4e9896472c44c917584316f3ccf23de">cloudViewer::utility::Timer::GetSystemTimeInMilliseconds</a></div><div class="ttdeci">static double GetSystemTimeInMilliseconds()</div><div class="ttdef"><b>Definition:</b> <a href="Timer_8cpp_source.html#l00022">Timer.cpp:22</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="arename_8h_html_a2b73533e20044db29705dbccbd100714"><div class="ttname"><a href="rename_8h.html#a2b73533e20044db29705dbccbd100714">seconds</a></div><div class="ttdeci">#define seconds</div><div class="ttdef"><b>Definition:</b> <a href="rename_8h_source.html#l00375">rename.h:375</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="Timer_8cpp.html">Timer.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:23 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

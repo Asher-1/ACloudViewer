@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -335,8 +326,8 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <span class="comment">// simpler)</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="keywordtype">unsigned</span> lastPointIndex = theCloudSize - 1;</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; pointsToRemove; ++i) {</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        std::uniform_int_distribution&lt;unsigned&gt; <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(0, lastPointIndex);</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordtype">unsigned</span> index = <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(gen);</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        std::uniform_int_distribution&lt;unsigned&gt; dist(0, lastPointIndex);</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordtype">unsigned</span> index = dist(gen);</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        newCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a1e11dd0cb33ba8a15485c1e842ee31ee">swap</a>(index, lastPointIndex);</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        --lastPointIndex;</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160; </div>
@@ -374,7 +365,7 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    <span class="comment">// output cloud</span></div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>* sampledCloud = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1ReferenceCloud.html">ReferenceCloud</a>(inputCloud);</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">unsigned</span> c_reserveStep = 65536;</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <span class="keywordflow">if</span> (!sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(cloudSize, c_reserveStep))) {</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <span class="keywordflow">if</span> (!sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(std::min(cloudSize, c_reserveStep))) {</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        <span class="keywordflow">if</span> (!inputOctree) <span class="keyword">delete</span> <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>;</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    }</div>
@@ -430,12 +421,12 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                    {</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                        ScalarType sfVal =</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                                sfMin + i * ((sfMax - sfMin) / levelCount);</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                        <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> =</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                        <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> dist =</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                                <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;                                        sfVal * modParams.<a class="code" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html#abe9425c9a876e3798657ccfa5952af10">a</a> + modParams.<a class="code" href="structcloudViewer_1_1CloudSamplingTools_1_1SFModulationParams.html#ab34a0627a747532c8e12dced69ba630d">b</a>);</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                        <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> level =</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                                <a class="code" href="qCanupoTools_8cpp.html#a586ebda6177a4d5f2c287cf4fcf3a20b">octree</a>-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a5965a93246173f8ee45c1aa77f1a46ff">findBestLevelForAGivenNeighbourhoodSizeExtraction</a>(</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                                        <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>);</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                                        dist);</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                        bestOctreeLevel.push_back(level);</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                    }</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                }</div>
@@ -472,7 +463,7 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160; </div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    <span class="comment">// for each point in the cloud that is still &#39;marked&#39;, we look</span></div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    <span class="comment">// for its neighbors and remove their own marks</span></div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    <span class="keywordtype">bool</span> error = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;    <span class="comment">// default octree level</span></div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;    assert(!bestOctreeLevel.empty());</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> <a class="code" href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a> = bestOctreeLevel.front();</div>
@@ -520,12 +511,12 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;                !sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a89aad10db193ea2958e34ab828c2a9b7">capacity</a>() +</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;                                       c_reserveStep)) {</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;                <span class="comment">// not enough memory</span></div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;                error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;            }</div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;            <span class="keywordflow">if</span> (!sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(i)) {</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;                <span class="comment">// not enough memory</span></div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;            }</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        }</div>
@@ -533,13 +524,13 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        <span class="comment">// progress indicator</span></div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <span class="keywordflow">if</span> (progressCb &amp;&amp; !normProgress.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>()) {</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;            <span class="comment">// cancel process</span></div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;        }</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    }</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160; </div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    <span class="comment">// remove unnecessarily allocated memory</span></div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    <span class="keywordflow">if</span> (!error) {</div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;        <span class="keywordflow">if</span> (sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a89aad10db193ea2958e34ab828c2a9b7">capacity</a>() &gt; sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>())</div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;            sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a86532c7244bb79b0198124c120d852d5">resize</a>(sampledCloud-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>());</div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;    } <span class="keywordflow">else</span> {</div>
@@ -625,7 +616,7 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;            }</div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;            avgDist = sumDist / pointCount;</div>
 <div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;            stdDev = sqrt(</div>
-<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;                    <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(sumSquareDist / pointCount - avgDist * avgDist));</div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;                    std::abs(sumSquareDist / pointCount - avgDist * avgDist));</div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        }</div>
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160; </div>
 <div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;        <span class="comment">// 2nd step: remove the farthest points</span></div>
@@ -897,14 +888,14 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;                        sum_d2 += d * d;</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;                    }</div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160; </div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;                    <span class="keywordtype">double</span> <a class="code" href="qAutoSeg_8cpp.html#ab9b10840986065765468ec463522f7f4">stddev</a> = sqrt(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(sum_d2 * realNeighborCount -</div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;                    <span class="keywordtype">double</span> <a class="code" href="qAutoSeg_8cpp.html#ab9b10840986065765468ec463522f7f4">stddev</a> = sqrt(std::abs(sum_d2 * realNeighborCount -</div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;                                                  sum_d * sum_d)) /</div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;                                    realNeighborCount;</div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;                    maxD = <a class="code" href="qAutoSeg_8cpp.html#ab9b10840986065765468ec463522f7f4">stddev</a> * nSigma;</div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                }</div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; </div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;                <span class="comment">// distance from the query point to the plane</span></div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                <span class="keywordtype">double</span> d = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html">cloudViewer::DistanceComputationTools</a>::</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                <span class="keywordtype">double</span> d = std::abs(<a class="code" href="classcloudViewer_1_1DistanceComputationTools.html">cloudViewer::DistanceComputationTools</a>::</div>
 <div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                                            computePoint2PlaneDistance(</div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;                                                    &amp;nNSS.<a class="code" href="structcloudViewer_1_1DgmOctree_1_1NearestNeighboursSearchStruct.html#ad4d5ff59f05b1fe28143cc1afa5b5601">queryPoint</a>, lsPlane));</div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160; </div>
@@ -1066,12 +1057,8 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ae1bc84432099435f6e9fd788aee2c2f6"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">cloudViewer::ReferenceCloud::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdoc">Returns the ith point.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00079">ReferenceCloud.h:79</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarFieldTools_html_af042be51e657fa7467b8c9c9f2abce35"><div class="ttname"><a href="classcloudViewer_1_1ScalarFieldTools.html#af042be51e657fa7467b8c9c9f2abce35">cloudViewer::ScalarFieldTools::computeScalarFieldExtremas</a></div><div class="ttdeci">static void computeScalarFieldExtremas(const GenericCloud *theCloud, ScalarType &amp;minV, ScalarType &amp;maxV)</div><div class="ttdoc">Compute the extreme values of a scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarFieldTools_8cpp_source.html#l00419">ScalarFieldTools.cpp:419</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_abd71c5d761aba8eaba9c4b6d5754e16e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a></div><div class="ttdeci">static bool ValidValue(ScalarType value)</div><div class="ttdoc">Returns whether a scalar value is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00061">ScalarField.h:61</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a3ad6422d3fb0907abb608368ee88a0c3"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a3ad6422d3fb0907abb608368ee88a0c3">cloudViewer::geometry::PointCloud</a></div><div class="ttdeci">::ccPointCloud PointCloud</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2PointCloud_8h_source.html#l00019">PointCloud.h:19</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
 <div class="ttc" id="aqAutoSeg_8cpp_html_ab9b10840986065765468ec463522f7f4"><div class="ttname"><a href="qAutoSeg_8cpp.html#ab9b10840986065765468ec463522f7f4">stddev</a></div><div class="ttdeci">double stddev(std::vector&lt; double &gt; const &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="qAutoSeg_8cpp_source.html#l00086">qAutoSeg.cpp:86</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a2c676e196711456506771bb1be8f424a"><div class="ttname"><a href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a></div><div class="ttdeci">cloudViewer::NormalizedProgress * nProgress</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00042">qCanupoTools.cpp:42</a></div></div>
@@ -1100,7 +1087,7 @@ $(document).ready(function(){initNavTree('core_2src_2CloudSamplingTools_8cpp_sou
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2CloudSamplingTools_8cpp.html">CloudSamplingTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

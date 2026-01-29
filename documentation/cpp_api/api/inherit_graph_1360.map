@@ -1,3 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classTreeNodeData.html" title=" " alt="" coords="5,5,120,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,132,79,159"/>
+<area shape="rect" id="node2" href="$classWidgets_1_1ColorPickerButton.html" title=" " alt="" coords="127,5,325,32"/>
+<area shape="rect" id="node3" href="$classWidgets_1_1ColorPickerItem.html" title=" " alt="" coords="133,56,319,83"/>
+<area shape="rect" id="node4" href="$classWidgets_1_1ColorPickerPopup.html" title=" " alt="" coords="128,107,324,133"/>
+<area shape="rect" id="node5" href="$classccColorScaleSelector.html" title="Advanced editor for color scales." alt="" coords="147,157,305,184"/>
+<area shape="rect" id="node6" href="$classcvExpanderButton.html" title="cvExpanderButton provides a frame with a toggle mode for collapsible sections." alt="" coords="155,208,297,235"/>
+<area shape="rect" id="node7" href="$classecvTextureFileSelector.html" title="Advanced editor for color scales." alt="" coords="141,259,311,285"/>
 </map>

@@ -1,6 +1,9 @@
 <map id="/root/ACloudViewer/libs/CV_db/include/ecvGenericFiltersTool.h" name="/root/ACloudViewer/libs/CV_db/include/ecvGenericFiltersTool.h">
-<area shape="rect" id="node1" title=" " alt="" coords="54,5,231,61"/>
-<area shape="rect" id="node2" href="$ecvFilterTool_8cpp.html" title=" " alt="" coords="5,199,168,240"/>
-<area shape="rect" id="node3" href="$ecvFilterTool_8h.html" title=" " alt="" coords="125,109,273,151"/>
-<area shape="rect" id="node4" href="$MainWindow_8cpp.html" title=" " alt="" coords="193,199,357,240"/>
+<area shape="rect" id="node1" title=" " alt="" coords="207,5,385,61"/>
+<area shape="rect" id="node2" href="$ecvFilterTool_8cpp.html" title=" " alt="" coords="5,221,168,262"/>
+<area shape="rect" id="node3" href="$ecvFilterTool_8h.html" title=" " alt="" coords="125,117,273,158"/>
+<area shape="rect" id="node5" href="$ecvGenericFiltersTool_8cpp.html" title=" " alt="" coords="297,109,492,165"/>
+<area shape="rect" id="node6" href="$PclFiltersTool_8h.html" title=" " alt="" coords="517,109,710,165"/>
+<area shape="rect" id="node4" href="$MainWindow_8cpp.html" title=" " alt="" coords="193,221,357,262"/>
+<area shape="rect" id="node7" href="$PclFiltersTool_8cpp.html" title=" " alt="" coords="509,213,717,269"/>
 </map>

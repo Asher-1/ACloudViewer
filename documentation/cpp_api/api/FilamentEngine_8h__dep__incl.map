@@ -1,5 +1,5 @@
 <map id="/root/ACloudViewer/libs/cloudViewer/visualization/rendering/filament/FilamentEngine.h" name="/root/ACloudViewer/libs/cloudViewer/visualization/rendering/filament/FilamentEngine.h">
-<area shape="rect" id="node1" title=" " alt="" coords="1961,5,2224,61"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1673,5,1936,61"/>
 <area shape="rect" id="node2" href="$Application_8cpp.html" title=" " alt="" coords="5,117,225,173"/>
 <area shape="rect" id="node3" href="$BitmapWindowSystem_8cpp.html" title=" " alt="" coords="249,117,475,173"/>
 <area shape="rect" id="node4" href="$GLFWWindowSystem_8cpp.html" title=" " alt="" coords="499,117,719,173"/>
@@ -14,6 +14,4 @@
 <area shape="rect" id="node13" href="$LineSetBuffers_8cpp.html" title=" " alt="" coords="3033,117,3304,173"/>
 <area shape="rect" id="node14" href="$PointCloudBuffers_8cpp.html" title=" " alt="" coords="3329,117,3622,173"/>
 <area shape="rect" id="node15" href="$TriangleMeshBuffers_8cpp.html" title=" " alt="" coords="3646,117,3955,173"/>
-<area shape="rect" id="node16" href="$visualization_2gui_2gui_8cpp.html" title=" " alt="" coords="3979,117,4163,173"/>
-<area shape="rect" id="node17" href="$rendering_8cpp.html" title=" " alt="" coords="4188,109,4363,180"/>
 </map>

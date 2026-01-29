@@ -4,7 +4,7 @@ var classccCircle =
     [ "ccCircle", "classccCircle.html#ae83236edd954ae285006df4eb200a4de", null ],
     [ "~ccCircle", "classccCircle.html#ad81c4b4f3549cb38742aa850d00973f1", null ],
     [ "applyGLTransformation", "classccCircle.html#a5f0e79b5dc8714dbf2bf90eb2912944a", null ],
-    [ "clone", "classccCircle.html#a479b93e6bf87ee1809d6f08b46757473", null ],
+    [ "clone", "classccCircle.html#ac1b666f611c0c20522ba4b436822b8e2", null ],
     [ "fromFile_MeOnly", "classccCircle.html#a9a484682f1aa10f76d6e909c1d36a6fa", null ],
     [ "getClassID", "classccCircle.html#a23897826c06abb75c71540ed7b08d4f5", null ],
     [ "getRadius", "classccCircle.html#aa701f8e523811371e94b6bbe3ee6ac25", null ],

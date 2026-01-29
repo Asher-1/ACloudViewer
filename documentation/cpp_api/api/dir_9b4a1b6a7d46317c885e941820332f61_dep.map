@@ -1,14 +1,10 @@
 <map id="/root/ACloudViewer/libs/CVViewer/benchmarks/pipelines" name="/root/ACloudViewer/libs/CVViewer/benchmarks/pipelines">
-<area shape="rect" id="node2" href="dir_0ec0b3dc425bd65a892b7313221ea557.html" title="registration" alt="" coords="97,63,195,111"/>
-<area shape="rect" id="node3" href="dir_989a49d236ff91a30045737f713f323f.html" title="cloudViewer" alt="" coords="5,159,108,207"/>
-<area shape="rect" id="edge6-headlabel" href="dir_000113_000049.html" title="4" alt="" coords="92,144,102,159"/>
-<area shape="rect" id="node4" href="dir_4270bfced15e0e73154b13468c7c9ad9.html" title="core" alt="" coords="90,351,162,399"/>
-<area shape="rect" id="edge4-headlabel" href="dir_000113_000046.html" title="1" alt="" coords="160,334,169,348"/>
-<area shape="rect" id="node5" href="dir_498792515503267d38cb2f40cb88e5cc.html" title="CV_db" alt="" coords="90,255,162,303"/>
-<area shape="rect" id="edge5-headlabel" href="dir_000113_000078.html" title="2" alt="" coords="134,230,143,245"/>
-<area shape="rect" id="edge2-headlabel" href="dir_000049_000046.html" title="380" alt="" coords="90,324,116,338"/>
-<area shape="rect" id="edge3-headlabel" href="dir_000049_000078.html" title="173" alt="" coords="92,228,118,242"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000078_000046.html" title="58" alt="" coords="126,325,143,340"/>
-<area shape="rect" id="clust2" href="dir_9b4a1b6a7d46317c885e941820332f61.html" alt="" coords="86,52,311,121"/>
-<area shape="rect" id="clust1" href="dir_7607a0cb680ab17c441548fac508d5ff.html" title="benchmarks" alt="" coords="75,16,322,132"/>
+<area shape="rect" id="node2" href="dir_0ec0b3dc425bd65a892b7313221ea557.html" title="registration" alt="" coords="38,63,135,111"/>
+<area shape="rect" id="node3" href="dir_498792515503267d38cb2f40cb88e5cc.html" title="CV_db" alt="" coords="49,255,121,303"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000094_000064.html" title="2" alt="" coords="77,227,86,242"/>
+<area shape="rect" id="node4" href="dir_989a49d236ff91a30045737f713f323f.html" title="cloudViewer" alt="" coords="79,159,182,207"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000094_000028.html" title="3" alt="" coords="115,131,124,146"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000028_000064.html" title="123" alt="" coords="99,235,125,249"/>
+<area shape="rect" id="clust2" href="dir_9b4a1b6a7d46317c885e941820332f61.html" alt="" coords="27,52,252,121"/>
+<area shape="rect" id="clust1" href="dir_7607a0cb680ab17c441548fac508d5ff.html" title="benchmarks" alt="" coords="16,16,263,132"/>
 </map>

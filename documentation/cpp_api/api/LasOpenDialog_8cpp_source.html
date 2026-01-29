@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -330,8 +321,8 @@ $(document).ready(function(){initNavTree('LasOpenDialog_8cpp_source.html',''); i
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="comment">// Do these maxs for safety, but the UI should not allow</span></div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="comment">// users to enter values below 1</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordtype">int</span> numTiles0 = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(tilingSpinBox0-&gt;value(), 1);</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <span class="keywordtype">int</span> numTiles1 = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(tilingSpinBox0-&gt;value(), 1);</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordtype">int</span> numTiles0 = std::max(tilingSpinBox0-&gt;value(), 1);</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <span class="keywordtype">int</span> numTiles1 = std::max(tilingSpinBox0-&gt;value(), 1);</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160; </div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="structLasTilingOptions.html">LasTilingOptions</a>{</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        tilingOutputPathLineEdit-&gt;text(),</div>
@@ -390,7 +381,6 @@ $(document).ready(function(){initNavTree('LasOpenDialog_8cpp_source.html',''); i
 <div class="ttc" id="aclassLasOpenDialog_html_acdf468493664f1e7ca9549222a28cce9"><div class="ttname"><a href="classLasOpenDialog.html#acdf468493664f1e7ca9549222a28cce9">LasOpenDialog::shouldIgnoreFieldsWithDefaultValues</a></div><div class="ttdeci">bool shouldIgnoreFieldsWithDefaultValues() const</div><div class="ttdef"><b>Definition:</b> <a href="LasOpenDialog_8cpp_source.html#l00159">LasOpenDialog.cpp:159</a></div></div>
 <div class="ttc" id="aclassLasOpenDialog_html_ad957b48879fb130c16b07b9d1f44f5f3"><div class="ttname"><a href="classLasOpenDialog.html#ad957b48879fb130c16b07b9d1f44f5f3">LasOpenDialog::LasOpenDialog</a></div><div class="ttdeci">LasOpenDialog(QWidget *parent=nullptr)</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="LasOpenDialog_8cpp_source.html#l00054">LasOpenDialog.cpp:54</a></div></div>
 <div class="ttc" id="aclassLasOpenDialog_html_ae24830127a86c9c9daf990f07256a874"><div class="ttname"><a href="classLasOpenDialog.html#ae24830127a86c9c9daf990f07256a874">LasOpenDialog::resetShouldSkipDialog</a></div><div class="ttdeci">void resetShouldSkipDialog()</div><div class="ttdef"><b>Definition:</b> <a href="LasOpenDialog_8cpp_source.html#l00199">LasOpenDialog.cpp:199</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="anamespaceLasDetails_html_a402ae1d3258b3789ba9b68f65c10e60a"><div class="ttname"><a href="namespaceLasDetails.html#a402ae1d3258b3789ba9b68f65c10e60a">LasDetails::HasRGB</a></div><div class="ttdeci">bool HasRGB(unsigned pointFormatId)</div><div class="ttdoc">Returns whether the point format supports RGB.</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00132">LasDetails.h:132</a></div></div>
 <div class="ttc" id="anamespaceLasDetails_html_a667f49b5ff9d29667a48d5770432cdef"><div class="ttname"><a href="namespaceLasDetails.html#a667f49b5ff9d29667a48d5770432cdef">LasDetails::HasGpsTime</a></div><div class="ttdeci">bool HasGpsTime(unsigned pointFormatId)</div><div class="ttdoc">Returns whether the point format supports Gps Time.</div><div class="ttdef"><b>Definition:</b> <a href="LasDetails_8h_source.html#l00125">LasDetails.h:125</a></div></div>
 <div class="ttc" id="anamespacee57_html_ac51cd6698affda7bd6180e4ff19e2c99"><div class="ttname"><a href="namespacee57.html#ac51cd6698affda7bd6180e4ff19e2c99">e57::toString</a></div><div class="ttdeci">std::string toString(T x)</div><div class="ttdef"><b>Definition:</b> <a href="IO_2qE57IO_2extern_2libE57Format_2src_2Common_8h_source.html#l00080">Common.h:80</a></div></div>
@@ -403,7 +393,7 @@ $(document).ready(function(){initNavTree('LasOpenDialog_8cpp_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_842c62f1e2b8e17e8860531595b81d2e.html">qLASIO</a></li><li class="navelem"><a class="el" href="dir_44acd46979d192825af47396a6a479bc.html">src</a></li><li class="navelem"><a class="el" href="LasOpenDialog_8cpp.html">LasOpenDialog.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

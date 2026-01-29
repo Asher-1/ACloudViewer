@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -125,8 +116,8 @@ $(document).ready(function(){initNavTree('CPUInfo_8cpp_source.html',''); initRes
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;intrin.h&gt;</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;Helper.h&gt;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">namespace </span>utility {</div>
@@ -178,18 +169,18 @@ $(document).ready(function(){initNavTree('CPUInfo_8cpp_source.html',''); initRes
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                                                                      : <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>;</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#elif _WIN32</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="comment">// Ref: https://stackoverflow.com/a/44247223/1255535.</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        DWORD <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = 0;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        DWORD length = 0;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keyword">const</span> BOOL result_first = GetLogicalProcessorInformationEx(</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                RelationProcessorCore, <span class="keyword">nullptr</span>, &amp;<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                RelationProcessorCore, <span class="keyword">nullptr</span>, &amp;length);</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        std::unique_ptr&lt;uint8_t[]&gt; buffer(<span class="keyword">new</span> uint8_t[<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>]);</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        std::unique_ptr&lt;uint8_t[]&gt; buffer(<span class="keyword">new</span> uint8_t[length]);</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keyword">const</span> PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX info =</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keyword">reinterpret_cast&lt;</span>PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX<span class="keyword">&gt;</span>(</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                        buffer.get());</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keyword">const</span> BOOL result_second = GetLogicalProcessorInformationEx(</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                RelationProcessorCore, info, &amp;<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        assert(result_second != <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                RelationProcessorCore, info, &amp;length);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        assert(result_second != <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>);</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <span class="keywordtype">int</span> nb_physical_cores = 0;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> = 0;</div>
@@ -199,7 +190,7 @@ $(document).ready(function(){initNavTree('CPUInfo_8cpp_source.html',''); initRes
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                            buffer.get() + <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>);</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> += current_info-&gt;Size;</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            ++nb_physical_cores;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        } <span class="keywordflow">while</span> (<a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> &lt; <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>));</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        } <span class="keywordflow">while</span> (<a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> &lt; <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(length));</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <span class="keywordflow">return</span> nb_physical_cores;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">return</span> std::thread::hardware_concurrency();</div>
@@ -299,23 +290,20 @@ $(document).ready(function(){initNavTree('CPUInfo_8cpp_source.html',''); initRes
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1CPUInfo_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1CPUInfo.html">cloudViewer::utility::CPUInfo</a></div><div class="ttdoc">CPU information.</div><div class="ttdef"><b>Definition:</b> <a href="CPUInfo_8h_source.html#l00019">CPUInfo.h:19</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="alsd_8c_html_aa93f0eb578d23995850d61f7d61c55c1"><div class="ttname"><a href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a></div><div class="ttdeci">#define FALSE</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00115">lsd.c:115</a></div></div>
+<div class="ttc" id="adbfopen_8c_html_aa93f0eb578d23995850d61f7d61c55c1"><div class="ttname"><a href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a></div><div class="ttdeci">#define FALSE</div><div class="ttdef"><b>Definition:</b> <a href="dbfopen_8c_source.html#l00235">dbfopen.c:235</a></div></div>
 <div class="ttc" id="anamespaceRuntime_html_a96e29e020a8bb88e9945eb16fb8b4f99"><div class="ttname"><a href="namespaceRuntime.html#a96e29e020a8bb88e9945eb16fb8b4f99">Runtime::GetInstance</a></div><div class="ttdeci">ccGuiPythonInstance * GetInstance() noexcept</div><div class="ttdef"><b>Definition:</b> <a href="Runtime_8cpp_source.html#l00072">Runtime.cpp:72</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00197">Helper.cpp:197</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4b43151f241f8c72356341c8f9db257a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4b43151f241f8c72356341c8f9db257a">cloudViewer::utility::StripString</a></div><div class="ttdeci">std::string &amp; StripString(std::string &amp;str, const std::string &amp;chars=&quot;\t\n\v\f\r &quot;)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00238">Helper.cpp:238</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a747fe34617c85bf42ab2f7ccb5b67302"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a747fe34617c85bf42ab2f7ccb5b67302">cloudViewer::utility::GetCPUModelName</a></div><div class="ttdeci">static std::string GetCPUModelName()</div><div class="ttdoc">Returns the CPU model name/brand string.</div><div class="ttdef"><b>Definition:</b> <a href="CPUInfo_8cpp_source.html#l00115">CPUInfo.cpp:115</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a95e4dc4b3cb25338bb5af58ee08313b5"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a95e4dc4b3cb25338bb5af58ee08313b5">cloudViewer::utility::PhysicalConcurrency</a></div><div class="ttdeci">static int PhysicalConcurrency()</div><div class="ttdoc">Returns the number of physical CPU cores.</div><div class="ttdef"><b>Definition:</b> <a href="CPUInfo_8cpp_source.html#l00036">CPUInfo.cpp:36</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="CPUInfo_8cpp.html">CPUInfo.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

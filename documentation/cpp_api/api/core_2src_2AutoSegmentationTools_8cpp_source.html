@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -332,9 +323,9 @@ $(document).ready(function(){initNavTree('core_2src_2AutoSegmentationTools_8cpp_
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;            theOctree-&gt;<a class="code" href="classcloudViewer_1_1DgmOctree.html#a6fe65767b34563fa0ca5ad197046e7b0">getTheCellPosWhichIncludesThePoint</a>(&amp;startPoint, cellPos,</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                                                          <a class="code" href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a>);</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;            <span class="comment">// clipping (important!)</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;            cellPos.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(octreeLength, cellPos.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>);</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            cellPos.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(octreeLength, cellPos.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>);</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            cellPos.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(octreeLength, cellPos.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;            cellPos.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> = std::min(octreeLength, cellPos.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>);</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            cellPos.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> = std::min(octreeLength, cellPos.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>);</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            cellPos.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> = std::min(octreeLength, cellPos.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            fm-&gt;<a class="code" href="classcloudViewer_1_1FastMarching.html#abbaec0521dba678f1f0d30e3bdd7e75e">setSeedCell</a>(cellPos);</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            ++seedPoints;</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        }</div>
@@ -445,8 +436,7 @@ $(document).ready(function(){initNavTree('core_2src_2AutoSegmentationTools_8cpp_
 <div class="ttc" id="aclasscloudViewer_1_1ScalarFieldTools_html_adbd1168f8082539f4bc13c313f042d54"><div class="ttname"><a href="classcloudViewer_1_1ScalarFieldTools.html#adbd1168f8082539f4bc13c313f042d54">cloudViewer::ScalarFieldTools::computeScalarFieldGradient</a></div><div class="ttdeci">static int computeScalarFieldGradient(GenericIndexedCloudPersist *theCloud, PointCoordinateType radius, bool euclideanDistances, bool sameInAndOutScalarField=false, GenericProgressCallback *progressCb=nullptr, DgmOctree *theOctree=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarFieldTools_8cpp_source.html#l00037">ScalarFieldTools.cpp:37</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html">cloudViewer::ScalarField</a></div><div class="ttdoc">A simple scalar field (to be associated to a point cloud)</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00025">ScalarField.h:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_aa8a9a41063c08fd1d1c0a4109491cd9f"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#aa8a9a41063c08fd1d1c0a4109491cd9f">cloudViewer::ScalarField::resizeSafe</a></div><div class="ttdeci">bool resizeSafe(std::size_t count, bool initNewElements=false, ScalarType valueForNewElements=0)</div><div class="ttdoc">Resizes memory (no exception thrown)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarField_8cpp_source.html#l00081">ScalarField.cpp:81</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_ac7a1706450d10e17651aa5c604c25e12"><div class="ttname"><a href="namespacecloudViewer.html#ac7a1706450d10e17651aa5c604c25e12">cloudViewer::ReferenceCloudContainer</a></div><div class="ttdeci">std::vector&lt; ReferenceCloud * &gt; ReferenceCloudContainer</div><div class="ttdoc">A standard container to store several subsets of points.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00028">AutoSegmentationTools.h:28</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_ad13343fa968ca77badd2bb6c22d64166"><div class="ttname"><a href="qCanupoTools_8cpp.html#ad13343fa968ca77badd2bb6c22d64166">octreeLevel</a></div><div class="ttdeci">unsigned char octreeLevel</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00038">qCanupoTools.cpp:38</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -455,7 +445,7 @@ $(document).ready(function(){initNavTree('core_2src_2AutoSegmentationTools_8cpp_
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2AutoSegmentationTools_8cpp.html">AutoSegmentationTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

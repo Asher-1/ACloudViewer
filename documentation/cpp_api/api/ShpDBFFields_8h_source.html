@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -121,7 +112,7 @@ $(document).ready(function(){initNavTree('ShpDBFFields_8h_source.html',''); init
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">// Shapelib</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;shapefil.h&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="shapefil_8h.html">shapefil.h</a>&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">class </span>GenericDBFField {</div>
@@ -133,13 +124,13 @@ $(document).ready(function(){initNavTree('ShpDBFFields_8h_source.html',''); init
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> is3D()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="comment">// to be reimplemented by siblings</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">virtual</span> DBFFieldType <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8">DBFFieldType</a> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> decimal() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(DBFHandle handle, <span class="keywordtype">int</span> fieldIndex)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(<a class="code" href="structDBFInfo.html">DBFHandle</a> handle, <span class="keywordtype">int</span> fieldIndex)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    }  <span class="comment">// 1D version</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(DBFHandle handle,</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(<a class="code" href="structDBFInfo.html">DBFHandle</a> handle,</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                      <span class="keywordtype">int</span> xFieldIndex,</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                      <span class="keywordtype">int</span> yFieldIndex,</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                      <span class="keywordtype">int</span> zFieldIndex)<span class="keyword"> const </span>{</div>
@@ -155,10 +146,10 @@ $(document).ready(function(){initNavTree('ShpDBFFields_8h_source.html',''); init
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    IntegerDBFField(QString <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) : GenericDBFField(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) {}</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="comment">// inherited from GenericDBFField</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">virtual</span> DBFFieldType <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> FTInteger; }</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8">DBFFieldType</a> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8af6c07154b0d2ca3f82e4a8cc3e79f522">FTInteger</a>; }</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 6; }</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> decimal()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 0; }</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(DBFHandle handle, <span class="keywordtype">int</span> fieldIndex) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(<a class="code" href="structDBFInfo.html">DBFHandle</a> handle, <span class="keywordtype">int</span> fieldIndex) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    std::vector&lt;int&gt; values;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;};</div>
@@ -168,10 +159,10 @@ $(document).ready(function(){initNavTree('ShpDBFFields_8h_source.html',''); init
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    DoubleDBFField(QString <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) : GenericDBFField(<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>) {}</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="comment">// inherited from GenericDBFField</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keyword">virtual</span> DBFFieldType <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> FTDouble; }</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8">DBFFieldType</a> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8a090cb27dde601c4258bec85bb4f4443b">FTDouble</a>; }</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 8; }</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> decimal()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 8; }</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(DBFHandle handle, <span class="keywordtype">int</span> fieldIndex) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(<a class="code" href="structDBFInfo.html">DBFHandle</a> handle, <span class="keywordtype">int</span> fieldIndex) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    std::vector&lt;double&gt; values;</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;};</div>
@@ -183,10 +174,10 @@ $(document).ready(function(){initNavTree('ShpDBFFields_8h_source.html',''); init
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="comment">// inherited from GenericDBFField</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> is3D()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <span class="keyword">true</span>; }</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">virtual</span> DBFFieldType <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> FTDouble; }</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8">DBFFieldType</a> <a class="code" href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8a090cb27dde601c4258bec85bb4f4443b">FTDouble</a>; }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 8; }</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">int</span> decimal()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 8; }</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(DBFHandle handle,</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> save(<a class="code" href="structDBFInfo.html">DBFHandle</a> handle,</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                      <span class="keywordtype">int</span> xFieldIndex,</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                      <span class="keywordtype">int</span> yFieldIndex,</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                      <span class="keywordtype">int</span> zFieldIndex) <span class="keyword">const</span>;</div>
@@ -201,13 +192,18 @@ $(document).ready(function(){initNavTree('ShpDBFFields_8h_source.html',''); init
 <div class="ttc" id="aFileIOFactory_8cpp_html_a2474a5474cbff19523a51eb1de01cda4"><div class="ttname"><a href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a></div><div class="ttdeci">int width</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00142">FileIOFactory.cpp:142</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aff17911edc8208aa8ddb1c7c52c78389"><div class="ttname"><a href="FileIOFactory_8cpp.html#aff17911edc8208aa8ddb1c7c52c78389">type</a></div><div class="ttdeci">char type</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00131">FileIOFactory.cpp:131</a></div></div>
+<div class="ttc" id="ashapefil_8h_html"><div class="ttname"><a href="shapefil_8h.html">shapefil.h</a></div></div>
+<div class="ttc" id="ashapefil_8h_html_a0617e43bea444eae85cc16e8de0c26c8"><div class="ttname"><a href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8">DBFFieldType</a></div><div class="ttdeci">DBFFieldType</div><div class="ttdef"><b>Definition:</b> <a href="shapefil_8h_source.html#l00630">shapefil.h:630</a></div></div>
+<div class="ttc" id="ashapefil_8h_html_a0617e43bea444eae85cc16e8de0c26c8a090cb27dde601c4258bec85bb4f4443b"><div class="ttname"><a href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8a090cb27dde601c4258bec85bb4f4443b">FTDouble</a></div><div class="ttdeci">@ FTDouble</div><div class="ttdef"><b>Definition:</b> <a href="shapefil_8h_source.html#l00633">shapefil.h:633</a></div></div>
+<div class="ttc" id="ashapefil_8h_html_a0617e43bea444eae85cc16e8de0c26c8af6c07154b0d2ca3f82e4a8cc3e79f522"><div class="ttname"><a href="shapefil_8h.html#a0617e43bea444eae85cc16e8de0c26c8af6c07154b0d2ca3f82e4a8cc3e79f522">FTInteger</a></div><div class="ttdeci">@ FTInteger</div><div class="ttdef"><b>Definition:</b> <a href="shapefil_8h_source.html#l00632">shapefil.h:632</a></div></div>
+<div class="ttc" id="astructDBFInfo_html"><div class="ttname"><a href="structDBFInfo.html">DBFInfo</a></div><div class="ttdef"><b>Definition:</b> <a href="shapefil_8h_source.html#l00584">shapefil.h:584</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_3886bc5fbdde051dbb667d23ac4e3d40.html">CV_io</a></li><li class="navelem"><a class="el" href="dir_e4c5393be4f54449f4c55d38d92d28ac.html">include</a></li><li class="navelem"><a class="el" href="ShpDBFFields_8h.html">ShpDBFFields.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:41 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

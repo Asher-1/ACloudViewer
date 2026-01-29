@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -111,7 +102,7 @@ $(document).ready(function(){initNavTree('GeneralizedICP_8cpp_source.html',''); 
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="GeneralizedICP_8h.html">pipelines/registration/GeneralizedICP.h</a>&quot;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Eigen_8h.html">Eigen.h</a>&gt;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvKDTreeSearchParam_8h.html">ecvKDTreeSearchParam.h</a>&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
@@ -124,10 +115,10 @@ $(document).ready(function(){initNavTree('GeneralizedICP_8cpp_source.html',''); 
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">namespace </span>{</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">inline</span> Eigen::Matrix3d GetRotationFromE1ToX(<span class="keyword">const</span> Eigen::Vector3d &amp;x) {</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">inline</span> Eigen::Matrix3d GetRotationFromE1ToX(<span class="keyword">const</span> Eigen::Vector3d &amp;<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) {</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keyword">const</span> Eigen::Vector3d e1{1, 0, 0};</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">const</span> Eigen::Vector3d v = e1.cross(x);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> c = e1.dot(x);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">const</span> Eigen::Vector3d v = e1.cross(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> c = e1.dot(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">if</span> (c &lt; -0.99) {</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        <span class="comment">// Then means that x and e1 are in the same direction</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="keywordflow">return</span> Eigen::Matrix3d::Identity();</div>
@@ -224,8 +215,8 @@ $(document).ready(function(){initNavTree('GeneralizedICP_8cpp_source.html',''); 
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                }</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            };</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <a class="code" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> JTJ;</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <a class="code" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a> JTr;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <a class="code" href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a> JTJ;</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <a class="code" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a> JTr;</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordtype">double</span> r2 = -1.0;</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    std::tie(JTJ, JTr, r2) =</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;            utility::ComputeJTJandJTr&lt;Eigen::Matrix6d, Eigen::Vector6d&gt;(</div>
@@ -274,23 +265,23 @@ $(document).ready(function(){initNavTree('GeneralizedICP_8cpp_source.html',''); 
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
 <div class="ttc" id="aecvKDTreeSearchParam_8h_html"><div class="ttname"><a href="ecvKDTreeSearchParam_8h.html">ecvKDTreeSearchParam.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespaceEigen_html_a09219f5e0b822edbf24b125e0e2a4fe0"><div class="ttname"><a href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 1 &gt; Vector6d</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00107">Eigen.h:107</a></div></div>
-<div class="ttc" id="anamespaceEigen_html_ab6f8b8b11b0f6350ed45e7cd3437207f"><div class="ttname"><a href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 6 &gt; Matrix6d</div><div class="ttdoc">Extending Eigen namespace by adding frequently used matrix type.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00106">Eigen.h:106</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespaceEigen_html_a8b8976b0ff4ff0c2f9af3b753a38f758"><div class="ttname"><a href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 6 &gt; Matrix6d</div><div class="ttdoc">Extending Eigen namespace by adding frequently used matrix type.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00106">Eigen.h:106</a></div></div>
+<div class="ttc" id="anamespaceEigen_html_adbd6d9559991f78d0f980c3630a950a0"><div class="ttname"><a href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a></div><div class="ttdeci">Eigen::Matrix&lt; double, 6, 1 &gt; Vector6d</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00107">Eigen.h:107</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a2a3a210a658eadce934cad620a0d2193"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a2a3a210a658eadce934cad620a0d2193">cloudViewer::pipelines::registration::RegistrationGeneralizedICP</a></div><div class="ttdeci">RegistrationResult RegistrationGeneralizedICP(const ccPointCloud &amp;source, const ccPointCloud &amp;target, double max_correspondence_distance, const Eigen::Matrix4d &amp;init, const TransformationEstimationForGeneralizedICP &amp;estimation, const ICPConvergenceCriteria &amp;criteria)</div><div class="ttdoc">Function for Generalized ICP registration.</div><div class="ttdef"><b>Definition:</b> <a href="GeneralizedICP_8cpp_source.html#l00150">GeneralizedICP.cpp:150</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a5d6d302b5823728dae4a97b31820c4b3"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a5d6d302b5823728dae4a97b31820c4b3">cloudViewer::pipelines::registration::CorrespondenceSet</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector2i &gt; CorrespondenceSet</div><div class="ttdef"><b>Definition:</b> <a href="pipelines_2registration_2TransformationEstimation_8h_source.html#l00023">TransformationEstimation.h:23</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_a7ad1796457a0bd5786246a5a934ae67d"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#a7ad1796457a0bd5786246a5a934ae67d">cloudViewer::pipelines::registration::RegistrationICP</a></div><div class="ttdeci">RegistrationResult RegistrationICP(const ccPointCloud &amp;source, const ccPointCloud &amp;target, double max_correspondence_distance, const Eigen::Matrix4d &amp;init, const TransformationEstimation &amp;estimation, const ICPConvergenceCriteria &amp;criteria)</div><div class="ttdoc">Functions for ICP registration.</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2pipelines_2registration_2Registration_8cpp_source.html#l00126">Registration.cpp:126</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1registration_html_ab2be786b525274aa132133d2c5da0008"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1registration.html#ab2be786b525274aa132133d2c5da0008">cloudViewer::pipelines::registration::max_correspondence_distance</a></div><div class="ttdeci">static const double max_correspondence_distance</div><div class="ttdef"><b>Definition:</b> <a href="CVViewer_2benchmarks_2pipelines_2registration_2Registration_8cpp_source.html#l00034">Registration.cpp:34</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6eca4b7abeef4bc05f3fa906b13be337"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6eca4b7abeef4bc05f3fa906b13be337">cloudViewer::utility::SkewMatrix</a></div><div class="ttdeci">Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &amp;vec)</div><div class="ttdoc">Genretate a skew-symmetric matrix from a vector 3x1.</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00414">Eigen.cpp:414</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa82a4da70b423081bf72fb9bc41eba6b"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa82a4da70b423081bf72fb9bc41eba6b">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a></div><div class="ttdeci">std::tuple&lt; bool, Eigen::Matrix4d &gt; SolveJacobianSystemAndObtainExtrinsicMatrix(const Eigen::Matrix6d &amp;JTJ, const Eigen::Vector6d &amp;JTr)</div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8cpp_source.html#l00105">Eigen.cpp:105</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="GeneralizedICP_8cpp.html">GeneralizedICP.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

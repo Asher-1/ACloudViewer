@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -143,7 +134,7 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">int</span> outBufSize;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordtype">bool</span> zBufError;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classQuaZIODevice.html#a75695a61e064914a56e2d860345ee4d6">atEnd</a>;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">int</span> doFlush(QString &amp;<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">int</span> doFlush(QString &amp;error);</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;};</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;QuaZIODevicePrivate::QuaZIODevicePrivate(QIODevice *io)</div>
@@ -185,12 +176,12 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">if</span> (outBuf != <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) <span class="keyword">delete</span>[] outBuf;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;}</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keywordtype">int</span> QuaZIODevicePrivate::doFlush(QString &amp;<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keywordtype">int</span> QuaZIODevicePrivate::doFlush(QString &amp;error) {</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordtype">int</span> flushed = 0;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordflow">while</span> (outBufPos &lt; outBufSize) {</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="keywordtype">int</span> more = io-&gt;write(outBuf + outBufPos, outBufSize - outBufPos);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordflow">if</span> (more == -1) {</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = io-&gt;errorString();</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            error = io-&gt;errorString();</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <span class="keywordflow">if</span> (more == 0) <span class="keywordflow">break</span>;</div>
@@ -221,7 +212,7 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;}</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
 <div class="line"><a name="l00126"></a><span class="lineno"><a class="line" href="classQuaZIODevice.html#ab3524cef44c240c21e6b7680ee5f42de">  126</a></span>&#160;<a class="code" href="classQuaZIODevice.html#ab3524cef44c240c21e6b7680ee5f42de">QuaZIODevice::~QuaZIODevice</a>() {</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a>()) <a class="code" href="classQuaZIODevice.html#ad27e447544d57f897316ee6f44535895">close</a>();</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordflow">if</span> (isOpen()) <a class="code" href="classQuaZIODevice.html#ad27e447544d57f897316ee6f44535895">close</a>();</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">delete</span> d;</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;}</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
@@ -280,7 +271,7 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    QIODevice::close();</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;}</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="classQuaZIODevice.html#aa12b8bc9c923e543eda9ae22dbd1ecbb">  186</a></span>&#160;qint64 <a class="code" href="classQuaZIODevice.html#aa12b8bc9c923e543eda9ae22dbd1ecbb">QuaZIODevice::readData</a>(<span class="keywordtype">char</span> *data, qint64 maxSize) {</div>
+<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="classQuaZIODevice.html#aa12b8bc9c923e543eda9ae22dbd1ecbb">  186</a></span>&#160;qint64 <a class="code" href="classQuaZIODevice.html#aa12b8bc9c923e543eda9ae22dbd1ecbb">QuaZIODevice::readData</a>(<span class="keywordtype">char</span> *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, qint64 maxSize) {</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">int</span> read = 0;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordflow">while</span> (read &lt; maxSize) {</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        <span class="keywordflow">if</span> (d-&gt;inBufPos == d-&gt;inBufSize) {</div>
@@ -296,17 +287,17 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        <span class="keywordflow">while</span> (read &lt; maxSize &amp;&amp; d-&gt;inBufPos &lt; d-&gt;inBufSize) {</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;            d-&gt;zins.next_in = (Bytef *)(d-&gt;inBuf + d-&gt;inBufPos);</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;            d-&gt;zins.avail_in = d-&gt;inBufSize - d-&gt;inBufPos;</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;            d-&gt;zins.next_out = (Bytef *)(data + read);</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;            d-&gt;zins.next_out = (Bytef *)(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a> + read);</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            d-&gt;zins.avail_out =</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                    (uInt)(maxSize - read);  <span class="comment">// hope it&#39;s less than 2GB</span></div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;            <span class="keywordtype">int</span> more = 0;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            <span class="keywordflow">switch</span> (inflate(&amp;d-&gt;zins, Z_SYNC_FLUSH)) {</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                <span class="keywordflow">case</span> Z_OK:</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                    read = (<span class="keywordtype">char</span> *)d-&gt;zins.next_out - data;</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                    read = (<span class="keywordtype">char</span> *)d-&gt;zins.next_out - <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>;</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                    d-&gt;inBufPos = (<span class="keywordtype">char</span> *)d-&gt;zins.next_in - d-&gt;inBuf;</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                <span class="keywordflow">case</span> Z_STREAM_END:</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                    read = (<span class="keywordtype">char</span> *)d-&gt;zins.next_out - data;</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                    read = (<span class="keywordtype">char</span> *)d-&gt;zins.next_out - <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>;</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                    d-&gt;inBufPos = (<span class="keywordtype">char</span> *)d-&gt;zins.next_in - d-&gt;inBuf;</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                    d-&gt;atEnd = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                    <span class="keywordflow">return</span> read;</div>
@@ -337,50 +328,50 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        }</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    }</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="preprocessor">#ifdef QUAZIP_ZIODEVICE_DEBUG_INPUT</span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    indebug.write(data, read);</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    indebug.write(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, read);</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    <span class="keywordflow">return</span> read;</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;}</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
-<div class="line"><a name="l00248"></a><span class="lineno"><a class="line" href="classQuaZIODevice.html#aab23b6badbc3548eb71ca86bf6211902">  248</a></span>&#160;qint64 <a class="code" href="classQuaZIODevice.html#aab23b6badbc3548eb71ca86bf6211902">QuaZIODevice::writeData</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *data, qint64 maxSize) {</div>
+<div class="line"><a name="l00248"></a><span class="lineno"><a class="line" href="classQuaZIODevice.html#aab23b6badbc3548eb71ca86bf6211902">  248</a></span>&#160;qint64 <a class="code" href="classQuaZIODevice.html#aab23b6badbc3548eb71ca86bf6211902">QuaZIODevice::writeData</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, qint64 maxSize) {</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keywordtype">int</span> written = 0;</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    QString <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keywordflow">if</span> (d-&gt;doFlush(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) == -1) {</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        setErrorString(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    QString error;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keywordflow">if</span> (d-&gt;doFlush(error) == -1) {</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        setErrorString(error);</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    }</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <span class="keywordflow">while</span> (written &lt; maxSize) {</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="comment">// there is some data waiting in the output buffer</span></div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="keywordflow">if</span> (d-&gt;outBufPos &lt; d-&gt;outBufSize) <span class="keywordflow">return</span> written;</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        d-&gt;zouts.next_in = (Bytef *)(data + written);</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        d-&gt;zouts.next_in = (Bytef *)(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a> + written);</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        d-&gt;zouts.avail_in =</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                (uInt)(maxSize - written);  <span class="comment">// hope it&#39;s less than 2GB</span></div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        d-&gt;zouts.next_out = (Bytef *)d-&gt;outBuf;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        d-&gt;zouts.avail_out = <a class="code" href="quaziodevice_8cpp.html#ae8ba10541ebf3928f703c320acff91e8">QUAZIO_OUTBUFSIZE</a>;</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        switch (deflate(&amp;d-&gt;zouts, Z_NO_FLUSH)) {</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;            <span class="keywordflow">case</span> Z_OK:</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                written = (<span class="keywordtype">char</span> *)d-&gt;zouts.next_in - data;</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                written = (<span class="keywordtype">char</span> *)d-&gt;zouts.next_in - <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>;</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                d-&gt;outBufSize = (<span class="keywordtype">char</span> *)d-&gt;zouts.next_out - d-&gt;outBuf;</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;            <span class="keywordflow">default</span>:</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                setErrorString(QString::fromLocal8Bit(d-&gt;zouts.msg));</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        }</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;        <span class="keywordflow">if</span> (d-&gt;doFlush(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) == -1) {</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;            setErrorString(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;        <span class="keywordflow">if</span> (d-&gt;doFlush(error) == -1) {</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;            setErrorString(error);</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;            <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        }</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    }</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="preprocessor">#ifdef QUAZIP_ZIODEVICE_DEBUG_OUTPUT</span></div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    debug.write(data, written);</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    debug.write(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, written);</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    <span class="keywordflow">return</span> written;</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;}</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160; </div>
 <div class="line"><a name="l00283"></a><span class="lineno"><a class="line" href="classQuaZIODevice.html#a25f586eb564841b51c395fd17f1cc080">  283</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classQuaZIODevice.html#a25f586eb564841b51c395fd17f1cc080">QuaZIODevice::flush</a>() {</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    QString <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    <span class="keywordflow">if</span> (d-&gt;doFlush(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) &lt; 0) {</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        setErrorString(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    QString error;</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    <span class="keywordflow">if</span> (d-&gt;doFlush(error) &lt; 0) {</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        setErrorString(error);</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    }</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    <span class="comment">// can&#39;t flush buffer, some data is still waiting</span></div>
@@ -394,8 +385,8 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        switch (deflate(&amp;d-&gt;zouts, Z_SYNC_FLUSH)) {</div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            <span class="keywordflow">case</span> Z_OK:</div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                d-&gt;outBufSize = (<span class="keywordtype">char</span> *)d-&gt;zouts.next_out - d-&gt;outBuf;</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;                if (d-&gt;doFlush(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) &lt; 0) {</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                    setErrorString(<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>);</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;                if (d-&gt;doFlush(error) &lt; 0) {</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                    setErrorString(error);</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                }</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                <span class="keywordflow">if</span> (d-&gt;outBufPos &lt; d-&gt;outBufSize) <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -439,19 +430,18 @@ $(document).ready(function(){initNavTree('quaziodevice_8cpp_source.html',''); in
 <div class="ttc" id="aclassQuaZIODevice_html_ad27e447544d57f897316ee6f44535895"><div class="ttname"><a href="classQuaZIODevice.html#ad27e447544d57f897316ee6f44535895">QuaZIODevice::close</a></div><div class="ttdeci">virtual void close()</div><div class="ttdoc">Closes this device, but not the underlying one.</div><div class="ttdef"><b>Definition:</b> <a href="quaziodevice_8cpp_source.html#l00171">quaziodevice.cpp:171</a></div></div>
 <div class="ttc" id="aclassQuaZIODevice_html_ae5d71c79ba5d07d11da66c5bf87ae1ff"><div class="ttname"><a href="classQuaZIODevice.html#ae5d71c79ba5d07d11da66c5bf87ae1ff">QuaZIODevice::getIoDevice</a></div><div class="ttdeci">QIODevice * getIoDevice() const</div><div class="ttdoc">Returns the underlying device.</div><div class="ttdef"><b>Definition:</b> <a href="quaziodevice_8cpp_source.html#l00131">quaziodevice.cpp:131</a></div></div>
 <div class="ttc" id="aclassQuaZIODevice_html_aeac42c0212cac8462f2f114b83023b15"><div class="ttname"><a href="classQuaZIODevice.html#aeac42c0212cac8462f2f114b83023b15">QuaZIODevice::isSequential</a></div><div class="ttdeci">virtual bool isSequential() const</div><div class="ttdoc">Returns true.</div><div class="ttdef"><b>Definition:</b> <a href="quaziodevice_8cpp_source.html#l00316">quaziodevice.cpp:316</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a72ce6622f68828767b6ef09cc1ed5127"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a72ce6622f68828767b6ef09cc1ed5127">cloudViewer::core::Append</a></div><div class="ttdeci">Tensor Append(const Tensor &amp;self, const Tensor &amp;other, const utility::optional&lt; int64_t &gt; &amp;axis)</div><div class="ttdoc">Appends the two tensors, along the given axis into a new tensor. Both the tensors must have same data...</div><div class="ttdef"><b>Definition:</b> <a href="TensorFunction_8cpp_source.html#l00118">TensorFunction.cpp:118</a></div></div>
 <div class="ttc" id="aquaziodevice_8cpp_html_ae13b100a248e870771d63d7724961412"><div class="ttname"><a href="quaziodevice_8cpp.html#ae13b100a248e870771d63d7724961412">QUAZIO_INBUFSIZE</a></div><div class="ttdeci">#define QUAZIO_INBUFSIZE</div><div class="ttdef"><b>Definition:</b> <a href="quaziodevice_8cpp_source.html#l00029">quaziodevice.cpp:29</a></div></div>
 <div class="ttc" id="aquaziodevice_8cpp_html_ae8ba10541ebf3928f703c320acff91e8"><div class="ttname"><a href="quaziodevice_8cpp.html#ae8ba10541ebf3928f703c320acff91e8">QUAZIO_OUTBUFSIZE</a></div><div class="ttdeci">#define QUAZIO_OUTBUFSIZE</div><div class="ttdef"><b>Definition:</b> <a href="quaziodevice_8cpp_source.html#l00030">quaziodevice.cpp:30</a></div></div>
 <div class="ttc" id="aquaziodevice_8h_html"><div class="ttname"><a href="quaziodevice_8h.html">quaziodevice.h</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_a51d2a93170930afe9fc7357f19792d9f"><div class="ttname"><a href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a></div><div class="ttdeci">#define isOpen(pFd)</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l52420">sqlite3.c:52420</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="quaziodevice_8cpp.html">quaziodevice.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

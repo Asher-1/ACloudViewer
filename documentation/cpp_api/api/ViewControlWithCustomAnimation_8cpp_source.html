@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,9 +97,9 @@ $(document).ready(function(){initNavTree('ViewControlWithCustomAnimation_8cpp_so
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ViewControlWithCustomAnimation_8h.html">visualization/visualizer/ViewControlWithCustomAnimation.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Helper.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;IJsonConvertibleIO.h&gt;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>visualization {</div>
@@ -147,21 +138,21 @@ $(document).ready(function(){initNavTree('ViewControlWithCustomAnimation_8cpp_so
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    }</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;}</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#a53d53db50cff3b7bd21f4459e338036d">   51</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#a53d53db50cff3b7bd21f4459e338036d">ViewControlWithCustomAnimation::Rotate</a>(<span class="keywordtype">double</span> x,</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                            <span class="keywordtype">double</span> y,</div>
+<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#a53d53db50cff3b7bd21f4459e338036d">   51</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#a53d53db50cff3b7bd21f4459e338036d">ViewControlWithCustomAnimation::Rotate</a>(<span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>,</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                            <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                                            <span class="keywordtype">double</span> xo,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                            <span class="keywordtype">double</span> yo) {</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#a9e32474f5fbbd5a589b4f936dd709f70">animation_mode_</a> == AnimationMode::FreeMode) {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControl.html#a5fc7a4e589b7844d52adbcf55389a1ee">ViewControl::Rotate</a>(x, y, xo, yo);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControl.html#a5fc7a4e589b7844d52adbcf55389a1ee">ViewControl::Rotate</a>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>, xo, yo);</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    }</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;}</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#af567023c18a29348e316b67c0b2ad4d0">   60</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#af567023c18a29348e316b67c0b2ad4d0">ViewControlWithCustomAnimation::Translate</a>(<span class="keywordtype">double</span> x,</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                               <span class="keywordtype">double</span> y,</div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#af567023c18a29348e316b67c0b2ad4d0">   60</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#af567023c18a29348e316b67c0b2ad4d0">ViewControlWithCustomAnimation::Translate</a>(<span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>,</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                               <span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                               <span class="keywordtype">double</span> xo,</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                                               <span class="keywordtype">double</span> yo) {</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewControlWithCustomAnimation.html#a9e32474f5fbbd5a589b4f936dd709f70">animation_mode_</a> == AnimationMode::FreeMode) {</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControl.html#a57848411b65b8174187622dbe8b8b662">ViewControl::Translate</a>(x, y, xo, yo);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1ViewControl.html#a57848411b65b8174187622dbe8b8b662">ViewControl::Translate</a>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>, xo, yo);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    }</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
@@ -483,20 +474,20 @@ $(document).ready(function(){initNavTree('ViewControlWithCustomAnimation_8cpp_so
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1ViewTrajectory_html_ab0c46d0af399e69c367dc2d8b13314ad"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#ab0c46d0af399e69c367dc2d8b13314ad">cloudViewer::visualization::ViewTrajectory::interval_</a></div><div class="ttdeci">int interval_</div><div class="ttdef"><b>Definition:</b> <a href="ViewTrajectory_8h_source.html#l00076">ViewTrajectory.h:76</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1ViewTrajectory_html_af46686a3c911b2db807f02f5d1237bcc"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#af46686a3c911b2db807f02f5d1237bcc">cloudViewer::visualization::ViewTrajectory::ComputeInterpolationCoefficients</a></div><div class="ttdeci">void ComputeInterpolationCoefficients()</div><div class="ttdef"><b>Definition:</b> <a href="ViewTrajectory_8cpp_source.html#l00024">ViewTrajectory.cpp:24</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a0fea3e9d6cec35df3a68bb3d096c3428"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible</a></div><div class="ttdeci">bool WriteIJsonConvertible(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_ac621f7b55c7bc721bb1674ccb210d5e6"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#ac621f7b55c7bc721bb1674ccb210d5e6">cloudViewer::io::ReadIJsonConvertible</a></div><div class="ttdeci">bool ReadIJsonConvertible(const std::string &amp;filename, cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a0fea3e9d6cec35df3a68bb3d096c3428"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible</a></div><div class="ttdeci">bool WriteIJsonConvertible(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00144">IJsonConvertibleIO.cpp:144</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_ac621f7b55c7bc721bb1674ccb210d5e6"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#ac621f7b55c7bc721bb1674ccb210d5e6">cloudViewer::io::ReadIJsonConvertible</a></div><div class="ttdeci">bool ReadIJsonConvertible(const std::string &amp;filename, cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00122">IJsonConvertibleIO.cpp:122</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa6877a3b1468f7e8ad6958a035087d6d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa6877a3b1468f7e8ad6958a035087d6d">cloudViewer::utility::GetCurrentTimeStamp</a></div><div class="ttdeci">std::string GetCurrentTimeStamp()</div><div class="ttdoc">Returns current time stamp.</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00286">Helper.cpp:286</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gl__util_html_a0aa4d523f7858af6887d7d103516a5b6"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gl__util.html#a0aa4d523f7858af6887d7d103516a5b6">cloudViewer::visualization::gl_util::Perspective</a></div><div class="ttdeci">GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near, double z_far)</div><div class="ttdef"><b>Definition:</b> <a href="GLHelper_8cpp_source.html#l00050">GLHelper.cpp:50</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="ViewControlWithCustomAnimation_8cpp.html">ViewControlWithCustomAnimation.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

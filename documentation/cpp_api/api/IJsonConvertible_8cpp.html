@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -101,7 +92,7 @@ $(document).ready(function(){initNavTree('IJsonConvertible_8cpp.html',''); initR
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="IJsonConvertible_8h_source.html">IJsonConvertible.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="core_2include_2Logging_8h_source.html">Logging.h</a>&quot;</code><br />
+<code>#include &quot;Logging.h&quot;</code><br />
 <code>#include &lt;json/json.h&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
@@ -109,31 +100,25 @@ Include dependency graph for IJsonConvertible.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="IJsonConvertible_8cpp__incl.png" border="0" usemap="#a_2root_2ACloudViewer_2core_2src_2IJsonConvertible_8cpp" alt=""/></div>
 <map name="a_2root_2ACloudViewer_2core_2src_2IJsonConvertible_8cpp" id="a_2root_2ACloudViewer_2core_2src_2IJsonConvertible_8cpp">
-<area shape="rect" title=" " alt="" coords="1432,5,1647,47"/>
-<area shape="rect" href="IJsonConvertible_8h.html" title=" " alt="" coords="845,95,985,121"/>
-<area shape="rect" href="core_2include_2Logging_8h.html" title=" " alt="" coords="1457,95,1542,121"/>
-<area shape="rect" title=" " alt="" coords="1810,169,1869,196"/>
-<area shape="rect" title=" " alt="" coords="1617,95,1709,121"/>
-<area shape="rect" title=" " alt="" coords="953,169,1059,196"/>
-<area shape="rect" title=" " alt="" coords="939,244,1031,271"/>
-<area shape="rect" href="CVCoreLib_8h.html" title=" " alt="" coords="1055,244,1157,271"/>
-<area shape="rect" href="Eigen_8h.html" title=" " alt="" coords="636,169,707,196"/>
-<area shape="rect" href="CVCoreLibWin_8h.html" title=" " alt="" coords="1043,319,1169,345"/>
-<area shape="rect" title=" " alt="" coords="1042,393,1170,420"/>
-<area shape="rect" title=" " alt="" coords="459,244,585,271"/>
-<area shape="rect" title=" " alt="" coords="609,244,733,271"/>
-<area shape="rect" title=" " alt="" coords="758,244,835,271"/>
-<area shape="rect" title=" " alt="" coords="860,244,915,271"/>
-<area shape="rect" title=" " alt="" coords="5,244,129,271"/>
-<area shape="rect" title=" " alt="" coords="153,244,213,271"/>
-<area shape="rect" title=" " alt="" coords="237,244,300,271"/>
-<area shape="rect" title=" " alt="" coords="324,244,435,271"/>
-<area shape="rect" title=" " alt="" coords="1083,169,1169,196"/>
-<area shape="rect" title=" " alt="" coords="1194,169,1274,196"/>
-<area shape="rect" title=" " alt="" coords="1298,169,1373,196"/>
-<area shape="rect" title=" " alt="" coords="1397,169,1487,196"/>
-<area shape="rect" title=" " alt="" coords="1511,169,1605,196"/>
-<area shape="rect" title=" " alt="" coords="1629,169,1735,196"/>
+<area shape="rect" title=" " alt="" coords="260,5,475,47"/>
+<area shape="rect" href="IJsonConvertible_8h.html" title=" " alt="" coords="104,95,244,121"/>
+<area shape="rect" title=" " alt="" coords="269,95,354,121"/>
+<area shape="rect" title=" " alt="" coords="379,95,471,121"/>
+<area shape="rect" title=" " alt="" coords="495,95,554,121"/>
+<area shape="rect" title=" " alt="" coords="5,169,111,196"/>
+<area shape="rect" title=" " alt="" coords="32,244,124,271"/>
+<area shape="rect" href="CVCoreLib_8h.html" title=" " alt="" coords="149,244,250,271"/>
+<area shape="rect" href="Eigen_8h.html" title=" " alt="" coords="524,169,595,196"/>
+<area shape="rect" href="CVCoreLibWin_8h.html" title=" " alt="" coords="136,319,263,345"/>
+<area shape="rect" title=" " alt="" coords="135,393,263,420"/>
+<area shape="rect" title=" " alt="" coords="496,244,623,271"/>
+<area shape="rect" title=" " alt="" coords="647,244,771,271"/>
+<area shape="rect" title=" " alt="" coords="795,244,873,271"/>
+<area shape="rect" title=" " alt="" coords="897,244,952,271"/>
+<area shape="rect" title=" " alt="" coords="976,244,1100,271"/>
+<area shape="rect" title=" " alt="" coords="1124,244,1184,271"/>
+<area shape="rect" title=" " alt="" coords="275,244,337,271"/>
+<area shape="rect" title=" " alt="" coords="361,244,472,271"/>
 </map>
 </div>
 </div>
@@ -149,10 +134,10 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ab48506e9114617b4f545307e1c65dbf6"><td class="memItemLeft" align="right" valign="top">Json::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#ab48506e9114617b4f545307e1c65dbf6">cloudViewer::utility::StringToJson</a> (const std::string &amp;json_str)</td></tr>
-<tr class="memdesc:ab48506e9114617b4f545307e1c65dbf6"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structParse.html">Parse</a> string and conver to Json::value. Throws exception if the conversion is invalid.  <a href="namespacecloudViewer_1_1utility.html#ab48506e9114617b4f545307e1c65dbf6">More...</a><br /></td></tr>
+<tr class="memitem:ab48506e9114617b4f545307e1c65dbf6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#ab48506e9114617b4f545307e1c65dbf6">cloudViewer::utility::StringToJson</a> (const std::string &amp;json_str)</td></tr>
+<tr class="memdesc:ab48506e9114617b4f545307e1c65dbf6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse string and conver to Json::value. Throws exception if the conversion is invalid.  <a href="namespacecloudViewer_1_1utility.html#ab48506e9114617b4f545307e1c65dbf6">More...</a><br /></td></tr>
 <tr class="separator:ab48506e9114617b4f545307e1c65dbf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acdaf05d2fca767f06cf014226b502743"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#acdaf05d2fca767f06cf014226b502743">cloudViewer::utility::JsonToString</a> (const Json::Value &amp;json)</td></tr>
+<tr class="memitem:acdaf05d2fca767f06cf014226b502743"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#acdaf05d2fca767f06cf014226b502743">cloudViewer::utility::JsonToString</a> (const <a class="el" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;json)</td></tr>
 <tr class="memdesc:acdaf05d2fca767f06cf014226b502743"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize a Json::Value to a string.  <a href="namespacecloudViewer_1_1utility.html#acdaf05d2fca767f06cf014226b502743">More...</a><br /></td></tr>
 <tr class="separator:acdaf05d2fca767f06cf014226b502743"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -162,7 +147,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="IJsonConvertible_8cpp.html">IJsonConvertible.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

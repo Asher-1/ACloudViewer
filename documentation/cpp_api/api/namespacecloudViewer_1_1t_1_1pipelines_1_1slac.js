@@ -15,7 +15,6 @@ var namespacecloudViewer_1_1t_1_1pipelines_1_1slac =
     [ "InitializeControlGrid", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a10784a60a0eb9a04284328a75a118ff1", null ],
     [ "Jet", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#af10e922622471f8252f70655557cd639", null ],
     [ "PreprocessPointClouds", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a5d0bce411a84155d2c05343b30152995", null ],
-    [ "pybind_slac", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a4536d9e70cd086948e37146906bd8a27", null ],
     [ "RunRigidOptimizerForFragments", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a11063f3be60132b857bf1369c53d68dd", null ],
     [ "RunSLACOptimizerForFragments", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a2df11c266c32b89bdea9810f1985bb7a", null ],
     [ "SaveCorrespondencesForPointClouds", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a050bda06c7412d0b89ce44be58449a34", null ],
@@ -27,6 +26,5 @@ var namespacecloudViewer_1_1t_1_1pipelines_1_1slac =
     [ "VisualizePointCloudEmbedding", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a0cd0773fa13e04ed2bdaa6e2fe421a44", null ],
     [ "kCorresColor", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a03036c322709836112674b166237df97", null ],
     [ "kSourceColor", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#aea9b01c6164ecb94c59ee0508dd8058c", null ],
-    [ "kTargetColor", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a45feb4fd86b49a1bbebcf68818303a5c", null ],
-    [ "map_shared_argument_docstrings", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a188804b640cce4a8d8fe6759e2651b1a", null ]
+    [ "kTargetColor", "namespacecloudViewer_1_1t_1_1pipelines_1_1slac.html#a45feb4fd86b49a1bbebcf68818303a5c", null ]
 ];

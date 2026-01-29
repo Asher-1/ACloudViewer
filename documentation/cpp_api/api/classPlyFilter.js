@@ -5,5 +5,5 @@ var classPlyFilter =
     [ "loadFile", "classPlyFilter.html#ae14f8be2d58a81cbe263db8735a8a427", null ],
     [ "loadFile", "classPlyFilter.html#a747e7c90aa2493c7e5645e2f9b275945", null ],
     [ "saveToFile", "classPlyFilter.html#aa8dd0f4c36d18e5d08ca83525412e281", null ],
-    [ "SetDefaultOutputFormat", "classPlyFilter.html#ac10e77a9f253f787e3aea5ee3ff8573f", null ]
+    [ "SetDefaultOutputFormat", "classPlyFilter.html#ac053f940f83bba045d7ab38418a0faed", null ]
 ];

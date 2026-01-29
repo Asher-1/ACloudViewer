@@ -1,7 +1,7 @@
 var structccCameraSensor_1_1IntrinsicParameters =
 [
     [ "IntrinsicParameters", "structccCameraSensor_1_1IntrinsicParameters.html#a8380935d6bca012d3c39f63ff66ebe55", null ],
-    [ "GetKinectDefaults", "structccCameraSensor_1_1IntrinsicParameters.html#ae92bd3f88094ad24e7b4a66285485f83", null ],
+    [ "GetKinectDefaults", "structccCameraSensor_1_1IntrinsicParameters.html#a91eac3277678d48969b1618a0e1c6ebf", null ],
     [ "horizFocal_pix", "structccCameraSensor_1_1IntrinsicParameters.html#af6aa681e39f251ad47beb223e9653a61", null ],
     [ "arrayHeight", "structccCameraSensor_1_1IntrinsicParameters.html#a40d856036ebafe1469f913cd869856a9", null ],
     [ "arrayWidth", "structccCameraSensor_1_1IntrinsicParameters.html#af220bea251819ac2315187628db616a5", null ],

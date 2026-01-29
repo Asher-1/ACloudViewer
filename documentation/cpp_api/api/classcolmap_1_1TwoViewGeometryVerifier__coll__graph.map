@@ -1,0 +1,11 @@
+<map id="colmap::TwoViewGeometryVerifier" name="colmap::TwoViewGeometryVerifier">
+<area shape="rect" id="node1" title=" " alt="" coords="876,116,1123,143"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1Thread.html" title=" " alt="" coords="450,5,573,32"/>
+<area shape="rect" id="node3" href="$structcolmap_1_1SiftMatchingOptions.html" title=" " alt="" coords="407,56,616,83"/>
+<area shape="rect" id="node4" title=" " alt="" coords="67,56,126,83"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1JobQueue.html" title=" " alt="" coords="393,107,629,149"/>
+<area shape="rect" id="node6" href="$classcolmap_1_1JobQueue.html" title=" " alt="" coords="7,116,186,143"/>
+<area shape="rect" id="node7" href="$classcolmap_1_1FeatureMatcherCache.html" title=" " alt="" coords="401,173,621,200"/>
+<area shape="rect" id="node8" href="$structcolmap_1_1TwoViewGeometry_1_1Options.html" title=" " alt="" coords="411,225,611,266"/>
+<area shape="rect" id="node9" href="$structcolmap_1_1RANSACOptions.html" title=" " alt="" coords="5,232,188,259"/>
+</map>

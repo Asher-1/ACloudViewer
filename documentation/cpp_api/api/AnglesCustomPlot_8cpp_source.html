@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -111,7 +102,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;ui_AnglesCustomPlot.h&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#a919d9a196720751c261d7055883614d5">   15</a></span>&#160;<a class="code" href="classAnglesCustomPlot.html#a919d9a196720751c261d7055883614d5">AnglesCustomPlot::AnglesCustomPlot</a>(<span class="keyword">const</span> QVector&lt;double&gt;&amp; data,</div>
+<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#a919d9a196720751c261d7055883614d5">   15</a></span>&#160;<a class="code" href="classAnglesCustomPlot.html#a919d9a196720751c261d7055883614d5">AnglesCustomPlot::AnglesCustomPlot</a>(<span class="keyword">const</span> QVector&lt;double&gt;&amp; <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>,</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;                                   <span class="keyword">const</span> QString&amp; xLabel,</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;                                   <span class="keywordtype">int</span> nbBins,</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;                                   QWidget* parent)</div>
@@ -125,27 +116,27 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    setWindowTitle(m_label);</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classAnglesCustomPlot.html#a8edc145af0c5d590634eb617c8e02c34">computeHistogram</a>(data);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classAnglesCustomPlot.html#a8edc145af0c5d590634eb617c8e02c34">computeHistogram</a>(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <a class="code" href="classAnglesCustomPlot.html#adf729f33646bff94b8c58394b2a88b12">createQCPBars</a>(m_label + <span class="stringliteral">&quot; [°]&quot;</span>);</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    m_bars-&gt;rescaleAxes();</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    m_bars-&gt;<a class="code" href="classQCPAbstractPlottable.html#a1491c4a606bccd2d09e65e11b79eb882">rescaleAxes</a>();</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;}</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#ad92445169f46054cc1339bc3f92360b5">   36</a></span>&#160;<a class="code" href="classAnglesCustomPlot.html#ad92445169f46054cc1339bc3f92360b5">AnglesCustomPlot::~AnglesCustomPlot</a>() { <span class="keyword">delete</span> ui; }</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="AnglesCustomPlot_8cpp.html#aab7e5b5b860b35934da9e600cb83f802">   39</a></span>&#160;<span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <a class="code" href="AnglesCustomPlot_8cpp.html#aab7e5b5b860b35934da9e600cb83f802">MAX_HISTOGRAM_SIZE</a> = 512;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#a8edc145af0c5d590634eb617c8e02c34">   41</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classAnglesCustomPlot.html#a8edc145af0c5d590634eb617c8e02c34">AnglesCustomPlot::computeHistogram</a>(<span class="keyword">const</span> QVector&lt;double&gt;&amp; data) {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">double</span> minData = *std::min_element(data.begin(), data.end());</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordtype">double</span> maxData = *std::max_element(data.begin(), data.end());</div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#a8edc145af0c5d590634eb617c8e02c34">   41</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classAnglesCustomPlot.html#a8edc145af0c5d590634eb617c8e02c34">AnglesCustomPlot::computeHistogram</a>(<span class="keyword">const</span> QVector&lt;double&gt;&amp; <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>) {</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">double</span> minData = *std::min_element(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.begin(), <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.end());</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordtype">double</span> maxData = *std::max_element(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.begin(), <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.end());</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">double</span> range = maxData - minData;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (range == 0 || data.size() == 0) {</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (range == 0 || <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.size() == 0) {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="comment">// can&#39;t build histogram of a flat field</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keywordtype">unsigned</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = data.size();</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keywordtype">unsigned</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>.size();</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="keywordtype">unsigned</span> numberOfBins;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="keywordflow">if</span> (m_nbBins == -1)  <span class="comment">// compute number of bins automatically</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        {</div>
@@ -175,11 +166,11 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="comment">// compute histogram</span></div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        ScalarType step = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(numberOfBins) / range;</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>; ++i) {</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            <span class="keyword">const</span> ScalarType&amp; val = data[i];</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            <span class="keyword">const</span> ScalarType&amp; val = <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>[i];</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a>(val)) {</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                <span class="keywordtype">unsigned</span> bin = <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>((val - minData) * step);</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                ++m_histogram[<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(bin, numberOfBins - 1)];</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                ++m_histogram[std::min(bin, numberOfBins - 1)];</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            }</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        }</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    }</div>
@@ -190,27 +181,27 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00092"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#adf729f33646bff94b8c58394b2a88b12">   92</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classAnglesCustomPlot.html#adf729f33646bff94b8c58394b2a88b12">AnglesCustomPlot::createQCPBars</a>(<span class="keyword">const</span> QString&amp; xLabel) {</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="comment">// clear previous display</span></div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordflow">if</span> (m_bars) {</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        this-&gt;removePlottable(m_bars);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        this-&gt;<a class="code" href="classQCustomPlot.html#af3dafd56884208474f311d6226513ab2">removePlottable</a>(m_bars);</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        m_bars = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    m_bars = <span class="keyword">new</span> QCPBars(xAxis, yAxis);</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    m_bars-&gt;setAntialiased(</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    m_bars = <span class="keyword">new</span> <a class="code" href="classQCPBars.html">QCPBars</a>(<a class="code" href="classQCustomPlot.html#a9a79cd0158a4c7f30cbc702f0fd800e4">xAxis</a>, <a class="code" href="classQCustomPlot.html#af6fea5679725b152c14facd920b19367">yAxis</a>);</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    m_bars-&gt;<a class="code" href="classQCPLayerable.html#a4fd43e89be4a553ead41652565ff0581">setAntialiased</a>(</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <span class="keyword">false</span>);  <span class="comment">// gives more crisp, pixel aligned bar borders</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    m_bars-&gt;setPen(QPen(QColor(0, 168, 140).<a class="code" href="namespaceecvColor.html#a2494df475cd71e560addaafdd73ad9e4">lighter</a>(130)));</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    m_bars-&gt;setBrush(QColor(0, 168, 140));</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    m_bars-&gt;setWidth(m_axis[1] - m_axis[0]);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    m_bars-&gt;setData(m_axis, m_histogram);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    xAxis-&gt;setLabel(xLabel);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    yAxis-&gt;setLabel(<span class="stringliteral">&quot;Counts&quot;</span>);</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    m_bars-&gt;<a class="code" href="classQCPAbstractPlottable.html#ab74b09ae4c0e7e13142fe4b5bf46cac7">setPen</a>(QPen(QColor(0, 168, 140).<a class="code" href="namespaceecvColor.html#a2494df475cd71e560addaafdd73ad9e4">lighter</a>(130)));</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    m_bars-&gt;<a class="code" href="classQCPAbstractPlottable.html#a7a4b92144dca6453a1f0f210e27edc74">setBrush</a>(QColor(0, 168, 140));</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    m_bars-&gt;<a class="code" href="classQCPBars.html#afec6116579d44d5b706e0fa5e5332507">setWidth</a>(m_axis[1] - m_axis[0]);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    m_bars-&gt;<a class="code" href="classQCPBars.html#a6dc562ec7120a8521e1061f2134367e4">setData</a>(m_axis, m_histogram);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <a class="code" href="classQCustomPlot.html#a9a79cd0158a4c7f30cbc702f0fd800e4">xAxis</a>-&gt;<a class="code" href="classQCPAxis.html#a33bcc382c111c9f31bb0687352a2dea4">setLabel</a>(xLabel);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <a class="code" href="classQCustomPlot.html#af6fea5679725b152c14facd920b19367">yAxis</a>-&gt;<a class="code" href="classQCPAxis.html#a33bcc382c111c9f31bb0687352a2dea4">setLabel</a>(<span class="stringliteral">&quot;Counts&quot;</span>);</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <a class="code" href="classQCustomPlot.html#a5ee1e2f6ae27419deca53e75907c27e5">setInteractions</a>(<a class="code" href="namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900">QCP::iRangeDrag</a> | <a class="code" href="namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0">QCP::iRangeZoom</a>);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;}</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
 <div class="line"><a name="l00111"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#a109eafef7816698801abe6b127e3baab">  111</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classAnglesCustomPlot.html#a109eafef7816698801abe6b127e3baab">AnglesCustomPlot::rescale</a>() {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="comment">// set ranges appropriate to show data</span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keywordflow">if</span> (m_bars) {</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        m_bars-&gt;rescaleAxes();</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        replot();</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        m_bars-&gt;<a class="code" href="classQCPAbstractPlottable.html#a1491c4a606bccd2d09e65e11b79eb882">rescaleAxes</a>();</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <a class="code" href="classQCustomPlot.html#aa4bfe7d70dbe67e81d877819b75ab9af">replot</a>();</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    }</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;}</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
@@ -218,7 +209,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>-&gt;button() == Qt::LeftButton) {</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <a class="code" href="classAnglesCustomPlot.html#a109eafef7816698801abe6b127e3baab">rescale</a>();</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    }</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    QCustomPlot::mouseDoubleClickEvent(<a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>);</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <a class="code" href="classQCustomPlot.html#a77591913a5b543bdc465dd5e08325a49">QCustomPlot::mouseDoubleClickEvent</a>(<a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>);</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;}</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
 <div class="line"><a name="l00126"></a><span class="lineno"><a class="line" href="classAnglesCustomPlot.html#a1e70a7e7f37ff8fac47a0e22987dec07">  126</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classAnglesCustomPlot.html#a1e70a7e7f37ff8fac47a0e22987dec07">AnglesCustomPlot::mousePressEvent</a>(QMouseEvent* <a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>) {</div>
@@ -230,7 +221,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                &amp;<a class="code" href="classAnglesCustomPlot.html#a22622afc0f09ec1d6b67f004e65ac8fa">AnglesCustomPlot::emitCloseTab</a>);</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        menu-&gt;popup(<a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>-&gt;globalPos());</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    }</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    QCustomPlot::mousePressEvent(<a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>);</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <a class="code" href="classQCustomPlot.html#abce84fa2c71e47b9295d67e8fce84bb4">QCustomPlot::mousePressEvent</a>(<a class="code" href="BitmapWindowSystem_8cpp.html#a676b8935df5792ce9ed1492ee266822e">event</a>);</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;}</div>
 <div class="ttc" id="aAnglesCustomPlot_8cpp_html_aab7e5b5b860b35934da9e600cb83f802"><div class="ttname"><a href="AnglesCustomPlot_8cpp.html#aab7e5b5b860b35934da9e600cb83f802">MAX_HISTOGRAM_SIZE</a></div><div class="ttdeci">static const unsigned MAX_HISTOGRAM_SIZE</div><div class="ttdoc">Default number of classes for associated histogram.</div><div class="ttdef"><b>Definition:</b> <a href="AnglesCustomPlot_8cpp_source.html#l00039">AnglesCustomPlot.cpp:39</a></div></div>
 <div class="ttc" id="aAnglesCustomPlot_8h_html"><div class="ttname"><a href="AnglesCustomPlot_8h.html">AnglesCustomPlot.h</a></div></div>
@@ -248,9 +239,26 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div class="ttc" id="aclassAnglesCustomPlot_html_ada244d1126c442c1602b59d825e00144"><div class="ttname"><a href="classAnglesCustomPlot.html#ada244d1126c442c1602b59d825e00144">AnglesCustomPlot::mouseDoubleClickEvent</a></div><div class="ttdeci">void mouseDoubleClickEvent(QMouseEvent *event) override</div><div class="ttdef"><b>Definition:</b> <a href="AnglesCustomPlot_8cpp_source.html#l00119">AnglesCustomPlot.cpp:119</a></div></div>
 <div class="ttc" id="aclassAnglesCustomPlot_html_adf729f33646bff94b8c58394b2a88b12"><div class="ttname"><a href="classAnglesCustomPlot.html#adf729f33646bff94b8c58394b2a88b12">AnglesCustomPlot::createQCPBars</a></div><div class="ttdeci">void createQCPBars(const QString &amp;xLabel)</div><div class="ttdef"><b>Definition:</b> <a href="AnglesCustomPlot_8cpp_source.html#l00092">AnglesCustomPlot.cpp:92</a></div></div>
 <div class="ttc" id="aclassCVLog_html_a34dde1c025c42c8df938bbd9fdf97e7f"><div class="ttname"><a href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a></div><div class="ttdeci">static bool Warning(const char *format,...)</div><div class="ttdoc">Prints out a formatted warning message in console.</div><div class="ttdef"><b>Definition:</b> <a href="CVLog_8cpp_source.html#l00133">CVLog.cpp:133</a></div></div>
+<div class="ttc" id="aclassQCPAbstractPlottable_html_a1491c4a606bccd2d09e65e11b79eb882"><div class="ttname"><a href="classQCPAbstractPlottable.html#a1491c4a606bccd2d09e65e11b79eb882">QCPAbstractPlottable::rescaleAxes</a></div><div class="ttdeci">void rescaleAxes(bool onlyEnlarge=false) const</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l11395">qcustomplot.cpp:11395</a></div></div>
+<div class="ttc" id="aclassQCPAbstractPlottable_html_a7a4b92144dca6453a1f0f210e27edc74"><div class="ttname"><a href="classQCPAbstractPlottable.html#a7a4b92144dca6453a1f0f210e27edc74">QCPAbstractPlottable::setBrush</a></div><div class="ttdeci">void setBrush(const QBrush &amp;brush)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l11178">qcustomplot.cpp:11178</a></div></div>
+<div class="ttc" id="aclassQCPAbstractPlottable_html_ab74b09ae4c0e7e13142fe4b5bf46cac7"><div class="ttname"><a href="classQCPAbstractPlottable.html#ab74b09ae4c0e7e13142fe4b5bf46cac7">QCPAbstractPlottable::setPen</a></div><div class="ttdeci">void setPen(const QPen &amp;pen)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l11167">qcustomplot.cpp:11167</a></div></div>
+<div class="ttc" id="aclassQCPAxis_html_a33bcc382c111c9f31bb0687352a2dea4"><div class="ttname"><a href="classQCPAxis.html#a33bcc382c111c9f31bb0687352a2dea4">QCPAxis::setLabel</a></div><div class="ttdeci">void setLabel(const QString &amp;str)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l08365">qcustomplot.cpp:8365</a></div></div>
+<div class="ttc" id="aclassQCPBars_html"><div class="ttname"><a href="classQCPBars.html">QCPBars</a></div><div class="ttdoc">A plottable representing a bar chart in a plot.</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8h_source.html#l06449">qcustomplot.h:6449</a></div></div>
+<div class="ttc" id="aclassQCPBars_html_a6dc562ec7120a8521e1061f2134367e4"><div class="ttname"><a href="classQCPBars.html#a6dc562ec7120a8521e1061f2134367e4">QCPBars::setData</a></div><div class="ttdeci">void setData(QSharedPointer&lt; QCPBarsDataContainer &gt; data)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l25176">qcustomplot.cpp:25176</a></div></div>
+<div class="ttc" id="aclassQCPBars_html_afec6116579d44d5b706e0fa5e5332507"><div class="ttname"><a href="classQCPBars.html#afec6116579d44d5b706e0fa5e5332507">QCPBars::setWidth</a></div><div class="ttdeci">void setWidth(double width)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l25206">qcustomplot.cpp:25206</a></div></div>
+<div class="ttc" id="aclassQCPLayerable_html_a4fd43e89be4a553ead41652565ff0581"><div class="ttname"><a href="classQCPLayerable.html#a4fd43e89be4a553ead41652565ff0581">QCPLayerable::setAntialiased</a></div><div class="ttdeci">void setAntialiased(bool enabled)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l01371">qcustomplot.cpp:1371</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_a5ee1e2f6ae27419deca53e75907c27e5"><div class="ttname"><a href="classQCustomPlot.html#a5ee1e2f6ae27419deca53e75907c27e5">QCustomPlot::setInteractions</a></div><div class="ttdeci">void setInteractions(const QCP::Interactions &amp;interactions)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l13623">qcustomplot.cpp:13623</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_a77591913a5b543bdc465dd5e08325a49"><div class="ttname"><a href="classQCustomPlot.html#a77591913a5b543bdc465dd5e08325a49">QCustomPlot::mouseDoubleClickEvent</a></div><div class="ttdeci">virtual void mouseDoubleClickEvent(QMouseEvent *event)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l15314">qcustomplot.cpp:15314</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_a9a79cd0158a4c7f30cbc702f0fd800e4"><div class="ttname"><a href="classQCustomPlot.html#a9a79cd0158a4c7f30cbc702f0fd800e4">QCustomPlot::xAxis</a></div><div class="ttdeci">QCPAxis * xAxis</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8h_source.html#l04393">qcustomplot.h:4393</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_aa4bfe7d70dbe67e81d877819b75ab9af"><div class="ttname"><a href="classQCustomPlot.html#aa4bfe7d70dbe67e81d877819b75ab9af">QCustomPlot::replot</a></div><div class="ttdeci">Q_SLOT void replot(QCustomPlot::RefreshPriority refreshPriority=QCustomPlot::rpRefreshHint)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l14909">qcustomplot.cpp:14909</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_abce84fa2c71e47b9295d67e8fce84bb4"><div class="ttname"><a href="classQCustomPlot.html#abce84fa2c71e47b9295d67e8fce84bb4">QCustomPlot::mousePressEvent</a></div><div class="ttdeci">virtual void mousePressEvent(QMouseEvent *event)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l15377">qcustomplot.cpp:15377</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_af3dafd56884208474f311d6226513ab2"><div class="ttname"><a href="classQCustomPlot.html#af3dafd56884208474f311d6226513ab2">QCustomPlot::removePlottable</a></div><div class="ttdeci">bool removePlottable(QCPAbstractPlottable *plottable)</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8cpp_source.html#l14055">qcustomplot.cpp:14055</a></div></div>
+<div class="ttc" id="aclassQCustomPlot_html_af6fea5679725b152c14facd920b19367"><div class="ttname"><a href="classQCustomPlot.html#af6fea5679725b152c14facd920b19367">QCustomPlot::yAxis</a></div><div class="ttdeci">QCPAxis * yAxis</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8h_source.html#l04393">qcustomplot.h:4393</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_abd71c5d761aba8eaba9c4b6d5754e16e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a></div><div class="ttdeci">static bool ValidValue(ScalarType value)</div><div class="ttdoc">Returns whether a scalar value is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00061">ScalarField.h:61</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
+<div class="ttc" id="anamespaceQCP_html_a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900"><div class="ttname"><a href="namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037a15aab687b04f7ecf86506102b41b0900">QCP::iRangeDrag</a></div><div class="ttdeci">@ iRangeDrag</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8h_source.html#l00324">qcustomplot.h:321</a></div></div>
+<div class="ttc" id="anamespaceQCP_html_a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0"><div class="ttname"><a href="namespaceQCP.html#a2ad6bb6281c7c2d593d4277b44c2b037ae91a9794d8323fe08229dda97d2c17a0">QCP::iRangeZoom</a></div><div class="ttdeci">@ iRangeZoom</div><div class="ttdef"><b>Definition:</b> <a href="app_2extern_2QCustomPlot_2qcustomplot_8h_source.html#l00328">qcustomplot.h:325</a></div></div>
+<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="sfEditDlg_8h_source.html#l00016">sfEditDlg.h:16</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a2494df475cd71e560addaafdd73ad9e4"><div class="ttname"><a href="namespaceecvColor.html#a2494df475cd71e560addaafdd73ad9e4">ecvColor::lighter</a></div><div class="ttdeci">constexpr Rgbaf lighter(0.83f, 0.83f, 0.83f, 1.00f)</div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -259,7 +267,7 @@ $(document).ready(function(){initNavTree('AnglesCustomPlot_8cpp_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_b07c9c898a41c3da2da9db5ccc16b042.html">qG3Point</a></li><li class="navelem"><a class="el" href="dir_d6e948405f28496c7e780d79209d7e4f.html">src</a></li><li class="navelem"><a class="el" href="AnglesCustomPlot_8cpp.html">AnglesCustomPlot.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

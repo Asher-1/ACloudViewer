@@ -47,9 +47,6 @@ var namespacecloudViewer_1_1t_1_1io =
     [ "ParseNpyPreamble", "namespacecloudViewer_1_1t_1_1io.html#ac51fcd745b24ca5738fdcd76a6a98c53", null ],
     [ "ParsePropertyDict", "namespacecloudViewer_1_1t_1_1io.html#ae18bf211c8b3aeeb09eda1527462a09e", null ],
     [ "ParseZipFooter", "namespacecloudViewer_1_1t_1_1io.html#a26a75f6d99de27a0e0357ff3852cd7c5", null ],
-    [ "pybind_class_io", "namespacecloudViewer_1_1t_1_1io.html#abc94fe319265382349c77781e5f13f61", null ],
-    [ "pybind_io", "namespacecloudViewer_1_1t_1_1io.html#a66081506b9d091000f76fdbde9fb469c", null ],
-    [ "pybind_sensor", "namespacecloudViewer_1_1t_1_1io.html#a5e9152394b434fe2fd026a8030ff1c42", null ],
     [ "ReadASCIIPCDColorsFromField", "namespacecloudViewer_1_1t_1_1io.html#a309e436dcbfc0dfec4c52783c0355062", null ],
     [ "ReadASCIIPCDElementsFromField", "namespacecloudViewer_1_1t_1_1io.html#abf7bf52bfeaf8c4e4c6fd8a151e34e96", null ],
     [ "ReadBinaryPCDColorsFromField", "namespacecloudViewer_1_1t_1_1io.html#a00a71585d26abde3891ee733b6e21f3f", null ],
@@ -136,6 +133,5 @@ var namespacecloudViewer_1_1t_1_1io =
     [ "kCloudViewerImageIODefaultQuality", "namespacecloudViewer_1_1t_1_1io.html#a277ccf2b804e6ce151171efccec02659", null ],
     [ "kPostProcessFlags_compulsory", "namespacecloudViewer_1_1t_1_1io.html#a9d204f70c5c7926e01f009324db41d9b", null ],
     [ "kPostProcessFlags_fast", "namespacecloudViewer_1_1t_1_1io.html#a346e544c26ab8e909d056b6b824a6bfd", null ],
-    [ "map_shared_argument_docstrings", "namespacecloudViewer_1_1t_1_1io.html#a79b38b0e029b53745d306317d45d793e", null ],
     [ "standard_config", "namespacecloudViewer_1_1t_1_1io.html#ad8cc70e3df581ce2b26c7a1a0b00415e", null ]
 ];

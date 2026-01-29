@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,18 +97,18 @@ $(document).ready(function(){initNavTree('ReconstructionManagerWidget_8cpp_sourc
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ReconstructionManagerWidget_8h.html">ReconstructionManagerWidget.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;base/reconstruction_manager.h&quot;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="reconstruction__manager_8h.html">base/reconstruction_manager.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">using namespace </span><a class="code" href="namespacecolmap.html">colmap</a>;</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">const</span> std::size_t <a class="code" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a5960b1fa9451c989e1e6be7bf141840e">ReconstructionManagerWidget::kNewestReconstructionIdx</a> =</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;        <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;size_t&gt;::max</a>();</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">const</span> std::size_t <a class="code" href="classcolmap_1_1ReconstructionManagerWidget.html#abd648d6b4d8b5a09ba5a7278f9402d82">ReconstructionManagerWidget::kNewestReconstructionIdx</a> =</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;        std::numeric_limits&lt;size_t&gt;::max();</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a07e98a4c690742eecd458560a011080f">   19</a></span>&#160;<a class="code" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a07e98a4c690742eecd458560a011080f">ReconstructionManagerWidget::ReconstructionManagerWidget</a>(</div>
+<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a07e98a4c690742eecd458560a011080f">   19</a></span>&#160;<a class="code" href="classcolmap_1_1ReconstructionManagerWidget.html#ad0e0a6e881bb2ef5658e2624183a6f88">ReconstructionManagerWidget::ReconstructionManagerWidget</a>(</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;        QWidget* parent,</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;        <span class="keyword">const</span> colmap::ReconstructionManager* reconstruction_manager)</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcolmap_1_1ReconstructionManager.html">colmap::ReconstructionManager</a>* reconstruction_manager)</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    : QComboBox(parent), reconstruction_manager_(reconstruction_manager) {</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    QFont font;</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    font.setPointSize(10);</div>
@@ -138,21 +129,21 @@ $(document).ready(function(){initNavTree('ReconstructionManagerWidget_8cpp_sourc
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    addItem(<span class="stringliteral">&quot;Newest model&quot;</span>);</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordtype">int</span> max_width = 0;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; reconstruction_manager_-&gt;Size(); ++i) {</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; reconstruction_manager_-&gt;<a class="code" href="classcolmap_1_1ReconstructionManager.html#a2c9178b2054a1737bbe2e0a761c68ec9">Size</a>(); ++i) {</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <span class="keyword">const</span> QString item = QString().asprintf(</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                <span class="stringliteral">&quot;Model %d (%d images, %d points)&quot;</span>, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(i + 1),</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                        reconstruction_manager_-&gt;Get(i).NumRegImages()),</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                        reconstruction_manager_-&gt;<a class="code" href="classcolmap_1_1ReconstructionManager.html#a63345a3c5ce6399d8beb0f820ba7779b">Get</a>(i).<a class="code" href="classcolmap_1_1Reconstruction.html#a15a0e04a6f89fdbee53ead6152188e71">NumRegImages</a>()),</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                        reconstruction_manager_-&gt;Get(i).NumPoints3D()));</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                        reconstruction_manager_-&gt;<a class="code" href="classcolmap_1_1ReconstructionManager.html#a63345a3c5ce6399d8beb0f820ba7779b">Get</a>(i).<a class="code" href="classcolmap_1_1Reconstruction.html#a600580d6bfd2bbcaf763afe17f60f4e2">NumPoints3D</a>()));</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        QFontMetrics font_metrics(view()-&gt;font());</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        max_width = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(max_width, font_metrics.horizontalAdvance(item));</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        max_width = std::max(max_width, font_metrics.horizontalAdvance(item));</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        addItem(item);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    }</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    view()-&gt;setMinimumWidth(max_width);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">if</span> (reconstruction_manager_-&gt;Size() == 0) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">if</span> (reconstruction_manager_-&gt;<a class="code" href="classcolmap_1_1ReconstructionManager.html#a2c9178b2054a1737bbe2e0a761c68ec9">Size</a>() == 0) {</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        setCurrentIndex(0);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        setCurrentIndex(prev_idx);</div>
@@ -162,7 +153,7 @@ $(document).ready(function(){initNavTree('ReconstructionManagerWidget_8cpp_sourc
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;}</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a1711450472ddeecf3f0d35a95c2c489c">   65</a></span>&#160;<span class="keywordtype">size_t</span> <a class="code" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a1711450472ddeecf3f0d35a95c2c489c">ReconstructionManagerWidget::SelectedReconstructionIdx</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">if</span> (reconstruction_manager_-&gt;Size() == 0) {</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">if</span> (reconstruction_manager_-&gt;<a class="code" href="classcolmap_1_1ReconstructionManager.html#a2c9178b2054a1737bbe2e0a761c68ec9">Size</a>() == 0) {</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a5960b1fa9451c989e1e6be7bf141840e">kNewestReconstructionIdx</a>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordflow">if</span> (currentIndex() == 0) {</div>
@@ -174,7 +165,7 @@ $(document).ready(function(){initNavTree('ReconstructionManagerWidget_8cpp_sourc
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;}</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
 <div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a044040eed9903660acaf1b24c0be47b8">   77</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1ReconstructionManagerWidget.html#a044040eed9903660acaf1b24c0be47b8">ReconstructionManagerWidget::SelectReconstruction</a>(<span class="keyword">const</span> <span class="keywordtype">size_t</span> idx) {</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">if</span> (reconstruction_manager_-&gt;Size() == 0) {</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">if</span> (reconstruction_manager_-&gt;<a class="code" href="classcolmap_1_1ReconstructionManager.html#a2c9178b2054a1737bbe2e0a761c68ec9">Size</a>() == 0) {</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        blockSignals(<span class="keyword">true</span>);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        setCurrentIndex(0);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        blockSignals(<span class="keyword">false</span>);</div>
@@ -188,20 +179,26 @@ $(document).ready(function(){initNavTree('ReconstructionManagerWidget_8cpp_sourc
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aReconstructionManagerWidget_8h_html"><div class="ttname"><a href="ReconstructionManagerWidget_8h.html">ReconstructionManagerWidget.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReconstructionManagerWidget_html_a044040eed9903660acaf1b24c0be47b8"><div class="ttname"><a href="classcloudViewer_1_1ReconstructionManagerWidget.html#a044040eed9903660acaf1b24c0be47b8">cloudViewer::ReconstructionManagerWidget::SelectReconstruction</a></div><div class="ttdeci">void SelectReconstruction(const size_t idx)</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionManagerWidget_8cpp_source.html#l00077">ReconstructionManagerWidget.cpp:77</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ReconstructionManagerWidget_html_a07e98a4c690742eecd458560a011080f"><div class="ttname"><a href="classcloudViewer_1_1ReconstructionManagerWidget.html#a07e98a4c690742eecd458560a011080f">cloudViewer::ReconstructionManagerWidget::ReconstructionManagerWidget</a></div><div class="ttdeci">ReconstructionManagerWidget(QWidget *parent, const colmap::ReconstructionManager *reconstruction_manager)</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionManagerWidget_8cpp_source.html#l00019">ReconstructionManagerWidget.cpp:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReconstructionManagerWidget_html_a1711450472ddeecf3f0d35a95c2c489c"><div class="ttname"><a href="classcloudViewer_1_1ReconstructionManagerWidget.html#a1711450472ddeecf3f0d35a95c2c489c">cloudViewer::ReconstructionManagerWidget::SelectedReconstructionIdx</a></div><div class="ttdeci">size_t SelectedReconstructionIdx() const</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionManagerWidget_8cpp_source.html#l00065">ReconstructionManagerWidget.cpp:65</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReconstructionManagerWidget_html_a5960b1fa9451c989e1e6be7bf141840e"><div class="ttname"><a href="classcloudViewer_1_1ReconstructionManagerWidget.html#a5960b1fa9451c989e1e6be7bf141840e">cloudViewer::ReconstructionManagerWidget::kNewestReconstructionIdx</a></div><div class="ttdeci">static const size_t kNewestReconstructionIdx</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionManagerWidget_8h_source.html#l00019">ReconstructionManagerWidget.h:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReconstructionManagerWidget_html_a7eb682c12b3c640f460a849da4ae68d9"><div class="ttname"><a href="classcloudViewer_1_1ReconstructionManagerWidget.html#a7eb682c12b3c640f460a849da4ae68d9">cloudViewer::ReconstructionManagerWidget::Update</a></div><div class="ttdeci">void Update()</div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionManagerWidget_8cpp_source.html#l00028">ReconstructionManagerWidget.cpp:28</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManagerWidget_html_abd648d6b4d8b5a09ba5a7278f9402d82"><div class="ttname"><a href="classcolmap_1_1ReconstructionManagerWidget.html#abd648d6b4d8b5a09ba5a7278f9402d82">colmap::ReconstructionManagerWidget::kNewestReconstructionIdx</a></div><div class="ttdeci">static const size_t kNewestReconstructionIdx</div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager__widget_8h_source.html#l00018">reconstruction_manager_widget.h:18</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManagerWidget_html_ad0e0a6e881bb2ef5658e2624183a6f88"><div class="ttname"><a href="classcolmap_1_1ReconstructionManagerWidget.html#ad0e0a6e881bb2ef5658e2624183a6f88">colmap::ReconstructionManagerWidget::ReconstructionManagerWidget</a></div><div class="ttdeci">ReconstructionManagerWidget(QWidget *parent, const ReconstructionManager *reconstruction_manager)</div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager__widget_8cc_source.html#l00042">reconstruction_manager_widget.cc:42</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManager_html"><div class="ttname"><a href="classcolmap_1_1ReconstructionManager.html">colmap::ReconstructionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager_8h_source.html#l00016">reconstruction_manager.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManager_html_a2c9178b2054a1737bbe2e0a761c68ec9"><div class="ttname"><a href="classcolmap_1_1ReconstructionManager.html#a2c9178b2054a1737bbe2e0a761c68ec9">colmap::ReconstructionManager::Size</a></div><div class="ttdeci">size_t Size() const</div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager_8cc_source.html#l00054">reconstruction_manager.cc:54</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ReconstructionManager_html_a63345a3c5ce6399d8beb0f820ba7779b"><div class="ttname"><a href="classcolmap_1_1ReconstructionManager.html#a63345a3c5ce6399d8beb0f820ba7779b">colmap::ReconstructionManager::Get</a></div><div class="ttdeci">const Reconstruction &amp; Get(const size_t idx) const</div><div class="ttdef"><b>Definition:</b> <a href="reconstruction__manager_8cc_source.html#l00056">reconstruction_manager.cc:56</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1Reconstruction_html_a15a0e04a6f89fdbee53ead6152188e71"><div class="ttname"><a href="classcolmap_1_1Reconstruction.html#a15a0e04a6f89fdbee53ead6152188e71">colmap::Reconstruction::NumRegImages</a></div><div class="ttdeci">size_t NumRegImages() const</div><div class="ttdef"><b>Definition:</b> <a href="reconstruction_8h_source.html#l00440">reconstruction.h:440</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1Reconstruction_html_a600580d6bfd2bbcaf763afe17f60f4e2"><div class="ttname"><a href="classcolmap_1_1Reconstruction.html#a600580d6bfd2bbcaf763afe17f60f4e2">colmap::Reconstruction::NumPoints3D</a></div><div class="ttdeci">size_t NumPoints3D() const</div><div class="ttdef"><b>Definition:</b> <a href="reconstruction_8h_source.html#l00442">reconstruction.h:442</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecolmap_html"><div class="ttname"><a href="namespacecolmap.html">colmap</a></div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00017">AutomaticReconstructionController.h:17</a></div></div>
+<div class="ttc" id="areconstruction__manager_8h_html"><div class="ttname"><a href="reconstruction__manager_8h.html">reconstruction_manager.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="ReconstructionManagerWidget_8cpp.html">ReconstructionManagerWidget.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -6,7 +6,7 @@ var classecvGenericMeasurementTools =
       [ "PROTRACTOR_WIDGET", "classecvGenericMeasurementTools.html#a27ad6efa46229dc49d45b97e1c439738aa1a06952f964738c49eac7423a7a27c8", null ]
     ] ],
     [ "ecvGenericMeasurementTools", "classecvGenericMeasurementTools.html#a74abf6d49c8003d926e89fa13bb0b315", null ],
-    [ "~ecvGenericMeasurementTools", "classecvGenericMeasurementTools.html#aabdc77aec7584db54d952da12475c2f7", null ],
+    [ "~ecvGenericMeasurementTools", "classecvGenericMeasurementTools.html#aea9767f8497878ba84c1d2ea5ed7e1f4", null ],
     [ "clear", "classecvGenericMeasurementTools.html#aeef11e0d7c5aeb3099d4e13f5d148358", null ],
     [ "clearPickingCache", "classecvGenericMeasurementTools.html#aa4c8ebaa755a11da965c3d68b377cf57", null ],
     [ "disableShortcuts", "classecvGenericMeasurementTools.html#ad7dc5190d59b3d823deccbdd6bce89b7", null ],
@@ -41,7 +41,7 @@ var classecvGenericMeasurementTools =
     [ "setVerticalJustification", "classecvGenericMeasurementTools.html#a5408571077dbe424a9fb9debcb94f374", null ],
     [ "start", "classecvGenericMeasurementTools.html#a8ef70d9637e4a4fcbc0bf097b8da03f8", null ],
     [ "unlockInteraction", "classecvGenericMeasurementTools.html#a9a4a4d36ee53dbf9c3b7299d74b84448", null ],
-    [ "update", "classecvGenericMeasurementTools.html#a5acd4c32e873e846940935da53348bdf", null ],
+    [ "update", "classecvGenericMeasurementTools.html#ae0562cd2c30f3292811d5183cb2291ba", null ],
     [ "m_associatedEntity", "classecvGenericMeasurementTools.html#a68ca74c1b1c84ecbfdce5bc030d05613", null ],
     [ "m_measurementType", "classecvGenericMeasurementTools.html#a60b2dc68d24a8b34a116b6ce118cace5", null ]
 ];

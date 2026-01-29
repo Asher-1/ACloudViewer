@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -114,7 +105,7 @@ $(document).ready(function(){initNavTree('RGBDVideoMetadata_8cpp_source.html',''
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>t {</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">namespace </span>io {</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
-<div class="line"><a name="l00018"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a8c9925031b74480234577906cf628e02">   18</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a8c9925031b74480234577906cf628e02">RGBDVideoMetadata::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00018"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a8c9925031b74480234577906cf628e02">   18</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a8c9925031b74480234577906cf628e02">RGBDVideoMetadata::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a64b7d0692ef4c6c52c28838735c8fb89">intrinsics_</a>.<a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html#aad83e8889778be51ac8853e0dc816863">ConvertToJsonValue</a>(value);</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    value[<span class="stringliteral">&quot;device_name&quot;</span>] = <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#aa04f9df30787327a2cef977ae7d98f1b">device_name_</a>;</div>
@@ -131,7 +122,7 @@ $(document).ready(function(){initNavTree('RGBDVideoMetadata_8cpp_source.html',''
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;}</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a4ed8f8a130823b7c7eb68a0bbb3332ba">   35</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a4ed8f8a130823b7c7eb68a0bbb3332ba">RGBDVideoMetadata::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a4ed8f8a130823b7c7eb68a0bbb3332ba">   35</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a4ed8f8a130823b7c7eb68a0bbb3332ba">RGBDVideoMetadata::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a64b7d0692ef4c6c52c28838735c8fb89">intrinsics_</a>.<a class="code" href="classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html#a369325fc469dd292bbf45f32f5558b96">ConvertFromJsonValue</a>(value);</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <a class="code" href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a3d21a9a1a7e6732fce94b2bbd37371a8">serial_number_</a> = value[<span class="stringliteral">&quot;serial_number&quot;</span>].asString();</div>
@@ -151,8 +142,8 @@ $(document).ready(function(){initNavTree('RGBDVideoMetadata_8cpp_source.html',''
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;}  <span class="comment">// namespace t</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aRGBDVideoMetadata_8h_html"><div class="ttname"><a href="RGBDVideoMetadata_8h.html">RGBDVideoMetadata.h</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1camera_1_1PinholeCameraIntrinsic_html_a369325fc469dd292bbf45f32f5558b96"><div class="ttname"><a href="classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html#a369325fc469dd292bbf45f32f5558b96">cloudViewer::camera::PinholeCameraIntrinsic::ConvertFromJsonValue</a></div><div class="ttdeci">bool ConvertFromJsonValue(const Json::Value &amp;value) override</div></div>
-<div class="ttc" id="aclasscloudViewer_1_1camera_1_1PinholeCameraIntrinsic_html_aad83e8889778be51ac8853e0dc816863"><div class="ttname"><a href="classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html#aad83e8889778be51ac8853e0dc816863">cloudViewer::camera::PinholeCameraIntrinsic::ConvertToJsonValue</a></div><div class="ttdeci">bool ConvertToJsonValue(Json::Value &amp;value) const override</div></div>
+<div class="ttc" id="aclasscloudViewer_1_1camera_1_1PinholeCameraIntrinsic_html_a369325fc469dd292bbf45f32f5558b96"><div class="ttname"><a href="classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html#a369325fc469dd292bbf45f32f5558b96">cloudViewer::camera::PinholeCameraIntrinsic::ConvertFromJsonValue</a></div><div class="ttdeci">bool ConvertFromJsonValue(const Json::Value &amp;value) override</div><div class="ttdef"><b>Definition:</b> <a href="PinholeCameraIntrinsic_8cpp_source.html#l00055">PinholeCameraIntrinsic.cpp:55</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1camera_1_1PinholeCameraIntrinsic_html_aad83e8889778be51ac8853e0dc816863"><div class="ttname"><a href="classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html#aad83e8889778be51ac8853e0dc816863">cloudViewer::camera::PinholeCameraIntrinsic::ConvertToJsonValue</a></div><div class="ttdeci">bool ConvertToJsonValue(Json::Value &amp;value) const override</div><div class="ttdef"><b>Definition:</b> <a href="PinholeCameraIntrinsic_8cpp_source.html#l00045">PinholeCameraIntrinsic.cpp:45</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata_html_a049bbdc0b0b709ab18a64f6766d4af2e"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a049bbdc0b0b709ab18a64f6766d4af2e">cloudViewer::t::io::RGBDVideoMetadata::color_format_</a></div><div class="ttdeci">std::string color_format_</div><div class="ttdoc">Pixel format for color data.</div><div class="ttdef"><b>Definition:</b> <a href="RGBDVideoMetadata_8h_source.html#l00063">RGBDVideoMetadata.h:63</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata_html_a1e743a31b152d16e6634301113887ee9"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a1e743a31b152d16e6634301113887ee9">cloudViewer::t::io::RGBDVideoMetadata::fps_</a></div><div class="ttdeci">double fps_</div><div class="ttdoc">Frame rate.</div><div class="ttdef"><b>Definition:</b> <a href="RGBDVideoMetadata_8h_source.html#l00060">RGBDVideoMetadata.h:60</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata_html_a3d21a9a1a7e6732fce94b2bbd37371a8"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#a3d21a9a1a7e6732fce94b2bbd37371a8">cloudViewer::t::io::RGBDVideoMetadata::serial_number_</a></div><div class="ttdeci">std::string serial_number_</div><div class="ttdoc">Capture device serial number.</div><div class="ttdef"><b>Definition:</b> <a href="RGBDVideoMetadata_8h_source.html#l00046">RGBDVideoMetadata.h:46</a></div></div>
@@ -165,14 +156,15 @@ $(document).ready(function(){initNavTree('RGBDVideoMetadata_8cpp_source.html',''
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata_html_abdff62df824f91cfdd66ec7e1b6aac6b"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#abdff62df824f91cfdd66ec7e1b6aac6b">cloudViewer::t::io::RGBDVideoMetadata::depth_scale_</a></div><div class="ttdeci">double depth_scale_</div><div class="ttdef"><b>Definition:</b> <a href="RGBDVideoMetadata_8h_source.html#l00079">RGBDVideoMetadata.h:79</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata_html_add895ba91d3fc74c1bbc79739c78345d"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#add895ba91d3fc74c1bbc79739c78345d">cloudViewer::t::io::RGBDVideoMetadata::height_</a></div><div class="ttdeci">int height_</div><div class="ttdoc">Height of the video frame.</div><div class="ttdef"><b>Definition:</b> <a href="RGBDVideoMetadata_8h_source.html#l00055">RGBDVideoMetadata.h:55</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata_html_aee7734242211843b7c5df8f11d6518e5"><div class="ttname"><a href="classcloudViewer_1_1t_1_1io_1_1RGBDVideoMetadata.html#aee7734242211843b7c5df8f11d6518e5">cloudViewer::t::io::RGBDVideoMetadata::stream_length_usec_</a></div><div class="ttdeci">uint64_t stream_length_usec_</div><div class="ttdoc">Length of the video (usec). 0 for live capture.</div><div class="ttdef"><b>Definition:</b> <a href="RGBDVideoMetadata_8h_source.html#l00049">RGBDVideoMetadata.h:49</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="avtkDistributedTrivialProducer_8cxx_html_a1ee6276fc24448fd28f1d17b9f02e438"><div class="ttname"><a href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Value</a></div><div class="ttdeci">static vtkPVTrivialProducerStaticInternal Value</div><div class="ttdef"><b>Definition:</b> <a href="vtkDistributedTrivialProducer_8cxx_source.html#l00065">vtkDistributedTrivialProducer.cxx:65</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_69f8b599ab6abe28788f204e4ebacea4.html">sensor</a></li><li class="navelem"><a class="el" href="RGBDVideoMetadata_8cpp.html">RGBDVideoMetadata.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:28 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

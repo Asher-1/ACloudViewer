@@ -1,3 +1,26 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classMarchingSquares.html" title=" " alt="" coords="5,5,140,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,373,129,399"/>
+<area shape="rect" id="node2" href="$structpcl_1_1visualization_1_1PCLContextImageItem.html" title=" " alt="" coords="193,300,369,341"/>
+<area shape="rect" id="node3" href="$structpcl_1_1visualization_1_1PCLContextItem.html" title=" " alt="" coords="214,365,349,407"/>
+<area shape="rect" id="node24" href="$classvtkContext2DScalarBarActor_1_1vtkScalarBarItem.html" title=" " alt="" coords="177,431,385,472"/>
+<area shape="rect" id="node4" href="$structPclUtils_1_1context__items_1_1Circle.html" title=" " alt="" coords="445,5,617,47"/>
+<area shape="rect" id="node6" href="$structPclUtils_1_1context__items_1_1Line.html" title=" " alt="" coords="445,71,617,112"/>
+<area shape="rect" id="node7" href="$structPclUtils_1_1context__items_1_1Point.html" title=" " alt="" coords="445,136,617,177"/>
+<area shape="rect" id="node8" href="$structPclUtils_1_1context__items_1_1Points.html" title=" " alt="" coords="445,201,617,243"/>
+<area shape="rect" id="node11" href="$structPclUtils_1_1context__items_1_1Rectangle.html" title=" " alt="" coords="445,267,617,308"/>
+<area shape="rect" id="node13" href="$structPclUtils_1_1context__items_1_1Text.html" title=" " alt="" coords="445,332,617,373"/>
+<area shape="rect" id="node14" href="$structpcl_1_1visualization_1_1context__items_1_1Circle.html" title=" " alt="" coords="447,397,615,439"/>
+<area shape="rect" id="node16" href="$structpcl_1_1visualization_1_1context__items_1_1Line.html" title=" " alt="" coords="452,463,611,504"/>
+<area shape="rect" id="node17" href="$structpcl_1_1visualization_1_1context__items_1_1Point.html" title=" " alt="" coords="449,528,613,569"/>
+<area shape="rect" id="node18" href="$structpcl_1_1visualization_1_1context__items_1_1Points.html" title=" " alt="" coords="446,593,617,635"/>
+<area shape="rect" id="node21" href="$structpcl_1_1visualization_1_1context__items_1_1Rectangle.html" title=" " alt="" coords="433,659,629,700"/>
+<area shape="rect" id="node23" href="$structpcl_1_1visualization_1_1context__items_1_1Text.html" title=" " alt="" coords="452,724,611,765"/>
+<area shape="rect" id="node5" href="$structPclUtils_1_1context__items_1_1Disk.html" title=" " alt="" coords="707,5,879,47"/>
+<area shape="rect" id="node9" href="$structPclUtils_1_1context__items_1_1Markers.html" title=" " alt="" coords="707,136,879,177"/>
+<area shape="rect" id="node10" href="$structPclUtils_1_1context__items_1_1Polygon.html" title=" " alt="" coords="707,201,879,243"/>
+<area shape="rect" id="node12" href="$structPclUtils_1_1context__items_1_1FilledRectangle.html" title=" " alt="" coords="707,267,879,308"/>
+<area shape="rect" id="node15" href="$structpcl_1_1visualization_1_1context__items_1_1Disk.html" title=" " alt="" coords="713,397,873,439"/>
+<area shape="rect" id="node19" href="$structpcl_1_1visualization_1_1context__items_1_1Markers.html" title=" " alt="" coords="701,528,884,569"/>
+<area shape="rect" id="node20" href="$structpcl_1_1visualization_1_1context__items_1_1Polygon.html" title=" " alt="" coords="701,593,884,635"/>
+<area shape="rect" id="node22" href="$structpcl_1_1visualization_1_1context__items_1_1FilledRectangle.html" title=" " alt="" coords="677,659,908,700"/>
 </map>

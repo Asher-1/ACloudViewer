@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -180,8 +171,8 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="classecvAnimationParamDlg.html#a5517a9bd94c6491808092beecc8014b4">   82</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classecvAnimationParamDlg.html#a5517a9bd94c6491808092beecc8014b4">ecvAnimationParamDlg::startAnimation</a>() {</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="comment">// we&#39;ll take the rendering time into account!</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    QElapsedTimer <a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.start();</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    QElapsedTimer timer;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    timer.start();</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="comment">// show progress dialog</span></div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordtype">int</span> viewport_num = 0;</div>
@@ -210,7 +201,7 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <span class="comment">// next frame</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.restart();</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        timer.restart();</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <a class="code" href="classecvDisplayTools.html#a9a15f4dd815d74d7a470f959d7ca7e7b">ecvDisplayTools::RotateWithAxis</a>(pos, rotationAxis, angle_step, 0);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <span class="keywordflow">if</span> (this-&gt;<a class="code" href="classecvAnimationParamDlg.html#af39de282bdd22e0cad421df4a7b0bbc2">isSavingViewport</a>() &amp;&amp; this-&gt;<a class="code" href="classecvAnimationParamDlg.html#a2b6a427ae164cd77ca099b69a6fd589a">getMainWindow</a>()) {</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;            this-&gt;<a class="code" href="classecvAnimationParamDlg.html#a2b6a427ae164cd77ca099b69a6fd589a">getMainWindow</a>()-&gt;<a class="code" href="classMainWindow.html#a4f8d52aa27e7dc9748afbd7c88743dff">doActionSaveViewportAsCamera</a>();</div>
@@ -227,7 +218,7 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        }</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        qint64 dt_ms = <a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>.elapsed();</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        qint64 dt_ms = timer.elapsed();</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <span class="comment">// remaining time</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordflow">if</span> (dt_ms &lt; delay_ms) {</div>
@@ -296,7 +287,7 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <a class="code" href="classccOverlayDialog.html#a7ff1880c9a1fd93c1d9452f2f847de30">m_processing</a> = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160; </div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="comment">// cache history viewport params</span></div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <a class="code" href="classecvAnimationParamDlg.html#a4b72a6d0256a150decac04094671ba24">viewportParamsHistory</a> = <a class="code" href="classecvDisplayTools.html#a40214ed48a21ecfdef4cc1cee881aef5">ecvDisplayTools::GetViewportParameters</a>();</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <a class="code" href="classecvAnimationParamDlg.html#a4b72a6d0256a150decac04094671ba24">viewportParamsHistory</a> = <a class="code" href="classecvDisplayTools.html#af2a5da3ebd2395002b857bce5bf74a84">ecvDisplayTools::GetViewportParameters</a>();</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;}</div>
@@ -332,7 +323,7 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160; </div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classccOverlayDialog.html#ac59a824012ef2d0af6c8fabd17521894">m_associatedWin</a>) {</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <a class="code" href="classecvAnimationParamDlg.html#a64a096d50206ca632b667b31a9112854">initWith</a>(<a class="code" href="classccOverlayDialog.html#ac59a824012ef2d0af6c8fabd17521894">m_associatedWin</a>);</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        connect(<a class="code" href="classecvDisplayTools.html#a7c54cc54ae517cfa6aa5c35ea24e041a">ecvDisplayTools::TheInstance</a>(), &amp;ecvDisplayTools::destroyed,</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        connect(<a class="code" href="classecvDisplayTools.html#a04e490a4a3a93d779ab02b0036166ac8">ecvDisplayTools::TheInstance</a>(), &amp;ecvDisplayTools::destroyed,</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                <span class="keyword">this</span>, &amp;QWidget::hide);</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    }</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>
@@ -386,7 +377,7 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;}</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160; </div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="keywordtype">void</span> ecvAnimationParamDlg::reset() {</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <a class="code" href="classecvDisplayTools.html#a80d5c1b5b0197868a9c05f58c87c5de3">ecvDisplayTools::SetViewportParameters</a>(<a class="code" href="classecvAnimationParamDlg.html#a4b72a6d0256a150decac04094671ba24">viewportParamsHistory</a>);</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <a class="code" href="classecvDisplayTools.html#a449751718037ee7b9b4a40bde25b8659">ecvDisplayTools::SetViewportParameters</a>(<a class="code" href="classecvAnimationParamDlg.html#a4b72a6d0256a150decac04094671ba24">viewportParamsHistory</a>);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <a class="code" href="classecvDisplayTools.html#ad1b3d8337bff3d3f8c8200b608411a88">ecvDisplayTools::UpdateScreen</a>();</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;}</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
@@ -432,14 +423,14 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        }</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="classccOverlayDialog.html#ac59a824012ef2d0af6c8fabd17521894">m_associatedWin</a>) {</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">if</span> (state) {</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            <a class="code" href="classecvDisplayTools.html#acd87a45a35772ff841c2bc261b5c633f">ecvDisplayTools::SetPickingMode</a>(</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            <a class="code" href="classecvDisplayTools.html#a5f1fdfa9bfa90cb53a467e9931e0ddf2">ecvDisplayTools::SetPickingMode</a>(</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                    <a class="code" href="classecvDisplayTools.html#a3f90ade902c599646fc66befb8f4bb47a628c15573added7d12d711fd60c797ee">ecvDisplayTools::POINT_OR_TRIANGLE_PICKING</a>);</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;            connect(<a class="code" href="classecvDisplayTools.html#a7c54cc54ae517cfa6aa5c35ea24e041a">ecvDisplayTools::TheInstance</a>(),</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;            connect(<a class="code" href="classecvDisplayTools.html#a04e490a4a3a93d779ab02b0036166ac8">ecvDisplayTools::TheInstance</a>(),</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                    &amp;<a class="code" href="classecvDisplayTools.html#a7cd316e0d66700f094a4fe71200e19b6">ecvDisplayTools::itemPicked</a>, <span class="keyword">this</span>,</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                    &amp;<a class="code" href="classecvAnimationParamDlg.html#ae1a40190942e3cf2e0f7057f43c53321">ecvAnimationParamDlg::processPickedItem</a>);</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            <a class="code" href="classecvDisplayTools.html#acd87a45a35772ff841c2bc261b5c633f">ecvDisplayTools::SetPickingMode</a>(<a class="code" href="classecvDisplayTools.html#a3f90ade902c599646fc66befb8f4bb47a07352f6cd91c9ee638103ab855c0db90">ecvDisplayTools::DEFAULT_PICKING</a>);</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;            disconnect(<a class="code" href="classecvDisplayTools.html#a7c54cc54ae517cfa6aa5c35ea24e041a">ecvDisplayTools::TheInstance</a>(),</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            <a class="code" href="classecvDisplayTools.html#a5f1fdfa9bfa90cb53a467e9931e0ddf2">ecvDisplayTools::SetPickingMode</a>(<a class="code" href="classecvDisplayTools.html#a3f90ade902c599646fc66befb8f4bb47a07352f6cd91c9ee638103ab855c0db90">ecvDisplayTools::DEFAULT_PICKING</a>);</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;            disconnect(<a class="code" href="classecvDisplayTools.html#a04e490a4a3a93d779ab02b0036166ac8">ecvDisplayTools::TheInstance</a>(),</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                       &amp;<a class="code" href="classecvDisplayTools.html#a7cd316e0d66700f094a4fe71200e19b6">ecvDisplayTools::itemPicked</a>, <span class="keyword">this</span>,</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                       &amp;<a class="code" href="classecvAnimationParamDlg.html#ae1a40190942e3cf2e0f7057f43c53321">ecvAnimationParamDlg::processPickedItem</a>);</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        }</div>
@@ -500,23 +491,22 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div class="ttc" id="aclassecvAnimationParamDlg_html_ae983d79bb1bd9cd0d0ceeab1c035e6eb"><div class="ttname"><a href="classecvAnimationParamDlg.html#ae983d79bb1bd9cd0d0ceeab1c035e6eb">ecvAnimationParamDlg::AxisType</a></div><div class="ttdeci">AxisType</div><div class="ttdef"><b>Definition:</b> <a href="ecvAnimationParamDlg_8h_source.html#l00040">ecvAnimationParamDlg.h:40</a></div></div>
 <div class="ttc" id="aclassecvAnimationParamDlg_html_af08849b9ce524b76f939aaebaf52d4a8"><div class="ttname"><a href="classecvAnimationParamDlg.html#af08849b9ce524b76f939aaebaf52d4a8">ecvAnimationParamDlg::~ecvAnimationParamDlg</a></div><div class="ttdeci">~ecvAnimationParamDlg() override</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition:</b> <a href="ecvAnimationParamDlg_8cpp_source.html#l00072">ecvAnimationParamDlg.cpp:72</a></div></div>
 <div class="ttc" id="aclassecvAnimationParamDlg_html_af39de282bdd22e0cad421df4a7b0bbc2"><div class="ttname"><a href="classecvAnimationParamDlg.html#af39de282bdd22e0cad421df4a7b0bbc2">ecvAnimationParamDlg::isSavingViewport</a></div><div class="ttdeci">bool isSavingViewport() const</div><div class="ttdef"><b>Definition:</b> <a href="ecvAnimationParamDlg_8cpp_source.html#l00078">ecvAnimationParamDlg.cpp:78</a></div></div>
+<div class="ttc" id="aclassecvDisplayTools_html_a04e490a4a3a93d779ab02b0036166ac8"><div class="ttname"><a href="classecvDisplayTools.html#a04e490a4a3a93d779ab02b0036166ac8">ecvDisplayTools::TheInstance</a></div><div class="ttdeci">static ecvDisplayTools * TheInstance()</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8cpp_source.html#l00237">ecvDisplayTools.cpp:237</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a3f90ade902c599646fc66befb8f4bb47a07352f6cd91c9ee638103ab855c0db90"><div class="ttname"><a href="classecvDisplayTools.html#a3f90ade902c599646fc66befb8f4bb47a07352f6cd91c9ee638103ab855c0db90">ecvDisplayTools::DEFAULT_PICKING</a></div><div class="ttdeci">@ DEFAULT_PICKING</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l00127">ecvDisplayTools.h:127</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a3f90ade902c599646fc66befb8f4bb47a628c15573added7d12d711fd60c797ee"><div class="ttname"><a href="classecvDisplayTools.html#a3f90ade902c599646fc66befb8f4bb47a628c15573added7d12d711fd60c797ee">ecvDisplayTools::POINT_OR_TRIANGLE_PICKING</a></div><div class="ttdeci">@ POINT_OR_TRIANGLE_PICKING</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l00124">ecvDisplayTools.h:124</a></div></div>
-<div class="ttc" id="aclassecvDisplayTools_html_a40214ed48a21ecfdef4cc1cee881aef5"><div class="ttname"><a href="classecvDisplayTools.html#a40214ed48a21ecfdef4cc1cee881aef5">ecvDisplayTools::GetViewportParameters</a></div><div class="ttdeci">static const ecvViewportParameters &amp; GetViewportParameters()</div></div>
+<div class="ttc" id="aclassecvDisplayTools_html_a449751718037ee7b9b4a40bde25b8659"><div class="ttname"><a href="classecvDisplayTools.html#a449751718037ee7b9b4a40bde25b8659">ecvDisplayTools::SetViewportParameters</a></div><div class="ttdeci">static void SetViewportParameters(const ecvViewportParameters &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8cpp_source.html#l02598">ecvDisplayTools.cpp:2598</a></div></div>
+<div class="ttc" id="aclassecvDisplayTools_html_a5f1fdfa9bfa90cb53a467e9931e0ddf2"><div class="ttname"><a href="classecvDisplayTools.html#a5f1fdfa9bfa90cb53a467e9931e0ddf2">ecvDisplayTools::SetPickingMode</a></div><div class="ttdeci">static void SetPickingMode(PICKING_MODE mode=DEFAULT_PICKING)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8cpp_source.html#l02724">ecvDisplayTools.cpp:2724</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a6515466545e94d0d7f253af37aa7164a"><div class="ttname"><a href="classecvDisplayTools.html#a6515466545e94d0d7f253af37aa7164a">ecvDisplayTools::GlWidth</a></div><div class="ttdeci">static int GlWidth()</div><div class="ttdoc">Returns the OpenGL context width.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l02038">ecvDisplayTools.h:2038</a></div></div>
-<div class="ttc" id="aclassecvDisplayTools_html_a7c54cc54ae517cfa6aa5c35ea24e041a"><div class="ttname"><a href="classecvDisplayTools.html#a7c54cc54ae517cfa6aa5c35ea24e041a">ecvDisplayTools::TheInstance</a></div><div class="ttdeci">static ecvDisplayTools * TheInstance()</div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a7cd316e0d66700f094a4fe71200e19b6"><div class="ttname"><a href="classecvDisplayTools.html#a7cd316e0d66700f094a4fe71200e19b6">ecvDisplayTools::itemPicked</a></div><div class="ttdeci">void itemPicked(ccHObject *entity, unsigned subEntityID, int x, int y, const CCVector3 &amp;P)</div><div class="ttdoc">Signal emitted when a point (or a triangle) is picked.</div></div>
-<div class="ttc" id="aclassecvDisplayTools_html_a80d5c1b5b0197868a9c05f58c87c5de3"><div class="ttname"><a href="classecvDisplayTools.html#a80d5c1b5b0197868a9c05f58c87c5de3">ecvDisplayTools::SetViewportParameters</a></div><div class="ttdeci">static void SetViewportParameters(const ecvViewportParameters &amp;params)</div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a81b87365bab8f91587bbaa4445cd2eba"><div class="ttname"><a href="classecvDisplayTools.html#a81b87365bab8f91587bbaa4445cd2eba">ecvDisplayTools::GlHeight</a></div><div class="ttdeci">static int GlHeight()</div><div class="ttdoc">Returns the OpenGL context height.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l02040">ecvDisplayTools.h:2040</a></div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_a9a15f4dd815d74d7a470f959d7ca7e7b"><div class="ttname"><a href="classecvDisplayTools.html#a9a15f4dd815d74d7a470f959d7ca7e7b">ecvDisplayTools::RotateWithAxis</a></div><div class="ttdeci">static void RotateWithAxis(const CCVector2i &amp;pos, const CCVector3d &amp;axis, double angle, int viewport=0)</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l00477">ecvDisplayTools.h:477</a></div></div>
-<div class="ttc" id="aclassecvDisplayTools_html_acd87a45a35772ff841c2bc261b5c633f"><div class="ttname"><a href="classecvDisplayTools.html#acd87a45a35772ff841c2bc261b5c633f">ecvDisplayTools::SetPickingMode</a></div><div class="ttdeci">static void SetPickingMode(PICKING_MODE mode=DEFAULT_PICKING)</div></div>
 <div class="ttc" id="aclassecvDisplayTools_html_ad1b3d8337bff3d3f8c8200b608411a88"><div class="ttname"><a href="classecvDisplayTools.html#ad1b3d8337bff3d3f8c8200b608411a88">ecvDisplayTools::UpdateScreen</a></div><div class="ttdeci">static void UpdateScreen()</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8h_source.html#l01242">ecvDisplayTools.h:1242</a></div></div>
+<div class="ttc" id="aclassecvDisplayTools_html_af2a5da3ebd2395002b857bce5bf74a84"><div class="ttname"><a href="classecvDisplayTools.html#af2a5da3ebd2395002b857bce5bf74a84">ecvDisplayTools::GetViewportParameters</a></div><div class="ttdeci">static const ecvViewportParameters &amp; GetViewportParameters()</div><div class="ttdef"><b>Definition:</b> <a href="ecvDisplayTools_8cpp_source.html#l02636">ecvDisplayTools.cpp:2636</a></div></div>
 <div class="ttc" id="aecvAnimationParamDlg_8h_html"><div class="ttname"><a href="ecvAnimationParamDlg_8h.html">ecvAnimationParamDlg.h</a></div></div>
 <div class="ttc" id="aecvDisplayTools_8h_html"><div class="ttname"><a href="ecvDisplayTools_8h.html">ecvDisplayTools.h</a></div></div>
 <div class="ttc" id="aecvFileUtils_8h_html"><div class="ttname"><a href="ecvFileUtils_8h.html">ecvFileUtils.h</a></div></div>
 <div class="ttc" id="aecvPickingHub_8h_html"><div class="ttname"><a href="ecvPickingHub_8h.html">ecvPickingHub.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a841b56bbb03f75b2952a783a34eff584"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">cloudViewer::utility::Sleep</a></div><div class="ttdeci">void Sleep(int milliseconds)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00278">Helper.cpp:278</a></div></div>
-<div class="ttc" id="astruct_8h_html_aae821c36bb7e6918e1414484f939c3d4"><div class="ttname"><a href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a></div><div class="ttdeci">double timer</div><div class="ttdef"><b>Definition:</b> <a href="struct_8h_source.html#l00215">struct.h:215</a></div></div>
 <div class="ttc" id="astructccPickingListener_1_1PickedItem_html"><div class="ttname"><a href="structccPickingListener_1_1PickedItem.html">ccPickingListener::PickedItem</a></div><div class="ttdoc">Picked item.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingListener_8h_source.html#l00026">ecvPickingListener.h:26</a></div></div>
 <div class="ttc" id="astructccPickingListener_1_1PickedItem_html_a14c9f1f933a3814b3afd2744526567a6"><div class="ttname"><a href="structccPickingListener_1_1PickedItem.html#a14c9f1f933a3814b3afd2744526567a6">ccPickingListener::PickedItem::P3D</a></div><div class="ttdeci">CCVector3 P3D</div><div class="ttdef"><b>Definition:</b> <a href="ecvPickingListener_8h_source.html#l00032">ecvPickingListener.h:32</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -525,7 +515,7 @@ $(document).ready(function(){initNavTree('ecvAnimationParamDlg_8cpp_source.html'
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="ecvAnimationParamDlg_8cpp.html">ecvAnimationParamDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,0 +1,17 @@
+<map id="DrawMeOnlyVisitor" name="DrawMeOnlyVisitor">
+<area shape="rect" id="node1" title="Recursive visitor for ccKdTree::drawMeOnly." alt="" coords="221,645,369,672"/>
+<area shape="rect" id="node2" href="$classccBBox.html" title="Bounding box structure." alt="" coords="260,556,331,583"/>
+<area shape="rect" id="node3" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="123,480,211,507"/>
+<area shape="rect" id="node4" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="5,132,84,159"/>
+<area shape="rect" id="node5" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="27,5,182,32"/>
+<area shape="rect" id="node11" href="$classccGLMatrixTpl.html" title=" " alt="" coords="99,183,273,209"/>
+<area shape="rect" id="node12" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="143,81,296,108"/>
+<area shape="rect" id="node6" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="248,383,388,410"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title=" " alt="" coords="278,272,443,299"/>
+<area shape="rect" id="node14" href="$classcloudViewer_1_1BoundingBoxTpl.html" title="Bounding box structure." alt="" coords="412,376,608,417"/>
+<area shape="rect" id="node8" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="366,81,510,108"/>
+<area shape="rect" id="node9" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="363,183,513,209"/>
+<area shape="rect" id="node15" href="$classVector3Tpl.html" title=" " alt="" coords="473,272,603,299"/>
+<area shape="rect" id="node10" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="139,272,233,299"/>
+<area shape="rect" id="node13" href="$classcloudViewer_1_1BoundingBoxTpl.html" title=" " alt="" coords="369,480,565,507"/>
+</map>

@@ -2,9 +2,9 @@ var classccSphere =
 [
     [ "ccSphere", "classccSphere.html#a344d5471d2b24b907d1aa042ad838327", null ],
     [ "ccSphere", "classccSphere.html#ad2c170f6c0de8a038486687f78d58e03", null ],
-    [ "buildUp", "classccSphere.html#a5010620ddc6dde2560121e2559298f0a", null ],
-    [ "clone", "classccSphere.html#a1b3eaa7a6734796ff5345ca1a03e56cb", null ],
-    [ "drawNameIn3D", "classccSphere.html#a5d36cdf88d9444d3d272a7ec19d2995b", null ],
+    [ "buildUp", "classccSphere.html#aca668cb9e6f35723df0f3a3d6ec4e2b2", null ],
+    [ "clone", "classccSphere.html#a121cd5b5cc12ce5919ca06fc52a27666", null ],
+    [ "drawNameIn3D", "classccSphere.html#a2e91ed02ef2d56fb44a11c1a04d8780b", null ],
     [ "fromFile_MeOnly", "classccSphere.html#ae77fd03a18924156bb2c487fe0d78048", null ],
     [ "getClassID", "classccSphere.html#a10dacaa531b1b4e594b2374370ab832b", null ],
     [ "getRadius", "classccSphere.html#ab68e02a544239fa267b43f14e67dcf42", null ],

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -110,10 +101,10 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="FastGlobalRegistrationDlg_8h.html">dialogs/FastGlobalRegistrationDlg.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// Local</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;Utils/cc2sm.h&gt;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;Utils/sm2cc.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="cc2sm_8h.html">Utils/cc2sm.h</a>&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="sm2cc_8h.html">Utils/sm2cc.h</a>&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;PclUtils/PCLModules.h&quot;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PCLModules_8h.html">PclUtils/PCLModules.h</a>&quot;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">// PCL</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &lt;pcl/features/fpfh_omp.h&gt;</span></div>
@@ -186,7 +177,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    }</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    pcl::PointCloud&lt;pcl::PointNormal&gt;::Ptr tmp_cloud =</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            cc2smReader(cloud).getAsPointNormal();</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            <a class="code" href="classcc2smReader.html">cc2smReader</a>(cloud).<a class="code" href="classcc2smReader.html#a44b27ada59f1c310225f9ed8eec2503b">getAsPointNormal</a>();</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">if</span> (!tmp_cloud) {</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Failed to convert CC cloud to PCL cloud&quot;</span>);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -210,7 +201,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        features.resize(pointCount, Eigen::VectorXf(33));</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; pointCount; ++i) {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            <span class="keyword">const</span> pcl::FPFHSignature33&amp; feature = objectFeatures.points[i];</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;            memcpy(features[i].data(), feature.histogram, <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>) * 33);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;            memcpy(features[i].<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>(), feature.histogram, <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>) * 33);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(<span class="stringliteral">&quot;Not enough memory&quot;</span>);</div>
@@ -252,7 +243,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="keywordflow">for</span> (<a class="code" href="classccHObject.html">ccHObject</a>* entity : <a class="code" href="classBasePclModule.html#ac757bac43ab948b2422589ec78fd14f3">m_selected</a>) {</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="comment">// clouds only</span></div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <span class="keywordflow">if</span> (entity-&gt;isA(<a class="code" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a>)) {</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud = <a class="code" href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a>(entity);</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            <a class="code" href="classccPointCloud.html">ccPointCloud</a>* cloud = <a class="code" href="classccHObjectCaster.html#afccaad08ccff7e3317c65aee63c2c760">ccHObjectCaster::ToPointCloud</a>(entity);</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <span class="keywordflow">if</span> (!cloud-&gt;<a class="code" href="classccPointCloud.html#a66251919b8d07ab180d024bd2e2734be">hasNormals</a>()) {</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;                <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            }</div>
@@ -375,6 +366,8 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="ttc" id="aFastGlobalRegistrationFilter_8cpp_html_a5d2ca4c86e85bc4e4d2495edc875b596"><div class="ttname"><a href="FastGlobalRegistrationFilter_8cpp.html#a5d2ca4c86e85bc4e4d2495edc875b596">ConverFromTo</a></div><div class="ttdeci">static bool ConverFromTo(const ccPointCloud &amp;cloud, fgr::Points &amp;points)</div><div class="ttdef"><b>Definition:</b> <a href="FastGlobalRegistrationFilter_8cpp_source.html#l00124">FastGlobalRegistrationFilter.cpp:124</a></div></div>
 <div class="ttc" id="aFastGlobalRegistrationFilter_8h_html"><div class="ttname"><a href="FastGlobalRegistrationFilter_8h.html">FastGlobalRegistrationFilter.h</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_af7f8f4a4e39e09fdb5e9f02330ecabef"><div class="ttname"><a href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a></div><div class="ttdeci">int points</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00144">FileIOFactory.cpp:144</a></div></div>
+<div class="ttc" id="aPCLModules_8h_html"><div class="ttname"><a href="PCLModules_8h.html">PCLModules.h</a></div></div>
+<div class="ttc" id="acc2sm_8h_html"><div class="ttname"><a href="cc2sm_8h.html">cc2sm.h</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html"><div class="ttname"><a href="classBasePclModule.html">BasePclModule</a></div><div class="ttdoc">Base abstract class for each implemented PCL filter.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00053">BasePclModule.h:53</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a7cb9b001d00e054785d3cff0c3126e73"><div class="ttname"><a href="classBasePclModule.html#a7cb9b001d00e054785d3cff0c3126e73">BasePclModule::m_app</a></div><div class="ttdeci">ecvMainAppInterface * m_app</div><div class="ttdoc">Associated application interface.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00296">BasePclModule.h:296</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a807b1aa6e0abe15ec48fc5c7801b6150"><div class="ttname"><a href="classBasePclModule.html#a807b1aa6e0abe15ec48fc5c7801b6150">BasePclModule::getErrorMessage</a></div><div class="ttdeci">virtual QString getErrorMessage(int errorCode)</div><div class="ttdoc">Returns the error message corresponding to a given error code.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00218">BasePclModule.cpp:218</a></div></div>
@@ -398,14 +391,16 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="ttc" id="aclassTuple3Tpl_html_ac8d05ce413d7659429e2e7243b8a8257"><div class="ttname"><a href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">Tuple3Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassTuple3Tpl_html_aea57f32b7c87f9388205c027216ba132"><div class="ttname"><a href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">Tuple3Tpl::z</a></div><div class="ttdeci">Type z</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
+<div class="ttc" id="aclasscc2smReader_html"><div class="ttname"><a href="classcc2smReader.html">cc2smReader</a></div><div class="ttdoc">CC to PCL cloud converter.</div><div class="ttdef"><b>Definition:</b> <a href="cc2sm_8h_source.html#l00043">cc2sm.h:43</a></div></div>
+<div class="ttc" id="aclasscc2smReader_html_a44b27ada59f1c310225f9ed8eec2503b"><div class="ttname"><a href="classcc2smReader.html#a44b27ada59f1c310225f9ed8eec2503b">cc2smReader::getAsPointNormal</a></div><div class="ttdeci">pcl::PointCloud&lt; pcl::PointNormal &gt;::Ptr getAsPointNormal() const</div><div class="ttdoc">Converts the ccPointCloud to a 'pcl::PointNormal' cloud.</div><div class="ttdef"><b>Definition:</b> <a href="cc2sm_8cpp_source.html#l00787">cc2sm.cpp:787</a></div></div>
 <div class="ttc" id="aclassccGLMatrixTpl_html_a07ea47ec8ca3f719e05a157b1922925b"><div class="ttname"><a href="classccGLMatrixTpl.html#a07ea47ec8ca3f719e05a157b1922925b">ccGLMatrixTpl::toString</a></div><div class="ttdeci">QString toString(int precision=12, QChar separator=' ') const</div><div class="ttdoc">Returns matrix as a string.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrixTpl_8h_source.html#l00502">ecvGLMatrixTpl.h:502</a></div></div>
 <div class="ttc" id="aclassccGLMatrixTpl_html_a606c679cae9275d7daae74779662f38b"><div class="ttname"><a href="classccGLMatrixTpl.html#a606c679cae9275d7daae74779662f38b">ccGLMatrixTpl::data</a></div><div class="ttdeci">T * data()</div><div class="ttdoc">Returns a pointer to internal data.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrixTpl_8h_source.html#l00810">ecvGLMatrixTpl.h:810</a></div></div>
 <div class="ttc" id="aclassccGLMatrix_html"><div class="ttname"><a href="classccGLMatrix.html">ccGLMatrix</a></div><div class="ttdoc">Float version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00019">ecvGLMatrix.h:19</a></div></div>
-<div class="ttc" id="aclassccHObjectCaster_html_a2d4a33e040e7e3e654aa5aebadad83a9"><div class="ttname"><a href="classccHObjectCaster.html#a2d4a33e040e7e3e654aa5aebadad83a9">ccHObjectCaster::ToPointCloud</a></div><div class="ttdeci">static ccPointCloud * ToPointCloud(ccHObject *obj, bool *isLockedVertices=nullptr)</div><div class="ttdoc">Converts current object to 'equivalent' ccPointCloud.</div></div>
+<div class="ttc" id="aclassccHObjectCaster_html_afccaad08ccff7e3317c65aee63c2c760"><div class="ttname"><a href="classccHObjectCaster.html#afccaad08ccff7e3317c65aee63c2c760">ccHObjectCaster::ToPointCloud</a></div><div class="ttdeci">static ccPointCloud * ToPointCloud(ccHObject *obj, bool *isLockedVertices=nullptr)</div><div class="ttdoc">Converts current object to 'equivalent' ccPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObjectCaster_8cpp_source.html#l00054">ecvHObjectCaster.cpp:54</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
-<div class="ttc" id="aclassccPointCloud_html_a66251919b8d07ab180d024bd2e2734be"><div class="ttname"><a href="classccPointCloud.html#a66251919b8d07ab180d024bd2e2734be">ccPointCloud::hasNormals</a></div><div class="ttdeci">bool hasNormals() const override</div><div class="ttdoc">Returns whether normals are enabled or not.</div></div>
-<div class="ttc" id="aclassccPointCloud_html_a7daad7286b0cc90bded6efc84ee40619"><div class="ttname"><a href="classccPointCloud.html#a7daad7286b0cc90bded6efc84ee40619">ccPointCloud::reserve</a></div><div class="ttdeci">bool reserve(unsigned numberOfPoints) override</div><div class="ttdoc">Reserves memory for all the active features.</div></div>
+<div class="ttc" id="aclassccPointCloud_html_a66251919b8d07ab180d024bd2e2734be"><div class="ttname"><a href="classccPointCloud.html#a66251919b8d07ab180d024bd2e2734be">ccPointCloud::hasNormals</a></div><div class="ttdeci">bool hasNormals() const override</div><div class="ttdoc">Returns whether normals are enabled or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8cpp_source.html#l01693">ecvPointCloud.cpp:1693</a></div></div>
+<div class="ttc" id="aclassccPointCloud_html_a7daad7286b0cc90bded6efc84ee40619"><div class="ttname"><a href="classccPointCloud.html#a7daad7286b0cc90bded6efc84ee40619">ccPointCloud::reserve</a></div><div class="ttdeci">bool reserve(unsigned numberOfPoints) override</div><div class="ttdoc">Reserves memory for all the active features.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8cpp_source.html#l01452">ecvPointCloud.cpp:1452</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ae034bad005881269d7a571c144185d6d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">cloudViewer::PointCloudTpl::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00143">PointCloudTpl.h:143</a></div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_a14cc3fe39398b6b11e156d14bc6a8589"><div class="ttname"><a href="classecvMainAppInterface.html#a14cc3fe39398b6b11e156d14bc6a8589">ecvMainAppInterface::getMainWindow</a></div><div class="ttdeci">virtual QMainWindow * getMainWindow()=0</div><div class="ttdoc">Returns main window.</div></div>
@@ -417,10 +412,12 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div class="ttc" id="aclassfgr_1_1CApp_html_aeb77f3d2e4a10c1096a5d6f7d885eafb"><div class="ttname"><a href="classfgr_1_1CApp.html#aeb77f3d2e4a10c1096a5d6f7d885eafb">fgr::CApp::AdvancedMatching</a></div><div class="ttdeci">void AdvancedMatching(bool crossCheck=true, bool tupleConstraint=true)</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8cpp_source.html#l00101">FastGlobalRegistration.cpp:101</a></div></div>
 <div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="anamespaceCV__TYPES_html_ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b"><div class="ttname"><a href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a6e961e18e4ef86b6c94ff2f70cfce29b">CV_TYPES::POINT_CLOUD</a></div><div class="ttdeci">@ POINT_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="CVTypes_8h_source.html#l00104">CVTypes.h:104</a></div></div>
 <div class="ttc" id="anamespacefgr_html_a287ff8df2210ff83f6f109528cad80f6"><div class="ttname"><a href="namespacefgr.html#a287ff8df2210ff83f6f109528cad80f6">fgr::Points</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector3f &gt; Points</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8h_source.html#l00013">FastGlobalRegistration.h:13</a></div></div>
 <div class="ttc" id="anamespacefgr_html_a9ba20f1b76493610d051a89cffd97bc4"><div class="ttname"><a href="namespacefgr.html#a9ba20f1b76493610d051a89cffd97bc4">fgr::Features</a></div><div class="ttdeci">std::vector&lt; Eigen::VectorXf &gt; Features</div><div class="ttdef"><b>Definition:</b> <a href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8h_source.html#l00014">FastGlobalRegistration.h:14</a></div></div>
 <div class="ttc" id="aplugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8h_html"><div class="ttname"><a href="plugins_2core_2Standard_2qPCL_2PclAlgorithms_2Filters_2FastGlobalRegistration_8h.html">FastGlobalRegistration.h</a></div></div>
+<div class="ttc" id="asm2cc_8h_html"><div class="ttname"><a href="sm2cc_8h.html">sm2cc.h</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -428,7 +425,7 @@ $(document).ready(function(){initNavTree('FastGlobalRegistrationFilter_8cpp_sour
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_4eb7fc12d0f78aca30086c5af62647fb.html">Filters</a></li><li class="navelem"><a class="el" href="FastGlobalRegistrationFilter_8cpp.html">FastGlobalRegistrationFilter.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

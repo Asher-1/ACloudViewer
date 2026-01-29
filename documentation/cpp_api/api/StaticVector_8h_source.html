@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -207,7 +198,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00109"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StaticVector.html#a2199eeab2837c7d16c35f2cffc98ccda">  109</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1StaticVector.html#a2199eeab2837c7d16c35f2cffc98ccda">indexOf</a>(<span class="keyword">const</span> T&amp; value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span> it = std::find(_data.begin(), _data.end(), value);</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordflow">return</span> it != _data.end() ? std::distance(_data.begin(), it) : -1;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordflow">return</span> it != _data.end() ? <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">std::distance</a>(_data.begin(), it) : -1;</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    }</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
 <div class="line"><a name="l00114"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StaticVector.html#a8f7f93dc793d2f3aec4024db4903a743">  114</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1StaticVector.html#a8f7f93dc793d2f3aec4024db4903a743">indexOfSorted</a>(<span class="keyword">const</span> T&amp; value)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="namespacecloudViewer.html#a8c422a2103c7e8bf581ec321e839fd10">indexOf</a>(value); }</div>
@@ -223,18 +214,18 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;            <span class="keyword">auto</span> prevIt = std::prev(it);</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            it = (value - *prevIt) &lt; (*it - value) ? prevIt : it;</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        }</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <span class="keywordflow">return</span> std::distance(_data.begin(), it);</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">std::distance</a>(_data.begin(), it);</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    }</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160; </div>
 <div class="line"><a name="l00130"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StaticVector.html#a77d568a4c7ab7ecbe3be8c498299db83">  130</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1StaticVector.html#a77d568a4c7ab7ecbe3be8c498299db83">minValId</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="keywordflow">if</span> (_data.empty()) <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keywordflow">return</span> std::distance(_data.begin(),</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">std::distance</a>(_data.begin(),</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                             std::min_element(_data.begin(), _data.end()));</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    }</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
 <div class="line"><a name="l00136"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1StaticVector.html#a3f157d9e0ac8f2a7cdfac8db12107471">  136</a></span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classcloudViewer_1_1StaticVector.html#a3f157d9e0ac8f2a7cdfac8db12107471">maxValId</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        <span class="keywordflow">if</span> (_data.empty()) <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        <span class="keywordflow">return</span> std::distance(_data.begin(),</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">std::distance</a>(_data.begin(),</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                             std::max_element(_data.begin(), _data.end()));</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    }</div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;};</div>
@@ -244,15 +235,15 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00145"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#af794df74a733ec17ead059c4a951c9b6">  145</a></span>&#160;<span class="keyword">using</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVectorBool</a> = <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;char&gt;</a>;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160; </div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a9521751f6a8e0fef7dc2c79550e80762">  148</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer.html#a9521751f6a8e0fef7dc2c79550e80762">sizeOfStaticVector</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* a) {</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="keywordflow">if</span> (a == <span class="keyword">nullptr</span>) <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keywordflow">return</span> a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a9521751f6a8e0fef7dc2c79550e80762">  148</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer.html#a9521751f6a8e0fef7dc2c79550e80762">sizeOfStaticVector</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>) {</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> == <span class="keyword">nullptr</span>) <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size();</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;}</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00154"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a28781d994c141fd80756135e22015fae">  154</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer.html#a9521751f6a8e0fef7dc2c79550e80762">sizeOfStaticVector</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; a) {</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">if</span> (a.<a class="code" href="classcloudViewer_1_1StaticVector.html#af0d78a07d8d2db8c52e050c408643ca8">empty</a>()) <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <span class="keywordflow">return</span> a.<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00154"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a28781d994c141fd80756135e22015fae">  154</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer.html#a9521751f6a8e0fef7dc2c79550e80762">sizeOfStaticVector</a>(<span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>) {</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.empty()) <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.size();</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;}</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
@@ -279,14 +270,14 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    fwrite(&amp;n, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; n; i++) {</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        <span class="keywordtype">int</span> m = 0;</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* a = (*aa)[i];</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;        <span class="keywordflow">if</span> (a == <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) {</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = (*aa)[i];</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> == <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>) {</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;            fwrite(&amp;m, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            m = a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            m = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size();</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;            fwrite(&amp;m, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;            <span class="keywordflow">if</span> (m &gt; 0) {</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                fwrite(&amp;(*a)[0], <span class="keyword">sizeof</span>(T), m, f);</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                fwrite(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0], <span class="keyword">sizeof</span>(T), m, f);</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            };</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;        };</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    };</div>
@@ -302,14 +293,14 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    fwrite(&amp;n, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; n; i++) {</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <span class="keywordtype">int</span> m = 0;</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; a = aa[i];</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (a.<a class="code" href="classcloudViewer_1_1StaticVector.html#af0d78a07d8d2db8c52e050c408643ca8">empty</a>()) {</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = aa[i];</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.empty()) {</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            fwrite(&amp;m, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            m = a.<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            m = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.size();</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            fwrite(&amp;m, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;            <span class="keywordflow">if</span> (m &gt; 0) {</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                fwrite(&amp;a[0], <span class="keyword">sizeof</span>(T), m, f);</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                fwrite(&amp;<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[0], <span class="keyword">sizeof</span>(T), m, f);</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            };</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;        };</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    };</div>
@@ -346,16 +337,16 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                    <span class="stringliteral">&quot;size&quot;</span>);</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        }</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="keywordflow">if</span> (m &gt; 0) {</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;            <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* a = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>();</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#ad786268a3fe4905dcde03ee46c0d9835">resize</a>(m);</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            retval = fread(&amp;(*a)[0], <span class="keyword">sizeof</span>(T), m, f);</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;            <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>();</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;resize(m);</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            retval = fread(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0], <span class="keyword">sizeof</span>(T), m, f);</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            <span class="keywordflow">if</span> (retval != <span class="keyword">static_cast&lt;</span>std::size_t<span class="keyword">&gt;</span>(m)) {</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                        <span class="stringliteral">&quot;[IO] loadArrayOfArraysFromFile: can&#39;t read vector &quot;</span></div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                        <span class="stringliteral">&quot;element&quot;</span>);</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            }</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            (*aa)[i] = a;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            (*aa)[i] = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        };</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    };</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    fclose(f);</div>
@@ -393,9 +384,9 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                    <span class="stringliteral">&quot;size&quot;</span>);</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        }</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keywordflow">if</span> (m &gt; 0) {</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; a = out_aa[i];</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            a.<a class="code" href="classcloudViewer_1_1StaticVector.html#ad786268a3fe4905dcde03ee46c0d9835">resize</a>(m);</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;            retval = fread(&amp;a[0], <span class="keyword">sizeof</span>(T), m, f);</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = out_aa[i];</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.resize(m);</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;            retval = fread(&amp;<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[0], <span class="keyword">sizeof</span>(T), m, f);</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;            <span class="keywordflow">if</span> (retval != <span class="keyword">static_cast&lt;</span>std::size_t<span class="keyword">&gt;</span>(m)) {</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
@@ -409,14 +400,14 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160; </div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
 <div class="line"><a name="l00312"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#acbc76c54718999ca3c0295524efcc4b4">  312</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer.html#acbc76c54718999ca3c0295524efcc4b4">saveArrayToFile</a>(<span class="keyword">const</span> std::string&amp; fileName,</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; a,</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                     <span class="keywordtype">bool</span> docompress = <span class="keyword">true</span>) {</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    <a class="code" href="namespacecloudViewer.html#acbc76c54718999ca3c0295524efcc4b4">saveArrayToFile</a>(fileName, &amp;a, docompress);</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    <a class="code" href="namespacecloudViewer.html#acbc76c54718999ca3c0295524efcc4b4">saveArrayToFile</a>(fileName, &amp;<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, docompress);</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;}</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
 <div class="line"><a name="l00319"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#ab19f072ae1964e48f9fe06b8371ee16f">  319</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer.html#acbc76c54718999ca3c0295524efcc4b4">saveArrayToFile</a>(<span class="keyword">const</span> std::string&amp; fileName,</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* a,</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                     <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                     <span class="keywordtype">bool</span> docompress = <span class="keyword">true</span>) {</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(<span class="stringliteral">&quot;[IO] saveArrayToFile: &quot;</span>, fileName.c_str());</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160; </div>
@@ -426,25 +417,25 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;        <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">utility::filesystem::MakeDirectoryHierarchy</a>(parent_dir);</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    }</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keywordflow">if</span> (!a) {</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>) {</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        <a class="code" href="classCVLog.html#a235aef414cd0e85f7463aba5041b9c9f">CVLog::PrintDebug</a>(</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                <span class="stringliteral">&quot;[IO] saveArrayToFile called with NULL static vector&quot;</span>);</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    }</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordflow">if</span> (a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>() == 0) {</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size() == 0) {</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <a class="code" href="classCVLog.html#a34dde1c025c42c8df938bbd9fdf97e7f">CVLog::Warning</a>(</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                <span class="stringliteral">&quot;[IO] saveArrayToFile called with 0-sized static vector&quot;</span>);</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    }</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keywordflow">if</span> ((docompress == <span class="keyword">false</span>) || (a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>() &lt; 1000)) {</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keywordflow">if</span> ((docompress == <span class="keyword">false</span>) || (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size() &lt; 1000)) {</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        FILE* f = fopen(fileName.c_str(), <span class="stringliteral">&quot;wb&quot;</span>);</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <span class="keywordflow">if</span> (f == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] file &quot;</span>, fileName.c_str(),</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;                         <span class="stringliteral">&quot; could not be opened, msg: &quot;</span>, strerror(errno));</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        }</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        <span class="keywordtype">int</span> n = a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        <span class="keywordtype">int</span> n = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size();</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        <span class="keywordflow">if</span> (n == 0) {</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;            fclose(f);</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;            <span class="keywordflow">return</span>;</div>
@@ -455,7 +446,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] failed to write 1 int to &quot;</span>, fileName.c_str(),</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                         <span class="stringliteral">&quot;, msg: &quot;</span>, strerror(errno));</div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        }</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        items = fwrite(&amp;(*a)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        items = fwrite(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        <span class="keywordflow">if</span> (items &lt; <span class="keyword">static_cast&lt;</span>std::size_t<span class="keyword">&gt;</span>(n) &amp;&amp; ferror(f) != 0) {</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;            fclose(f);</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] failed to write n items to &quot;</span>, fileName.c_str(),</div>
@@ -478,17 +469,17 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;<span class="comment">        */</span></div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;        <span class="comment">// uLong comprLen = sizeof(T)*a-&gt;size();</span></div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        uLong comprLen =</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;                uLong(<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<span class="keyword">sizeof</span>(T) * a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>()) * 1.02) + 12;</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;                uLong(<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<span class="keyword">sizeof</span>(T) * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size()) * 1.02) + 12;</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        Byte* compr =</div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;                <span class="keyword">static_cast&lt;</span>Byte*<span class="keyword">&gt;</span>(calloc(<span class="keyword">static_cast&lt;</span>uInt<span class="keyword">&gt;</span>(comprLen), 1));</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;        <span class="keywordtype">int</span> err =</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                compress(compr, &amp;comprLen, <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>Bytef*<span class="keyword">&gt;</span>(&amp;(*a)[0]),</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                         <span class="keyword">sizeof</span>(T) * a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>());</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                compress(compr, &amp;comprLen, <span class="keyword">static_cast&lt;</span><span class="keyword">const </span>Bytef*<span class="keyword">&gt;</span>(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0]),</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                         <span class="keyword">sizeof</span>(T) * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size());</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160; </div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        <span class="keywordflow">if</span> (err != Z_OK) {</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;compress error %1 : 2% -&gt; %3, n %4&quot;</span>)</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;                                 .arg(err, (<span class="keyword">sizeof</span>(T) * a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>()), comprLen,</div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;                                      a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>()));</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;                                 .arg(err, (<span class="keyword">sizeof</span>(T) * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size()), comprLen,</div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;                                      <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size()));</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;            FILE* f = fopen(fileName.c_str(), <span class="stringliteral">&quot;wb&quot;</span>);</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;            <span class="keywordflow">if</span> (f == <span class="keyword">nullptr</span>) {</div>
@@ -496,7 +487,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] file &quot;</span>, fileName.c_str(),</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                             <span class="stringliteral">&quot; could not be opened, msg: &quot;</span>, strerror(errno));</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;            }</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;            <span class="keywordtype">int</span> n = a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;            <span class="keywordtype">int</span> n = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size();</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            <span class="keywordflow">if</span> (n &gt; 0) {</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;                <span class="keyword">auto</span> items = fwrite(&amp;n, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;                <span class="keywordflow">if</span> (items &lt; 1 &amp;&amp; ferror(f) != 0) {</div>
@@ -505,7 +496,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;                    <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] failed to write 1 int to &quot;</span>,</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;                                 fileName.c_str(), <span class="stringliteral">&quot;, msg: &quot;</span>, strerror(errno));</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                }</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;                items = fwrite(&amp;(*a)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;                items = fwrite(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;                <span class="keywordflow">if</span> (items &lt; 1 &amp;&amp; ferror(f) != 0) {</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;                    fclose(f);</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;                    free(compr);</div>
@@ -532,7 +523,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] failed to write 1 int to &quot;</span>, fileName.c_str(),</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                             <span class="stringliteral">&quot;, msg: &quot;</span>, strerror(errno));</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;            }</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;            n = a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>();</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;            n = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size();</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            items = fwrite(&amp;n, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;            <span class="keywordflow">if</span> (items &lt; 1 &amp;&amp; ferror(f) != 0) {</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;                fclose(f);</div>
@@ -581,7 +572,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;                    <span class="stringliteral">&quot;[IO] loadArrayFromFile: can&#39;t read array size (1) from &quot;</span>,</div>
 <div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;                    fileName.c_str());</div>
 <div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;        }</div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;        <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* a = <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>;</div>
+<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;        <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>;</div>
 <div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160; </div>
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;        <span class="keywordflow">if</span> (n == -1) {</div>
 <div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;            retval = fread(&amp;n, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
@@ -590,13 +581,13 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;                        <span class="stringliteral">&quot;[IO] loadArrayFromFile: can&#39;t read array size (2)&quot;</span>);</div>
 <div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;            }</div>
-<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;            a = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>();</div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;            a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#ad786268a3fe4905dcde03ee46c0d9835">resize</a>(n);</div>
+<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>();</div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;resize(n);</div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160; </div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;            uLong comprLen;</div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;            retval = fread(&amp;comprLen, <span class="keyword">sizeof</span>(uLong), 1, f);</div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;            <span class="keywordflow">if</span> (retval != 1) {</div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                <span class="keyword">delete</span> a;</div>
+<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                <span class="keyword">delete</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;                        <span class="stringliteral">&quot;[IO] loadArrayFromFile: can&#39;t read ulong elem size&quot;</span>);</div>
@@ -605,17 +596,17 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;                    <span class="keyword">static_cast&lt;</span>Byte*<span class="keyword">&gt;</span>(calloc(<span class="keyword">static_cast&lt;</span>uInt<span class="keyword">&gt;</span>(comprLen), 1));</div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;            retval = fread(compr, <span class="keyword">sizeof</span>(Byte), comprLen, f);</div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;            <span class="keywordflow">if</span> (retval != comprLen) {</div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;                <span class="keyword">delete</span> a;</div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;                <span class="keyword">delete</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] loadArrayFromFile: can&#39;t read blob&quot;</span>);</div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;            }</div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160; </div>
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;            uLong uncomprLen = <span class="keyword">sizeof</span>(T) * n;</div>
-<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;            <span class="keywordtype">int</span> err = uncompress((Bytef*)(&amp;(*a)[0]), &amp;uncomprLen, compr,</div>
+<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;            <span class="keywordtype">int</span> err = uncompress((Bytef*)(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0]), &amp;uncomprLen, compr,</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;                                 comprLen);</div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160; </div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;            <span class="keywordflow">if</span> (err != Z_OK) {</div>
-<div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;                <span class="keyword">delete</span> a;</div>
+<div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;                <span class="keyword">delete</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(QString(<span class="stringliteral">&quot;uncompress error %1 : 2% -&gt; %3, n %4&quot;</span>)</div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;                                     .arg(QString::number(err),</div>
@@ -625,7 +616,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;            }</div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160; </div>
 <div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;            <span class="keywordflow">if</span> (uncomprLen != <span class="keyword">sizeof</span>(T) * n) {</div>
-<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;                <span class="keyword">delete</span> a;</div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;                <span class="keyword">delete</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(</div>
 <div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;                        <span class="stringliteral">&quot;loadArrayFromFile: uncompression failed &quot;</span></div>
@@ -634,11 +625,11 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160; </div>
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;            free(compr);</div>
 <div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;            a = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>();</div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;            a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#ad786268a3fe4905dcde03ee46c0d9835">resize</a>(n);</div>
-<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;            <span class="keywordtype">size_t</span> retval = fread(&amp;(*a)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
+<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>();</div>
+<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;resize(n);</div>
+<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;            <span class="keywordtype">size_t</span> retval = fread(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;            <span class="keywordflow">if</span> (retval != <span class="keyword">static_cast&lt;</span>std::size_t<span class="keyword">&gt;</span>(n)) {</div>
-<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;                <span class="keyword">delete</span> a;</div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;                <span class="keyword">delete</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;                fclose(f);</div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;                <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;[IO] loadArrayFromFile: can&#39;t read n elements&quot;</span>);</div>
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;            }</div>
@@ -646,7 +637,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160; </div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        fclose(f);</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160; </div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        <span class="keywordflow">return</span> a;</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;    }</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;}</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160; </div>
@@ -724,7 +715,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;}</div>
 <div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160; </div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00628"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#ab137951ca5cd7fd41427cbd908ae66e2">  628</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer.html#ab137951ca5cd7fd41427cbd908ae66e2">loadArrayFromFileIntoArray</a>(<a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* a,</div>
+<div class="line"><a name="l00628"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#ab137951ca5cd7fd41427cbd908ae66e2">  628</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer.html#ab137951ca5cd7fd41427cbd908ae66e2">loadArrayFromFileIntoArray</a>(<a class="code" href="classcloudViewer_1_1StaticVector.html">StaticVector&lt;T&gt;</a>* <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;                                <span class="keyword">const</span> std::string&amp; fileName,</div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;                                <span class="keywordtype">bool</span> printfWarning = <span class="keyword">false</span>) {</div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;    Q_UNUSED(printfWarning);</div>
@@ -740,10 +731,10 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160; </div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;    <span class="keywordflow">if</span> (n == -1) {</div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;        fread(&amp;n, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, f);</div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keywordflow">if</span> (a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>() != n) {</div>
+<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size() != n) {</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;            fclose(f);</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;loadArrayFromFileIntoArray: expected length &quot;</span></div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;                         &lt;&lt; a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>() &lt;&lt; <span class="stringliteral">&quot; loaded length &quot;</span> &lt;&lt; n);</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;                         &lt;&lt; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size() &lt;&lt; <span class="stringliteral">&quot; loaded length &quot;</span> &lt;&lt; n);</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        }</div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160; </div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        uLong comprLen;</div>
@@ -753,7 +744,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;        fread(compr, <span class="keyword">sizeof</span>(Byte), comprLen, f);</div>
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160; </div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        uLong uncomprLen = <span class="keyword">sizeof</span>(T) * n;</div>
-<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keywordtype">int</span> err = uncompress(<span class="keyword">static_cast&lt;</span>Bytef*<span class="keyword">&gt;</span>(&amp;(*a)[0]), &amp;uncomprLen, compr,</div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keywordtype">int</span> err = uncompress(<span class="keyword">static_cast&lt;</span>Bytef*<span class="keyword">&gt;</span>(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0]), &amp;uncomprLen, compr,</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;                             comprLen);</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160; </div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        <span class="keywordflow">if</span> (err != Z_OK) {</div>
@@ -774,12 +765,12 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160; </div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;        free(compr);</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        <span class="keywordflow">if</span> (a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>() != n) {</div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size() != n) {</div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;            fclose(f);</div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;            <a class="code" href="classCVLog.html#af2f3cbaa178ff5745feafef782cb3a4c">CVLog::Error</a>(<span class="stringliteral">&quot;loadArrayFromFileIntoArray: expected length &quot;</span></div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;                         &lt;&lt; a-&gt;<a class="code" href="classcloudViewer_1_1StaticVector.html#a0cc67c7b4aecf49eedf9dd726485641d">size</a>() &lt;&lt; <span class="stringliteral">&quot; loaded length &quot;</span> &lt;&lt; n);</div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;                         &lt;&lt; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>-&gt;size() &lt;&lt; <span class="stringliteral">&quot; loaded length &quot;</span> &lt;&lt; n);</div>
 <div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        }</div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;        fread(&amp;(*a)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;        fread(&amp;(*<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>)[0], <span class="keyword">sizeof</span>(T), n, f);</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    }</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160; </div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;    fclose(f);</div>
@@ -880,10 +871,12 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div class="ttc" id="aclasscloudViewer_1_1StaticVector_html_af152707f257aa9d3446e61516a5b73c8"><div class="ttname"><a href="classcloudViewer_1_1StaticVector.html#af152707f257aa9d3446e61516a5b73c8">cloudViewer::StaticVector::resize</a></div><div class="ttdeci">void resize(int n, T value)</div><div class="ttdef"><b>Definition:</b> <a href="StaticVector_8h_source.html#l00066">StaticVector.h:66</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1StaticVector_html_af196894de09a35a68b3831ecedb55f94"><div class="ttname"><a href="classcloudViewer_1_1StaticVector.html#af196894de09a35a68b3831ecedb55f94">cloudViewer::StaticVector::push_back_distinct</a></div><div class="ttdeci">int push_back_distinct(const T &amp;val)</div><div class="ttdef"><b>Definition:</b> <a href="StaticVector_8h_source.html#l00097">StaticVector.h:97</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1StaticVector_html_af206c2e8022ab362ba42fc9a01b74a26"><div class="ttname"><a href="classcloudViewer_1_1StaticVector.html#af206c2e8022ab362ba42fc9a01b74a26">cloudViewer::StaticVector::capacity</a></div><div class="ttdeci">size_t capacity() const</div><div class="ttdef"><b>Definition:</b> <a href="StaticVector_8h_source.html#l00063">StaticVector.h:63</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_ae430a5de18ca81ff5600530347e7d0fa"><div class="ttname"><a href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">Utils::distance</a></div><div class="ttdeci">static double distance(T *pot1, T *pot2)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00111">utils.h:111</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a5d9af191de0dc57cce1e8eb1693d2534"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a5d9af191de0dc57cce1e8eb1693d2534">cloudViewer::utility::filesystem::MakeDirectoryHierarchy</a></div><div class="ttdeci">bool MakeDirectoryHierarchy(const std::string &amp;directory)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00499">FileSystem.cpp:499</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a66f3411d5d77326974645154fc3dcea7"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a66f3411d5d77326974645154fc3dcea7">cloudViewer::utility::filesystem::GetFileParentDirectory</a></div><div class="ttdeci">std::string GetFileParentDirectory(const std::string &amp;filename)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00314">FileSystem.cpp:314</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a7b7cdb048dfa77f4da22b9c3bd2578f8"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a7b7cdb048dfa77f4da22b9c3bd2578f8">cloudViewer::utility::filesystem::DirectoryExists</a></div><div class="ttdeci">bool DirectoryExists(const std::string &amp;directory)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00473">FileSystem.cpp:473</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a0def8e2d3181138881f8cd22dff25380"><div class="ttname"><a href="namespacecloudViewer.html#a0def8e2d3181138881f8cd22dff25380">cloudViewer::deleteArrayOfArrays</a></div><div class="ttdeci">void deleteArrayOfArrays(StaticVector&lt; StaticVector&lt; T &gt; * &gt; **aa)</div><div class="ttdef"><b>Definition:</b> <a href="StaticVector_8h_source.html#l00692">StaticVector.h:692</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a159118cf0c27d31a2aef01a80cd7ef2e"><div class="ttname"><a href="namespacecloudViewer.html#a159118cf0c27d31a2aef01a80cd7ef2e">cloudViewer::saveArrayOfArraysToFile</a></div><div class="ttdeci">void saveArrayOfArraysToFile(std::string fileName, StaticVector&lt; StaticVector&lt; T &gt; * &gt; *aa)</div><div class="ttdef"><b>Definition:</b> <a href="StaticVector_8h_source.html#l00175">StaticVector.h:175</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a631b26fd504107f13b84c373db46bae6"><div class="ttname"><a href="namespacecloudViewer.html#a631b26fd504107f13b84c373db46bae6">cloudViewer::getArrayLengthFromFile</a></div><div class="ttdeci">int getArrayLengthFromFile(std::string fileName)</div><div class="ttdef"><b>Definition:</b> <a href="StaticVector_8cpp_source.html#l00014">StaticVector.cpp:14</a></div></div>
@@ -900,7 +893,7 @@ $(document).ready(function(){initNavTree('StaticVector_8h_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="StaticVector_8h.html">StaticVector.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

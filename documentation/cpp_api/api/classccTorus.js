@@ -2,8 +2,8 @@ var classccTorus =
 [
     [ "ccTorus", "classccTorus.html#a18bcb5122b73dd835afc0173d10bf64d", null ],
     [ "ccTorus", "classccTorus.html#a805048d5fa0137f66ff2e877393757a2", null ],
-    [ "buildUp", "classccTorus.html#ac9a174d83374dc2a63bd6d4a65f84b65", null ],
-    [ "clone", "classccTorus.html#af32a38d4f8ce71dc9695129a1972ea21", null ],
+    [ "buildUp", "classccTorus.html#a22adec17cebca78855f1ef20a42e8811", null ],
+    [ "clone", "classccTorus.html#adafb12a06048387616ff96c64563bf85", null ],
     [ "fromFile_MeOnly", "classccTorus.html#a99a7354f3019a78394b5c7946fea90b6", null ],
     [ "getAngleRad", "classccTorus.html#a03aa507b83fdbb9b88e1fa2f8f330071", null ],
     [ "getClassID", "classccTorus.html#a9d7afd7b71f9f2bc4087ec1fc7180fd2", null ],

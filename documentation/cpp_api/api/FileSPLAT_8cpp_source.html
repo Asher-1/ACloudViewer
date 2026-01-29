@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -105,7 +96,7 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="FileSystem_8h.html">FileSystem.h</a>&gt;</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ProgressReporters_8h.html">ProgressReporters.h</a>&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;tbb/parallel_sort.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
@@ -130,7 +121,7 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;constexpr <span class="keywordtype">int</span> SPLAT_GAUSSIAN_BYTE_SIZE = 32;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="comment">// Sigmoid function for opacity calculation</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">double</span> sigmoid(<span class="keywordtype">double</span> x) { <span class="keywordflow">return</span> 1.0 / (1.0 + std::exp(-x)); }</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">double</span> sigmoid(<span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) { <span class="keywordflow">return</span> 1.0 / (1.0 + std::exp(-<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)); }</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> scalar_t&gt;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;Eigen::Array&lt;uint8_t, 4, 1&gt; ComputeColor(<span class="keyword">const</span> scalar_t *f_dc_ptr,</div>
@@ -181,7 +172,7 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a723ea9c294f0370baf8524cd149d9bb5">   84</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a723ea9c294f0370baf8524cd149d9bb5">ReadPointCloudFromSPLAT</a>(</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html">geometry::PointCloud</a> &amp;pointcloud,</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a> &amp;<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) {</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a> &amp;params) {</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordflow">try</span> {</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="comment">// Open the file</span></div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html">utility::filesystem::CFile</a> file;</div>
@@ -203,13 +194,13 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        }</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="comment">// Report progress</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">utility::CountingProgressReporter</a> reporter(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.update_progress);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">utility::CountingProgressReporter</a> reporter(params.<a class="code" href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html#a51e1abb3e68819b5aa987d2f0ff01305">update_progress</a>);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a05a638f260949a15767476618c66a66a">SetTotal</a>(file.<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#aaba12d07a5f472e06b20cd02cae1f23d">GetFileSize</a>());</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="comment">// Constants</span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <span class="keywordtype">char</span> buffer[SPLAT_GAUSSIAN_BYTE_SIZE];</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *buffer_position = buffer;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *buffer_scale = buffer_position + 3 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *buffer_scale = buffer_position + 3 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <span class="keyword">const</span> uint8_t *buffer_color =</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                <span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span>uint8_t *<span class="keyword">&gt;</span>(buffer_scale) +</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                3 * <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>);</div>
@@ -295,8 +286,8 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="comment">// Report progress</span></div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a7f7a938d992ccc60b28c5fee39946560">Finish</a>();</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;e) {</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Read SPLAT file {} failed: {}&quot;</span>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, e.what());</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;Read SPLAT file {} failed: {}&quot;</span>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    }</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;}</div>
@@ -304,7 +295,7 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00207"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#a7edbff0a4b6dbf458378c055b0668e45">  207</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a7edbff0a4b6dbf458378c055b0668e45">WritePointCloudToSPLAT</a>(</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;        <span class="keyword">const</span> std::string &amp;<a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html">geometry::PointCloud</a> &amp;pointcloud,</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html">cloudViewer::io::WritePointCloudOption</a> &amp;<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>) {</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html">cloudViewer::io::WritePointCloudOption</a> &amp;params) {</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="comment">// Validate Point Cloud</span></div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="keywordflow">if</span> (pointcloud.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a8e5ac7051d586be04994d6925970e8af">IsEmpty</a>()) {</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Write SPLAT failed: point cloud has 0 points.&quot;</span>);</div>
@@ -355,7 +346,7 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    }</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="comment">// Write to SPLAT</span></div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">utility::CountingProgressReporter</a> reporter(<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.update_progress);</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html">utility::CountingProgressReporter</a> reporter(params.<a class="code" href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#a7574ecf738f7ec484d015bc2fccdea0c">update_progress</a>);</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a05a638f260949a15767476618c66a66a">SetTotal</a>(num_gaussians);</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    std::vector&lt;int64_t&gt; sorted_indices = SortedSplatIndices(t_map);</div>
@@ -406,9 +397,9 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        splat_file.close();  <span class="comment">// Close file, flushes to disk.</span></div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        reporter.<a class="code" href="classcloudViewer_1_1utility_1_1CountingProgressReporter.html#a7f7a938d992ccc60b28c5fee39946560">Finish</a>();</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::ios_base::failure &amp;e) {</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::ios_base::failure &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Write SPLAT to file {} failed: {}&quot;</span>, <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                            e.what());</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                            <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    }</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;}</div>
@@ -421,7 +412,6 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="ttc" id="aFileSystem_8h_html"><div class="ttname"><a href="FileSystem_8h.html">FileSystem.h</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_aa332976d803be75beb81e81af320bfcb"><div class="ttname"><a href="LineSetBuffers_8cpp.html#aa332976d803be75beb81e81af320bfcb">color</a></div><div class="ttdeci">math::float4 color</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00046">LineSetBuffers.cpp:46</a></div></div>
 <div class="ttc" id="aProgressReporters_8h_html"><div class="ttname"><a href="ProgressReporters_8h.html">ProgressReporters.h</a></div></div>
-<div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aTensorMap_8h_html"><div class="ttname"><a href="TensorMap_8h.html">TensorMap.h</a></div></div>
 <div class="ttc" id="aTensor_8h_html"><div class="ttname"><a href="Tensor_8h.html">Tensor.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html">cloudViewer::core::Device</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00018">Device.h:18</a></div></div>
@@ -449,13 +439,17 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_afbc6c830de00098be64d643ee5fcb047"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">cloudViewer::utility::filesystem::CFile::ReadData</a></div><div class="ttdeci">size_t ReadData(T *data, size_t num_elems)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00253">FileSystem.h:253</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a723ea9c294f0370baf8524cd149d9bb5"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a723ea9c294f0370baf8524cd149d9bb5">cloudViewer::t::io::ReadPointCloudFromSPLAT</a></div><div class="ttdeci">bool ReadPointCloudFromSPLAT(const std::string &amp;filename, geometry::PointCloud &amp;pointcloud, const cloudViewer::io::ReadPointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="FileSPLAT_8cpp_source.html#l00084">FileSPLAT.cpp:84</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a7edbff0a4b6dbf458378c055b0668e45"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a7edbff0a4b6dbf458378c055b0668e45">cloudViewer::t::io::WritePointCloudToSPLAT</a></div><div class="ttdeci">bool WritePointCloudToSPLAT(const std::string &amp;filename, const geometry::PointCloud &amp;pointcloud, const cloudViewer::io::WritePointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="FileSPLAT_8cpp_source.html#l00207">FileSPLAT.cpp:207</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html">cloudViewer::io::ReadPointCloudOption</a></div><div class="ttdoc">Optional parameters to ReadPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00039">FileIO.h:39</a></div></div>
+<div class="ttc" id="astructcloudViewer_1_1io_1_1ReadPointCloudOption_html_a51e1abb3e68819b5aa987d2f0ff01305"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadPointCloudOption.html#a51e1abb3e68819b5aa987d2f0ff01305">cloudViewer::io::ReadPointCloudOption::update_progress</a></div><div class="ttdeci">std::function&lt; bool(double)&gt; update_progress</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00072">FileIO.h:72</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1WritePointCloudOption_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1WritePointCloudOption.html">cloudViewer::io::WritePointCloudOption</a></div><div class="ttdoc">Optional parameters to WritePointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00077">FileIO.h:77</a></div></div>
+<div class="ttc" id="astructcloudViewer_1_1io_1_1WritePointCloudOption_html_a7574ecf738f7ec484d015bc2fccdea0c"><div class="ttname"><a href="structcloudViewer_1_1io_1_1WritePointCloudOption.html#a7574ecf738f7ec484d015bc2fccdea0c">cloudViewer::io::WritePointCloudOption::update_progress</a></div><div class="ttdeci">std::function&lt; bool(double)&gt; update_progress</div><div class="ttdef"><b>Definition:</b> <a href="FileIO_8h_source.html#l00135">FileIO.h:135</a></div></div>
 <div class="ttc" id="at_2io_2PointCloudIO_8h_html"><div class="ttname"><a href="t_2io_2PointCloudIO_8h.html">PointCloudIO.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -463,7 +457,7 @@ $(document).ready(function(){initNavTree('FileSPLAT_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_b02e663b84a5466686fe36f6d8e707d1.html">file_format</a></li><li class="navelem"><a class="el" href="FileSPLAT_8cpp.html">FileSPLAT.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,7 +1,7 @@
 var classccDepthBuffer =
 [
     [ "ccDepthBuffer", "classccDepthBuffer.html#a3458a2dd23e3cc97fe616d9e74f049c9", null ],
-    [ "~ccDepthBuffer", "classccDepthBuffer.html#a8e4bb5b0e36d8ab866862596f1f7ee0a", null ],
+    [ "~ccDepthBuffer", "classccDepthBuffer.html#a9e3d9d3a3b27e8c22d9e3bcfa0d8a929", null ],
     [ "clear", "classccDepthBuffer.html#a66e58d092d5c41a6f4e4a34889b9d764", null ],
     [ "fillHoles", "classccDepthBuffer.html#a5351163095b99b25f8d245c5219f9735", null ],
     [ "deltaPhi", "classccDepthBuffer.html#a831262451faa83e19c9071edab768fa9", null ],

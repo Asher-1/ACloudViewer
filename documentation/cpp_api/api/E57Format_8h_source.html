@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -420,7 +411,7 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;      <span class="keywordtype">unsigned</span> read( std::vector&lt;SourceDestBuffer&gt; &amp;dbufs );</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;      <span class="keywordtype">void</span> seek( int64_t recordNumber ); <span class="comment">// !!! not implemented yet</span></div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;      <span class="keywordtype">void</span> close();</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a>();</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;      <span class="keywordtype">bool</span> isOpen();</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;      <a class="code" href="classe57_1_1CompressedVectorNode.html">CompressedVectorNode</a> compressedVectorNode() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;      <span class="keywordtype">void</span> dump( <span class="keywordtype">int</span> indent = 0, std::ostream &amp;os = std::cout ) <span class="keyword">const</span>;</div>
@@ -443,7 +434,7 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;      <span class="keywordtype">void</span> write( <span class="keyword">const</span> <span class="keywordtype">size_t</span> recordCount );</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;      <span class="keywordtype">void</span> write( std::vector&lt;SourceDestBuffer&gt; &amp;sbufs, <span class="keyword">const</span> <span class="keywordtype">size_t</span> recordCount );</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;      <span class="keywordtype">void</span> close();</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a>();</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;      <span class="keywordtype">bool</span> isOpen();</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;      <a class="code" href="classe57_1_1CompressedVectorNode.html">CompressedVectorNode</a> compressedVectorNode() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160; </div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;      <span class="keywordtype">void</span> dump( <span class="keywordtype">int</span> indent = 0, std::ostream &amp;os = std::cout ) <span class="keyword">const</span>;</div>
@@ -677,7 +668,7 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;      <a class="code" href="classe57_1_1BlobNode.html">BlobNode</a>( std::shared_ptr&lt;BlobNodeImpl&gt; ni ); <span class="comment">// internal use only</span></div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160; </div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;      <span class="comment">// Internal use only, create blob already in a file</span></div>
-<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;      <a class="code" href="classe57_1_1BlobNode.html">BlobNode</a>( <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a> destImageFile, int64_t fileOffset, int64_t <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> );</div>
+<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;      <a class="code" href="classe57_1_1BlobNode.html">BlobNode</a>( <a class="code" href="classe57_1_1ImageFile.html">ImageFile</a> destImageFile, int64_t fileOffset, int64_t length );</div>
 <div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160; </div>
 <div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;      E57_OBJECT_IMPLEMENTATION( <a class="code" href="classe57_1_1BlobNode.html">BlobNode</a> ) <span class="comment">// Internal implementation details, not</span></div>
 <div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;                                            <span class="comment">// part of API, must be last in object</span></div>
@@ -693,7 +684,7 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;      <a class="code" href="classe57_1_1StructureNode.html">StructureNode</a> root() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;      <span class="keywordtype">void</span> close();</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;      <span class="keywordtype">void</span> cancel();</div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;      <span class="keywordtype">bool</span> <a class="code" href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;      <span class="keywordtype">bool</span> isOpen() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;      <span class="keywordtype">bool</span> isWritable() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;      <a class="code" href="namespacee57.html#aa52d9c7d60546840767b2484ed33f0de">ustring</a> fileName() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;      <span class="keywordtype">int</span> writerCount() <span class="keyword">const</span>;</div>
@@ -784,7 +775,6 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="ttc" id="aclasse57_1_1VectorNodeImpl_html"><div class="ttname"><a href="classe57_1_1VectorNodeImpl.html">e57::VectorNodeImpl</a></div><div class="ttdef"><b>Definition:</b> <a href="VectorNodeImpl_8h_source.html#l00033">VectorNodeImpl.h:34</a></div></div>
 <div class="ttc" id="aclasse57_1_1VectorNode_html"><div class="ttname"><a href="classe57_1_1VectorNode.html">e57::VectorNode</a></div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00256">E57Format.h:257</a></div></div>
 <div class="ttc" id="aclasse57_1_1VectorNode_html_affb0761350c2599b3a85fcbeb7928424"><div class="ttname"><a href="classe57_1_1VectorNode.html#affb0761350c2599b3a85fcbeb7928424">e57::VectorNode::VectorNode</a></div><div class="ttdeci">VectorNode()=delete</div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ad6dc9b6b533094ad312fc0a398a30333"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ad6dc9b6b533094ad312fc0a398a30333">cloudViewer::utility::operator!=</a></div><div class="ttdeci">constexpr bool operator!=(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00620">Optional.h:620</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_afdf4d48647db5d5512ba844470381384"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afdf4d48647db5d5512ba844470381384">cloudViewer::utility::operator==</a></div><div class="ttdeci">constexpr bool operator==(const optional&lt; T &gt; &amp;x, const optional&lt; T &gt; &amp;y)</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00615">Optional.h:615</a></div></div>
 <div class="ttc" id="anamespacee57_html"><div class="ttname"><a href="namespacee57.html">e57</a></div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00036">E57Exception.h:37</a></div></div>
@@ -819,14 +809,13 @@ $(document).ready(function(){initNavTree('E57Format_8h_source.html',''); initRes
 <div class="ttc" id="anamespacee57_html_ac3fbb0958b358e3321b803df1a5aef35ac30370c591ff3595bbf9a8bb455c5f53"><div class="ttname"><a href="namespacee57.html#ac3fbb0958b358e3321b803df1a5aef35ac30370c591ff3595bbf9a8bb455c5f53">e57::E57_FLOAT</a></div><div class="ttdeci">@ E57_FLOAT</div><div class="ttdoc">FloatNode class.</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00064">E57Format.h:64</a></div></div>
 <div class="ttc" id="anamespacee57_html_ac3fbb0958b358e3321b803df1a5aef35afa1b767e0587a3e9ef2215d249a40207"><div class="ttname"><a href="namespacee57.html#ac3fbb0958b358e3321b803df1a5aef35afa1b767e0587a3e9ef2215d249a40207">e57::E57_STRING</a></div><div class="ttdeci">@ E57_STRING</div><div class="ttdoc">StringNode class.</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00065">E57Format.h:65</a></div></div>
 <div class="ttc" id="anamespacee57_html_ade81b051f7d3ea443735b476ba6ab802"><div class="ttname"><a href="namespacee57.html#ade81b051f7d3ea443735b476ba6ab802">e57::CHECKSUM_POLICY_NONE</a></div><div class="ttdeci">constexpr ReadChecksumPolicy CHECKSUM_POLICY_NONE</div><div class="ttdef"><b>Definition:</b> <a href="E57Format_8h_source.html#l00097">E57Format.h:97</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_a51d2a93170930afe9fc7357f19792d9f"><div class="ttname"><a href="sqlite3_8c.html#a51d2a93170930afe9fc7357f19792d9f">isOpen</a></div><div class="ttdeci">#define isOpen(pFd)</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l52420">sqlite3.c:52420</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d21333906be55f8c765d03a59e7fedc5.html">include</a></li><li class="navelem"><a class="el" href="E57Format_8h.html">E57Format.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

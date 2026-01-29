@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -162,9 +153,9 @@ $(document).ready(function(){initNavTree('ccThickness_8cpp_source.html',''); ini
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <span class="comment">// http://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors</span></div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;            <span class="comment">//]</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3f</a> N(0, 1, 0);  <span class="comment">// north vector</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            <span class="keywordtype">float</span> <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a> = hzComp.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(N);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            <span class="keywordtype">float</span> dot = hzComp.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(N);</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;            <span class="keywordtype">float</span> det = <a class="code" href="CVGeom_8h.html#a10a184f133f2b60c2727689f1a524287">CCVector3f</a>(0, 0, 1).<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(hzComp.<a class="code" href="classVector3Tpl.html#a751bc8290bdcfda8b947f82637e9d931">cross</a>(N));</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            trend = std::atan2(det, <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>) *</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            trend = std::atan2(det, dot) *</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                    (180 / <a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>);  <span class="comment">// heading measured clockwise from north (in</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                   <span class="comment">// degrees)</span></div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;            <span class="keywordflow">if</span> (trend &lt; 0) trend += 360;</div>
@@ -172,24 +163,24 @@ $(document).ready(function(){initNavTree('ccThickness_8cpp_source.html',''); ini
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="comment">// store trend and plunge info</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> s = *<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">getPoint</a>(0);  <span class="comment">// start point</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> e = *<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">getPoint</a>(1);  <span class="comment">// end point</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="keywordtype">float</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = (s - e).norm();</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = *<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">getPoint</a>(1);  <span class="comment">// end point</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="keywordtype">float</span> length = (s - <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>).norm();</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Sx&quot;</span>, s.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Sy&quot;</span>, s.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Sz&quot;</span>, s.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Ex&quot;</span>, e.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>);</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Ey&quot;</span>, e.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>);</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Ez&quot;</span>, e.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Ex&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.x);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Ey&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.y);</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Ez&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.z);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Trend&quot;</span>, trend);</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Plunge&quot;</span>, plunge);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Length&quot;</span>, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        map-&gt;insert(<span class="stringliteral">&quot;Length&quot;</span>, length);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="comment">// store metadata</span></div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <a class="code" href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4">setMetaData</a>(*map, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="comment">// update name</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(QString::asprintf(<span class="stringliteral">&quot;%.3fT&quot;</span>, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>));</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(QString::asprintf(<span class="stringliteral">&quot;%.3fT&quot;</span>, length));</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    }</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="comment">// store</span></div>
@@ -216,8 +207,8 @@ $(document).ready(function(){initNavTree('ccThickness_8cpp_source.html',''); ini
 <div class="ttc" id="aclassVector3Tpl_html_a187b05d3460e2f67407baa886d3a8153"><div class="ttname"><a href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">Vector3Tpl::dot</a></div><div class="ttdeci">Type dot(const Vector3Tpl &amp;v) const</div><div class="ttdoc">Dot product.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00408">CVGeom.h:408</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html_a751bc8290bdcfda8b947f82637e9d931"><div class="ttname"><a href="classVector3Tpl.html#a751bc8290bdcfda8b947f82637e9d931">Vector3Tpl::cross</a></div><div class="ttdeci">Vector3Tpl cross(const Vector3Tpl &amp;v) const</div><div class="ttdoc">Cross product.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00412">CVGeom.h:412</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="aclassccObject_html_a7ac3c1d54b60afd2008ce30680d615b4"><div class="ttname"><a href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4">ccObject::setMetaData</a></div><div class="ttdeci">void setMetaData(const QString &amp;key, const QVariant &amp;data)</div><div class="ttdoc">Sets a meta-data element.</div></div>
-<div class="ttc" id="aclassccObject_html_a952f835a47b98923402ea17a4a6300e0"><div class="ttname"><a href="classccObject.html#a952f835a47b98923402ea17a4a6300e0">ccObject::hasMetaData</a></div><div class="ttdeci">bool hasMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns whether a meta-data element with the given key exists or not.</div></div>
+<div class="ttc" id="aclassccObject_html_a7ac3c1d54b60afd2008ce30680d615b4"><div class="ttname"><a href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4">ccObject::setMetaData</a></div><div class="ttdeci">void setMetaData(const QString &amp;key, const QVariant &amp;data)</div><div class="ttdoc">Sets a meta-data element.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8cpp_source.html#l00216">ecvObject.cpp:216</a></div></div>
+<div class="ttc" id="aclassccObject_html_a952f835a47b98923402ea17a4a6300e0"><div class="ttname"><a href="classccObject.html#a952f835a47b98923402ea17a4a6300e0">ccObject::hasMetaData</a></div><div class="ttdeci">bool hasMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns whether a meta-data element with the given key exists or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8cpp_source.html#l00230">ecvObject.cpp:230</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPointPair_html"><div class="ttname"><a href="classccPointPair.html">ccPointPair</a></div><div class="ttdef"><b>Definition:</b> <a href="ccPointPair_8h_source.html#l00023">ccPointPair.h:23</a></div></div>
@@ -228,15 +219,14 @@ $(document).ready(function(){initNavTree('ccThickness_8cpp_source.html',''); ini
 <div class="ttc" id="aclassccThickness_html_aa771a7f2292c673bd79309b84ad9bf8a"><div class="ttname"><a href="classccThickness.html#aa771a7f2292c673bd79309b84ad9bf8a">ccThickness::isThickness</a></div><div class="ttdeci">static bool isThickness(ccHObject *obj)</div><div class="ttdef"><b>Definition:</b> <a href="ccThickness_8cpp_source.html#l00101">ccThickness.cpp:101</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_a5a1aad9c3784c6a3f32ae5d0eb6bbe45"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">cloudViewer::ReferenceCloud::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdoc">Returns the number of points.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00041">ReferenceCloud.h:41</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html_ae1bc84432099435f6e9fd788aee2c2f6"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html#ae1bc84432099435f6e9fd788aee2c2f6">cloudViewer::ReferenceCloud::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdoc">Returns the ith point.</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00079">ReferenceCloud.h:79</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aa81053cc504f50bd3cd8b5cc6f54b666"><div class="ttname"><a href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a></div><div class="ttdeci">__host__ __device__ float dot(float2 a, float2 b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01119">cutil_math.h:1119</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccThickness_8cpp.html">ccThickness.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -116,8 +107,8 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span>kernel {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef __CUDACC__</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">using</span> <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>;</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">using</span> <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>;</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">using</span> std::max;</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">using</span> std::min;</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> scalar_t&gt;</div>
@@ -142,7 +133,7 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    scalar_t angle1 = <a class="code" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#abe658a9ee3851f2e78142020c1212fdf">core::linalg::kernel::dot_3x1</a>(n1, dp2p1) / feature[3];</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    scalar_t angle2 = <a class="code" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#abe658a9ee3851f2e78142020c1212fdf">core::linalg::kernel::dot_3x1</a>(n2, dp2p1) / feature[3];</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (acos(<a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a>(angle1)) &gt; acos(<a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a>(angle2))) {</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (acos(fabs(angle1)) &gt; acos(fabs(angle2))) {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        n1_copy[0] = n2[0];</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        n1_copy[1] = n2[1];</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        n1_copy[2] = n2[2];</div>
@@ -190,13 +181,13 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                                               scalar_t *spfh) {</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordtype">int</span> h_index1 =</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">floor</a>(11 * (feature[0] + <a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>) / (2.0 * <a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>)));</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    h_index1 = h_index1 &gt;= 11 ? 10 : <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>(0, h_index1);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    h_index1 = h_index1 &gt;= 11 ? 10 : max(0, h_index1);</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordtype">int</span> h_index2 = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">floor</a>(11 * (feature[1] + 1.0) * 0.5));</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    h_index2 = h_index2 &gt;= 11 ? 10 : <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>(0, h_index2);</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    h_index2 = h_index2 &gt;= 11 ? 10 : max(0, h_index2);</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keywordtype">int</span> h_index3 = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">floor</a>(11 * (feature[2] + 1.0) * 0.5));</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    h_index3 = h_index3 &gt;= 11 ? 10 : <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>(0, h_index3);</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    h_index3 = h_index3 &gt;= 11 ? 10 : max(0, h_index3);</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    spfh[idx * 33 + h_index1] += hist_incr;</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    spfh[idx * 33 + h_index2 + 11] += hist_incr;</div>
@@ -310,7 +301,7 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                                                  [workload_idx]</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                                        : workload_idx;</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                    int64_t idx = 3 * workload_point_idx;</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                    <span class="keyword">const</span> scalar_t *<a class="code" href="structpoint.html">point</a> = points_ptr + idx;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                    <span class="keyword">const</span> scalar_t *point = points_ptr + idx;</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                    <span class="keyword">const</span> scalar_t *<a class="code" href="FileIOFactory_8cpp.html#a09ab306cdab1aa39bb9e04096e50f6b1">normal</a> = normals_ptr + idx;</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160; </div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                    <span class="keyword">const</span> <span class="keywordtype">int</span> indice_size =</div>
@@ -337,7 +328,7 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                                    normals_ptr + 3 * point_idx;</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                            scalar_t fea[4] = {0};</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                            ComputePairFeature&lt;scalar_t&gt;(</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                                    <a class="code" href="structpoint.html">point</a>, <a class="code" href="FileIOFactory_8cpp.html#a09ab306cdab1aa39bb9e04096e50f6b1">normal</a>, point_ref, normal_ref, fea);</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                                    point, <a class="code" href="FileIOFactory_8cpp.html#a09ab306cdab1aa39bb9e04096e50f6b1">normal</a>, point_ref, normal_ref, fea);</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                            UpdateSPFHFeature&lt;scalar_t&gt;(fea, workload_idx,</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                                                        hist_incr, spfhs_ptr);</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                        }</div>
@@ -365,15 +356,15 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                                    is_radius_search</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                                            ? i + counts_ptr[workload_spfh_idx]</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                                            : workload_spfh_idx * nn_size + i;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                            <span class="keyword">const</span> scalar_t <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> = distance2_ptr[idx];</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                            <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> == 0.0) <span class="keywordflow">continue</span>;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                            <span class="keyword">const</span> scalar_t dist = distance2_ptr[idx];</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                            <span class="keywordflow">if</span> (dist == 0.0) <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                            <span class="keyword">const</span> int32_t spfh_idx =</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                                    filter_fpfh ? map_point_idx_to_spfh_idx_ptr</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                                                          [indices_ptr[idx]]</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                                                : indices_ptr[idx];</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j = 0; j &lt; 33; j++) {</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                                <span class="keyword">const</span> scalar_t val =</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                                        spfhs_ptr[spfh_idx * 33 + j] / <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>;</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                                        spfhs_ptr[spfh_idx * 33 + j] / dist;</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                                sum[j / 11] += val;</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                                fpfhs_ptr[workload_idx * 33 + j] += val;</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                            }</div>
@@ -421,11 +412,7 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1optional_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1optional.html">cloudViewer::utility::optional</a></div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00244">Optional.h:244</a></div></div>
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aad6a2701675cd2a4bc1b1da7b79948ae"><div class="ttname"><a href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a></div><div class="ttdeci">__host__ __device__ float2 fabs(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01254">cutil_math.h:1254</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="akernel_2Feature_8h_html"><div class="ttname"><a href="kernel_2Feature_8h.html">Feature.h</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_a21b285d8adab226f365383e80b534dd8"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a21b285d8adab226f365383e80b534dd8">cloudViewer::core::linalg::kernel::cross_3x1</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE void cross_3x1(const scalar_t *A_3x1_input, const scalar_t *B_3x1_input, scalar_t *C_3x1_output)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00062">Matrix.h:62</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_abe658a9ee3851f2e78142020c1212fdf"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#abe658a9ee3851f2e78142020c1212fdf">cloudViewer::core::linalg::kernel::dot_3x1</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t dot_3x1(const scalar_t *A_3x1_input, const scalar_t *B_3x1_input)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00088">Matrix.h:88</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0793177dbf31e47ea65bb4bbaa85700c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">cloudViewer::core::ParallelFor</a></div><div class="ttdeci">void ParallelFor(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00111">ParallelFor.h:111</a></div></div>
@@ -434,15 +421,14 @@ $(document).ready(function(){initNavTree('FeatureImpl_8h_source.html',''); initR
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1kernel_html_a563b591e7f60e1268b8db1afec88267b"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1kernel.html#a563b591e7f60e1268b8db1afec88267b">cloudViewer::t::pipelines::kernel::ComputePairFeature</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE void ComputePairFeature(const scalar_t *p1, const scalar_t *n1, const scalar_t *p2, const scalar_t *n2, scalar_t *feature)</div><div class="ttdef"><b>Definition:</b> <a href="FeatureImpl_8h_source.html#l00025">FeatureImpl.h:25</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1pipelines_1_1kernel_html_af05ef53baf48078b07bcea32b2399215"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1pipelines_1_1kernel.html#af05ef53baf48078b07bcea32b2399215">cloudViewer::t::pipelines::kernel::ComputeFPFHFeatureCPU</a></div><div class="ttdeci">void ComputeFPFHFeatureCPU(const core::Tensor &amp;points, const core::Tensor &amp;normals, const core::Tensor &amp;indices, const core::Tensor &amp;distance2, const core::Tensor &amp;counts, core::Tensor &amp;fpfhs, const utility::optional&lt; core::Tensor &gt; &amp;mask=utility::nullopt, const utility::optional&lt; core::Tensor &gt; &amp;map_batch_info_idx_to_point_idx=utility::nullopt)</div><div class="ttdef"><b>Definition:</b> <a href="FeatureImpl_8h_source.html#l00110">FeatureImpl.h:112</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa2763013e3ec9c4434c6f9a82d2752fc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">cloudViewer::utility::floor</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; floor(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00075">MiniVec.h:75</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0da8f8fbf693040b7dc37f26c330e75d.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_87854a73da7d2c61b77749bd286f64d0.html">kernel</a></li><li class="navelem"><a class="el" href="FeatureImpl_8h.html">FeatureImpl.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:28 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

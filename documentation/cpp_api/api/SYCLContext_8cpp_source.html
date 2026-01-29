@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('SYCLContext_8cpp_source.html',''); ini
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="SYCLContext_8h.html">cloudViewer/core/SYCLContext.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;array&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
@@ -179,8 +170,8 @@ $(document).ready(function(){initNavTree('SYCLContext_8cpp_source.html',''); ini
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keyword">const</span> sycl::device &amp;sycl_device = sycl::device(sycl::gpu_selector_v);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Device.html">Device</a> open3d_device = <a class="code" href="classcloudViewer_1_1core_1_1Device.html">Device</a>(<span class="stringliteral">&quot;SYCL:0&quot;</span>);</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        devices_.emplace(open3d_device, sycl_device);</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> sycl::exception &amp;e) {</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;SYCL GPU unavailable: {}&quot;</span>, e.what());</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> sycl::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;SYCL GPU unavailable: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    }</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="comment">// SYCL CPU fallback (last device).</span></div>
@@ -196,8 +187,8 @@ $(document).ready(function(){initNavTree('SYCLContext_8cpp_source.html',''); ini
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keyword">const</span> Device open3d_device =</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                Device(<span class="stringliteral">&quot;SYCL:&quot;</span> + <a class="code" href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">std::to_string</a>(devices_.size()));</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        devices_.emplace(open3d_device, sycl_device);</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> sycl::exception &amp;e) {</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;SYCL CPU unavailable: {}&quot;</span>, e.what());</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> sycl::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;SYCL CPU unavailable: {}&quot;</span>, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    }</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keywordflow">if</span> (devices_.size() == 0) {</div>
@@ -220,9 +211,9 @@ $(document).ready(function(){initNavTree('SYCLContext_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1sy_1_1SYCLContext_html_aa8fa687c457e1c7642d01ef7a6679b28"><div class="ttname"><a href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#aa8fa687c457e1c7642d01ef7a6679b28">cloudViewer::core::sy::SYCLContext::GetDefaultQueue</a></div><div class="ttdeci">sycl::queue GetDefaultQueue(const Device &amp;device)</div><div class="ttdoc">Get the default SYCL queue given an CloudViewer device.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8cpp_source.html#l00043">SYCLContext.cpp:43</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1sy_1_1SYCLContext_html_ae1e0cb4f4f97aa435ba711450eed8b53"><div class="ttname"><a href="classcloudViewer_1_1core_1_1sy_1_1SYCLContext.html#ae1e0cb4f4f97aa435ba711450eed8b53">cloudViewer::core::sy::SYCLContext::GetAvailableSYCLDevices</a></div><div class="ttdeci">std::vector&lt; Device &gt; GetAvailableSYCLDevices()</div><div class="ttdoc">Returns a list of all available SYCL devices.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8cpp_source.html#l00035">SYCLContext.cpp:35</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1sy_html_a065ead33587c0b78d163f05fd8533cce"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1sy.html#a065ead33587c0b78d163f05fd8533cce">cloudViewer::core::sy::GetDeviceTypeName</a></div><div class="ttdeci">CLOUDVIEWER_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &amp;device)</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1sy_1_1SYCLDevice_html_a3057e2abffd0f3631e2ee34896280f12"><div class="ttname"><a href="structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a3057e2abffd0f3631e2ee34896280f12">cloudViewer::core::sy::SYCLDevice::usm_device_allocations</a></div><div class="ttdeci">bool usm_device_allocations</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8h_source.html#l00035">SYCLContext.h:35</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1core_1_1sy_1_1SYCLDevice_html_a384c0208a879a386f27942165eac4fbb"><div class="ttname"><a href="structcloudViewer_1_1core_1_1sy_1_1SYCLDevice.html#a384c0208a879a386f27942165eac4fbb">cloudViewer::core::sy::SYCLDevice::fp64</a></div><div class="ttdeci">bool fp64</div><div class="ttdoc">Double precision support, else need to emulate.</div><div class="ttdef"><b>Definition:</b> <a href="SYCLContext_8h_source.html#l00034">SYCLContext.h:34</a></div></div>
@@ -238,7 +229,7 @@ $(document).ready(function(){initNavTree('SYCLContext_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="SYCLContext_8cpp.html">SYCLContext.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

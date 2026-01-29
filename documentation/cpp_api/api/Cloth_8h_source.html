@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -173,11 +164,11 @@ $(document).ready(function(){initNavTree('Cloth_8h_source.html',''); initResizab
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    }</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classCloth.html#adbb53fe5b62ca9451561e9756ea7180e">   77</a></span>&#160;    <span class="keyword">inline</span> <a class="code" href="classParticle.html">Particle</a>&amp; <a class="code" href="classCloth.html#adbb53fe5b62ca9451561e9756ea7180e">getParticle</a>(<span class="keywordtype">int</span> x, <span class="keywordtype">int</span> y) {</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> particles[y * <a class="code" href="classCloth.html#a32574e17ea8fed0a438c7519aea6cd1e">num_particles_width</a> + x];</div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classCloth.html#adbb53fe5b62ca9451561e9756ea7180e">   77</a></span>&#160;    <span class="keyword">inline</span> <a class="code" href="classParticle.html">Particle</a>&amp; <a class="code" href="classCloth.html#adbb53fe5b62ca9451561e9756ea7180e">getParticle</a>(<span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>) {</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> particles[<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> * <a class="code" href="classCloth.html#a32574e17ea8fed0a438c7519aea6cd1e">num_particles_width</a> + <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>];</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    }</div>
-<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="classCloth.html#a0f85e629d28af7f61e1df29b7005bcf9">   80</a></span>&#160;    <span class="keyword">inline</span> <span class="keyword">const</span> <a class="code" href="classParticle.html">Particle</a>&amp; <a class="code" href="classCloth.html#a0f85e629d28af7f61e1df29b7005bcf9">getParticle</a>(<span class="keywordtype">int</span> x, <span class="keywordtype">int</span> y)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">return</span> particles[y * <a class="code" href="classCloth.html#a32574e17ea8fed0a438c7519aea6cd1e">num_particles_width</a> + x];</div>
+<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="classCloth.html#a0f85e629d28af7f61e1df29b7005bcf9">   80</a></span>&#160;    <span class="keyword">inline</span> <span class="keyword">const</span> <a class="code" href="classParticle.html">Particle</a>&amp; <a class="code" href="classCloth.html#a0f85e629d28af7f61e1df29b7005bcf9">getParticle</a>(<span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">return</span> particles[<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> * <a class="code" href="classCloth.html#a32574e17ea8fed0a438c7519aea6cd1e">num_particles_width</a> + <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>];</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    }</div>
 <div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="classCloth.html#a1198cfef7e840d2b7209a34729bbffc3">   83</a></span>&#160;    <span class="keyword">inline</span> <a class="code" href="classParticle.html">Particle</a>&amp; <a class="code" href="classCloth.html#a1198cfef7e840d2b7209a34729bbffc3">getParticleByIndex</a>(<span class="keywordtype">int</span> index) { <span class="keywordflow">return</span> particles[index]; }</div>
 <div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="classCloth.html#af54afa9542aece1af92675c3e1ecfbf1">   84</a></span>&#160;    <span class="keyword">inline</span> <span class="keyword">const</span> <a class="code" href="classParticle.html">Particle</a> <a class="code" href="classCloth.html#af54afa9542aece1af92675c3e1ecfbf1">getParticleByIndex</a>(<span class="keywordtype">int</span> index)<span class="keyword"> const </span>{</div>
@@ -269,6 +260,8 @@ $(document).ready(function(){initNavTree('Cloth_8h_source.html',''); initResizab
 <div class="ttc" id="aclassParticle_html_aeeb80895a5c75fe7aa45282cea122b5e"><div class="ttname"><a href="classParticle.html#aeeb80895a5c75fe7aa45282cea122b5e">Particle::neighborsList</a></div><div class="ttdeci">std::vector&lt; Particle * &gt; neighborsList</div><div class="ttdef"><b>Definition:</b> <a href="Particle_8h_source.html#l00044">Particle.h:44</a></div></div>
 <div class="ttc" id="aclassVec3_html"><div class="ttname"><a href="classVec3.html">Vec3</a></div><div class="ttdef"><b>Definition:</b> <a href="Vec3_8h_source.html#l00013">Vec3.h:14</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="astructXY_html"><div class="ttname"><a href="structXY.html">XY</a></div><div class="ttdef"><b>Definition:</b> <a href="Cloth_8h_source.html#l00038">Cloth.h:38</a></div></div>
 <div class="ttc" id="astructXY_html_a29c62a4354023af09e8457601e41d229"><div class="ttname"><a href="structXY.html#a29c62a4354023af09e8457601e41d229">XY::x</a></div><div class="ttdeci">int x</div><div class="ttdef"><b>Definition:</b> <a href="Cloth_8h_source.html#l00040">Cloth.h:40</a></div></div>
@@ -280,7 +273,7 @@ $(document).ready(function(){initNavTree('Cloth_8h_source.html',''); initResizab
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html">qCSF</a></li><li class="navelem"><a class="el" href="dir_6e143f2a132939b1d8f12d4591e274b5.html">include</a></li><li class="navelem"><a class="el" href="Cloth_8h.html">Cloth.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,7 +1,7 @@
 var classAsciiSaveDlg =
 [
     [ "AsciiSaveDlg", "classAsciiSaveDlg.html#ae518044bb345be98184080232d4136fa", null ],
-    [ "~AsciiSaveDlg", "classAsciiSaveDlg.html#a20fff17b5592e311d790daf280716c6f", null ],
+    [ "~AsciiSaveDlg", "classAsciiSaveDlg.html#a410bd5fe2888638ff0aafff509c63e18", null ],
     [ "acceptAndSaveSettings", "classAsciiSaveDlg.html#a3223e36c02a98ed3226b4b54394f6e61", null ],
     [ "autoShown", "classAsciiSaveDlg.html#a0dc996e0d056c155ef261d28687130f7", null ],
     [ "coordsPrecision", "classAsciiSaveDlg.html#aa289cff27b8057e77bce9fc512fae481", null ],

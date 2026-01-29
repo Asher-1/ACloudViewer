@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('TensorKey_8cpp_source.html',''); initR
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="TensorKey_8h.html">cloudViewer/core/TensorKey.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;sstream&gt;</span></div>
@@ -130,7 +121,7 @@ $(document).ready(function(){initNavTree('TensorKey_8cpp_source.html',''); initR
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html">   31</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html">TensorKey::IndexImpl</a> : <span class="keyword">public</span> <a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1Impl.html">TensorKey::Impl</a> {</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html#a12ad6a64abf1847df32f64494f374aff">   33</a></span>&#160;    <a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html#a12ad6a64abf1847df32f64494f374aff">IndexImpl</a>(int64_t index)</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        : <a class="code" href="classcloudViewer_1_1core_1_1TensorKey.html">TensorKey</a>::<a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1Impl.html">Impl</a>(<a class="code" href="classcloudViewer_1_1core_1_1TensorKey.html#adba85995827c000379ad092b1b0338f3">TensorKeyMode</a>::<a class="code" href="structIndex.html">Index</a>), index_(index) {}</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        : <a class="code" href="classcloudViewer_1_1core_1_1TensorKey.html">TensorKey</a>::<a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1Impl.html">Impl</a>(<a class="code" href="classcloudViewer_1_1core_1_1TensorKey.html#adba85995827c000379ad092b1b0338f3">TensorKeyMode</a>::<a class="code" href="classcloudViewer_1_1core_1_1TensorKey.html#adb65000b12c0a93e82b6c30dcdab44e1">Index</a>), index_(index) {}</div>
 <div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html#af2e1b1eadd72d3a856762803cb6041fe">   35</a></span>&#160;    int64_t <a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html#af2e1b1eadd72d3a856762803cb6041fe">GetIndex</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> index_; }</div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html#a4508a404b9740700f290a32cedd257b0">   36</a></span>&#160;    std::string <a class="code" href="classcloudViewer_1_1core_1_1TensorKey_1_1IndexImpl.html#a4508a404b9740700f290a32cedd257b0">ToString</a>()<span class="keyword"> const override </span>{</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;        std::stringstream ss;</div>
@@ -335,17 +326,15 @@ $(document).ready(function(){initNavTree('TensorKey_8cpp_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1optional_html_a4d6982513eab4610fce1902bfb34cecb"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1optional.html#a4d6982513eab4610fce1902bfb34cecb">cloudViewer::utility::optional::has_value</a></div><div class="ttdeci">constexpr bool has_value() const noexcept</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00440">Optional.h:440</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1optional_html_a86e7895cbf12401fa5f7f261a0a070d0"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1optional.html#a86e7895cbf12401fa5f7f261a0a070d0">cloudViewer::utility::optional::value</a></div><div class="ttdeci">constexpr T const  &amp; value() const &amp;</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00465">Optional.h:465</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aadab2d794a49208e83ccebd6de29bbc0"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aadab2d794a49208e83ccebd6de29bbc0">cloudViewer::utility::nullopt</a></div><div class="ttdeci">constexpr nullopt_t nullopt</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00136">Optional.h:136</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="astructIndex_html"><div class="ttname"><a href="structIndex.html">Index</a></div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l17745">sqlite3.c:17745</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="TensorKey_8cpp.html">TensorKey.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

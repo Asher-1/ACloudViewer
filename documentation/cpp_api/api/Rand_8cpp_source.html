@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -125,9 +116,9 @@ $(document).ready(function(){initNavTree('Rand_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                  <a class="code" href="classcloudViewer_1_1core_1_1Dtype.html">core::Dtype</a> dtype,</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                  <span class="keyword">const</span> <a class="code" href="classcloudViewer_1_1core_1_1Device.html">core::Device</a>&amp; device) {</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="comment">// Initialize on CPU, then copy to device</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> random =</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> <a class="code" href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">random</a> =</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;            <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">core::Tensor::Empty</a>(shape, dtype, <a class="code" href="classcloudViewer_1_1core_1_1Device.html">core::Device</a>(<span class="stringliteral">&quot;CPU:0&quot;</span>));</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <a class="code" href="classcloudViewer_1_1core_1_1TensorIterator.html">core::TensorIterator</a> random_it(random);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <a class="code" href="classcloudViewer_1_1core_1_1TensorIterator.html">core::TensorIterator</a> random_it(<a class="code" href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">random</a>);</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <a class="code" href="Dispatch_8h.html#a3ee6afe384b00f5089b6b736add667e4">DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL</a>(dtype, [&amp;]() {</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        scalar_t low = range.first.To&lt;scalar_t&gt;();</div>
@@ -157,20 +148,20 @@ $(document).ready(function(){initNavTree('Rand_8cpp_source.html',''); initResiza
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="keywordflow">for</span> (int64_t i = 0; i &lt; num_threads; ++i) {</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            rng.emplace_back(seed + i);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        }</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        uniform_distribution <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(low, high);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        uniform_distribution dist(low, high);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <a class="code" href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">core::ParallelFor</a>(<a class="code" href="classcloudViewer_1_1core_1_1Device.html">core::Device</a>(<span class="stringliteral">&quot;CPU:0&quot;</span>), num_threads, [&amp;](int64_t i) {</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;            int64_t start = random.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a8b5878c632774b74befc2b9852a2d1fa">NumElements</a>() * i / num_threads;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;            int64_t start = <a class="code" href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">random</a>.NumElements() * i / num_threads;</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;            int64_t end = std::min&lt;int64_t&gt;(</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                    random.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a8b5878c632774b74befc2b9852a2d1fa">NumElements</a>() * (i + 1) / num_threads,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                    random.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a8b5878c632774b74befc2b9852a2d1fa">NumElements</a>());</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                    <a class="code" href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">random</a>.NumElements() * (i + 1) / num_threads,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                    <a class="code" href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">random</a>.NumElements());</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            <span class="keywordflow">for</span> (int64_t idx = start; idx &lt; end; ++idx) {</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                *<span class="keyword">static_cast&lt;</span>scalar_t*<span class="keyword">&gt;</span>(random_it.<a class="code" href="classcloudViewer_1_1core_1_1TensorIterator.html#aae13ecb51fd262803601be4daa510b43">GetPtr</a>(idx)) = <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(rng[i]);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                *<span class="keyword">static_cast&lt;</span>scalar_t*<span class="keyword">&gt;</span>(random_it.<a class="code" href="classcloudViewer_1_1core_1_1TensorIterator.html#aae13ecb51fd262803601be4daa510b43">GetPtr</a>(idx)) = dist(rng[i]);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            }</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        });</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    });</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">return</span> random.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">To</a>(device);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">random</a>.To(device);</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;}</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;}  <span class="comment">// namespace benchmarks</span></div>
@@ -187,21 +178,19 @@ $(document).ready(function(){initNavTree('Rand_8cpp_source.html',''); initResiza
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1TensorIterator_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1TensorIterator.html">cloudViewer::core::TensorIterator</a></div><div class="ttdef"><b>Definition:</b> <a href="Indexer_8h_source.html#l00222">Indexer.h:222</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1TensorIterator_html_aae13ecb51fd262803601be4daa510b43"><div class="ttname"><a href="classcloudViewer_1_1core_1_1TensorIterator.html#aae13ecb51fd262803601be4daa510b43">cloudViewer::core::TensorIterator::GetPtr</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE void * GetPtr(int64_t workload_idx) const</div><div class="ttdef"><b>Definition:</b> <a href="Indexer_8h_source.html#l00235">Indexer.h:235</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html">cloudViewer::core::Tensor</a></div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l00032">Tensor.h:32</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_a8b5878c632774b74befc2b9852a2d1fa"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#a8b5878c632774b74befc2b9852a2d1fa">cloudViewer::core::Tensor::NumElements</a></div><div class="ttdeci">int64_t NumElements() const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01170">Tensor.h:1170</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ac87c47027f8f16da95e12093da57b95c"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ac87c47027f8f16da95e12093da57b95c">cloudViewer::core::Tensor::Empty</a></div><div class="ttdeci">static Tensor Empty(const SizeVector &amp;shape, Dtype dtype, const Device &amp;device=Device(&quot;CPU:0&quot;))</div><div class="ttdoc">Create a tensor with uninitialized values.</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00400">Tensor.cpp:400</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_aefba3173ede176f74574d8372f5dfc2e"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#aefba3173ede176f74574d8372f5dfc2e">cloudViewer::core::Tensor::To</a></div><div class="ttdeci">Tensor To(Dtype dtype, bool copy=false) const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8cpp_source.html#l00739">Tensor.cpp:739</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_a58a66117237b140d07cc511ad904daf4"><div class="ttname"><a href="namespaceUtils.html#a58a66117237b140d07cc511ad904daf4">Utils::random</a></div><div class="ttdeci">double random(int low, int high)</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00055">utils.cpp:55</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1benchmarks_html_af0629a25aa182f2d328354c5878f3e89"><div class="ttname"><a href="namespacecloudViewer_1_1benchmarks.html#af0629a25aa182f2d328354c5878f3e89">cloudViewer::benchmarks::Rand</a></div><div class="ttdeci">core::Tensor Rand(const core::SizeVector &amp;shape, size_t seed, const std::pair&lt; core::Scalar, core::Scalar &gt; &amp;range, core::Dtype dtype, const core::Device &amp;device)</div><div class="ttdoc">Returns a Tensor with random values within the range range .</div><div class="ttdef"><b>Definition:</b> <a href="Rand_8cpp_source.html#l00023">Rand.cpp:23</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0793177dbf31e47ea65bb4bbaa85700c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">cloudViewer::core::ParallelFor</a></div><div class="ttdeci">void ParallelFor(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00111">ParallelFor.h:111</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a6c3bbb412c07c125cf6d4868d38ecb2c"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a6c3bbb412c07c125cf6d4868d38ecb2c">cloudViewer::utility::EstimateMaxThreads</a></div><div class="ttdeci">int EstimateMaxThreads()</div><div class="ttdoc">Estimate the maximum number of threads to be used in a parallel region.</div><div class="ttdef"><b>Definition:</b> <a href="Parallel_8cpp_source.html#l00031">Parallel.cpp:31</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_7ca1acaefb8190390b510b63acf876fa.html">CVViewer</a></li><li class="navelem"><a class="el" href="dir_7607a0cb680ab17c441548fac508d5ff.html">benchmarks</a></li><li class="navelem"><a class="el" href="dir_457d7d5d5bd01225cf429971e14c2474.html">benchmark_utilities</a></li><li class="navelem"><a class="el" href="Rand_8cpp.html">Rand.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:41 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

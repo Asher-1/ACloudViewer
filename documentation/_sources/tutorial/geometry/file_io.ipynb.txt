@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:11.440504Z",
-     "iopub.status.busy": "2026-01-28T16:52:11.440020Z",
-     "iopub.status.idle": "2026-01-28T16:52:12.161330Z",
-     "shell.execute_reply": "2026-01-28T16:52:12.160690Z"
+     "iopub.execute_input": "2026-01-29T04:47:38.951805Z",
+     "iopub.status.busy": "2026-01-29T04:47:38.951608Z",
+     "iopub.status.idle": "2026-01-29T04:47:39.660587Z",
+     "shell.execute_reply": "2026-01-29T04:47:39.660043Z"
     },
     "nbsphinx": "hidden"
    },
@@ -55,10 +55,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:12.163911Z",
-     "iopub.status.busy": "2026-01-28T16:52:12.163480Z",
-     "iopub.status.idle": "2026-01-28T16:52:12.557547Z",
-     "shell.execute_reply": "2026-01-28T16:52:12.556878Z"
+     "iopub.execute_input": "2026-01-29T04:47:39.663114Z",
+     "iopub.status.busy": "2026-01-29T04:47:39.662682Z",
+     "iopub.status.idle": "2026-01-29T04:47:40.051075Z",
+     "shell.execute_reply": "2026-01-29T04:47:40.050473Z"
     }
    },
    "outputs": [
@@ -131,10 +131,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:12.562251Z",
-     "iopub.status.busy": "2026-01-28T16:52:12.561881Z",
-     "iopub.status.idle": "2026-01-28T16:52:12.661042Z",
-     "shell.execute_reply": "2026-01-28T16:52:12.660425Z"
+     "iopub.execute_input": "2026-01-29T04:47:40.055827Z",
+     "iopub.status.busy": "2026-01-29T04:47:40.055426Z",
+     "iopub.status.idle": "2026-01-29T04:47:40.152682Z",
+     "shell.execute_reply": "2026-01-29T04:47:40.152082Z"
     }
    },
    "outputs": [
@@ -142,13 +142,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Testing IO for meshes ...\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "Testing IO for meshes ...\n",
       "ccMesh with 1440 points and 2880 triangles.\n",
       "\u001b[1;33m[CloudViewer WARNING] GLFW initialized for headless rendering.\u001b[0;m\n"
      ]
@@ -205,10 +199,10 @@
    "execution_count": 4,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:12.664141Z",
-     "iopub.status.busy": "2026-01-28T16:52:12.663963Z",
-     "iopub.status.idle": "2026-01-28T16:52:13.299382Z",
-     "shell.execute_reply": "2026-01-28T16:52:13.298666Z"
+     "iopub.execute_input": "2026-01-29T04:47:40.157075Z",
+     "iopub.status.busy": "2026-01-29T04:47:40.156614Z",
+     "iopub.status.idle": "2026-01-29T04:47:40.680281Z",
+     "shell.execute_reply": "2026-01-29T04:47:40.679651Z"
     }
    },
    "outputs": [

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -189,14 +180,14 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="structLasField.html#a2a6c216a3b9db01313a7e3c2401e90cf">   94</a></span>&#160;    <a class="code" href="structLasField.html#a2a6c216a3b9db01313a7e3c2401e90cf">LasField</a>(<a class="code" href="LASFields_8h.html#a75b7b71db516f48729d86dbdf5296a40">LAS_FIELDS</a> fieldType = <a class="code" href="LASFields_8h.html#a75b7b71db516f48729d86dbdf5296a40a1deaa2ed2206c102506e29a29becc3ba">LAS_INVALID</a>,</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;             <span class="keywordtype">double</span> defaultVal = 0,</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;             <span class="keywordtype">double</span> <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a> = 0.0,</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;             <span class="keywordtype">double</span> <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a> = -1.0,</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;             <span class="keywordtype">double</span> min = 0.0,</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;             <span class="keywordtype">double</span> max = -1.0,</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;             uint8_t _minPointFormat = 0)</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        : <a class="code" href="structLasField.html#ae5ba93096e86b32c1038be2ed57cb2b1">type</a>(fieldType),</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;          <a class="code" href="structLasField.html#a2094a2a557b8775815aee3cf386d35d8">sf</a>(nullptr),</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;          <a class="code" href="structLasField.html#a7b40f11e64b0e6fb73eca395dc83bb76">firstValue</a>(0.0),</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;          <a class="code" href="structLasField.html#a1eefa30d6ca4e90d49ea170b01c6a905">minValue</a>(<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a>),</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;          <a class="code" href="structLasField.html#a3add9213e894b2676b53803f1194d819">maxValue</a>(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a>),</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;          <a class="code" href="structLasField.html#a1eefa30d6ca4e90d49ea170b01c6a905">minValue</a>(min),</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;          <a class="code" href="structLasField.html#a3add9213e894b2676b53803f1194d819">maxValue</a>(max),</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;          <a class="code" href="structLasField.html#aa5aae636b99d539f17362e6549fa1fd5">defaultValue</a>(defaultVal),</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;          <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>(_minPointFormat) {}</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
@@ -274,7 +265,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                            fieldsToSave.push_back(lasFields[j]);</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                            fieldsToSave.back().sf = <a class="code" href="structLasField.html#a2094a2a557b8775815aee3cf386d35d8">sf</a>;</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                            <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                            <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = std::max(</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                                    <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>,</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                                    fieldsToSave.back().minPointFormat);</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                        }</div>
@@ -340,7 +331,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;            <span class="keywordflow">if</span> (withFWF) {</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                <span class="comment">// 0, 1 --&gt; 4</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>, (uint8_t)4);</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = std::max(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>, (uint8_t)4);</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;            }</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            <span class="keywordflow">if</span> (withRGB) {</div>
@@ -366,11 +357,11 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;            assert(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> &lt;= 6);  <span class="comment">// in effect, standard LAS fields will</span></div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                                          <span class="comment">// only require version 6 at most</span></div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160; </div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>, (uint8_t)6);</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = std::max(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>, (uint8_t)6);</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            <span class="comment">// FWF data?</span></div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordflow">if</span> (withFWF) {</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                <span class="comment">// 6 --&gt; 9</span></div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>, (uint8_t)9);</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                <a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a> = std::max(<a class="code" href="structLasField.html#ac52b135c907be0ee951839dc49bd5138">minPointFormat</a>, (uint8_t)9);</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            }</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            <span class="comment">// Colors?</span></div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            <span class="keywordflow">if</span> (withRGB) {</div>
@@ -477,8 +468,6 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a581d830daaf4575734be3347aa7d69ef"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a581d830daaf4575734be3347aa7d69ef">cloudViewer::ScalarField::getName</a></div><div class="ttdeci">const char * getName() const</div><div class="ttdoc">Returns scalar field name.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00043">ScalarField.h:43</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_abd71c5d761aba8eaba9c4b6d5754e16e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a></div><div class="ttdeci">static bool ValidValue(ScalarType value)</div><div class="ttdoc">Returns whether a scalar value is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00061">ScalarField.h:61</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_ad917c2c5a959a8f8f29d9217029c0c1e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#ad917c2c5a959a8f8f29d9217029c0c1e">cloudViewer::ScalarField::getMax</a></div><div class="ttdeci">ScalarType getMax() const</div><div class="ttdoc">Returns the maximum value.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00074">ScalarField.h:74</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvScalarField_8h_html"><div class="ttname"><a href="ecvScalarField_8h.html">ecvScalarField.h</a></div></div>
 <div class="ttc" id="astructLasField_html"><div class="ttname"><a href="structLasField.html">LasField</a></div><div class="ttdoc">LAS field descriptor.</div><div class="ttdef"><b>Definition:</b> <a href="LASFields_8h_source.html#l00089">LASFields.h:89</a></div></div>
@@ -505,7 +494,7 @@ $(document).ready(function(){initNavTree('LASFields_8h_source.html',''); initRes
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_888642a0b7b06326fd06f56c68febd6b.html">qPDALIO</a></li><li class="navelem"><a class="el" href="dir_4643caca16d2b24ab8979d5dba840b1d.html">include</a></li><li class="navelem"><a class="el" href="LASFields_8h.html">LASFields.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

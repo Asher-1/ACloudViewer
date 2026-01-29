@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -115,17 +106,17 @@ $(document).ready(function(){initNavTree('CameraSphereInteractorLogic_8cpp_sourc
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    : <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1CameraInteractorLogic.html">CameraInteractorLogic</a>(c, min_far_plane) {}</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1rendering_1_1CameraSphereInteractorLogic.html#ad1073f816d9434104be3e040d6b8434f">   18</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1CameraSphereInteractorLogic.html#ad1073f816d9434104be3e040d6b8434f">CameraSphereInteractorLogic::Rotate</a>(<span class="keywordtype">int</span> dx, <span class="keywordtype">int</span> dy) {</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <span class="keywordtype">float</span> phi = phi_at_mousedown_ - float(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>) * dx / float(<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a65ac5ad28607b3531b429556524e877e">view_width_</a>);</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    <span class="keywordtype">float</span> theta = theta_at_mousedown_ + float(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>) * dy / float(<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a53438920abec1243eca5813eb0d92581">view_height_</a>);</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <span class="keywordtype">float</span> phi = phi_at_mousedown_ - <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>) * dx / <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a65ac5ad28607b3531b429556524e877e">view_width_</a>);</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    <span class="keywordtype">float</span> theta = theta_at_mousedown_ + <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>) * dy / <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a53438920abec1243eca5813eb0d92581">view_height_</a>);</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keywordtype">float</span> <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> = r_at_mousedown_;</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keywordtype">float</span> dist = r_at_mousedown_;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keywordtype">float</span> sin_theta = std::sin(theta);</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordtype">float</span> cos_theta = std::cos(theta);</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordtype">float</span> sin_phi = std::sin(phi);</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="keywordtype">float</span> cos_phi = std::cos(phi);</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    Eigen::Vector3f eye(<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>.x() + <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> * cos_phi * cos_theta,</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                        <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>.y() + <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> * sin_phi * cos_theta,</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                        <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>.z() + <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> * sin_theta);</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    Eigen::Vector3f eye(<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>.x() + dist * cos_phi * cos_theta,</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                        <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>.y() + dist * sin_phi * cos_theta,</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                        <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>.z() + dist * sin_theta);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    Eigen::Vector3f up(-cos_phi * sin_theta, -sin_phi * sin_theta, cos_theta);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    Eigen::Vector3f forward = (<a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a> - eye).normalized();</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    Eigen::Vector3f left = up.cross(forward);</div>
@@ -147,14 +138,14 @@ $(document).ready(function(){initNavTree('CameraSphereInteractorLogic_8cpp_sourc
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    eye = (eye - <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a2482c74538e2b9c70a67f9878dca3098">center_of_rotation_</a>) / r_at_mousedown_;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="comment">// Clamp coords to [-1, 1], since floating point error can result it being</span></div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="comment">// a little outside those bounds.</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordtype">float</span> eye_x = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0f, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0f, eye.x()));</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordtype">float</span> eye_y = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0f, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0f, eye.y()));</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordtype">float</span> eye_z = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0f, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0f, eye.z()));</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordtype">float</span> up_z = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0f, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0f, up.z()));</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordtype">float</span> eye_x = std::min(1.0f, std::max(-1.0f, eye.x()));</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordtype">float</span> eye_y = std::min(1.0f, std::max(-1.0f, eye.y()));</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordtype">float</span> eye_z = std::min(1.0f, std::max(-1.0f, eye.z()));</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordtype">float</span> up_z = std::min(1.0f, std::max(-1.0f, up.z()));</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    theta_at_mousedown_ = std::asin(eye_z);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(eye_y) &lt; 0.001 &amp;&amp; <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(eye_x) &lt; 0.001) {</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordtype">float</span> up_x = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0f, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0f, up.x()));</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="keywordtype">float</span> up_y = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0f, <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0f, up.y()));</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">if</span> (std::abs(eye_y) &lt; 0.001 &amp;&amp; std::abs(eye_x) &lt; 0.001) {</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordtype">float</span> up_x = std::min(1.0f, std::max(-1.0f, up.x()));</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="keywordtype">float</span> up_y = std::min(1.0f, std::max(-1.0f, up.y()));</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        phi_at_mousedown_ = std::atan2(-up_y, -up_x);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        phi_at_mousedown_ = std::atan2(eye_y, eye_x);</div>
@@ -165,7 +156,7 @@ $(document).ready(function(){initNavTree('CameraSphereInteractorLogic_8cpp_sourc
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;            theta_at_mousedown_ = -<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a> - theta_at_mousedown_;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        }</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        phi_at_mousedown_ += float(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        phi_at_mousedown_ += <a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>(<a class="code" href="CVConst_8h.html#a7dd8de910244c0c514f90d00e2854724">M_PI</a>);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    }</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
@@ -188,18 +179,15 @@ $(document).ready(function(){initNavTree('CameraSphereInteractorLogic_8cpp_sourc
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic_html_a53438920abec1243eca5813eb0d92581"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a53438920abec1243eca5813eb0d92581">cloudViewer::visualization::rendering::MatrixInteractorLogic::view_height_</a></div><div class="ttdeci">int view_height_</div><div class="ttdef"><b>Definition:</b> <a href="MatrixInteractorLogic_8h_source.html#l00069">MatrixInteractorLogic.h:69</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic_html_a65ac5ad28607b3531b429556524e877e"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1MatrixInteractorLogic.html#a65ac5ad28607b3531b429556524e877e">cloudViewer::visualization::rendering::MatrixInteractorLogic::view_width_</a></div><div class="ttdeci">int view_width_</div><div class="ttdef"><b>Definition:</b> <a href="MatrixInteractorLogic_8h_source.html#l00068">MatrixInteractorLogic.h:68</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1rendering_1_1RotationInteractorLogic_html_a9464ee4e0c7a785ac15be98bf730cf25"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1rendering_1_1RotationInteractorLogic.html#a9464ee4e0c7a785ac15be98bf730cf25">cloudViewer::visualization::rendering::RotationInteractorLogic::camera_</a></div><div class="ttdeci">Camera * camera_</div><div class="ttdef"><b>Definition:</b> <a href="RotationInteractorLogic_8h_source.html#l00035">RotationInteractorLogic.h:35</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_b499a281afeca67f84e0ab4cbebb6d96.html">rendering</a></li><li class="navelem"><a class="el" href="CameraSphereInteractorLogic_8cpp.html">CameraSphereInteractorLogic.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

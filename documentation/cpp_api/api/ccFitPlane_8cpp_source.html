@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -113,7 +104,7 @@ $(document).ready(function(){initNavTree('ccFitPlane_8cpp_source.html',''); init
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;              &amp;p-&gt;getTransformation(),</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;              p-&gt;getName())  <span class="comment">// create an identical plane</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;{</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    p-&gt;<a class="code" href="classccPlane.html#a1847f180e6a0252e20d756222576f43d">clone</a>();</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    p-&gt;<a class="code" href="classccPlane.html#a4fcc9557358351d2f981207051fb9120">clone</a>();</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    <span class="comment">// add metadata tag defining the ccCompass class type</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    QVariantMap* map = <span class="keyword">new</span> QVariantMap();</div>
@@ -126,7 +117,7 @@ $(document).ready(function(){initNavTree('ccFitPlane_8cpp_source.html',''); init
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keywordflow">if</span> (N.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> &lt; 0.0) N *= -1.0;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="comment">// calculate strike/dip/dip direction</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keywordtype">float</span> dip, dipdir;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <a class="code" href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">ccNormalVectors::ConvertNormalToDipAndDipDir</a>(N, dip, dipdir);</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <a class="code" href="classccNormalVectors.html#a4e4f10855d28dbd64a73fb7cf818067f">ccNormalVectors::ConvertNormalToDipAndDipDir</a>(N, dip, dipdir);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    QString dipAndDipDirStr = QString(<span class="stringliteral">&quot;%1/%2&quot;</span>)</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                      .arg((<span class="keywordtype">int</span>)dip, 2, 10, QChar(<span class="charliteral">&#39;0&#39;</span>))</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                                      .arg((<span class="keywordtype">int</span>)dipdir, 3, 10, QChar(<span class="charliteral">&#39;0&#39;</span>));</div>
@@ -161,7 +152,7 @@ $(document).ready(function(){initNavTree('ccFitPlane_8cpp_source.html',''); init
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="comment">// calculate strike/dip/dip direction</span></div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordtype">float</span> strike, dip, dipdir;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <a class="code" href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">ccNormalVectors::ConvertNormalToDipAndDipDir</a>(N, dip, dipdir);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <a class="code" href="classccNormalVectors.html#a4e4f10855d28dbd64a73fb7cf818067f">ccNormalVectors::ConvertNormalToDipAndDipDir</a>(N, dip, dipdir);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="comment">// ccNormalVectors::ConvertNormalToStrikeAndDip(N, strike, dip); //n.b. this</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="comment">// returns result using the british RHR?!?)</span></div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
@@ -218,7 +209,7 @@ $(document).ready(function(){initNavTree('ccFitPlane_8cpp_source.html',''); init
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
 <div class="line"><a name="l00120"></a><span class="lineno"><a class="line" href="classccFitPlane.html#a29809b8afbdc1e58906df9c9aa4f7c2e">  120</a></span>&#160;<a class="code" href="classccFitPlane.html">ccFitPlane</a>* <a class="code" href="classccFitPlane.html#a29809b8afbdc1e58906df9c9aa4f7c2e">ccFitPlane::Fit</a>(<a class="code" href="classcloudViewer_1_1GenericIndexedCloudPersist.html">cloudViewer::GenericIndexedCloudPersist</a>* cloud,</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                            <span class="keywordtype">double</span>* rms) {</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <a class="code" href="classccPlane.html">ccPlane</a>* p = <a class="code" href="classccPlane.html#a315c7dcddf19462821c71bd2a166fe88">ccPlane::Fit</a>(cloud, rms);</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <a class="code" href="classccPlane.html">ccPlane</a>* p = <a class="code" href="classccPlane.html#a7f7d843f2ff3d7cb9af49341088a9d13">ccPlane::Fit</a>(cloud, rms);</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (p)  <span class="comment">// valid plane</span></div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    {</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <a class="code" href="classccFitPlane.html">ccFitPlane</a>* fp = <span class="keyword">new</span> <a class="code" href="classccFitPlane.html#a2106667a9c26d4ebbf65675ed7c12360">ccFitPlane</a>(p);</div>
@@ -246,18 +237,18 @@ $(document).ready(function(){initNavTree('ccFitPlane_8cpp_source.html',''); init
 <div class="ttc" id="aclassccFitPlane_html_ab93f72f1f025f272035fa8a65ac47057"><div class="ttname"><a href="classccFitPlane.html#ab93f72f1f025f272035fa8a65ac47057">ccFitPlane::isFitPlane</a></div><div class="ttdeci">static bool isFitPlane(ccHObject *object)</div><div class="ttdef"><b>Definition:</b> <a href="ccFitPlane_8cpp_source.html#l00099">ccFitPlane.cpp:99</a></div></div>
 <div class="ttc" id="aclassccGenericMesh_html_aa698e146317967fe380f22b35670fabc"><div class="ttname"><a href="classccGenericMesh.html#aa698e146317967fe380f22b35670fabc">ccGenericMesh::enableStippling</a></div><div class="ttdeci">void enableStippling(bool state)</div><div class="ttdoc">Enables polygon stippling.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGenericMesh_8h_source.html#l00207">ecvGenericMesh.h:207</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a4370db1303f7fadda74abd534b612889"><div class="ttname"><a href="classccHObject.html#a4370db1303f7fadda74abd534b612889">ccHObject::transferChildren</a></div><div class="ttdeci">void transferChildren(ccHObject &amp;newParent, bool forceFatherDependent=false)</div><div class="ttdoc">Transfer all children to another parent.</div></div>
-<div class="ttc" id="aclassccNormalVectors_html_a6dadf6f07315f15899d092baf0a9fcd9"><div class="ttname"><a href="classccNormalVectors.html#a6dadf6f07315f15899d092baf0a9fcd9">ccNormalVectors::ConvertNormalToDipAndDipDir</a></div><div class="ttdeci">static void ConvertNormalToDipAndDipDir(const CCVector3 &amp;N, PointCoordinateType &amp;dip_deg, PointCoordinateType &amp;dipDir_deg)</div><div class="ttdoc">Converts a normal vector to geological 'dip direction &amp; dip' parameters.</div></div>
-<div class="ttc" id="aclassccObject_html_a7ac3c1d54b60afd2008ce30680d615b4"><div class="ttname"><a href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4">ccObject::setMetaData</a></div><div class="ttdeci">void setMetaData(const QString &amp;key, const QVariant &amp;data)</div><div class="ttdoc">Sets a meta-data element.</div></div>
-<div class="ttc" id="aclassccObject_html_a8c9caef524f26d93cd44f6f036425dc7"><div class="ttname"><a href="classccObject.html#a8c9caef524f26d93cd44f6f036425dc7">ccObject::getMetaData</a></div><div class="ttdeci">QVariant getMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns a given associated meta data.</div></div>
-<div class="ttc" id="aclassccObject_html_a952f835a47b98923402ea17a4a6300e0"><div class="ttname"><a href="classccObject.html#a952f835a47b98923402ea17a4a6300e0">ccObject::hasMetaData</a></div><div class="ttdeci">bool hasMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns whether a meta-data element with the given key exists or not.</div></div>
+<div class="ttc" id="aclassccHObject_html_a4370db1303f7fadda74abd534b612889"><div class="ttname"><a href="classccHObject.html#a4370db1303f7fadda74abd534b612889">ccHObject::transferChildren</a></div><div class="ttdeci">void transferChildren(ccHObject &amp;newParent, bool forceFatherDependent=false)</div><div class="ttdoc">Transfer all children to another parent.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00664">ecvHObject.cpp:664</a></div></div>
+<div class="ttc" id="aclassccNormalVectors_html_a4e4f10855d28dbd64a73fb7cf818067f"><div class="ttname"><a href="classccNormalVectors.html#a4e4f10855d28dbd64a73fb7cf818067f">ccNormalVectors::ConvertNormalToDipAndDipDir</a></div><div class="ttdeci">static void ConvertNormalToDipAndDipDir(const CCVector3 &amp;N, PointCoordinateType &amp;dip_deg, PointCoordinateType &amp;dipDir_deg)</div><div class="ttdoc">Converts a normal vector to geological 'dip direction &amp; dip' parameters.</div><div class="ttdef"><b>Definition:</b> <a href="ecvNormalVectors_8cpp_source.html#l00848">ecvNormalVectors.cpp:848</a></div></div>
+<div class="ttc" id="aclassccObject_html_a7ac3c1d54b60afd2008ce30680d615b4"><div class="ttname"><a href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4">ccObject::setMetaData</a></div><div class="ttdeci">void setMetaData(const QString &amp;key, const QVariant &amp;data)</div><div class="ttdoc">Sets a meta-data element.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8cpp_source.html#l00216">ecvObject.cpp:216</a></div></div>
+<div class="ttc" id="aclassccObject_html_a8c9caef524f26d93cd44f6f036425dc7"><div class="ttname"><a href="classccObject.html#a8c9caef524f26d93cd44f6f036425dc7">ccObject::getMetaData</a></div><div class="ttdeci">QVariant getMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns a given associated meta data.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8cpp_source.html#l00208">ecvObject.cpp:208</a></div></div>
+<div class="ttc" id="aclassccObject_html_a952f835a47b98923402ea17a4a6300e0"><div class="ttname"><a href="classccObject.html#a952f835a47b98923402ea17a4a6300e0">ccObject::hasMetaData</a></div><div class="ttdeci">bool hasMetaData(const QString &amp;key) const</div><div class="ttdoc">Returns whether a meta-data element with the given key exists or not.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8cpp_source.html#l00230">ecvObject.cpp:230</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccPlanarEntityInterface_html_a558643913e2b640dcc1dbe0fb09a111e"><div class="ttname"><a href="classccPlanarEntityInterface.html#a558643913e2b640dcc1dbe0fb09a111e">ccPlanarEntityInterface::showNormalVector</a></div><div class="ttdeci">void showNormalVector(bool state)</div><div class="ttdoc">Show normal vector.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlanarEntityInterface_8h_source.html#l00025">ecvPlanarEntityInterface.h:25</a></div></div>
 <div class="ttc" id="aclassccPlane_html"><div class="ttname"><a href="classccPlane.html">ccPlane</a></div><div class="ttdoc">Plane (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00017">ecvPlane.h:18</a></div></div>
-<div class="ttc" id="aclassccPlane_html_a1847f180e6a0252e20d756222576f43d"><div class="ttname"><a href="classccPlane.html#a1847f180e6a0252e20d756222576f43d">ccPlane::clone</a></div><div class="ttdeci">virtual ccGenericPrimitive * clone() const override</div><div class="ttdoc">Clones primitive.</div></div>
-<div class="ttc" id="aclassccPlane_html_a315c7dcddf19462821c71bd2a166fe88"><div class="ttname"><a href="classccPlane.html#a315c7dcddf19462821c71bd2a166fe88">ccPlane::Fit</a></div><div class="ttdeci">static ccPlane * Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double *rms=0)</div><div class="ttdoc">Fits a plane primitive on a cloud.</div></div>
 <div class="ttc" id="aclassccPlane_html_a437b6ad24c21a766489b94ba59368059"><div class="ttname"><a href="classccPlane.html#a437b6ad24c21a766489b94ba59368059">ccPlane::getCenter</a></div><div class="ttdeci">CCVector3 getCenter() const</div><div class="ttdoc">Returns the center.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00056">ecvPlane.h:56</a></div></div>
 <div class="ttc" id="aclassccPlane_html_a43f5e2e60bd2cd3584b90c7b10a568c7"><div class="ttname"><a href="classccPlane.html#a43f5e2e60bd2cd3584b90c7b10a568c7">ccPlane::getNormal</a></div><div class="ttdeci">CCVector3 getNormal() const override</div><div class="ttdoc">Returns the entity normal.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8h_source.html#l00073">ecvPlane.h:73</a></div></div>
+<div class="ttc" id="aclassccPlane_html_a4fcc9557358351d2f981207051fb9120"><div class="ttname"><a href="classccPlane.html#a4fcc9557358351d2f981207051fb9120">ccPlane::clone</a></div><div class="ttdeci">virtual ccGenericPrimitive * clone() const override</div><div class="ttdoc">Clones primitive.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8cpp_source.html#l00065">ecvPlane.cpp:65</a></div></div>
+<div class="ttc" id="aclassccPlane_html_a7f7d843f2ff3d7cb9af49341088a9d13"><div class="ttname"><a href="classccPlane.html#a7f7d843f2ff3d7cb9af49341088a9d13">ccPlane::Fit</a></div><div class="ttdeci">static ccPlane * Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double *rms=0)</div><div class="ttdoc">Fits a plane primitive on a cloud.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPlane_8cpp_source.html#l00108">ecvPlane.cpp:108</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericIndexedCloudPersist_html"><div class="ttname"><a href="classcloudViewer_1_1GenericIndexedCloudPersist.html">cloudViewer::GenericIndexedCloudPersist</a></div><div class="ttdoc">A generic 3D point cloud with index-based and presistent access to points.</div><div class="ttdef"><b>Definition:</b> <a href="GenericIndexedCloudPersist_8h_source.html#l00018">GenericIndexedCloudPersist.h:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -265,7 +256,7 @@ $(document).ready(function(){initNavTree('ccFitPlane_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_5eee8d93df27060c9d6c81f134bce6d3.html">qCompass</a></li><li class="navelem"><a class="el" href="dir_f302ddf31a7ff7d3919969b4561a7afc.html">src</a></li><li class="navelem"><a class="el" href="ccFitPlane_8cpp.html">ccFitPlane.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

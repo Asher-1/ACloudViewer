@@ -2,7 +2,7 @@ var dir_3e6d23fef4819891c1e739ac149a8e20 =
 [
     [ "GeometryIndexer.h", "GeometryIndexer_8h.html", "GeometryIndexer_8h" ],
     [ "GeometryMacros.h", "GeometryMacros_8h.html", "GeometryMacros_8h" ],
-    [ "Image.cpp", "kernel_2Image_8cpp.html", "kernel_2Image_8cpp" ],
+    [ "Image.cpp", "cloudViewer_2t_2geometry_2kernel_2Image_8cpp.html", "cloudViewer_2t_2geometry_2kernel_2Image_8cpp" ],
     [ "Image.h", "cloudViewer_2t_2geometry_2kernel_2Image_8h.html", "cloudViewer_2t_2geometry_2kernel_2Image_8h" ],
     [ "ImageCPU.cpp", "ImageCPU_8cpp.html", null ],
     [ "ImageCUDA.cu", "ImageCUDA_8cu.html", null ],

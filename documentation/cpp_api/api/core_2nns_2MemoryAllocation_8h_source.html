@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -192,7 +183,7 @@ $(document).ready(function(){initNavTree('core_2nns_2MemoryAllocation_8h_source.
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <span class="keyword">auto</span> seg = _free_segments[0];</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        <span class="keywordtype">char</span>* end_ptr = (<span class="keywordtype">char</span>*)seg.first + seg.second;</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordtype">size_t</span> <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> = 0;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        for (<span class="keywordtype">size_t</span> i = 1; i &lt; _free_segments.size(); ++i) {</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a3ce2b84995587ea215ddc01e4510ec15">for</a> (<span class="keywordtype">size_t</span> i = 1; i &lt; _free_segments.size(); ++i) {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            <span class="keyword">const</span> <span class="keyword">auto</span>&amp; seg_i = _free_segments[i];</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <span class="keywordflow">if</span> (end_ptr == (<span class="keywordtype">char</span>*)seg_i.first) {</div>
@@ -273,14 +264,15 @@ $(document).ready(function(){initNavTree('core_2nns_2MemoryAllocation_8h_source.
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1nns_1_1MemoryAllocation_html_ac6fa53a34da6eea9f39d7b71fe592e4d"><div class="ttname"><a href="classcloudViewer_1_1core_1_1nns_1_1MemoryAllocation.html#ac6fa53a34da6eea9f39d7b71fe592e4d">cloudViewer::core::nns::MemoryAllocation::Alignment</a></div><div class="ttdeci">size_t Alignment() const</div><div class="ttdoc">Returns the alignment in bytes.</div><div class="ttdef"><b>Definition:</b> <a href="core_2nns_2MemoryAllocation_8h_source.html#l00148">MemoryAllocation.h:148</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1nns_1_1MemoryAllocation_html_aed96950b2deac40527e4e016be34e847"><div class="ttname"><a href="classcloudViewer_1_1core_1_1nns_1_1MemoryAllocation.html#aed96950b2deac40527e4e016be34e847">cloudViewer::core::nns::MemoryAllocation::FreeSegments</a></div><div class="ttdeci">const std::vector&lt; std::pair&lt; void *, size_t &gt; &gt; &amp; FreeSegments() const</div><div class="ttdoc">Returns the list of free segments.</div><div class="ttdef"><b>Definition:</b> <a href="core_2nns_2MemoryAllocation_8h_source.html#l00151">MemoryAllocation.h:151</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1nns_1_1MemoryAllocation_html_aef18c83d99e11e6979a9aa5dea6f45c4"><div class="ttname"><a href="classcloudViewer_1_1core_1_1nns_1_1MemoryAllocation.html#aef18c83d99e11e6979a9aa5dea6f45c4">cloudViewer::core::nns::MemoryAllocation::AllocLargestSegment</a></div><div class="ttdeci">std::pair&lt; void *, size_t &gt; AllocLargestSegment()</div><div class="ttdoc">Returns the largest free segment.</div><div class="ttdef"><b>Definition:</b> <a href="core_2nns_2MemoryAllocation_8h_source.html#l00075">MemoryAllocation.h:75</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a3ce2b84995587ea215ddc01e4510ec15"><div class="ttname"><a href="essential__matrix__poly_8h.html#a3ce2b84995587ea215ddc01e4510ec15">for</a></div><div class="ttdeci">for(size_t i=0;i&lt; 36;++i)</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00014">essential_matrix_poly.h:14</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_83a5b8913191d9a934d28737ee240a2c.html">nns</a></li><li class="navelem"><a class="el" href="core_2nns_2MemoryAllocation_8h.html">MemoryAllocation.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

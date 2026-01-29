@@ -1,6 +1,5 @@
 <map id="cloudViewer::visualization::gui::Window" name="cloudViewer::visualization::gui::Window">
-<area shape="rect" id="node1" title=" " alt="" coords="5,71,199,112"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,39,199,80"/>
 <area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1GuiVisualizer.html" title=" " alt="" coords="247,5,440,47"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1gui_1_1PyWindow.html" title=" " alt="" coords="247,71,440,112"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer.html" title=" " alt="" coords="247,136,440,177"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer.html" title=" " alt="" coords="247,71,440,112"/>
 </map>

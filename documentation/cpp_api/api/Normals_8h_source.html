@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -136,7 +127,7 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#ifndef NORMALS_HEADER</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#define NORMALS_HEADER</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;math.h&gt;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="math_8h.html">math.h</a>&gt;</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;Eigen/Dense&gt;</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;ctime&gt;</span></div>
@@ -294,7 +285,7 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            }</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        }</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        <span class="keywordtype">int</span> rotations = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(n_rot, 1);</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        <span class="keywordtype">int</span> rotations = std::max(n_rot, 1);</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="comment">// create the list of triplets in KNN case</span></div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        Eigen::MatrixX3i trip;</div>
@@ -553,8 +544,8 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;                       (2 * n_phi);</div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;            }</div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160; </div>
-<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;            post = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(0, <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(2 * n_phi - 1, post));</div>
-<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;            posp = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(0, <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(n_phi, posp));</div>
+<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;            post = std::max(0, std::min(2 * n_phi - 1, post));</div>
+<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;            posp = std::max(0, std::min(n_phi, posp));</div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160; </div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;            votes[post + posp * d1] += 1.;</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;            votesV[post + posp * d1] += Pn;</div>
@@ -594,7 +585,7 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;        std::vector&lt;bool&gt; normals_use(rotations, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        <span class="comment">// alignement of normals</span></div>
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 1; i &lt; rotations; i++) {</div>
-<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;            <span class="keywordflow">if</span> (normals_vec[0].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(normals_vec[i]) &lt; 0) {</div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;            <span class="keywordflow">if</span> (normals_vec[0].dot(normals_vec[i]) &lt; 0) {</div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;                normals_vec[i] *= -1;</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;            }</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;        }</div>
@@ -620,7 +611,7 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160; </div>
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; rotations; i++) {</div>
 <div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;                <span class="keywordflow">if</span> (normals_use[i] &amp;&amp;</div>
-<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;                    acos(normals_vec[idx].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(normals_vec[i])) &lt;</div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;                    acos(normals_vec[idx].dot(normals_vec[i])) &lt;</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;                            tol_angle_rad) {</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;                    normals_use[i] = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;                    number_to_test--;</div>
@@ -674,9 +665,7 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div class="ttc" id="aclassEigen__Normal__Estimator_html_ae2299a93667d7471f32564fb2ad9d434"><div class="ttname"><a href="classEigen__Normal__Estimator.html#ae2299a93667d7471f32564fb2ad9d434">Eigen_Normal_Estimator::maxProgressCounter</a></div><div class="ttdeci">int maxProgressCounter() const</div><div class="ttdef"><b>Definition:</b> <a href="Normals_8h_source.html#l00117">Normals.h:117</a></div></div>
 <div class="ttc" id="aclassEigen__Normal__Estimator_html_af15dc9dca227b99b9a0a6823f99a0d95"><div class="ttname"><a href="classEigen__Normal__Estimator.html#af15dc9dca227b99b9a0a6823f99a0d95">Eigen_Normal_Estimator::get_normals</a></div><div class="ttdeci">const Eigen::MatrixX3d &amp; get_normals() const</div><div class="ttdef"><b>Definition:</b> <a href="Normals_8h_source.html#l00086">Normals.h:86</a></div></div>
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aa81053cc504f50bd3cd8b5cc6f54b666"><div class="ttname"><a href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a></div><div class="ttdeci">__host__ __device__ float dot(float2 a, float2 b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01119">cutil_math.h:1119</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="amath_8h_html"><div class="ttname"><a href="math_8h.html">math.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa2763013e3ec9c4434c6f9a82d2752fc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">cloudViewer::utility::floor</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; floor(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00075">MiniVec.h:75</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -685,7 +674,7 @@ $(document).ready(function(){initNavTree('Normals_8h_source.html',''); initResiz
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8b7a7f55f1426123c9983afa7170d0cf.html">qHoughNormals</a></li><li class="navelem"><a class="el" href="dir_b89e954b4ddae5a7a4e6be4e455628f0.html">extern</a></li><li class="navelem"><a class="el" href="dir_71e9e99cb51a47abb86313c28369d186.html">normals_Hough</a></li><li class="navelem"><a class="el" href="dir_2d6c1b659045648624fd6c5ccde24ed0.html">normals_Hough</a></li><li class="navelem"><a class="el" href="Normals_8h.html">Normals.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

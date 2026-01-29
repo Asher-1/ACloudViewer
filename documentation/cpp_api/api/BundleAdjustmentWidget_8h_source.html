@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -109,30 +100,30 @@ $(document).ready(function(){initNavTree('BundleAdjustmentWidget_8h_source.html'
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;QtCore&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;QtWidgets&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;base/reconstruction.h&quot;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;ui/options_widget.h&quot;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;util/option_manager.h&quot;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="reconstruction_8h.html">base/reconstruction.h</a>&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="options__widget_8h.html">ui/options_widget.h</a>&quot;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="option__manager_8h.html">util/option_manager.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">   19</a></span>&#160;<span class="keyword">using</span> <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">OptionManager</a> = <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">colmap::OptionManager</a>;</div>
+<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">   19</a></span>&#160;<span class="keyword">using</span> <a class="code" href="classcolmap_1_1OptionManager.html">OptionManager</a> = <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">colmap::OptionManager</a>;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1ReconstructionWidget.html">ReconstructionWidget</a>;</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1ThreadControlWidget.html">ThreadControlWidget</a>;</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
-<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1BundleAdjustmentWidget.html">   23</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1BundleAdjustmentWidget.html">BundleAdjustmentWidget</a> : <span class="keyword">public</span> colmap::OptionsWidget {</div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1BundleAdjustmentWidget.html">   23</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcloudViewer_1_1BundleAdjustmentWidget.html">BundleAdjustmentWidget</a> : <span class="keyword">public</span> <a class="code" href="classcolmap_1_1OptionsWidget.html">colmap::OptionsWidget</a> {</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <a class="code" href="classcloudViewer_1_1BundleAdjustmentWidget.html#ab66c0f78c1d7f27d9b4376a6d9a8dae0">BundleAdjustmentWidget</a>(<a class="code" href="classcloudViewer_1_1ReconstructionWidget.html">ReconstructionWidget</a>* main_window,</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                           <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">OptionManager</a>* options);</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                           <a class="code" href="classcolmap_1_1OptionManager.html">OptionManager</a>* options);</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1BundleAdjustmentWidget.html#a2926765f1c860d986ae628c1d02d627d">Show</a>(colmap::Reconstruction* reconstruction);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1BundleAdjustmentWidget.html#a2926765f1c860d986ae628c1d02d627d">Show</a>(<a class="code" href="classcolmap_1_1Reconstruction.html">colmap::Reconstruction</a>* reconstruction);</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordtype">void</span> Run();</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordtype">void</span> Render();</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <a class="code" href="classcloudViewer_1_1ReconstructionWidget.html">ReconstructionWidget</a>* main_window_;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">OptionManager</a>* options_;</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    colmap::Reconstruction* reconstruction_;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <a class="code" href="classcolmap_1_1OptionManager.html">OptionManager</a>* options_;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <a class="code" href="classcolmap_1_1Reconstruction.html">colmap::Reconstruction</a>* reconstruction_;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <a class="code" href="classcloudViewer_1_1ThreadControlWidget.html">ThreadControlWidget</a>* thread_control_widget_;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    QAction* render_action_;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;};</div>
@@ -143,15 +134,21 @@ $(document).ready(function(){initNavTree('BundleAdjustmentWidget_8h_source.html'
 <div class="ttc" id="aclasscloudViewer_1_1BundleAdjustmentWidget_html_ab66c0f78c1d7f27d9b4376a6d9a8dae0"><div class="ttname"><a href="classcloudViewer_1_1BundleAdjustmentWidget.html#ab66c0f78c1d7f27d9b4376a6d9a8dae0">cloudViewer::BundleAdjustmentWidget::BundleAdjustmentWidget</a></div><div class="ttdeci">BundleAdjustmentWidget(ReconstructionWidget *main_window, OptionManager *options)</div><div class="ttdef"><b>Definition:</b> <a href="BundleAdjustmentWidget_8cpp_source.html#l00020">BundleAdjustmentWidget.cpp:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReconstructionWidget_html"><div class="ttname"><a href="classcloudViewer_1_1ReconstructionWidget.html">cloudViewer::ReconstructionWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="ReconstructionWidget_8h_source.html#l00045">ReconstructionWidget.h:45</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ThreadControlWidget_html"><div class="ttname"><a href="classcloudViewer_1_1ThreadControlWidget.html">cloudViewer::ThreadControlWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="ThreadControlWidget_8h_source.html#l00019">ThreadControlWidget.h:19</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionManager_html"><div class="ttname"><a href="classcolmap_1_1OptionManager.html">colmap::OptionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="option__manager_8h_source.html#l00038">option_manager.h:38</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionsWidget_html"><div class="ttname"><a href="classcolmap_1_1OptionsWidget.html">colmap::OptionsWidget</a></div><div class="ttdef"><b>Definition:</b> <a href="options__widget_8h_source.html#l00016">options_widget.h:16</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1Reconstruction_html"><div class="ttname"><a href="classcolmap_1_1Reconstruction.html">colmap::Reconstruction</a></div><div class="ttdef"><b>Definition:</b> <a href="reconstruction_8h_source.html#l00040">reconstruction.h:40</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_acbdc2fe5d0d56b055e4a87639b627d31"><div class="ttname"><a href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">cloudViewer::OptionManager</a></div><div class="ttdeci">colmap::OptionManager OptionManager</div><div class="ttdef"><b>Definition:</b> <a href="BundleAdjustmentWidget_8h_source.html#l00019">BundleAdjustmentWidget.h:19</a></div></div>
+<div class="ttc" id="aoption__manager_8h_html"><div class="ttname"><a href="option__manager_8h.html">option_manager.h</a></div></div>
+<div class="ttc" id="aoptions__widget_8h_html"><div class="ttname"><a href="options__widget_8h.html">options_widget.h</a></div></div>
+<div class="ttc" id="areconstruction_8h_html"><div class="ttname"><a href="reconstruction_8h.html">reconstruction.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="BundleAdjustmentWidget_8h.html">BundleAdjustmentWidget.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

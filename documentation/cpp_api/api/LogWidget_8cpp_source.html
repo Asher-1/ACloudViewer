@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('LogWidget_8cpp_source.html',''); initR
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="LogWidget_8h.html">LogWidget.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;util/option_manager.h&quot;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="option__manager_8h.html">util/option_manager.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// CV_CORE_LIB</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CVLog_8h.html">CVLog.h</a>&gt;</span></div>
@@ -117,7 +108,7 @@ $(document).ready(function(){initNavTree('LogWidget_8cpp_source.html',''); initR
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1LogWidget.html#a64db40ba13477f8a1e0fe1a2cfbb64ed">   20</a></span>&#160;<a class="code" href="classcloudViewer_1_1LogWidget.html#a64db40ba13477f8a1e0fe1a2cfbb64ed">LogWidget::LogWidget</a>(QWidget* parent, <span class="keyword">const</span> <span class="keywordtype">int</span> max_num_blocks) {</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    setWindowFlags(<a class="code" href="sqlite3_8c.html#adb2a551453af16dd3214a23b16e67544">Qt::Window</a>);</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    setWindowFlags(Qt::Window);</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    setWindowTitle(<span class="stringliteral">&quot;Log&quot;</span>);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    resize(320, parent-&gt;height());</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
@@ -127,9 +118,9 @@ $(document).ready(function(){initNavTree('LogWidget_8cpp_source.html',''); initR
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    qRegisterMetaType&lt;QTextCursor&gt;(<span class="stringliteral">&quot;QTextCursor&quot;</span>);</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    qRegisterMetaType&lt;QTextBlock&gt;(<span class="stringliteral">&quot;QTextBlock&quot;</span>);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    QTimer* <a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a> = <span class="keyword">new</span> QTimer(<span class="keyword">this</span>);</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    connect(<a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>, &amp;QTimer::timeout, <span class="keyword">this</span>, &amp;<a class="code" href="classcloudViewer_1_1LogWidget.html#aaee0a1f90aa5a969bfaf883c064e6558">LogWidget::Flush</a>);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <a class="code" href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a>-&gt;start(100);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    QTimer* timer = <span class="keyword">new</span> QTimer(<span class="keyword">this</span>);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    connect(timer, &amp;QTimer::timeout, <span class="keyword">this</span>, &amp;<a class="code" href="classcloudViewer_1_1LogWidget.html#aaee0a1f90aa5a969bfaf883c064e6558">LogWidget::Flush</a>);</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    timer-&gt;start(100);</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="comment">// Comment these lines if debugging, otherwise debug messages won&#39;t appear</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <span class="comment">// on the console and the output is lost in the log widget when crashing</span></div>
@@ -337,16 +328,15 @@ $(document).ready(function(){initNavTree('LogWidget_8cpp_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1LogWidget_html_aaee0a1f90aa5a969bfaf883c064e6558"><div class="ttname"><a href="classcloudViewer_1_1LogWidget.html#aaee0a1f90aa5a969bfaf883c064e6558">cloudViewer::LogWidget::Flush</a></div><div class="ttdeci">void Flush()</div><div class="ttdef"><b>Definition:</b> <a href="LogWidget_8cpp_source.html#l00172">LogWidget.cpp:172</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1StandardOutputRedirector_html"><div class="ttname"><a href="classcloudViewer_1_1StandardOutputRedirector.html">cloudViewer::StandardOutputRedirector</a></div><div class="ttdef"><b>Definition:</b> <a href="LogWidget_8h_source.html#l00018">LogWidget.h:18</a></div></div>
 <div class="ttc" id="anamespaceQtCompatRegExpOption_html_aef3543c60166ecb59e406c1fc2c29950"><div class="ttname"><a href="namespaceQtCompatRegExpOption.html#aef3543c60166ecb59e406c1fc2c29950">QtCompatRegExpOption::CaseInsensitive</a></div><div class="ttdeci">constexpr QRegularExpression::PatternOption CaseInsensitive</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00174">QtCompat.h:174</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_adb2a551453af16dd3214a23b16e67544"><div class="ttname"><a href="sqlite3_8c.html#adb2a551453af16dd3214a23b16e67544">Window</a></div><div class="ttdeci">struct Window Window</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l14435">sqlite3.c:14678</a></div></div>
-<div class="ttc" id="astruct_8h_html_aae821c36bb7e6918e1414484f939c3d4"><div class="ttname"><a href="struct_8h.html#aae821c36bb7e6918e1414484f939c3d4">timer</a></div><div class="ttdeci">double timer</div><div class="ttdef"><b>Definition:</b> <a href="struct_8h_source.html#l00215">struct.h:215</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="aoption__manager_8h_html"><div class="ttname"><a href="option__manager_8h.html">option_manager.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="LogWidget_8cpp.html">LogWidget.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

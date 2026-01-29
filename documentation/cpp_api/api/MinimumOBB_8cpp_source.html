@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -271,7 +262,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    faces_for_edge.reserve(num_vertices * 2);</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    constexpr <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> empty_edge =</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;unsigned int&gt;::max</a>();</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            std::numeric_limits&lt;unsigned int&gt;::max();</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    std::vector&lt;unsigned int&gt; vertex_pairs_to_edges(num_vertices * num_vertices,</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                                                    empty_edge);</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
@@ -306,7 +297,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;            v0 = v1;</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;        }</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <span class="comment">// Compute Face Normal</span></div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keyword">auto</span> n = (hull_v[t1] - hull_v[t0]).<a class="code" href="cutil__math_8h.html#a2e4be24f36bc31a9d0b35540aaa5fb71">cross</a>(hull_v[t2] - hull_v[t0]);</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keyword">auto</span> n = (hull_v[t1] - hull_v[t0]).cross(hull_v[t2] - hull_v[t0]);</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        face_normals.push_back(n.normalized());</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    }</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160; </div>
@@ -316,9 +307,9 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="comment">// Throughout the algorithm, internal edges can all be discarded.</span></div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    <span class="keyword">auto</span> isInternalEdge = [&amp;](std::size_t iEdge) noexcept {</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        <span class="keywordflow">return</span> (face_normals[faces_for_edge[iEdge].first].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        <span class="keywordflow">return</span> (face_normals[faces_for_edge[iEdge].first].dot(</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                        face_normals[faces_for_edge[iEdge].second]) &gt;</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                1.0 - 1e-4);</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                1.0 - 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4);</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    };</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160; </div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="comment">// Throughout the whole algorithm, this array stores an auxiliary structure</span></div>
@@ -356,8 +347,8 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            [&amp;](<span class="keywordtype">int</span> vi, <span class="keyword">const</span> std::vector&lt;int&gt;&amp; neighbors,</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                <span class="keyword">const</span> Eigen::Vector3d&amp; f1a,</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                <span class="keyword">const</span> Eigen::Vector3d&amp; f1b) noexcept -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        constexpr <span class="keywordtype">double</span> epsilon = 1e-4;</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        constexpr <span class="keywordtype">double</span> degenerate_threshold = -5e-2;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        constexpr <span class="keywordtype">double</span> epsilon = 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        constexpr <span class="keywordtype">double</span> degenerate_threshold = -5<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-2;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <span class="keywordtype">double</span> t_min = 0.0;</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        <span class="keywordtype">double</span> t_max = 1.0;</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
@@ -370,17 +361,17 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;            <span class="keyword">const</span> <span class="keyword">auto</span>&amp; neighbor = hull_v[neighbor_index];</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;            <span class="comment">// Compute edge vector e = neighbor - v.</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;            Eigen::Vector3d e = neighbor - v;</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;            Eigen::Vector3d <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = neighbor - v;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160; </div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            <span class="comment">// Compute dot products manually for efficiency.</span></div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordtype">double</span> s = f1b_f1a.dot(e);</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            <span class="keywordtype">double</span> n = f1b.dot(e);</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordtype">double</span> s = f1b_f1a.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>);</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            <span class="keywordtype">double</span> n = f1b.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>);</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            <span class="comment">// Adjust t_min and t_max based on the value of s.</span></div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            <span class="keywordflow">if</span> (s &gt; epsilon) {</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                t_max = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(t_max, n / s);</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                t_max = std::min(t_max, n / s);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (s &lt; -epsilon) {</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                t_min = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(t_min, n / s);</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                t_min = std::max(t_min, n / s);</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (n &lt; -epsilon) {</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                <span class="comment">// No feasible t if n is negative when s is nearly zero.</span></div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -412,26 +403,26 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160; </div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        <span class="comment">// Traverse neighbors to find more extreme vertices.</span></div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        <span class="keywordtype">int</span> second_best = -1;</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keywordtype">double</span> second_best_dot = cur_dot - 1e-3;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keywordtype">double</span> second_best_dot = cur_dot - 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-3;</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordflow">while</span> (neighbors != neighbors_end) {</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            <span class="keywordtype">int</span> n = *neighbors++;</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            <span class="keywordflow">if</span> (flood_fill_visited[n] != flood_fill_visit_color) {</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                <span class="keywordtype">double</span> <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a> = direction.dot(hull_v[n]);</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a> &gt; cur_dot) {</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                <span class="keywordtype">double</span> dot = direction.dot(hull_v[n]);</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                <span class="keywordflow">if</span> (dot &gt; cur_dot) {</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                    <span class="comment">// Found a new vertex with higher dot product.</span></div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;                    starting_vertex = n;</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                    cur_dot = <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>;</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                    cur_dot = dot;</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;                    flood_fill_visited[starting_vertex] =</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;                            flood_fill_visit_color;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;                    neighbors = &amp;adjacency_data[starting_vertex][0];</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                    neighbors_end =</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;                            neighbors + adjacency_data[starting_vertex].size();</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;                    second_best = -1;</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                    second_best_dot = cur_dot - 1e-3;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a> &gt; second_best_dot) {</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                    second_best_dot = cur_dot - 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-3;</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (dot &gt; second_best_dot) {</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                    <span class="comment">// Update second-best candidate.</span></div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                    second_best = n;</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                    second_best_dot = <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                    second_best_dot = dot;</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;                }</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;            }</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        }</div>
@@ -440,7 +431,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <span class="keywordflow">if</span> (second_best != -1 &amp;&amp;</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            flood_fill_visited[second_best] != flood_fill_visit_color) {</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;            <span class="keywordtype">double</span> second_most_extreme =</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    -<a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    -std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;            <span class="keywordtype">int</span> second_try = <span class="keyword">self</span>(<span class="keyword">self</span>, direction, flood_fill_visited,</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;                                  flood_fill_visit_color, second_most_extreme,</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;                                  second_best);</div>
@@ -474,12 +465,12 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;        traverse_stack_edges.reserve(edge_size);</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        traverse_stack_edges.emplace_back(0, adjacency_data[0].front());</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        <span class="keywordflow">while</span> (!traverse_stack_edges.empty()) {</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;            <span class="keyword">auto</span> e = traverse_stack_edges.back();</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;            <span class="keyword">auto</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = traverse_stack_edges.back();</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;            traverse_stack_edges.pop_back();</div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160; </div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;            <span class="comment">// Find edge index</span></div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;            <span class="keywordtype">int</span> edge_idx =</div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;                    vertex_pairs_to_edges[e.first * num_vertices + e.second];</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;                    vertex_pairs_to_edges[<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.first * num_vertices + <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.second];</div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;            <span class="keywordflow">if</span> (visited_edges[edge_idx]) <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;            visited_edges[edge_idx] = 1;</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;            <span class="keyword">auto</span>&amp; ff = faces_for_edge[edge_idx];</div>
@@ -497,7 +488,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                spatial_edge_order.push_back(edge_idx);</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;            }</div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160; </div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            <span class="keywordtype">int</span> v0 = e.second;</div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            <span class="keywordtype">int</span> v0 = <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.second;</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            <span class="keywordtype">size_t</span> size_before = traverse_stack_edges.size();</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v1 : adjacency_data[v0]) {</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;                <span class="keywordtype">int</span> e1 = vertex_pairs_to_edges[v0 * num_vertices + v1];</div>
@@ -602,19 +593,19 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;        Eigen::Vector3d dead_direction = (f1a + f1b) * 0.5;</div>
 <div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;        Eigen::Vector3d basis1, basis2;</div>
 <div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        <span class="keywordtype">double</span> sign = std::copysign(1.0, dead_direction.z());</div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">double</span> a = -1.0 / (sign + dead_direction.z());</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">double</span> b = dead_direction.x() * dead_direction.y() * a;</div>
+<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = -1.0 / (sign + dead_direction.z());</div>
+<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">double</span> b = dead_direction.x() * dead_direction.y() * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        basis1 = Eigen::Vector3d(</div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;                1.0 + sign * dead_direction.x() * dead_direction.x() * a,</div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;                1.0 + sign * dead_direction.x() * dead_direction.x() * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;                sign * b, -sign * dead_direction.x());</div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        basis2 = Eigen::Vector3d(</div>
-<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;                b, sign + dead_direction.y() * dead_direction.y() * a,</div>
+<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;                b, sign + dead_direction.y() * dead_direction.y() * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>,</div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;                -dead_direction.y());</div>
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160; </div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;        <span class="keywordtype">double</span> dummy;</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;        Eigen::Vector3d dir =</div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;                (f1a.cross(Eigen::Vector3d(0, 1, 0))).normalized();</div>
-<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;        <span class="keywordflow">if</span> (dir.norm() &lt; 1e-4) {</div>
+<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;        <span class="keywordflow">if</span> (dir.norm() &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4) {</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;            dir = Eigen::Vector3d(0, 0, 1);  <span class="comment">// If f1a is parallel to y-axis</span></div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;        }</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        clearGraphSearch();</div>
@@ -646,8 +637,8 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;                <span class="keywordtype">double</span> ab = a2 + b2;</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;                <span class="keywordtype">double</span> ac = a2 + c2;</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;                <span class="keywordtype">double</span> abcd = ab + c2 + d2;</div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;                <span class="keywordtype">double</span> min_val = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>({a2, ab, ac, abcd});</div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;                <span class="keywordtype">double</span> max_val = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>({a2, ab, ac, abcd});</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;                <span class="keywordtype">double</span> min_val = std::min({a2, ab, ac, abcd});</div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;                <span class="keywordtype">double</span> max_val = std::max({a2, ab, ac, abcd});</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;                <span class="keywordtype">bool</span> are_edges_compatible_for_obb =</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;                        (min_val &lt;= 0.0 &amp;&amp; max_val &gt;= 0.0);</div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160; </div>
@@ -718,10 +709,10 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;            Eigen::Vector3d dead_dir = 0.5 * (f2a + f2b);</div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;            Eigen::Vector3d search_dir = baseDir.cross(dead_dir);</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;            search_dir = search_dir.normalized();</div>
-<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;            <span class="keywordflow">if</span> (search_dir.norm() &lt; 1e-9) {</div>
+<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;            <span class="keywordflow">if</span> (search_dir.norm() &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-9) {</div>
 <div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;                search_dir = f1a.cross(f2a);</div>
 <div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;                search_dir = search_dir.normalized();</div>
-<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;                <span class="keywordflow">if</span> (search_dir.norm() &lt; 1e-9) {</div>
+<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;                <span class="keywordflow">if</span> (search_dir.norm() &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-9) {</div>
 <div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;                    search_dir =</div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;                            (f1a.cross(Eigen::Vector3d(0, 1, 0))).normalized();</div>
 <div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;                }</div>
@@ -811,41 +802,41 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;                                    Eigen::Vector3d::Zero(),</div>
 <div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;                                    Eigen::Vector3d::Zero()};</div>
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160; </div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;                            constexpr <span class="keywordtype">double</span> eps = 1e-4;</div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;                            constexpr <span class="keywordtype">double</span> angle_eps = 1e-3;</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;                            constexpr <span class="keywordtype">double</span> eps = 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4;</div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;                            constexpr <span class="keywordtype">double</span> angle_eps = 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-3;</div>
 <div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;                            <span class="keywordtype">int</span> n_solutions = 0;</div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160; </div>
 <div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;                            {</div>
 <div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;                                <span class="comment">// Precompute intermediate vectors for</span></div>
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;                                <span class="comment">// polynomial coefficients.</span></div>
-<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;                                Eigen::Vector3d a = f1b;</div>
+<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;                                Eigen::Vector3d <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = f1b;</div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;                                Eigen::Vector3d b = f1a - f1b;</div>
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;                                Eigen::Vector3d c = f2b;</div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;                                Eigen::Vector3d d = f2a - f2b;</div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                                Eigen::Vector3d e = f3b;</div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                                Eigen::Vector3d <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = f3b;</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;                                Eigen::Vector3d f = f3a - f3b;</div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160; </div>
 <div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                                <span class="comment">// Compute polynomial coefficients.</span></div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                                <span class="keywordtype">double</span> g = a.dot(c) * d.dot(e) -</div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;                                           a.dot(d) * c.dot(e);</div>
-<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;                                <span class="keywordtype">double</span> h = a.dot(c) * d.dot(f) -</div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;                                           a.dot(d) * c.dot(f);</div>
-<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                                <span class="keywordtype">double</span> i = b.dot(c) * d.dot(e) -</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                                           b.dot(d) * c.dot(e);</div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                                <span class="keywordtype">double</span> g = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(c) * d.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) -</div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;                                           <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(d) * c.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>);</div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;                                <span class="keywordtype">double</span> h = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(c) * d.dot(f) -</div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;                                           <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(d) * c.dot(f);</div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                                <span class="keywordtype">double</span> i = b.dot(c) * d.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) -</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                                           b.dot(d) * c.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>);</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                                <span class="keywordtype">double</span> j = b.dot(c) * d.dot(f) -</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;                                           b.dot(d) * c.dot(f);</div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;                                <span class="keywordtype">double</span> k = g * b.dot(e) - a.dot(e) * i;</div>
-<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;                                <span class="keywordtype">double</span> l = h * b.dot(e) + g * b.dot(f) -</div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;                                           a.dot(f) * i - a.dot(e) * j;</div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;                                <span class="keywordtype">double</span> m = h * b.dot(f) - a.dot(f) * j;</div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;                                <span class="keywordtype">double</span> k = g * b.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) - <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) * i;</div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;                                <span class="keywordtype">double</span> l = h * b.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + g * b.dot(f) -</div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;                                           <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(f) * i - <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) * j;</div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;                                <span class="keywordtype">double</span> m = h * b.dot(f) - <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>.dot(f) * j;</div>
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;                                <span class="keywordtype">double</span> s = l * l - 4 * m * k;</div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160; </div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;                                <span class="comment">// Handle degenerate or linear case.</span></div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;                                <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(m) &lt; 1e-5 || <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(s) &lt; 1e-5) {</div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;                                <span class="keywordflow">if</span> (std::abs(m) &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-5 || std::abs(s) &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-5) {</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;                                    <span class="keywordtype">double</span> v = -k / l;</div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;                                    <span class="keywordtype">double</span> t = -(g + h * v) / (i + j * v);</div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;                                    <span class="keywordtype">double</span> u = -(c.dot(e) + c.dot(f) * v) /</div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;                                               (d.dot(e) + d.dot(f) * v);</div>
+<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;                                    <span class="keywordtype">double</span> u = -(c.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + c.dot(f) * v) /</div>
+<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;                                               (d.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + d.dot(f) * v);</div>
 <div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;                                    n_solutions = 0;</div>
 <div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160; </div>
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;                                    <span class="comment">// If we happened to divide by zero above,</span></div>
@@ -853,14 +844,14 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;                                    <span class="keywordflow">if</span> (v &gt;= -eps &amp;&amp; t &gt;= -eps &amp;&amp; u &gt;= -eps &amp;&amp;</div>
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;                                        v &lt;= 1.0 + eps &amp;&amp; t &lt;= 1.0 + eps &amp;&amp;</div>
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;                                        u &lt;= 1.0 + eps) {</div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;                                        n1[0] = (a + b * t).normalized();</div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;                                        n1[0] = (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> + b * t).normalized();</div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;                                        n2[0] = (c + d * u).normalized();</div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;                                        n3[0] = (e + f * v).normalized();</div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;                                        <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n1[0].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(n2[0])) &lt;</div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;                                        n3[0] = (<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> + f * v).normalized();</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;                                        <span class="keywordflow">if</span> (std::abs(n1[0].dot(n2[0])) &lt;</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;                                                    angle_eps &amp;&amp;</div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;                                            <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n1[0].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(n3[0])) &lt;</div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;                                            std::abs(n1[0].dot(n3[0])) &lt;</div>
 <div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;                                                    angle_eps &amp;&amp;</div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;                                            <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n2[0].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(n3[0])) &lt;</div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;                                            std::abs(n2[0].dot(n3[0])) &lt;</div>
 <div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;                                                    angle_eps) {</div>
 <div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;                                            n_solutions = 1;</div>
 <div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;                                        } <span class="keywordflow">else</span> {</div>
@@ -882,30 +873,30 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;                                        <span class="keywordtype">double</span> T2 =</div>
 <div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;                                                -(g + h * V2) / (i + j * V2);</div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;                                        <span class="keywordtype">double</span> U1 =</div>
-<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;                                                -(c.dot(e) + c.dot(f) * V1) /</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;                                                (d.dot(e) + d.dot(f) * V1);</div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;                                                -(c.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + c.dot(f) * V1) /</div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;                                                (d.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + d.dot(f) * V1);</div>
 <div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;                                        <span class="keywordtype">double</span> U2 =</div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;                                                -(c.dot(e) + c.dot(f) * V2) /</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;                                                (d.dot(e) + d.dot(f) * V2);</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;                                                -(c.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + c.dot(f) * V2) /</div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;                                                (d.dot(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) + d.dot(f) * V2);</div>
 <div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160; </div>
 <div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;                                        <span class="keywordflow">if</span> (V1 &gt;= -eps &amp;&amp; T1 &gt;= -eps &amp;&amp;</div>
 <div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;                                            U1 &gt;= -eps &amp;&amp; V1 &lt;= 1.0 + eps &amp;&amp;</div>
 <div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;                                            T1 &lt;= 1.0 + eps &amp;&amp;</div>
 <div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;                                            U1 &lt;= 1.0 + eps) {</div>
 <div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;                                            n1[n_solutions] =</div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;                                                    (a + b * T1).normalized();</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;                                                    (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> + b * T1).normalized();</div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;                                            n2[n_solutions] =</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;                                                    (c + d * U1).normalized();</div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;                                            n3[n_solutions] =</div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;                                                    (e + f * V1).normalized();</div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;                                                    (<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> + f * V1).normalized();</div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160; </div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;                                            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n1[n_solutions].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;                                            <span class="keywordflow">if</span> (std::abs(n1[n_solutions].dot(</div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;                                                        n2[n_solutions])) &lt;</div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                                                        angle_eps &amp;&amp;</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                                                <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n1[n_solutions].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                                                std::abs(n1[n_solutions].dot(</div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;                                                        n3[n_solutions])) &lt;</div>
 <div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                                                        angle_eps &amp;&amp;</div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                                                <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n2[n_solutions].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                                                std::abs(n2[n_solutions].dot(</div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;                                                        n3[n_solutions])) &lt;</div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;                                                        angle_eps)</div>
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;                                                ++n_solutions;</div>
@@ -915,23 +906,23 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                                            T2 &lt;= 1.0 + eps &amp;&amp;</div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;                                            U2 &lt;= 1.0 + eps) {</div>
 <div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                                            n1[n_solutions] =</div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                                                    (a + b * T2).normalized();</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                                                    (<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> + b * T2).normalized();</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;                                            n2[n_solutions] =</div>
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                                                    (c + d * U2).normalized();</div>
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                                            n3[n_solutions] =</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                                                    (e + f * V2).normalized();</div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                                            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n1[n_solutions].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                                                    (<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> + f * V2).normalized();</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                                            <span class="keywordflow">if</span> (std::abs(n1[n_solutions].dot(</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;                                                        n2[n_solutions])) &lt;</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                                                        angle_eps &amp;&amp;</div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;                                                <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n1[n_solutions].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;                                                std::abs(n1[n_solutions].dot(</div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;                                                        n3[n_solutions])) &lt;</div>
 <div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;                                                        angle_eps &amp;&amp;</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;                                                <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(n2[n_solutions].<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;                                                std::abs(n2[n_solutions].dot(</div>
 <div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;                                                        n3[n_solutions])) &lt;</div>
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;                                                        angle_eps)</div>
 <div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;                                                ++n_solutions;</div>
 <div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;                                        }</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;                                        <span class="keywordflow">if</span> (s &lt; 1e-4 &amp;&amp; n_solutions == 2) {</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;                                        <span class="keywordflow">if</span> (s &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4 &amp;&amp; n_solutions == 2) {</div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;                                            n_solutions = 1;</div>
 <div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;                                        }</div>
 <div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                                    }</div>
@@ -955,11 +946,11 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                                <span class="keywordtype">double</span> max_n2 = n2_.dot(hull_v_j);</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;                                <span class="keywordtype">double</span> max_n3 = n3_.dot(hull_v_k);</div>
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;                                <span class="keywordtype">double</span> min_n1 =</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                                        <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                                        std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;                                <span class="keywordtype">double</span> min_n2 =</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;                                        <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;                                        std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;                                <span class="keywordtype">double</span> min_n3 =</div>
-<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;                                        <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;                                        std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160; </div>
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;                                <span class="keyword">const</span> <span class="keyword">auto</span>&amp; antipodal_i =</div>
 <div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;                                        antipodal_points_for_edge[edge_i];</div>
@@ -971,15 +962,15 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;                                <span class="comment">// Determine the minimum projections along each</span></div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;                                <span class="comment">// axis over respective antipodal sets.</span></div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;                                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v_idx : antipodal_i) {</div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                                    min_n1 = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(min_n1,</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                                    min_n1 = std::min(min_n1,</div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;                                                      n1_.dot(hull_v[v_idx]));</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;                                }</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;                                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v_idx : antipodal_j) {</div>
-<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;                                    min_n2 = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(min_n2,</div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;                                    min_n2 = std::min(min_n2,</div>
 <div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;                                                      n2_.dot(hull_v[v_idx]));</div>
 <div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;                                }</div>
 <div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;                                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v_idx : antipodal_k) {</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;                                    min_n3 = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(min_n3,</div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;                                    min_n3 = std::min(min_n3,</div>
 <div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;                                                      n3_.dot(hull_v[v_idx]));</div>
 <div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;                                }</div>
 <div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160; </div>
@@ -1061,17 +1052,17 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;                    Eigen::Vector3d n;</div>
 <div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160; </div>
 <div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;                    <span class="keywordtype">bool</span> areCompatibleOpposingEdges = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;                    constexpr <span class="keywordtype">double</span> tooCloseToFaceEpsilon = 1e-4;</div>
+<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;                    constexpr <span class="keywordtype">double</span> tooCloseToFaceEpsilon = 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4;</div>
 <div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160; </div>
 <div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;                    Eigen::Matrix3d A;</div>
 <div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;                    A.col(0) = f2b;</div>
 <div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;                    A.col(1) = f1a - f1b;</div>
 <div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;                    A.col(2) = f2a - f2b;</div>
 <div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;                    Eigen::ColPivHouseholderQR&lt;Eigen::Matrix3d&gt; solver(A);</div>
-<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;                    Eigen::Vector3d x = solver.solve(-f1b);</div>
-<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;                    <span class="keywordtype">double</span> c = x(0);</div>
-<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;                    <span class="keywordtype">double</span> t = x(1);</div>
-<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;                    <span class="keywordtype">double</span> cu = x(2);</div>
+<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;                    Eigen::Vector3d <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = solver.solve(-f1b);</div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;                    <span class="keywordtype">double</span> c = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(0);</div>
+<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;                    <span class="keywordtype">double</span> t = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(1);</div>
+<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;                    <span class="keywordtype">double</span> cu = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(2);</div>
 <div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160; </div>
 <div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;                    <span class="keywordflow">if</span> (c &lt;= 0.0 || t &lt; 0.0 || t &gt; 1.0) {</div>
 <div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;                        areCompatibleOpposingEdges = <span class="keyword">false</span>;</div>
@@ -1124,9 +1115,9 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;                    <span class="keywordtype">double</span> den = n1.dot(f3b - f3a);</div>
 <div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;                    moveSign(num, den);</div>
 <div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160; </div>
-<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;                    constexpr <span class="keywordtype">double</span> epsilon = 1e-4;</div>
+<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;                    constexpr <span class="keywordtype">double</span> epsilon = 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4;</div>
 <div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;                    <span class="keywordflow">if</span> (den &lt; epsilon) {</div>
-<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;                        num = (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(num) &lt; 1e-4) ? 0.0 : -1.0;</div>
+<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;                        num = (std::abs(num) &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4) ? 0.0 : -1.0;</div>
 <div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;                        den = 1.0;</div>
 <div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160;                    }</div>
 <div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160; </div>
@@ -1162,7 +1153,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;                        min_n2 = -min_n2;</div>
 <div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160; </div>
 <div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160;                        <span class="keywordtype">double</span> max_n3 = n3.dot(hull_v[edges[edge_j].first]);</div>
-<div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;                        <span class="keywordtype">double</span> min_n3 = <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;                        <span class="keywordtype">double</span> min_n3 = std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160; </div>
 <div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;                        <span class="comment">// If there are very few antipodal vertices, do a</span></div>
 <div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160;                        <span class="comment">// very tight loop and just iterate over each.</span></div>
@@ -1171,7 +1162,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;                        <span class="keywordflow">if</span> (antipodals_edge.size() &lt; 20) {</div>
 <div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;                            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v_idx : antipodals_edge) {</div>
 <div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;                                min_n3 =</div>
-<div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;                                        <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(min_n3, n3.dot(hull_v[v_idx]));</div>
+<div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;                                        std::min(min_n3, n3.dot(hull_v[v_idx]));</div>
 <div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;                            }</div>
 <div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160;                        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;                            <span class="comment">// Otherwise perform a spatial locality</span></div>
@@ -1235,9 +1226,9 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01136"></a><span class="lineno"> 1136</span>&#160;            <span class="keywordtype">int</span> v0 = tri(2);</div>
 <div class="line"><a name="l01137"></a><span class="lineno"> 1137</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j = 0; j &lt; 3; ++j) {</div>
 <div class="line"><a name="l01138"></a><span class="lineno"> 1138</span>&#160;                <span class="keywordtype">int</span> v1 = tri(j);</div>
-<div class="line"><a name="l01139"></a><span class="lineno"> 1139</span>&#160;                <span class="keywordtype">int</span> e = vertex_pairs_to_edges[v0 * num_vertices + v1];</div>
-<div class="line"><a name="l01140"></a><span class="lineno"> 1140</span>&#160;                <span class="keywordflow">if</span> (!isInternalEdge(e)) {</div>
-<div class="line"><a name="l01141"></a><span class="lineno"> 1141</span>&#160;                    e1 = e;</div>
+<div class="line"><a name="l01139"></a><span class="lineno"> 1139</span>&#160;                <span class="keywordtype">int</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = vertex_pairs_to_edges[v0 * num_vertices + v1];</div>
+<div class="line"><a name="l01140"></a><span class="lineno"> 1140</span>&#160;                <span class="keywordflow">if</span> (!isInternalEdge(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>)) {</div>
+<div class="line"><a name="l01141"></a><span class="lineno"> 1141</span>&#160;                    e1 = <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>;</div>
 <div class="line"><a name="l01142"></a><span class="lineno"> 1142</span>&#160;                    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01143"></a><span class="lineno"> 1143</span>&#160;                }</div>
 <div class="line"><a name="l01144"></a><span class="lineno"> 1144</span>&#160;                v0 = v1;</div>
@@ -1248,12 +1239,12 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01149"></a><span class="lineno"> 1149</span>&#160;            <span class="comment">// Compute min_n1 either by scanning antipodal points or using</span></div>
 <div class="line"><a name="l01150"></a><span class="lineno"> 1150</span>&#160;            <span class="comment">// ExtremeVertexConvex.</span></div>
 <div class="line"><a name="l01151"></a><span class="lineno"> 1151</span>&#160;            <span class="keywordtype">double</span> max_n1 = n1.dot(hull_v[edges[e1].first]);</div>
-<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;            <span class="keywordtype">double</span> min_n1 = <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;            <span class="keywordtype">double</span> min_n1 = std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l01153"></a><span class="lineno"> 1153</span>&#160;            <span class="keyword">const</span> <span class="keyword">auto</span>&amp; antipodals = antipodal_points_for_edge[e1];</div>
 <div class="line"><a name="l01154"></a><span class="lineno"> 1154</span>&#160;            <span class="keywordflow">if</span> (antipodals.size() &lt; 20) {</div>
-<div class="line"><a name="l01155"></a><span class="lineno"> 1155</span>&#160;                min_n1 = <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l01155"></a><span class="lineno"> 1155</span>&#160;                min_n1 = std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l01156"></a><span class="lineno"> 1156</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v_idx : antipodals) {</div>
-<div class="line"><a name="l01157"></a><span class="lineno"> 1157</span>&#160;                    min_n1 = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(min_n1, n1.dot(hull_v[v_idx]));</div>
+<div class="line"><a name="l01157"></a><span class="lineno"> 1157</span>&#160;                    min_n1 = std::min(min_n1, n1.dot(hull_v[v_idx]));</div>
 <div class="line"><a name="l01158"></a><span class="lineno"> 1158</span>&#160;                }</div>
 <div class="line"><a name="l01159"></a><span class="lineno"> 1159</span>&#160;            } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01160"></a><span class="lineno"> 1160</span>&#160;                clearGraphSearch();</div>
@@ -1274,11 +1265,11 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160;                <span class="keywordtype">double</span> num = n1.dot(f3b);</div>
 <div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;                <span class="keywordtype">double</span> den = n1.dot(f3b - f3a);</div>
 <div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;                <span class="keywordtype">double</span> v;</div>
-<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;                constexpr <span class="keywordtype">double</span> epsilon = 1e-4;</div>
-<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(den) &gt;= epsilon) {</div>
+<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;                constexpr <span class="keywordtype">double</span> epsilon = 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-4;</div>
+<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;                <span class="keywordflow">if</span> (std::abs(den) &gt;= epsilon) {</div>
 <div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;                    v = num / den;</div>
 <div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;                    v = (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(num) &lt; epsilon) ? 0.0 : -1.0;</div>
+<div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;                    v = (std::abs(num) &lt; epsilon) ? 0.0 : -1.0;</div>
 <div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;                }</div>
 <div class="line"><a name="l01184"></a><span class="lineno"> 1184</span>&#160; </div>
 <div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;                <span class="keywordflow">if</span> (v &gt;= -epsilon &amp;&amp; v &lt;= 1.0 + epsilon) {</div>
@@ -1297,7 +1288,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01198"></a><span class="lineno"> 1198</span>&#160;                    min_n2 = -min_n2;</div>
 <div class="line"><a name="l01199"></a><span class="lineno"> 1199</span>&#160; </div>
 <div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160;                    <span class="keywordtype">double</span> max_n3 = n3.dot(hull_v[edges[edge_k].first]);</div>
-<div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;                    <span class="keywordtype">double</span> min_n3 = <a class="code" href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">std::numeric_limits&lt;double&gt;::infinity</a>();</div>
+<div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;                    <span class="keywordtype">double</span> min_n3 = std::numeric_limits&lt;double&gt;::infinity();</div>
 <div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160; </div>
 <div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;                    <span class="comment">// If there are very few antipodal vertices, do a very</span></div>
 <div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;                    <span class="comment">// tight loop and just iterate over each.</span></div>
@@ -1305,7 +1296,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;                            antipodal_points_for_edge[edge_k];</div>
 <div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;                    <span class="keywordflow">if</span> (antipodals_edge.size() &lt; 20) {</div>
 <div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;                        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> v_idx : antipodals_edge) {</div>
-<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;                            min_n3 = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(min_n3, n3.dot(hull_v[v_idx]));</div>
+<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;                            min_n3 = std::min(min_n3, n3.dot(hull_v[v_idx]));</div>
 <div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;                        }</div>
 <div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160;                    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160;                        clearGraphSearch();</div>
@@ -1381,11 +1372,11 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01282"></a><span class="lineno"> 1282</span>&#160;    <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html">PointCloud</a> hull_pcd(hull_mesh.GetVertexPositions().Clone());</div>
 <div class="line"><a name="l01283"></a><span class="lineno"> 1283</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; tri : hull_t) {</div>
 <div class="line"><a name="l01284"></a><span class="lineno"> 1284</span>&#160;        hull_pcd.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a7f6cc416ed84500dac9491efce985563">GetPointPositions</a>().<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a1d228013449f01e63b44cfa6b16c6f5b">CopyFrom</a>(hull_mesh.GetVertexPositions());</div>
-<div class="line"><a name="l01285"></a><span class="lineno"> 1285</span>&#160;        Eigen::Vector3d a = hull_v[tri(0)];</div>
+<div class="line"><a name="l01285"></a><span class="lineno"> 1285</span>&#160;        Eigen::Vector3d <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a> = hull_v[tri(0)];</div>
 <div class="line"><a name="l01286"></a><span class="lineno"> 1286</span>&#160;        Eigen::Vector3d b = hull_v[tri(1)];</div>
 <div class="line"><a name="l01287"></a><span class="lineno"> 1287</span>&#160;        Eigen::Vector3d c = hull_v[tri(2)];</div>
-<div class="line"><a name="l01288"></a><span class="lineno"> 1288</span>&#160;        Eigen::Vector3d u = b - a;</div>
-<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160;        Eigen::Vector3d v = c - a;</div>
+<div class="line"><a name="l01288"></a><span class="lineno"> 1288</span>&#160;        Eigen::Vector3d u = b - <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
+<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160;        Eigen::Vector3d v = c - <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>;</div>
 <div class="line"><a name="l01290"></a><span class="lineno"> 1290</span>&#160;        Eigen::Vector3d w = u.cross(v);</div>
 <div class="line"><a name="l01291"></a><span class="lineno"> 1291</span>&#160;        v = w.cross(u);</div>
 <div class="line"><a name="l01292"></a><span class="lineno"> 1292</span>&#160;        u = u / u.norm();</div>
@@ -1396,7 +1387,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="line"><a name="l01297"></a><span class="lineno"> 1297</span>&#160;        <span class="keyword">auto</span> rot_inv =</div>
 <div class="line"><a name="l01298"></a><span class="lineno"> 1298</span>&#160;                <a class="code" href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a08fa2bff9597e0e3f926eb642318be0e">core::eigen_converter::EigenMatrixToTensor</a>(m_rot.inverse());</div>
 <div class="line"><a name="l01299"></a><span class="lineno"> 1299</span>&#160;        <span class="keyword">auto</span> center =</div>
-<div class="line"><a name="l01300"></a><span class="lineno"> 1300</span>&#160;                <a class="code" href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a08fa2bff9597e0e3f926eb642318be0e">core::eigen_converter::EigenMatrixToTensor</a>(a).<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#abbea02921dd5b1e355a2789094d166f1">Reshape</a>({3});</div>
+<div class="line"><a name="l01300"></a><span class="lineno"> 1300</span>&#160;                <a class="code" href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a08fa2bff9597e0e3f926eb642318be0e">core::eigen_converter::EigenMatrixToTensor</a>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>).<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#abbea02921dd5b1e355a2789094d166f1">Reshape</a>({3});</div>
 <div class="line"><a name="l01301"></a><span class="lineno"> 1301</span>&#160;        hull_pcd.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a0d0cfdacbf3af6b39cc73f5ec446300a">Rotate</a>(rot_inv, center);</div>
 <div class="line"><a name="l01302"></a><span class="lineno"> 1302</span>&#160; </div>
 <div class="line"><a name="l01303"></a><span class="lineno"> 1303</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span> aabox = hull_pcd.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a9c75195bee5baa382c19042764b6dd13">GetAxisAlignedBoundingBox</a>();</div>
@@ -1453,12 +1444,9 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1PointCloud_html_a7f6cc416ed84500dac9491efce985563"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a7f6cc416ed84500dac9491efce985563">cloudViewer::t::geometry::PointCloud::GetPointPositions</a></div><div class="ttdeci">core::Tensor &amp; GetPointPositions()</div><div class="ttdoc">Get the value of the &quot;positions&quot; attribute. Convenience function.</div><div class="ttdef"><b>Definition:</b> <a href="t_2geometry_2PointCloud_8h_source.html#l00124">PointCloud.h:124</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1PointCloud_html_a9c75195bee5baa382c19042764b6dd13"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a9c75195bee5baa382c19042764b6dd13">cloudViewer::t::geometry::PointCloud::GetAxisAlignedBoundingBox</a></div><div class="ttdeci">AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const</div><div class="ttdoc">Create an axis-aligned bounding box from attribute &quot;positions&quot;.</div><div class="ttdef"><b>Definition:</b> <a href="libs_2cloudViewer_2t_2geometry_2PointCloud_8cpp_source.html#l01271">PointCloud.cpp:1271</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="acuda_2result__set_8h_html_a3b2ee75223537478bf82a4f7a9c89910"><div class="ttname"><a href="cuda_2result__set_8h.html#a3b2ee75223537478bf82a4f7a9c89910">infinity</a></div><div class="ttdeci">__device__ __forceinline__ float infinity()</div><div class="ttdef"><b>Definition:</b> <a href="cuda_2result__set_8h_source.html#l00036">result_set.h:36</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2e4be24f36bc31a9d0b35540aaa5fb71"><div class="ttname"><a href="cutil__math_8h.html#a2e4be24f36bc31a9d0b35540aaa5fb71">cross</a></div><div class="ttdeci">__host__ __device__ float3 cross(float3 a, float3 b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01295">cutil_math.h:1295</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aa81053cc504f50bd3cd8b5cc6f54b666"><div class="ttname"><a href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a></div><div class="ttdeci">__host__ __device__ float dot(float2 a, float2 b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01119">cutil_math.h:1119</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1eigen__converter_html_a08fa2bff9597e0e3f926eb642318be0e"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a08fa2bff9597e0e3f926eb642318be0e">cloudViewer::core::eigen_converter::EigenMatrixToTensor</a></div><div class="ttdeci">core::Tensor EigenMatrixToTensor(const Eigen::MatrixBase&lt; Derived &gt; &amp;matrix)</div><div class="ttdoc">Converts a eigen matrix of shape (M, N) with alignment A and type T to a tensor.</div><div class="ttdef"><b>Definition:</b> <a href="EigenConverter_8h_source.html#l00029">EigenConverter.h:29</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1eigen__converter_html_a7bcfdebbf37eac188abde58da40906a8"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a7bcfdebbf37eac188abde58da40906a8">cloudViewer::core::eigen_converter::TensorToEigenVector3dVector</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector3d &gt; TensorToEigenVector3dVector(const core::Tensor &amp;tensor)</div><div class="ttdoc">Converts a tensor of shape (N, 3) to std::vector&lt;Eigen::Vector3d&gt;. An exception will be thrown if the...</div><div class="ttdef"><b>Definition:</b> <a href="EigenConverter_8cpp_source.html#l00150">EigenConverter.cpp:150</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1eigen__converter_html_a97005d0f2e0225aaeb2cc96138dd5b59"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a97005d0f2e0225aaeb2cc96138dd5b59">cloudViewer::core::eigen_converter::TensorToEigenVector3iVector</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector3i &gt; TensorToEigenVector3iVector(const core::Tensor &amp;tensor)</div><div class="ttdoc">Converts a tensor of shape (N, 3) to std::vector&lt;Eigen::Vector3i&gt;. An exception will be thrown if the...</div><div class="ttdef"><b>Definition:</b> <a href="EigenConverter_8cpp_source.html#l00155">EigenConverter.cpp:155</a></div></div>
@@ -1466,11 +1454,11 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a6b6e31d5568e111450f18df2d5174ea4"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a6b6e31d5568e111450f18df2d5174ea4">cloudViewer::core::make_pair</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE Pair&lt; First, Second &gt; make_pair(const First &amp;_first, const Second &amp;_second)</div><div class="ttdef"><b>Definition:</b> <a href="SlabTraits_8h_source.html#l00049">SlabTraits.h:49</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a93d1839009b16e3c6144b66743314a66"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a93d1839009b16e3c6144b66743314a66">cloudViewer::geometry::OrientedBoundingBox</a></div><div class="ttdeci">::ecvOrientedBBox OrientedBoundingBox</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2BoundingVolume_8h_source.html#l00022">BoundingVolume.h:22</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image_html_ace77713993ef38117c5e93442ab02a42"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image.html#ace77713993ef38117c5e93442ab02a42">cloudViewer::t::geometry::kernel::image::To</a></div><div class="ttdeci">void To(const core::Tensor &amp;src, core::Tensor &amp;dst, double scale, double offset)</div><div class="ttdef"><b>Definition:</b> <a href="kernel_2Image_8cpp_source.html#l00017">Image.cpp:17</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image_html_ace77713993ef38117c5e93442ab02a42"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image.html#ace77713993ef38117c5e93442ab02a42">cloudViewer::t::geometry::kernel::image::To</a></div><div class="ttdeci">void To(const core::Tensor &amp;src, core::Tensor &amp;dst, double scale, double offset)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2t_2geometry_2kernel_2Image_8cpp_source.html#l00017">Image.cpp:17</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1minimum__obb_html_a92d241e73543283453ceb24102cc70a2"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1minimum__obb.html#a92d241e73543283453ceb24102cc70a2">cloudViewer::t::geometry::kernel::minimum_obb::ComputeMinimumOBBApprox</a></div><div class="ttdeci">OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor &amp;points, bool robust)</div><div class="ttdef"><b>Definition:</b> <a href="MinimumOBB_8cpp_source.html#l01248">MinimumOBB.cpp:1248</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1minimum__obb_html_aa7f07a0578e1d04d0b8816a6b745ae93"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1minimum__obb.html#aa7f07a0578e1d04d0b8816a6b745ae93">cloudViewer::t::geometry::kernel::minimum_obb::ComputeMinimumOBBJylanki</a></div><div class="ttdeci">OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor &amp;points_, bool robust)</div><div class="ttdef"><b>Definition:</b> <a href="MinimumOBB_8cpp_source.html#l00055">MinimumOBB.cpp:55</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aadab2d794a49208e83ccebd6de29bbc0"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aadab2d794a49208e83ccebd6de29bbc0">cloudViewer::utility::nullopt</a></div><div class="ttdeci">constexpr nullopt_t nullopt</div><div class="ttdef"><b>Definition:</b> <a href="Optional_8h_source.html#l00136">Optional.h:136</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a0c8f90db0d53db509d716984b4ae1fda"><div class="ttname"><a href="namespaceknncpp.html#a0c8f90db0d53db509d716984b4ae1fda">knncpp::Vector3i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 3, 1 &gt; Vector3i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00030">knncpp.h:30</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
 <div class="ttc" id="at_2geometry_2BoundingVolume_8h_html"><div class="ttname"><a href="t_2geometry_2BoundingVolume_8h.html">BoundingVolume.h</a></div></div>
@@ -1481,7 +1469,7 @@ $(document).ready(function(){initNavTree('MinimumOBB_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="MinimumOBB_8cpp.html">MinimumOBB.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

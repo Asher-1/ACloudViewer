@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,8 +97,8 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ProjectWidget_8h.html">ProjectWidget.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="database_8h.html">base/database.h</a>&quot;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;util/option_manager.h&quot;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="base_2database_8h.html">base/database.h</a>&quot;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="option__manager_8h.html">util/option_manager.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// CV_CORE_LIB</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CVTools_8h.html">CVTools.h</a>&gt;</span></div>
@@ -116,7 +107,7 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">using namespace </span><a class="code" href="namespacecolmap.html">colmap</a>;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ProjectWidget.html#acb43444e0a9cd94cf92a58fec59851f4">   20</a></span>&#160;<a class="code" href="classcloudViewer_1_1ProjectWidget.html#acb43444e0a9cd94cf92a58fec59851f4">ProjectWidget::ProjectWidget</a>(QWidget* parent, <a class="code" href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">OptionManager</a>* options)</div>
+<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ProjectWidget.html#acb43444e0a9cd94cf92a58fec59851f4">   20</a></span>&#160;<a class="code" href="classcolmap_1_1ProjectWidget.html#a9c6cf5bbb3b1a7dbd2e523b486480c17">ProjectWidget::ProjectWidget</a>(QWidget* parent, <a class="code" href="classcolmap_1_1OptionManager.html">OptionManager</a>* options)</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    : QWidget(parent), options_(options), prev_selected_(false) {</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    setWindowFlags(Qt::Dialog);</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    setWindowModality(Qt::ApplicationModal);</div>
@@ -131,14 +122,14 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;            &amp;ProjectWidget::SelectExistingDatabasePath);</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    database_path_text_ = <span class="keyword">new</span> QLineEdit(<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    database_path_text_-&gt;setText(</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;            QString::fromStdString(*options_-&gt;database_path));</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;            QString::fromStdString(*options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a4a5a016a1c397550d7ebb4145216d5b0">database_path</a>));</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="comment">// Image path.</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    QPushButton* image_path_select = <span class="keyword">new</span> QPushButton(tr(<span class="stringliteral">&quot;Select&quot;</span>), <span class="keyword">this</span>);</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    connect(image_path_select, &amp;QPushButton::released, <span class="keyword">this</span>,</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;            &amp;ProjectWidget::SelectImagePath);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    image_path_text_ = <span class="keyword">new</span> QLineEdit(<span class="keyword">this</span>);</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    image_path_text_-&gt;setText(QString::fromStdString(*options_-&gt;image_path));</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    image_path_text_-&gt;setText(QString::fromStdString(*options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#af2c431fa3f7c5d5862eec878d1033d8d">image_path</a>));</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="comment">// Save button.</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    QPushButton* create_button = <span class="keyword">new</span> QPushButton(tr(<span class="stringliteral">&quot;Save&quot;</span>), <span class="keyword">this</span>);</div>
@@ -159,8 +150,8 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;}</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ProjectWidget.html#ae87d7464b1f09fc108278860647d6050">   62</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1ProjectWidget.html#ae87d7464b1f09fc108278860647d6050">ProjectWidget::IsValid</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">return</span> ExistsDir(<a class="code" href="classcloudViewer_1_1ProjectWidget.html#a21970bc3b2c57c0dfa5dc90dc0c99fdd">GetImagePath</a>()) &amp;&amp; !ExistsDir(<a class="code" href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">GetDatabasePath</a>()) &amp;&amp;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;           ExistsDir(GetParentDir(<a class="code" href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">GetDatabasePath</a>()));</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacecolmap.html#a95929756edbe4281616ef6b8be9a593f">ExistsDir</a>(<a class="code" href="classcloudViewer_1_1ProjectWidget.html#a21970bc3b2c57c0dfa5dc90dc0c99fdd">GetImagePath</a>()) &amp;&amp; !<a class="code" href="namespacecolmap.html#a95929756edbe4281616ef6b8be9a593f">ExistsDir</a>(<a class="code" href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">GetDatabasePath</a>()) &amp;&amp;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;           <a class="code" href="namespacecolmap.html#a95929756edbe4281616ef6b8be9a593f">ExistsDir</a>(<a class="code" href="namespacecolmap.html#ae0b73d8a508cbd52ba72bd805e6d1fbd">GetParentDir</a>(<a class="code" href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">GetDatabasePath</a>()));</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;}</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1ProjectWidget.html#ac28aa155202bdae239a37d38345d7b35">   67</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1ProjectWidget.html#ac28aa155202bdae239a37d38345d7b35">ProjectWidget::Reset</a>() {</div>
@@ -197,13 +188,13 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keywordtype">void</span> ProjectWidget::Save() {</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1ProjectWidget.html#ae87d7464b1f09fc108278860647d6050">IsValid</a>()) {</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        *options_-&gt;database_path = <a class="code" href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">GetDatabasePath</a>();</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        *options_-&gt;image_path = <a class="code" href="classcloudViewer_1_1ProjectWidget.html#a21970bc3b2c57c0dfa5dc90dc0c99fdd">GetImagePath</a>();</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        *options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a4a5a016a1c397550d7ebb4145216d5b0">database_path</a> = <a class="code" href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">GetDatabasePath</a>();</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        *options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#af2c431fa3f7c5d5862eec878d1033d8d">image_path</a> = <a class="code" href="classcloudViewer_1_1ProjectWidget.html#a21970bc3b2c57c0dfa5dc90dc0c99fdd">GetImagePath</a>();</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <span class="comment">// Save empty database file.</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        Database database(*options_-&gt;database_path);</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <a class="code" href="classcloudViewer_1_1ProjectWidget.html#a7e63641ac036b70456c0b7a9e10a7992">persistSave</a>(*options_-&gt;project_path, *options_-&gt;database_path,</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    *options_-&gt;image_path);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="classcolmap_1_1Database.html">Database</a> database(*options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a4a5a016a1c397550d7ebb4145216d5b0">database_path</a>);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <a class="code" href="classcloudViewer_1_1ProjectWidget.html#a7e63641ac036b70456c0b7a9e10a7992">persistSave</a>(*options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a94fd61d2e5c63060ea3e3ceb0c2f8b21">project_path</a>, *options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a4a5a016a1c397550d7ebb4145216d5b0">database_path</a>,</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    *options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#af2c431fa3f7c5d5862eec878d1033d8d">image_path</a>);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        hide();</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    } <span class="keywordflow">else</span> {</div>
@@ -248,17 +239,17 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    prev_selected_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordflow">if</span> (!options_-&gt;project_path-&gt;empty()) {</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span> parent_path = GetParentDir(*options_-&gt;project_path);</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="keywordflow">if</span> (ExistsDir(parent_path)) {</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordflow">if</span> (!options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a94fd61d2e5c63060ea3e3ceb0c2f8b21">project_path</a>-&gt;empty()) {</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span> parent_path = <a class="code" href="namespacecolmap.html#ae0b73d8a508cbd52ba72bd805e6d1fbd">GetParentDir</a>(*options_-&gt;<a class="code" href="classcolmap_1_1OptionManager.html#a94fd61d2e5c63060ea3e3ceb0c2f8b21">project_path</a>);</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecolmap.html#a95929756edbe4281616ef6b8be9a593f">ExistsDir</a>(parent_path)) {</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            <span class="keywordflow">return</span> QString::fromStdString(parent_path);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        }</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    }</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordflow">if</span> (!database_path_text_-&gt;text().isEmpty()) {</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="keyword">const</span> <span class="keyword">auto</span> parent_path =</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                GetParentDir(database_path_text_-&gt;text().toUtf8().constData());</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        <span class="keywordflow">if</span> (ExistsDir(parent_path)) {</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                <a class="code" href="namespacecolmap.html#ae0b73d8a508cbd52ba72bd805e6d1fbd">GetParentDir</a>(database_path_text_-&gt;text().toUtf8().constData());</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="namespacecolmap.html#a95929756edbe4281616ef6b8be9a593f">ExistsDir</a>(parent_path)) {</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            <span class="keywordflow">return</span> QString::fromStdString(parent_path);</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        }</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    }</div>
@@ -273,6 +264,7 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aCVTools_8h_html"><div class="ttname"><a href="CVTools_8h.html">CVTools.h</a></div></div>
 <div class="ttc" id="aProjectWidget_8h_html"><div class="ttname"><a href="ProjectWidget_8h.html">ProjectWidget.h</a></div></div>
+<div class="ttc" id="abase_2database_8h_html"><div class="ttname"><a href="base_2database_8h.html">database.h</a></div></div>
 <div class="ttc" id="aclassCVTools_html_a5c3dcd4d6f6d49afb2ab0bc1689fa421"><div class="ttname"><a href="classCVTools.html#a5c3dcd4d6f6d49afb2ab0bc1689fa421">CVTools::ToQString</a></div><div class="ttdeci">static QString ToQString(const std::string &amp;s)</div><div class="ttdef"><b>Definition:</b> <a href="CVTools_8cpp_source.html#l00092">CVTools.cpp:92</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_a0b6358fb91fc992dbd7864abc3213267"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#a0b6358fb91fc992dbd7864abc3213267">cloudViewer::ProjectWidget::SetImagePath</a></div><div class="ttdeci">void SetImagePath(const std::string &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00095">ProjectWidget.cpp:95</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_a21970bc3b2c57c0dfa5dc90dc0c99fdd"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#a21970bc3b2c57c0dfa5dc90dc0c99fdd">cloudViewer::ProjectWidget::GetImagePath</a></div><div class="ttdeci">std::string GetImagePath() const</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00087">ProjectWidget.cpp:87</a></div></div>
@@ -280,21 +272,27 @@ $(document).ready(function(){initNavTree('ProjectWidget_8cpp_source.html',''); i
 <div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_aa1f57b4e51be2c4912ce0e81e2eca67c"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#aa1f57b4e51be2c4912ce0e81e2eca67c">cloudViewer::ProjectWidget::SetDatabasePath</a></div><div class="ttdeci">void SetDatabasePath(const std::string &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00091">ProjectWidget.cpp:91</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_aa4ba07d3dbdf9e230ad9f008b8bc72f3"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#aa4ba07d3dbdf9e230ad9f008b8bc72f3">cloudViewer::ProjectWidget::GetDatabasePath</a></div><div class="ttdeci">std::string GetDatabasePath() const</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00083">ProjectWidget.cpp:83</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_ac28aa155202bdae239a37d38345d7b35"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#ac28aa155202bdae239a37d38345d7b35">cloudViewer::ProjectWidget::Reset</a></div><div class="ttdeci">void Reset()</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00067">ProjectWidget.cpp:67</a></div></div>
-<div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_acb43444e0a9cd94cf92a58fec59851f4"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#acb43444e0a9cd94cf92a58fec59851f4">cloudViewer::ProjectWidget::ProjectWidget</a></div><div class="ttdeci">ProjectWidget(QWidget *parent, OptionManager *options)</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00020">ProjectWidget.cpp:20</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ProjectWidget_html_ae87d7464b1f09fc108278860647d6050"><div class="ttname"><a href="classcloudViewer_1_1ProjectWidget.html#ae87d7464b1f09fc108278860647d6050">cloudViewer::ProjectWidget::IsValid</a></div><div class="ttdeci">bool IsValid() const</div><div class="ttdef"><b>Definition:</b> <a href="ProjectWidget_8cpp_source.html#l00062">ProjectWidget.cpp:62</a></div></div>
-<div class="ttc" id="adatabase_8h_html"><div class="ttname"><a href="database_8h.html">database.h</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1Database_html"><div class="ttname"><a href="classcolmap_1_1Database.html">colmap::Database</a></div><div class="ttdef"><b>Definition:</b> <a href="base_2database_8h_source.html#l00029">database.h:29</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionManager_html"><div class="ttname"><a href="classcolmap_1_1OptionManager.html">colmap::OptionManager</a></div><div class="ttdef"><b>Definition:</b> <a href="option__manager_8h_source.html#l00038">option_manager.h:38</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionManager_html_a4a5a016a1c397550d7ebb4145216d5b0"><div class="ttname"><a href="classcolmap_1_1OptionManager.html#a4a5a016a1c397550d7ebb4145216d5b0">colmap::OptionManager::database_path</a></div><div class="ttdeci">std::shared_ptr&lt; std::string &gt; database_path</div><div class="ttdef"><b>Definition:</b> <a href="option__manager_8h_source.html#l00099">option_manager.h:99</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionManager_html_a94fd61d2e5c63060ea3e3ceb0c2f8b21"><div class="ttname"><a href="classcolmap_1_1OptionManager.html#a94fd61d2e5c63060ea3e3ceb0c2f8b21">colmap::OptionManager::project_path</a></div><div class="ttdeci">std::shared_ptr&lt; std::string &gt; project_path</div><div class="ttdef"><b>Definition:</b> <a href="option__manager_8h_source.html#l00098">option_manager.h:98</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1OptionManager_html_af2c431fa3f7c5d5862eec878d1033d8d"><div class="ttname"><a href="classcolmap_1_1OptionManager.html#af2c431fa3f7c5d5862eec878d1033d8d">colmap::OptionManager::image_path</a></div><div class="ttdeci">std::shared_ptr&lt; std::string &gt; image_path</div><div class="ttdef"><b>Definition:</b> <a href="option__manager_8h_source.html#l00100">option_manager.h:100</a></div></div>
+<div class="ttc" id="aclasscolmap_1_1ProjectWidget_html_a9c6cf5bbb3b1a7dbd2e523b486480c17"><div class="ttname"><a href="classcolmap_1_1ProjectWidget.html#a9c6cf5bbb3b1a7dbd2e523b486480c17">colmap::ProjectWidget::ProjectWidget</a></div><div class="ttdeci">ProjectWidget(QWidget *parent, OptionManager *options)</div><div class="ttdef"><b>Definition:</b> <a href="project__widget_8cc_source.html#l00038">project_widget.cc:38</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_ae68215a0cbeac4f3232619026f32c518"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#ae68215a0cbeac4f3232619026f32c518">cloudViewer::utility::filesystem::HasFileExtension</a></div><div class="ttdeci">bool HasFileExtension(const std::string &amp;file_name, const std::string &amp;ext)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00117">FileSystem.cpp:117</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html_acbdc2fe5d0d56b055e4a87639b627d31"><div class="ttname"><a href="namespacecloudViewer.html#acbdc2fe5d0d56b055e4a87639b627d31">cloudViewer::OptionManager</a></div><div class="ttdeci">colmap::OptionManager OptionManager</div><div class="ttdef"><b>Definition:</b> <a href="BundleAdjustmentWidget_8h_source.html#l00019">BundleAdjustmentWidget.h:19</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecolmap_html"><div class="ttname"><a href="namespacecolmap.html">colmap</a></div><div class="ttdef"><b>Definition:</b> <a href="AutomaticReconstructionController_8h_source.html#l00017">AutomaticReconstructionController.h:17</a></div></div>
+<div class="ttc" id="anamespacecolmap_html_a95929756edbe4281616ef6b8be9a593f"><div class="ttname"><a href="namespacecolmap.html#a95929756edbe4281616ef6b8be9a593f">colmap::ExistsDir</a></div><div class="ttdeci">bool ExistsDir(const std::string &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="misc_8cc_source.html#l00104">misc.cc:104</a></div></div>
+<div class="ttc" id="anamespacecolmap_html_ae0b73d8a508cbd52ba72bd805e6d1fbd"><div class="ttname"><a href="namespacecolmap.html#ae0b73d8a508cbd52ba72bd805e6d1fbd">colmap::GetParentDir</a></div><div class="ttdeci">std::string GetParentDir(const std::string &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="misc_8cc_source.html#l00128">misc.cc:128</a></div></div>
+<div class="ttc" id="aoption__manager_8h_html"><div class="ttname"><a href="option__manager_8h.html">option_manager.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="ProjectWidget_8cpp.html">ProjectWidget.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

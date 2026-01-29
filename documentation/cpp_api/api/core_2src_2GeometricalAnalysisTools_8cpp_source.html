@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -649,7 +640,7 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* P = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#a92fb0560290d58171c67563d84e6a278">getNextPoint</a>();</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;        ScalarType w = weights-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a3f4b03878754e8a774ba422b31ac5440">getValue</a>(i);</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">ScalarField::ValidValue</a>(w)) <span class="keywordflow">continue</span>;</div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;        sum += <a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3d::fromArray</a>(P-&gt;<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>) * <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(w);</div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;        sum += <a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3d::fromArray</a>(P-&gt;<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>) * std::abs(w);</div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;        wSum += w;</div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;    }</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160; </div>
@@ -779,7 +770,7 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;        <span class="keywordflow">if</span> (coupleWeights) {</div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;            ScalarType w = coupleWeights-&gt;<a class="code" href="classcloudViewer_1_1ScalarField.html#a3f4b03878754e8a774ba422b31ac5440">getValue</a>(i);</div>
 <div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;            <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">ScalarField::ValidValue</a>(w)) <span class="keywordflow">continue</span>;</div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;            wi = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(w);</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;            wi = std::abs(w);</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        }</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160; </div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        <span class="comment">// DGM: we virtually make the P (data) point nearer if it has a lower</span></div>
@@ -837,8 +828,8 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3d</a> derivatives(0, 0, 0);</div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;        <span class="keywordtype">unsigned</span> realCount = 0;</div>
 <div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a>; ++i) {</div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;            <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* Pi = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">getPoint</a>(i);</div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3d</a> Di = <a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3d::fromArray</a>(Pi-&gt;<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>) - c;</div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;            <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* <a class="code" href="utils_8cpp.html#a26722c3df2ea3f0f62eef1a57cf05016">Pi</a> = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">getPoint</a>(i);</div>
+<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3d</a> Di = <a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3d::fromArray</a>(<a class="code" href="utils_8cpp.html#a26722c3df2ea3f0f62eef1a57cf05016">Pi</a>-&gt;u) - c;</div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;            <span class="keywordtype">double</span> norm = Di.<a class="code" href="classVector3Tpl.html#a60dc9f590381d86199df3eb509c9b1b3">norm</a>();</div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;            <span class="keywordflow">if</span> (norm &lt; <a class="code" href="CVConst_8h.html#ad2f04bb18798718524e94c944876c4cb">ZERO_TOLERANCE_D</a>) <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160; </div>
@@ -880,7 +871,7 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;    <span class="keywordflow">if</span> (n &lt; 4) <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8a6c97e6229758388eef7131040c4582f4">NotEnoughPoints</a>;</div>
 <div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160; </div>
 <div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;    assert(confidence &lt; 1.0);</div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;    confidence = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(confidence, 1.0 - FLT_EPSILON);</div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;    confidence = std::min(confidence, 1.0 - FLT_EPSILON);</div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160; </div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">unsigned</span> p = 4;</div>
 <div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160; </div>
@@ -921,7 +912,7 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;        seed = randomGenerator();</div>
 <div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;    }</div>
 <div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;    std::mt19937 gen(seed);  <span class="comment">// to seed mersenne twister.</span></div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;    std::uniform_int_distribution&lt;unsigned&gt; <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(0, n - 1);</div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;    std::uniform_int_distribution&lt;unsigned&gt; dist(0, n - 1);</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;    <span class="keywordtype">unsigned</span> sampleCount = 0;</div>
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;    <span class="keywordtype">unsigned</span> attempts = 0;</div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;    <span class="keywordtype">double</span> minError = -1.0;</div>
@@ -931,7 +922,7 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> j = 0; j &lt; 4; ++j) {</div>
 <div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;            <span class="keywordtype">bool</span> isOK = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;            <span class="keywordflow">while</span> (!isOK) {</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;                indexes[j] = <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>(gen);</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;                indexes[j] = dist(gen);</div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;                isOK = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> k = 0; k &lt; j &amp;&amp; isOK; ++k)</div>
 <div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                    <span class="keywordflow">if</span> (indexes[j] == indexes[k]) isOK = <span class="keyword">false</span>;</div>
@@ -952,9 +943,9 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160; </div>
 <div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;        <span class="comment">// compute residuals</span></div>
 <div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; n; ++i) {</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> =</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;            <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> error =</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;                    (*cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">getPoint</a>(i) - thisCenter).norm() - thisRadius;</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;            values[i] = <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> * <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;            values[i] = error * error;</div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;        }</div>
 <div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160; </div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> medianIndex = n / 2;</div>
@@ -963,11 +954,11 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;                         values.end());</div>
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160; </div>
 <div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;        <span class="comment">// the error is the median of the squared residuals</span></div>
-<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;        <span class="keywordtype">double</span> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(values[medianIndex]);</div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;        <span class="keywordtype">double</span> error = <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(values[medianIndex]);</div>
 <div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160; </div>
 <div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;        <span class="comment">// we keep track of the solution with the least error</span></div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> &lt; minError || minError &lt; 0.0) {</div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;            minError = <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;        <span class="keywordflow">if</span> (error &lt; minError || minError &lt; 0.0) {</div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;            minError = error;</div>
 <div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;            center = thisCenter;</div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;            radius = thisRadius;</div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;        }</div>
@@ -997,9 +988,9 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;        <span class="keywordflow">if</span> (candidates.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#ad962545dc4babcf0442883041950e1ee">reserve</a>(n)) {</div>
 <div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;            <span class="comment">// compute residuals and select the points</span></div>
 <div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; n; ++i) {</div>
-<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;                <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> =</div>
+<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;                <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> error =</div>
 <div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;                        (*cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">getPoint</a>(i) - center).norm() - radius;</div>
-<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> &lt; maxResidual) candidates.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(i);</div>
+<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;                <span class="keywordflow">if</span> (error &lt; maxResidual) candidates.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(i);</div>
 <div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;            }</div>
 <div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;            candidates.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a86532c7244bb79b0198124c120d852d5">resize</a>(candidates.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a5a1aad9c3784c6a3f32ae5d0eb6bbe45">size</a>());</div>
 <div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160; </div>
@@ -1021,8 +1012,8 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;        <span class="keywordtype">double</span> residuals = 0;</div>
 <div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; n; ++i) {</div>
 <div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;            <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a>* P = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">getPoint</a>(i);</div>
-<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;            <span class="keywordtype">double</span> e = (*P - center).norm() - radius;</div>
-<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;            residuals += e * e;</div>
+<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;            <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = (*P - center).norm() - radius;</div>
+<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;            residuals += <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> * <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>;</div>
 <div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;        }</div>
 <div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;        rms = sqrt(residuals / n);</div>
 <div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;    }</div>
@@ -1144,13 +1135,13 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;        assert(eigenVector);</div>
 <div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160; </div>
 <div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;        <span class="comment">// compute a local coordinate system</span></div>
-<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> x = eigenVector-&gt;<a class="code" href="classVector3Tpl.html#a3434995b93669a2f4dc91123bb51b689">orthogonal</a>();</div>
-<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> y = eigenVector-&gt;<a class="code" href="classVector3Tpl.html#a751bc8290bdcfda8b947f82637e9d931">cross</a>(x);</div>
+<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = eigenVector-&gt;<a class="code" href="classVector3Tpl.html#a3434995b93669a2f4dc91123bb51b689">orthogonal</a>();</div>
+<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = eigenVector-&gt;<a class="code" href="classVector3Tpl.html#a751bc8290bdcfda8b947f82637e9d931">cross</a>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
 <div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;<span class="preprocessor">#ifdef DEBUG_TRACE</span></div>
 <div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;        {</div>
 <div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;            fprintf(fp, <span class="stringliteral">&quot;Dim %i\n&quot;</span>, dim);</div>
-<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;            fprintf(fp, <span class="stringliteral">&quot;X = %f %f %f\n&quot;</span>, x.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, x.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, x.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
-<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;            fprintf(fp, <span class="stringliteral">&quot;Y = %f %f %f\n&quot;</span>, y.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, y.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, y.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
+<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;            fprintf(fp, <span class="stringliteral">&quot;X = %f %f %f\n&quot;</span>, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>.x, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>.y, <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>.z);</div>
+<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;            fprintf(fp, <span class="stringliteral">&quot;Y = %f %f %f\n&quot;</span>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>.x, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>.y, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>.z);</div>
 <div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;            fprintf(fp, <span class="stringliteral">&quot;Z = %f %f %f\n&quot;</span>, eigenVector-&gt;<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, eigenVector-&gt;<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>,</div>
 <div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;                    eigenVector-&gt;<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
 <div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;        }</div>
@@ -1159,7 +1150,7 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;        <span class="comment">// step 3: project the point cloud onto a 2D plane</span></div>
 <div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; n; ++i) {</div>
 <div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;            <a class="code" href="classVector3Tpl.html">CCVector3</a> Plocal = *cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericIndexedCloud.html#a33b19730507f2fdcbfea0fd04310b29a">getPoint</a>(i) - *G;</div>
-<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;            pointsOnPlane[i] = {Plocal.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(x), Plocal.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(y)};</div>
+<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;            pointsOnPlane[i] = {Plocal.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>), Plocal.<a class="code" href="classVector3Tpl.html#a187b05d3460e2f67407baa886d3a8153">dot</a>(<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>)};</div>
 <div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;        }</div>
 <div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160; </div>
 <div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;        <span class="keywordflow">if</span> (progressCb &amp;&amp; !<a class="code" href="qCanupoTools_8cpp.html#a2c676e196711456506771bb1be8f424a">nProgress</a>.<a class="code" href="classcloudViewer_1_1NormalizedProgress.html#a6e75fa9a0a99931ed3ed2835e142d2d5">oneStep</a>()) {</div>
@@ -1208,8 +1199,8 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160;            <span class="keywordtype">double</span> thisRMS = 0.0;</div>
 <div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;            <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code" href="classVector2Tpl.html">CCVector2d</a>&amp; P2D : pointsOnPlane) {</div>
 <div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160;                <span class="keywordtype">double</span> r = (P2D - thisCenter2D).norm();</div>
-<div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160;                <span class="keywordtype">double</span> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = thisRadius - r;</div>
-<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;                thisRMS += <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> * <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
+<div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160;                <span class="keywordtype">double</span> error = thisRadius - r;</div>
+<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;                thisRMS += error * error;</div>
 <div class="line"><a name="l01114"></a><span class="lineno"> 1114</span>&#160;            }</div>
 <div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160; </div>
 <div class="line"><a name="l01116"></a><span class="lineno"> 1116</span>&#160;            thisRMS = sqrt(thisRMS / n);</div>
@@ -1222,8 +1213,8 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01123"></a><span class="lineno"> 1123</span>&#160;            <span class="keywordflow">if</span> (dim == 0 || thisRMS &lt; rms) {</div>
 <div class="line"><a name="l01124"></a><span class="lineno"> 1124</span>&#160;                <span class="comment">// reposition the circle center in 3D</span></div>
 <div class="line"><a name="l01125"></a><span class="lineno"> 1125</span>&#160;                center = *G +</div>
-<div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;                         <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(thisCenter2D.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>) * x +</div>
-<div class="line"><a name="l01127"></a><span class="lineno"> 1127</span>&#160;                         <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(thisCenter2D.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>) * y;</div>
+<div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;                         <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(thisCenter2D.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>) * <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> +</div>
+<div class="line"><a name="l01127"></a><span class="lineno"> 1127</span>&#160;                         <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(thisCenter2D.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>) * <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
 <div class="line"><a name="l01128"></a><span class="lineno"> 1128</span>&#160;                <a class="code" href="FileIOFactory_8cpp.html#a09ab306cdab1aa39bb9e04096e50f6b1">normal</a> = <a class="code" href="classVector3Tpl.html#a7afd060d5392e69ceed8c9dd9775bca5">CCVector3::fromArray</a>(eigenVector-&gt;<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>);</div>
 <div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;                radius = thisRadius;</div>
 <div class="line"><a name="l01130"></a><span class="lineno"> 1130</span>&#160;                rms = thisRMS;</div>
@@ -1280,15 +1271,15 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;<span class="comment">//    J, factorization failed on step J, and the solutions could not</span></div>
 <div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;<span class="comment">//    be computed.</span></div>
 <div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;<span class="comment">//</span></div>
-<div class="line"><a name="l01184"></a><span class="lineno"><a class="line" href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5"> 1184</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5">dmat_solve</a>(<span class="keywordtype">int</span> n, <span class="keywordtype">int</span> rhs_num, <span class="keywordtype">double</span> a[]) {</div>
+<div class="line"><a name="l01184"></a><span class="lineno"><a class="line" href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5"> 1184</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5">dmat_solve</a>(<span class="keywordtype">int</span> n, <span class="keywordtype">int</span> rhs_num, <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[]) {</div>
 <div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j = 0; j &lt; n; j++) {</div>
 <div class="line"><a name="l01186"></a><span class="lineno"> 1186</span>&#160;        <span class="comment">//  Choose a pivot row.</span></div>
 <div class="line"><a name="l01187"></a><span class="lineno"> 1187</span>&#160;        <span class="keywordtype">int</span> ipivot = j;</div>
-<div class="line"><a name="l01188"></a><span class="lineno"> 1188</span>&#160;        <span class="keywordtype">double</span> apivot = a[j + j * n];</div>
+<div class="line"><a name="l01188"></a><span class="lineno"> 1188</span>&#160;        <span class="keywordtype">double</span> apivot = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[j + j * n];</div>
 <div class="line"><a name="l01189"></a><span class="lineno"> 1189</span>&#160; </div>
 <div class="line"><a name="l01190"></a><span class="lineno"> 1190</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = j; i &lt; n; i++) {</div>
-<div class="line"><a name="l01191"></a><span class="lineno"> 1191</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(apivot) &lt; <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(a[i + j * n])) {</div>
-<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160;                apivot = a[i + j * n];</div>
+<div class="line"><a name="l01191"></a><span class="lineno"> 1191</span>&#160;            <span class="keywordflow">if</span> (std::abs(apivot) &lt; std::abs(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i + j * n])) {</div>
+<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160;                apivot = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i + j * n];</div>
 <div class="line"><a name="l01193"></a><span class="lineno"> 1193</span>&#160;                ipivot = i;</div>
 <div class="line"><a name="l01194"></a><span class="lineno"> 1194</span>&#160;            }</div>
 <div class="line"><a name="l01195"></a><span class="lineno"> 1195</span>&#160;        }</div>
@@ -1299,22 +1290,22 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160; </div>
 <div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;        <span class="comment">//  Interchange.</span></div>
 <div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; n + rhs_num; i++) {</div>
-<div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;            <a class="code" href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a>(a[ipivot + i * n], a[j + i * n]);</div>
+<div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;            <a class="code" href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[ipivot + i * n], <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[j + i * n]);</div>
 <div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;        }</div>
 <div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160; </div>
 <div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;        <span class="comment">//  A(J,J) becomes 1.</span></div>
-<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;        a[j + j * n] = 1.0;</div>
+<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[j + j * n] = 1.0;</div>
 <div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> k = j; k &lt; n + rhs_num; k++) {</div>
-<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;            a[j + k * n] = a[j + k * n] / apivot;</div>
+<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;            <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[j + k * n] = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[j + k * n] / apivot;</div>
 <div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;        }</div>
 <div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160; </div>
 <div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160;        <span class="comment">//  A(I,J) becomes 0.</span></div>
 <div class="line"><a name="l01213"></a><span class="lineno"> 1213</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; n; i++) {</div>
 <div class="line"><a name="l01214"></a><span class="lineno"> 1214</span>&#160;            <span class="keywordflow">if</span> (i != j) {</div>
-<div class="line"><a name="l01215"></a><span class="lineno"> 1215</span>&#160;                <span class="keywordtype">double</span> factor = a[i + j * n];</div>
-<div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;                a[i + j * n] = 0.0;</div>
+<div class="line"><a name="l01215"></a><span class="lineno"> 1215</span>&#160;                <span class="keywordtype">double</span> factor = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i + j * n];</div>
+<div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;                <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i + j * n] = 0.0;</div>
 <div class="line"><a name="l01217"></a><span class="lineno"> 1217</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> k = j; k &lt; n + rhs_num; k++) {</div>
-<div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;                    a[i + k * n] = a[i + k * n] - factor * a[j + k * n];</div>
+<div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;                    <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i + k * n] = <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[i + k * n] - factor * <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[j + k * n];</div>
 <div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;                }</div>
 <div class="line"><a name="l01220"></a><span class="lineno"> 1220</span>&#160;            }</div>
 <div class="line"><a name="l01221"></a><span class="lineno"> 1221</span>&#160;        }</div>
@@ -1334,39 +1325,39 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="line"><a name="l01235"></a><span class="lineno"> 1235</span>&#160;    <span class="comment">// Woodwark</span></div>
 <div class="line"><a name="l01236"></a><span class="lineno"> 1236</span>&#160; </div>
 <div class="line"><a name="l01237"></a><span class="lineno"> 1237</span>&#160;    <span class="comment">// Set up the linear system.</span></div>
-<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;    <span class="keywordtype">double</span> a[12];</div>
+<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;    <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[12];</div>
 <div class="line"><a name="l01239"></a><span class="lineno"> 1239</span>&#160;    {</div>
 <div class="line"><a name="l01240"></a><span class="lineno"> 1240</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> AB = B - A;</div>
-<div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160;        a[0] = AB.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>;</div>
-<div class="line"><a name="l01242"></a><span class="lineno"> 1242</span>&#160;        a[3] = AB.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>;</div>
-<div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;        a[6] = AB.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
-<div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;        a[9] = AB.<a class="code" href="classVector3Tpl.html#a1e7b5958daa4abcb2d11a110be4d1505">norm2d</a>();</div>
+<div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[0] = AB.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>;</div>
+<div class="line"><a name="l01242"></a><span class="lineno"> 1242</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[3] = AB.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>;</div>
+<div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[6] = AB.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
+<div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[9] = AB.<a class="code" href="classVector3Tpl.html#a1e7b5958daa4abcb2d11a110be4d1505">norm2d</a>();</div>
 <div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;    }</div>
 <div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;    {</div>
 <div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> AC = C - A;</div>
-<div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;        a[1] = AC.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>;</div>
-<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;        a[4] = AC.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>;</div>
-<div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;        a[7] = AC.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
-<div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;        a[10] = AC.<a class="code" href="classVector3Tpl.html#a1e7b5958daa4abcb2d11a110be4d1505">norm2d</a>();</div>
+<div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[1] = AC.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>;</div>
+<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[4] = AC.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>;</div>
+<div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[7] = AC.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
+<div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[10] = AC.<a class="code" href="classVector3Tpl.html#a1e7b5958daa4abcb2d11a110be4d1505">norm2d</a>();</div>
 <div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160;    }</div>
 <div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160;    {</div>
 <div class="line"><a name="l01254"></a><span class="lineno"> 1254</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> AD = D - A;</div>
-<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;        a[2] = AD.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>;</div>
-<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;        a[5] = AD.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>;</div>
-<div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;        a[8] = AD.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
-<div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;        a[11] = AD.<a class="code" href="classVector3Tpl.html#a1e7b5958daa4abcb2d11a110be4d1505">norm2d</a>();</div>
+<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[2] = AD.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>;</div>
+<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[5] = AD.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>;</div>
+<div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[8] = AD.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>;</div>
+<div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[11] = AD.<a class="code" href="classVector3Tpl.html#a1e7b5958daa4abcb2d11a110be4d1505">norm2d</a>();</div>
 <div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;    }</div>
 <div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160; </div>
 <div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160;    <span class="comment">//  Solve the linear system (with Gauss-Jordan elimination)</span></div>
-<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5">dmat_solve</a>(3, 1, a) != 0) {</div>
+<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5">dmat_solve</a>(3, 1, <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>) != 0) {</div>
 <div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;        <span class="comment">// system is singular?</span></div>
 <div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1GeometricalAnalysisTools.html#afdfc6e2e8a330df489e5554780c577b8a4a7ba70e60f83cfd9f0b729689b8aba5">ProcessFailed</a>;</div>
 <div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;    }</div>
 <div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160; </div>
 <div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;    <span class="comment">//  Compute the radius and center.</span></div>
-<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> u = <a class="code" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(a[0 + 3 * 3]),</div>
-<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;                            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(a[1 + 3 * 3]),</div>
-<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;                            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(a[2 + 3 * 3])) /</div>
+<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> u = <a class="code" href="CVGeom_8h.html#aba743094ac3c5f78d2814b141438015c">CCVector3</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[0 + 3 * 3]),</div>
+<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;                            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[1 + 3 * 3]),</div>
+<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;                            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>[2 + 3 * 3])) /</div>
 <div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;                  2;</div>
 <div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;    radius = u.<a class="code" href="classVector3Tpl.html#a60dc9f590381d86199df3eb509c9b1b3">norm</a>();</div>
 <div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;    center = A + u;</div>
@@ -1504,11 +1495,11 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="ttc" id="acore_2src_2GeometricalAnalysisTools_8cpp_html_a1a915b776d4cadafa3a1ec0d42d91ff5"><div class="ttname"><a href="core_2src_2GeometricalAnalysisTools_8cpp.html#a1a915b776d4cadafa3a1ec0d42d91ff5">dmat_solve</a></div><div class="ttdeci">int dmat_solve(int n, int rhs_num, double a[])</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l01184">GeometricalAnalysisTools.cpp:1184</a></div></div>
 <div class="ttc" id="acore_2src_2GeometricalAnalysisTools_8cpp_html_a8bd51ebf1f3e70460a7b9b902952eb85"><div class="ttname"><a href="core_2src_2GeometricalAnalysisTools_8cpp.html#a8bd51ebf1f3e70460a7b9b902952eb85">s_UnitSphereVolume</a></div><div class="ttdeci">static double s_UnitSphereVolume</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00026">GeometricalAnalysisTools.cpp:26</a></div></div>
 <div class="ttc" id="acore_2src_2GeometricalAnalysisTools_8cpp_html_ab1d846a4b5e8b3d82780759d4dab4bcc"><div class="ttname"><a href="core_2src_2GeometricalAnalysisTools_8cpp.html#ab1d846a4b5e8b3d82780759d4dab4bcc">Landau_Smith</a></div><div class="ttdeci">static bool Landau_Smith(const std::vector&lt; CCVector2d &gt; &amp;xy, CCVector2d &amp;center, PointCoordinateType &amp;radius)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2GeometricalAnalysisTools_8cpp_source.html#l00934">GeometricalAnalysisTools.cpp:934</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a2450dc3c30a970ee39ed08aa985b3b98"><div class="ttname"><a href="namespacecloudViewer.html#a2450dc3c30a970ee39ed08aa985b3b98">cloudViewer::SquareMatrixd</a></div><div class="ttdeci">SquareMatrixTpl&lt; double &gt; SquareMatrixd</div><div class="ttdoc">Double square matrix type.</div><div class="ttdef"><b>Definition:</b> <a href="SquareMatrix_8h_source.html#l01026">SquareMatrix.h:1026</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a40c4286c80bddd2f6f96f6d5f00137d8"><div class="ttname"><a href="namespacecloudViewer.html#a40c4286c80bddd2f6f96f6d5f00137d8">cloudViewer::GreaterThanEpsilon</a></div><div class="ttdeci">bool GreaterThanEpsilon(float x)</div><div class="ttdoc">Test a floating point number against our epsilon (a very small number).</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00037">CVMath.h:37</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
@@ -1529,13 +1520,14 @@ $(document).ready(function(){initNavTree('core_2src_2GeometricalAnalysisTools_8c
 <div class="ttc" id="astructcloudViewer_1_1DgmOctree_1_1octreeCell_html_ab9a079e323a532093d61b0ac42ea0e66"><div class="ttname"><a href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html#ab9a079e323a532093d61b0ac42ea0e66">cloudViewer::DgmOctree::octreeCell::parentOctree</a></div><div class="ttdeci">const DgmOctree * parentOctree</div><div class="ttdoc">Octree to which the cell belongs.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00359">DgmOctree.h:359</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1DgmOctree_1_1octreeCell_html_adb6746218f2e358a417e52b87483d8a9"><div class="ttname"><a href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html#adb6746218f2e358a417e52b87483d8a9">cloudViewer::DgmOctree::octreeCell::level</a></div><div class="ttdeci">unsigned char level</div><div class="ttdoc">Cell level of subdivision.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00367">DgmOctree.h:367</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1DgmOctree_1_1octreeCell_html_afae944128633b5d470640264d7fdd27f"><div class="ttname"><a href="structcloudViewer_1_1DgmOctree_1_1octreeCell.html#afae944128633b5d470640264d7fdd27f">cloudViewer::DgmOctree::octreeCell::truncatedCode</a></div><div class="ttdeci">CellCode truncatedCode</div><div class="ttdoc">Truncated cell code.</div><div class="ttdef"><b>Definition:</b> <a href="DgmOctree_8h_source.html#l00361">DgmOctree.h:361</a></div></div>
+<div class="ttc" id="autils_8cpp_html_a26722c3df2ea3f0f62eef1a57cf05016"><div class="ttname"><a href="utils_8cpp.html#a26722c3df2ea3f0f62eef1a57cf05016">Pi</a></div><div class="ttdeci">const float Pi</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00015">utils.cpp:15</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2GeometricalAnalysisTools_8cpp.html">GeometricalAnalysisTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -238,7 +229,7 @@ $(document).ready(function(){initNavTree('quazipdir_8cpp_source.html',''); initR
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160; </div>
 <div class="line"><a name="l00142"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#a62306db3f4c0866930fa35c7348b84b3">  142</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classQuaZipDir.html#a62306db3f4c0866930fa35c7348b84b3">QuaZipDir::cdUp</a>() { <span class="keywordflow">return</span> <a class="code" href="classQuaZipDir.html#aa829afc0243f1d307302f1167edecc7b">cd</a>(<span class="stringliteral">&quot;..&quot;</span>); }</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160; </div>
-<div class="line"><a name="l00144"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#a9cd93fdd7a09e75406142c5236562fa8">  144</a></span>&#160;<a class="code" href="cutil__math_8h.html#a91ad9478d81a7aaf2593e8d9c3d06a14">uint</a> <a class="code" href="classQuaZipDir.html#a9cd93fdd7a09e75406142c5236562fa8">QuaZipDir::count</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classQuaZipDir.html#a19aef18df6082776add947a6f93ed1fe">entryList</a>().count(); }</div>
+<div class="line"><a name="l00144"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#a9cd93fdd7a09e75406142c5236562fa8">  144</a></span>&#160;uint <a class="code" href="classQuaZipDir.html#a9cd93fdd7a09e75406142c5236562fa8">QuaZipDir::count</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="classQuaZipDir.html#a19aef18df6082776add947a6f93ed1fe">entryList</a>().count(); }</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
 <div class="line"><a name="l00146"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#a144bc38da92d7f2383b64a5a5d1b4cc7">  146</a></span>&#160;QString <a class="code" href="classQuaZipDir.html#a144bc38da92d7f2383b64a5a5d1b4cc7">QuaZipDir::dirName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> QDir(d-&gt;dir).dirName(); }</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
@@ -340,7 +331,7 @@ $(document).ready(function(){initNavTree('quazipdir_8cpp_source.html',''); initR
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="keywordtype">bool</span> QuaZipDirComparator::operator()(<span class="keyword">const</span> <a class="code" href="structQuaZipFileInfo64.html">QuaZipFileInfo64</a> &amp;info1,</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                                     <span class="keyword">const</span> <a class="code" href="structQuaZipFileInfo64.html">QuaZipFileInfo64</a> &amp;info2) {</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    QDir::SortFlags order =</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            sort &amp; (QDir::Name | <a class="code" href="MyTime_8h.html#a8c289673cb33adfcf6672d936fcc016e">QDir::Time</a> | QDir::Size | QDir::Type);</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            sort &amp; (QDir::Name | QDir::Time | QDir::Size | QDir::Type);</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keywordflow">if</span> ((sort &amp; QDir::DirsFirst) == QDir::DirsFirst ||</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        (sort &amp; QDir::DirsLast) == QDir::DirsLast) {</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        <span class="keywordflow">if</span> (info1.<a class="code" href="structQuaZipFileInfo64.html#a2cadad4cb9a765e90b5422dae2388762">name</a>.endsWith(<span class="charliteral">&#39;/&#39;</span>) &amp;&amp; !info2.<a class="code" href="structQuaZipFileInfo64.html#a2cadad4cb9a765e90b5422dae2388762">name</a>.endsWith(<span class="charliteral">&#39;/&#39;</span>))</div>
@@ -370,7 +361,7 @@ $(document).ready(function(){initNavTree('quazipdir_8cpp_source.html',''); initR
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = info1.<a class="code" href="structQuaZipFileInfo64.html#a571ca077fe282c908e57b0bc82528d49">uncompressedSize</a> &lt; info2.<a class="code" href="structQuaZipFileInfo64.html#a571ca077fe282c908e57b0bc82528d49">uncompressedSize</a>;</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;            }</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="MyTime_8h.html#a8c289673cb33adfcf6672d936fcc016e">QDir::Time</a>:</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        <span class="keywordflow">case</span> QDir::Time:</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            <span class="keywordflow">if</span> (info1.<a class="code" href="structQuaZipFileInfo64.html#a4d77c6aa6076703e858c938efeb551e4">dateTime</a> == info2.<a class="code" href="structQuaZipFileInfo64.html#a4d77c6aa6076703e858c938efeb551e4">dateTime</a>) {</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = compareStrings(info1.<a class="code" href="structQuaZipFileInfo64.html#a2cadad4cb9a765e90b5422dae2388762">name</a>, info2.<a class="code" href="structQuaZipFileInfo64.html#a2cadad4cb9a765e90b5422dae2388762">name</a>) &lt; 0;</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            } <span class="keywordflow">else</span> {</div>
@@ -586,7 +577,6 @@ $(document).ready(function(){initNavTree('quazipdir_8cpp_source.html',''); initR
 <div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160; </div>
 <div class="line"><a name="l00496"></a><span class="lineno"><a class="line" href="classQuaZipDir.html#ae25d482e91472b5742d723d68dc9311b">  496</a></span>&#160;QDir::SortFlags <a class="code" href="classQuaZipDir.html#ae25d482e91472b5742d723d68dc9311b">QuaZipDir::sorting</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> d-&gt;sorting; }</div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
-<div class="ttc" id="aMyTime_8h_html_a8c289673cb33adfcf6672d936fcc016e"><div class="ttname"><a href="MyTime_8h.html#a8c289673cb33adfcf6672d936fcc016e">Time</a></div><div class="ttdeci">double Time(void)</div><div class="ttdef"><b>Definition:</b> <a href="MyTime_8h_source.html#l00038">MyTime.h:38</a></div></div>
 <div class="ttc" id="aQtCompat_8h_html"><div class="ttname"><a href="QtCompat_8h.html">QtCompat.h</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
 <div class="ttc" id="aclassQuaZipDir_html"><div class="ttname"><a href="classQuaZipDir.html">QuaZipDir</a></div><div class="ttdoc">Provides ZIP archive navigation.</div><div class="ttdef"><b>Definition:</b> <a href="quazipdir_8h_source.html#l00055">quazipdir.h:55</a></div></div>
@@ -622,7 +612,6 @@ $(document).ready(function(){initNavTree('quazipdir_8cpp_source.html',''); initR
 <div class="ttc" id="aclassQuaZip_html_a6053a1d249ed210a85c9d5eb7cf9cdbe"><div class="ttname"><a href="classQuaZip.html#a6053a1d249ed210a85c9d5eb7cf9cdbe">QuaZip::CaseSensitivity</a></div><div class="ttdeci">CaseSensitivity</div><div class="ttdoc">Case sensitivity for the file names.</div><div class="ttdef"><b>Definition:</b> <a href="quazip_8h_source.html#l00159">quazip.h:159</a></div></div>
 <div class="ttc" id="aclassQuaZip_html_a6c657bfcfccb59d728e0da24c677d899"><div class="ttname"><a href="classQuaZip.html#a6c657bfcfccb59d728e0da24c677d899">QuaZip::setCurrentFile</a></div><div class="ttdeci">bool setCurrentFile(const QString &amp;fileName, CaseSensitivity cs=csDefault)</div><div class="ttdoc">Sets current file by its name.</div><div class="ttdef"><b>Definition:</b> <a href="quazip_8cpp_source.html#l00398">quazip.cpp:398</a></div></div>
 <div class="ttc" id="aclassQuaZip_html_ad79caa4c8a3262f7fcf52c6262b1dc25"><div class="ttname"><a href="classQuaZip.html#ad79caa4c8a3262f7fcf52c6262b1dc25">QuaZip::getCurrentFileInfo</a></div><div class="ttdeci">bool getCurrentFileInfo(QuaZipFileInfo *info) const</div><div class="ttdoc">Retrieves information about the current file.</div><div class="ttdef"><b>Definition:</b> <a href="quazip_8cpp_source.html#l00477">quazip.cpp:477</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a91ad9478d81a7aaf2593e8d9c3d06a14"><div class="ttname"><a href="cutil__math_8h.html#a91ad9478d81a7aaf2593e8d9c3d06a14">uint</a></div><div class="ttdeci">unsigned int uint</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00028">cutil_math.h:28</a></div></div>
 <div class="ttc" id="anamespaceQtCompatRegExpOption_html_aef3543c60166ecb59e406c1fc2c29950"><div class="ttname"><a href="namespaceQtCompatRegExpOption.html#aef3543c60166ecb59e406c1fc2c29950">QtCompatRegExpOption::CaseInsensitive</a></div><div class="ttdeci">constexpr QRegularExpression::PatternOption CaseInsensitive</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00174">QtCompat.h:174</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a2d9f30935c99da4eabe7ee9b8ca503d1"><div class="ttname"><a href="namespaceQtCompat.html#a2d9f30935c99da4eabe7ee9b8ca503d1">QtCompat::SkipEmptyParts</a></div><div class="ttdeci">constexpr Qt::SplitBehavior SkipEmptyParts</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00302">QtCompat.h:302</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
@@ -650,7 +639,7 @@ $(document).ready(function(){initNavTree('quazipdir_8cpp_source.html',''); initR
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="quazipdir_8cpp.html">quazipdir.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

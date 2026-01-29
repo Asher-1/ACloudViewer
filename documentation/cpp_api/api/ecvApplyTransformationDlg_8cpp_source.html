@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -444,7 +435,7 @@ $(document).ready(function(){initNavTree('ecvApplyTransformationDlg_8cpp_source.
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    s_rotateAboutCenter = dddDlg.rotateAboutCenterCheckBox-&gt;isChecked();</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160; </div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    <span class="comment">// resulting normal vector</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> Nd = <a class="code" href="classccNormalVectors.html#a1678a489db80df681a3be7803eb4f361">ccNormalVectors::ConvertDipAndDipDirToNormal</a>(</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3</a> Nd = <a class="code" href="classccNormalVectors.html#a99121dd3515f65d080f6625ae47f72ed">ccNormalVectors::ConvertDipAndDipDirToNormal</a>(</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(s_dip_deg),</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;            <span class="keyword">static_cast&lt;</span><a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a><span class="keyword">&gt;</span>(s_dipDir_deg));</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    <span class="comment">// corresponding rotation (assuming we start from (0, 0, 1))</span></div>
@@ -456,7 +447,7 @@ $(document).ready(function(){initNavTree('ecvApplyTransformationDlg_8cpp_source.
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                <a class="code" href="classMainWindow.html#a278951746ec91c9d3678f674616dbba2">MainWindow::TheInstance</a>()-&gt;<a class="code" href="classMainWindow.html#a1fc146c942436b45ce4e4f32c17d7b5a">getSelectedEntities</a>();</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        <a class="code" href="classccBBox.html">ccBBox</a> box;</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        <span class="keywordflow">for</span> (<a class="code" href="classccHObject.html">ccHObject</a>* obj : selectedEntities) {</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;            box += obj-&gt;<a class="code" href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">getBB_recursive</a>();</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;            box += obj-&gt;<a class="code" href="classccHObject.html#a2e92dc46d5b82462c78ea3164cbad9fd">getBB_recursive</a>();</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;        }</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;        <span class="keywordflow">if</span> (box.<a class="code" href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">isValid</a>()) {</div>
@@ -519,9 +510,9 @@ $(document).ready(function(){initNavTree('ecvApplyTransformationDlg_8cpp_source.
 <div class="ttc" id="aclassccGLMatrix_html"><div class="ttname"><a href="classccGLMatrix.html">ccGLMatrix</a></div><div class="ttdoc">Float version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00019">ecvGLMatrix.h:19</a></div></div>
 <div class="ttc" id="aclassccGLMatrixd_html"><div class="ttname"><a href="classccGLMatrixd.html">ccGLMatrixd</a></div><div class="ttdoc">Double version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00056">ecvGLMatrix.h:56</a></div></div>
 <div class="ttc" id="aclassccHObject_html"><div class="ttname"><a href="classccHObject.html">ccHObject</a></div><div class="ttdoc">Hierarchical CLOUDVIEWER Object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00025">ecvHObject.h:25</a></div></div>
-<div class="ttc" id="aclassccHObject_html_aa9d5b40019739029911758c5cdd90f10"><div class="ttname"><a href="classccHObject.html#aa9d5b40019739029911758c5cdd90f10">ccHObject::getBB_recursive</a></div><div class="ttdeci">virtual ccBBox getBB_recursive(bool withGLFeatures=false, bool onlyEnabledChildren=true)</div><div class="ttdoc">Returns the bounding-box of this entity and it's children.</div></div>
+<div class="ttc" id="aclassccHObject_html_a2e92dc46d5b82462c78ea3164cbad9fd"><div class="ttname"><a href="classccHObject.html#a2e92dc46d5b82462c78ea3164cbad9fd">ccHObject::getBB_recursive</a></div><div class="ttdeci">virtual ccBBox getBB_recursive(bool withGLFeatures=false, bool onlyEnabledChildren=true)</div><div class="ttdoc">Returns the bounding-box of this entity and it's children.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00759">ecvHObject.cpp:759</a></div></div>
 <div class="ttc" id="aclassccHObject_html_ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156"><div class="ttname"><a href="classccHObject.html#ae9ac8f6ce4ed9bcda2cb8c5fcb1ee156">ccHObject::Container</a></div><div class="ttdeci">std::vector&lt; ccHObject * &gt; Container</div><div class="ttdoc">Standard instances container (for children, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00337">ecvHObject.h:337</a></div></div>
-<div class="ttc" id="aclassccNormalVectors_html_a1678a489db80df681a3be7803eb4f361"><div class="ttname"><a href="classccNormalVectors.html#a1678a489db80df681a3be7803eb4f361">ccNormalVectors::ConvertDipAndDipDirToNormal</a></div><div class="ttdeci">static CCVector3 ConvertDipAndDipDirToNormal(PointCoordinateType dip_deg, PointCoordinateType dipDir_deg, bool upward=true)</div></div>
+<div class="ttc" id="aclassccNormalVectors_html_a99121dd3515f65d080f6625ae47f72ed"><div class="ttname"><a href="classccNormalVectors.html#a99121dd3515f65d080f6625ae47f72ed">ccNormalVectors::ConvertDipAndDipDirToNormal</a></div><div class="ttdeci">static CCVector3 ConvertDipAndDipDirToNormal(PointCoordinateType dip_deg, PointCoordinateType dipDir_deg, bool upward=true)</div><div class="ttdef"><b>Definition:</b> <a href="ecvNormalVectors_8cpp_source.html#l00892">ecvNormalVectors.cpp:892</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_a3b4197a19a89e56536d7780c7fb14cbd"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#a3b4197a19a89e56536d7780c7fb14cbd">cloudViewer::BoundingBoxTpl::getCenter</a></div><div class="ttdeci">Vector3Tpl&lt; T &gt; getCenter() const</div><div class="ttdoc">Returns center.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00164">BoundingBox.h:164</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1BoundingBoxTpl_html_ae42ccda2daa6b8891fb33eb06948daa2"><div class="ttname"><a href="classcloudViewer_1_1BoundingBoxTpl.html#ae42ccda2daa6b8891fb33eb06948daa2">cloudViewer::BoundingBoxTpl::isValid</a></div><div class="ttdeci">bool isValid() const</div><div class="ttdoc">Returns whether bounding box is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="BoundingBox_8h_source.html#l00203">BoundingBox.h:203</a></div></div>
 <div class="ttc" id="aclassecvPS_html_a61057f6767003f49f889f00ae4a780c1"><div class="ttname"><a href="classecvPS.html#a61057f6767003f49f889f00ae4a780c1">ecvPS::CurrentPath</a></div><div class="ttdeci">static const QString CurrentPath()</div><div class="ttdef"><b>Definition:</b> <a href="ecvPersistentSettings_8h_source.html#l00039">ecvPersistentSettings.h:39</a></div></div>
@@ -534,7 +525,7 @@ $(document).ready(function(){initNavTree('ecvApplyTransformationDlg_8cpp_source.
 <div class="ttc" id="aecvFileUtils_8h_html"><div class="ttname"><a href="ecvFileUtils_8h.html">ecvFileUtils.h</a></div></div>
 <div class="ttc" id="aecvNormalVectors_8h_html"><div class="ttname"><a href="ecvNormalVectors_8h.html">ecvNormalVectors.h</a></div></div>
 <div class="ttc" id="aecvPersistentSettings_8h_html"><div class="ttname"><a href="ecvPersistentSettings_8h.html">ecvPersistentSettings.h</a></div></div>
-<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
+<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="sfEditDlg_8h_source.html#l00016">sfEditDlg.h:16</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_a6286aab37e15a37234bcb5ba345062e2"><div class="ttname"><a href="namespacecloudViewer.html#a6286aab37e15a37234bcb5ba345062e2">cloudViewer::DegreesToRadians</a></div><div class="ttdeci">float DegreesToRadians(int degrees)</div><div class="ttdoc">Convert degrees to radians.</div><div class="ttdef"><b>Definition:</b> <a href="CVMath_8h_source.html#l00098">CVMath.h:98</a></div></div>
 <div class="ttc" id="anamespaceecvFileUtils_html_ae4aab4936c27dcc80eef207462b82c32"><div class="ttname"><a href="namespaceecvFileUtils.html#ae4aab4936c27dcc80eef207462b82c32">ecvFileUtils::defaultDocPath</a></div><div class="ttdeci">QString defaultDocPath()</div><div class="ttdoc">Shortcut for getting the documents location path.</div><div class="ttdef"><b>Definition:</b> <a href="ecvFileUtils_8h_source.html#l00030">ecvFileUtils.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -543,7 +534,7 @@ $(document).ready(function(){initNavTree('ecvApplyTransformationDlg_8cpp_source.
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="ecvApplyTransformationDlg_8cpp.html">ecvApplyTransformationDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:52 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:11 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,7 +95,7 @@ $(document).ready(function(){initNavTree('t_2io_2file__format_2FileASSIMP_8cpp_s
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;assimp/GltfMaterial.h&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;assimp/material.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;assimp/postprocess.h&gt;</span></div>
@@ -145,12 +136,12 @@ $(document).ready(function(){initNavTree('t_2io_2file__format_2FileASSIMP_8cpp_s
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1t_1_1io.html#af830b79d1ca65cfdc0f2d26795cf64b3">   46</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#af830b79d1ca65cfdc0f2d26795cf64b3">ReadTriangleMeshUsingASSIMP</a>(</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="keyword">const</span> std::string&amp; <a class="code" href="CVViewer_2benchmarks_2io_2PointCloudIO_8cpp.html#ae80f820219e45772366a2a68de6a54c4">filename</a>,</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html">geometry::TriangleMesh</a>&amp; mesh,</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a>&amp; <a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a> <span class="comment">/*={}*/</span>) {</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a>&amp; params <span class="comment">/*={}*/</span>) {</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    Assimp::Importer importer;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> post_process_flags = <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a9d204f70c5c7926e01f009324db41d9b">kPostProcessFlags_compulsory</a>;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a>.enable_post_processing) {</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordflow">if</span> (params.<a class="code" href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html#ab03f1446199333a3333b7670314ba5ea">enable_post_processing</a>) {</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        post_process_flags = <a class="code" href="namespacecloudViewer_1_1t_1_1io.html#a346e544c26ab8e909d056b6b824a6bfd">kPostProcessFlags_fast</a>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    }</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
@@ -762,7 +753,6 @@ $(document).ready(function(){initNavTree('t_2io_2file__format_2FileASSIMP_8cpp_s
 <div class="ttc" id="aFileIOFactory_8cpp_html_a5c88f8dea8790a366bc1a833cc7a1af9"><div class="ttname"><a href="FileIOFactory_8cpp.html#a5c88f8dea8790a366bc1a833cc7a1af9">has_colors</a></div><div class="ttdeci">bool has_colors</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00152">FileIOFactory.cpp:152</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_abb697d81df2187149a94f865ce8cdf65"><div class="ttname"><a href="FileIOFactory_8cpp.html#abb697d81df2187149a94f865ce8cdf65">has_normals</a></div><div class="ttdeci">bool has_normals</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00151">FileIOFactory.cpp:151</a></div></div>
 <div class="ttc" id="aParallelFor_8h_html"><div class="ttname"><a href="ParallelFor_8h.html">ParallelFor.h</a></div></div>
-<div class="ttc" id="aSurfaceTrimmer_8cpp_html_a27a922afed740fd69ab9a6ed1cf0306b"><div class="ttname"><a href="SurfaceTrimmer_8cpp.html#a27a922afed740fd69ab9a6ed1cf0306b">params</a></div><div class="ttdeci">cmdLineReadable * params[]</div><div class="ttdef"><b>Definition:</b> <a href="SurfaceTrimmer_8cpp_source.html#l00047">SurfaceTrimmer.cpp:47</a></div></div>
 <div class="ttc" id="aTensorFunction_8h_html"><div class="ttname"><a href="TensorFunction_8h.html">TensorFunction.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html">cloudViewer::core::Device</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00018">Device.h:18</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Dtype_html_a139c2514c1d8ff2257cd43d062ac6b11"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Dtype.html#a139c2514c1d8ff2257cd43d062ac6b11">cloudViewer::core::Dtype::UInt8</a></div><div class="ttdeci">static const Dtype UInt8</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8h_source.html#l00030">Dtype.h:30</a></div></div>
@@ -833,7 +823,6 @@ $(document).ready(function(){initNavTree('t_2io_2file__format_2FileASSIMP_8cpp_s
 <div class="ttc" id="acloudViewer_2io_2TriangleMeshIO_8cpp_html_a6bae0d1aafb8f3da25b63c82398668b3"><div class="ttname"><a href="cloudViewer_2io_2TriangleMeshIO_8cpp.html#a6bae0d1aafb8f3da25b63c82398668b3">normals</a></div><div class="ttdeci">double normals[3]</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2TriangleMeshIO_8cpp_source.html#l00054">TriangleMeshIO.cpp:54</a></div></div>
 <div class="ttc" id="acloudViewer_2t_2io_2ImageIO_8h_html"><div class="ttname"><a href="cloudViewer_2t_2io_2ImageIO_8h.html">ImageIO.h</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a0793177dbf31e47ea65bb4bbaa85700c"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a0793177dbf31e47ea65bb4bbaa85700c">cloudViewer::core::ParallelFor</a></div><div class="ttdeci">void ParallelFor(const Device &amp;device, int64_t n, const func_t &amp;func)</div><div class="ttdef"><b>Definition:</b> <a href="ParallelFor_8h_source.html#l00111">ParallelFor.h:111</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a240c7ca2d7dc5a0bedc7f7a44e4d4397"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a240c7ca2d7dc5a0bedc7f7a44e4d4397">cloudViewer::core::Concatenate</a></div><div class="ttdeci">Tensor Concatenate(const std::vector&lt; Tensor &gt; &amp;tensors, const utility::optional&lt; int64_t &gt; &amp;axis)</div><div class="ttdoc">Concatenates the list of tensors in their order, along the given axis into a new tensor....</div><div class="ttdef"><b>Definition:</b> <a href="TensorFunction_8cpp_source.html#l00079">TensorFunction.cpp:79</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ae2fa792c81d8d9344d5b392a9a279fd2"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ae2fa792c81d8d9344d5b392a9a279fd2">cloudViewer::core::None</a></div><div class="ttdeci">constexpr utility::nullopt_t None</div><div class="ttdef"><b>Definition:</b> <a href="TensorKey_8h_source.html#l00020">TensorKey.h:20</a></div></div>
@@ -845,9 +834,10 @@ $(document).ready(function(){initNavTree('t_2io_2file__format_2FileASSIMP_8cpp_s
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_a9d204f70c5c7926e01f009324db41d9b"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#a9d204f70c5c7926e01f009324db41d9b">cloudViewer::t::io::kPostProcessFlags_compulsory</a></div><div class="ttdeci">const unsigned int kPostProcessFlags_compulsory</div><div class="ttdef"><b>Definition:</b> <a href="t_2io_2file__format_2FileASSIMP_8cpp_source.html#l00037">FileASSIMP.cpp:37</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_af3e82867aa365394526391bea2dd8924"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#af3e82867aa365394526391bea2dd8924">cloudViewer::t::io::WriteTriangleMeshUsingASSIMP</a></div><div class="ttdeci">bool WriteTriangleMeshUsingASSIMP(const std::string &amp;filename, const geometry::TriangleMesh &amp;mesh, const bool write_ascii, const bool compressed, const bool write_vertex_normals, const bool write_vertex_colors, const bool write_triangle_uvs, const bool print_progress)</div><div class="ttdef"><b>Definition:</b> <a href="t_2io_2file__format_2FileASSIMP_8cpp_source.html#l00371">FileASSIMP.cpp:371</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1io_html_af830b79d1ca65cfdc0f2d26795cf64b3"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1io.html#af830b79d1ca65cfdc0f2d26795cf64b3">cloudViewer::t::io::ReadTriangleMeshUsingASSIMP</a></div><div class="ttdeci">bool ReadTriangleMeshUsingASSIMP(const std::string &amp;filename, geometry::TriangleMesh &amp;mesh, const cloudViewer::io::ReadTriangleMeshOptions &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="t_2io_2file__format_2FileASSIMP_8cpp_source.html#l00046">FileASSIMP.cpp:46</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1io_1_1ReadTriangleMeshOptions_html"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html">cloudViewer::io::ReadTriangleMeshOptions</a></div><div class="ttdef"><b>Definition:</b> <a href="AutoIO_8h_source.html#l00024">AutoIO.h:24</a></div></div>
+<div class="ttc" id="astructcloudViewer_1_1io_1_1ReadTriangleMeshOptions_html_ab03f1446199333a3333b7670314ba5ea"><div class="ttname"><a href="structcloudViewer_1_1io_1_1ReadTriangleMeshOptions.html#ab03f1446199333a3333b7670314ba5ea">cloudViewer::io::ReadTriangleMeshOptions::enable_post_processing</a></div><div class="ttdeci">bool enable_post_processing</div><div class="ttdoc">Enables post-processing on the mesh.</div><div class="ttdef"><b>Definition:</b> <a href="AutoIO_8h_source.html#l00026">AutoIO.h:26</a></div></div>
 <div class="ttc" id="at_2io_2TriangleMeshIO_8h_html"><div class="ttname"><a href="t_2io_2TriangleMeshIO_8h.html">TriangleMeshIO.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -855,7 +845,7 @@ $(document).ready(function(){initNavTree('t_2io_2file__format_2FileASSIMP_8cpp_s
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0b490d8c6bdbdcdd41809fb35cbf2a1b.html">io</a></li><li class="navelem"><a class="el" href="dir_b02e663b84a5466686fe36f6d8e707d1.html">file_format</a></li><li class="navelem"><a class="el" href="t_2io_2file__format_2FileASSIMP_8cpp.html">FileASSIMP.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:26 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

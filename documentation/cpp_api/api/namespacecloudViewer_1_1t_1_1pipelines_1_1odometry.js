@@ -17,12 +17,10 @@ var namespacecloudViewer_1_1t_1_1pipelines_1_1odometry =
     [ "ComputeOdometryResultPointToPlane", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a489ed403e6428c9785494720eb2ee1c8", null ],
     [ "ComputeOdometryResultPointToPlane", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#ac2503fdf3de07949c570c29a87cb2a36", null ],
     [ "CreateIntrisicTensor", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a836d62de194ec6fd4b148307dcddc2ef", null ],
-    [ "pybind_odometry", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a3b8c389cb19e90004061909194e8c746", null ],
     [ "RGBDOdometryMultiScale", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a1eaaf7ae12781b7b99d4ece0b1b67788", null ],
     [ "RGBDOdometryMultiScale", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a66f8726866cded9a5b4930eb244f0d5b", null ],
     [ "RGBDOdometryMultiScaleHybrid", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#ab520639c5b8591857ba31ee8d0fc2da5", null ],
     [ "RGBDOdometryMultiScaleIntensity", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#ab008d5734221cddf7f4a1f511b4cc284", null ],
     [ "RGBDOdometryMultiScalePointToPlane", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a6e2034c0e31e0c7e1f028321114a6ccc", null ],
-    [ "Unit", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a23de1779368076f09fbdf495fc9567ba", null ],
-    [ "map_shared_argument_docstrings", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a0fbf2130af48d5a412431ca18f698593", null ]
+    [ "Unit", "namespacecloudViewer_1_1t_1_1pipelines_1_1odometry.html#a23de1779368076f09fbdf495fc9567ba", null ]
 ];

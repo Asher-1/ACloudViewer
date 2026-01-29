@@ -1,0 +1,6 @@
+<map id="cvGenericSelectionTool" name="cvGenericSelectionTool">
+<area shape="rect" id="node1" title="Base class for selection tools with picking capabilities." alt="" coords="105,80,278,107"/>
+<area shape="rect" id="node3" href="$classcvSelectionHighlighter.html" title="Helper class for highlighting selected elements in the visualizer." alt="" coords="5,155,175,181"/>
+<area shape="rect" id="node4" href="$classcvViewSelectionManager.html" title="Central manager for all selection operations in the view." alt="" coords="199,155,386,181"/>
+<area shape="rect" id="node2" href="$classcvSelectionBase.html" title="Lightweight base class for all selection&#45;related components." alt="" coords="127,5,256,32"/>
+</map>

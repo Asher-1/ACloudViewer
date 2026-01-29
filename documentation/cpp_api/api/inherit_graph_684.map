@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structe57_1_1PinholeRepresentation.html" title="Stores an image that is mapped from 3D using the pinhole camera projection model." alt="" coords="5,5,207,32"/>
+<area shape="rect" id="node1" href="$classcolmap_1_1Sampler.html" title=" " alt="" coords="5,56,137,83"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1CombinationSampler.html" title=" " alt="" coords="185,5,400,32"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1ProgressiveSampler.html" title=" " alt="" coords="189,56,397,83"/>
+<area shape="rect" id="node4" href="$classcolmap_1_1RandomSampler.html" title=" " alt="" coords="199,107,386,133"/>
 </map>

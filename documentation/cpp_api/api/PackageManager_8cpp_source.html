@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -134,46 +125,46 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#if defined(Q_OS_WIN32)</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">static</span> BOOL GetFolderRights(LPCTSTR folderName, DWORD genericAccessRights, DWORD *grantedRights)</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;{</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    DWORD <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = 0;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    DWORD length = 0;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    constexpr SECURITY_INFORMATION requestedInformation =</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="comment">/* Get the needed length */</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    GetFileSecurity(folderName, requestedInformation, <span class="keyword">nullptr</span>, <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>, &amp;<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    GetFileSecurity(folderName, requestedInformation, <span class="keyword">nullptr</span>, <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>, &amp;length);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (ERROR_INSUFFICIENT_BUFFER != GetLastError())</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    }</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    PSECURITY_DESCRIPTOR security = LocalAlloc(LPTR, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordflow">if</span> (GetFileSecurity(folderName, requestedInformation, security, <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>, &amp;<a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>) == <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    PSECURITY_DESCRIPTOR security = LocalAlloc(LPTR, length);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordflow">if</span> (GetFileSecurity(folderName, requestedInformation, security, length, &amp;length) == <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    {</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        LocalFree(security);</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    }</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    DWORD desiredAccess = TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ;</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    HANDLE hToken = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (OpenProcessToken(GetCurrentProcess(), desiredAccess, &amp;hToken) == <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (OpenProcessToken(GetCurrentProcess(), desiredAccess, &amp;hToken) == <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    {</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        LocalFree(security);</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    HANDLE hImpersonatedToken = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">if</span> (DuplicateToken(hToken, SecurityImpersonation, &amp;hImpersonatedToken) == <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">if</span> (DuplicateToken(hToken, SecurityImpersonation, &amp;hImpersonatedToken) == <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    {</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        CloseHandle(hToken);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        LocalFree(security);</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    }</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    GENERIC_MAPPING mapping = {0xFFFFFFFF};</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    PRIVILEGE_SET privileges = {0};</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    DWORD grantedAccess = 0, privilegesLength = <span class="keyword">sizeof</span>(privileges);</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    BOOL <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    BOOL <a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a> = <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    mapping.GenericRead = FILE_GENERIC_READ;</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    mapping.GenericWrite = FILE_GENERIC_WRITE;</div>
@@ -188,12 +179,12 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                    &amp;privileges,</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                    &amp;privilegesLength,</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                    &amp;grantedAccess,</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                    &amp;<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>) == <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                    &amp;<a class="code" href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a>) == <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    {</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        CloseHandle(hImpersonatedToken);</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        CloseHandle(hToken);</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        LocalFree(security);</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    }</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    *grantedRights = grantedAccess;</div>
@@ -202,7 +193,7 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    CloseHandle(hToken);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    LocalFree(security);</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>;</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="dbfopen_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a>;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;}</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="keyword">static</span> <span class="keywordtype">bool</span> HasReadWriteAccessToFolder(<span class="keyword">const</span> QString &amp;folderPath)</div>
@@ -217,7 +208,7 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    BOOL ret = GetFolderRights(str.c_str(), access_mask, &amp;grant);</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="keywordflow">if</span> (ret == <a class="code" href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="keywordflow">if</span> (ret == <a class="code" href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a>)</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    {</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <a class="code" href="Utilities_8h.html#a2775111d94dd73d46cff438e05ebf94d">plgWarning</a>() &lt;&lt; <span class="stringliteral">&quot;Failed to get access rights for path &#39;&quot;</span> &lt;&lt; folderPath &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -635,9 +626,8 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div class="ttc" id="aclassPythonConfig_html_a83c350cff8fc199538b3f76b6c095601aa45da96d0bf6575970f2d27af22be28a"><div class="ttname"><a href="classPythonConfig.html#a83c350cff8fc199538b3f76b6c095601aa45da96d0bf6575970f2d27af22be28a">PythonConfig::Type::System</a></div><div class="ttdeci">@ System</div></div>
 <div class="ttc" id="aclassPythonConfig_html_a83c350cff8fc199538b3f76b6c095601ab51033629de554699ddca078b7849d42"><div class="ttname"><a href="classPythonConfig.html#a83c350cff8fc199538b3f76b6c095601ab51033629de554699ddca078b7849d42">PythonConfig::Type::Venv</a></div><div class="ttdeci">@ Venv</div></div>
 <div class="ttc" id="aclassQtCompatTextCodec_html_a6a53d827243c1f19157247709f3a0935"><div class="ttname"><a href="classQtCompatTextCodec.html#a6a53d827243c1f19157247709f3a0935">QtCompatTextCodec::toUnicode</a></div><div class="ttdeci">QString toUnicode(const char *chars, int len=-1)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00610">QtCompat.h:610</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
-<div class="ttc" id="alsd_8c_html_aa8cecfc5c5c054d2875c03e77b7be15d"><div class="ttname"><a href="lsd_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a></div><div class="ttdeci">#define TRUE</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00119">lsd.c:119</a></div></div>
-<div class="ttc" id="alsd_8c_html_aa93f0eb578d23995850d61f7d61c55c1"><div class="ttname"><a href="lsd_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a></div><div class="ttdeci">#define FALSE</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00115">lsd.c:115</a></div></div>
+<div class="ttc" id="adbfopen_8c_html_aa8cecfc5c5c054d2875c03e77b7be15d"><div class="ttname"><a href="dbfopen_8c.html#aa8cecfc5c5c054d2875c03e77b7be15d">TRUE</a></div><div class="ttdeci">#define TRUE</div><div class="ttdef"><b>Definition:</b> <a href="dbfopen_8c_source.html#l00236">dbfopen.c:236</a></div></div>
+<div class="ttc" id="adbfopen_8c_html_aa93f0eb578d23995850d61f7d61c55c1"><div class="ttname"><a href="dbfopen_8c.html#aa93f0eb578d23995850d61f7d61c55c1">FALSE</a></div><div class="ttdeci">#define FALSE</div><div class="ttdef"><b>Definition:</b> <a href="dbfopen_8c_source.html#l00235">dbfopen.c:235</a></div></div>
 <div class="ttc" id="aqCanupoTools_8cpp_html_a0515b9abe2b8e49a72c23ab07b6f270d"><div class="ttname"><a href="qCanupoTools_8cpp.html#a0515b9abe2b8e49a72c23ab07b6f270d">errorOccurred</a></div><div class="ttdeci">bool errorOccurred</div><div class="ttdef"><b>Definition:</b> <a href="qCanupoTools_8cpp_source.html#l00044">qCanupoTools.cpp:44</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -645,7 +635,7 @@ $(document).ready(function(){initNavTree('PackageManager_8cpp_source.html',''); 
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_e161ab9834a43a82c6098609a33dadcc.html">src</a></li><li class="navelem"><a class="el" href="PackageManager_8cpp.html">PackageManager.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

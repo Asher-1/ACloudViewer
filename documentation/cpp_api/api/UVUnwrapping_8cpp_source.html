@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -193,7 +184,7 @@ $(document).ready(function(){initNavTree('UVUnwrapping_8cpp_source.html',''); in
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keyword">typedef</span> std::pair&lt;uint32_t, uint32_t&gt; AdjTriangles_t;</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keyword">const</span> uint32_t <a class="code" href="SinusxFilter_8cpp.html#a007dea27057008224e9da69eaeca8606aef2863a469df3ea6871d640e3669a2f2">INVALID</a> = <span class="keyword">static_cast&lt;</span>uint32_t<span class="keyword">&gt;</span>(-1);</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keyword">auto</span> MakeEdge = [](uint32_t idx1, uint32_t idx2) {</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> (uint64_t(<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(idx1, idx2)) &lt;&lt; 32) | <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(idx1, idx2);</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> (uint64_t(std::min(idx1, idx2)) &lt;&lt; 32) | std::max(idx1, idx2);</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    };</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="comment">// Compute adjacency as described here</span></div>
@@ -205,12 +196,12 @@ $(document).ready(function(){initNavTree('UVUnwrapping_8cpp_source.html',''); in
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            <span class="keyword">const</span> uint32_t* t_ptr = triangles_ptr + i * 3;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j = 0; j &lt; 3; ++j) {</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                <span class="keyword">auto</span> e = MakeEdge(t_ptr[j], t_ptr[(j + 1) % 3]);</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                <span class="keyword">auto</span> it = edge_adjtriangle_map.find(e);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                <span class="keyword">auto</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = MakeEdge(t_ptr[j], t_ptr[(j + 1) % 3]);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                <span class="keyword">auto</span> it = edge_adjtriangle_map.find(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>);</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                <span class="keywordflow">if</span> (it != edge_adjtriangle_map.end()) {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                    it-&gt;second.second = i;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                    edge_adjtriangle_map[e] = AdjTriangles_t(i, <a class="code" href="SinusxFilter_8cpp.html#a007dea27057008224e9da69eaeca8606aef2863a469df3ea6871d640e3669a2f2">INVALID</a>);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                    edge_adjtriangle_map[<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>] = AdjTriangles_t(i, <a class="code" href="SinusxFilter_8cpp.html#a007dea27057008224e9da69eaeca8606aef2863a469df3ea6871d640e3669a2f2">INVALID</a>);</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            }</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        }</div>
@@ -220,8 +211,8 @@ $(document).ready(function(){initNavTree('UVUnwrapping_8cpp_source.html',''); in
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <span class="keywordflow">for</span> (int64_t i = 0; i &lt; num_triangles; ++i) {</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;            <span class="keyword">const</span> uint32_t* t_ptr = triangles_ptr + i * 3;</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j = 0; j &lt; 3; ++j, ++linear_idx) {</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                <span class="keyword">auto</span> e = MakeEdge(t_ptr[j], t_ptr[(j + 1) % 3]);</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                <span class="keyword">auto</span>&amp; adjacent_tri = edge_adjtriangle_map[e];</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                <span class="keyword">auto</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = MakeEdge(t_ptr[j], t_ptr[(j + 1) % 3]);</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                <span class="keyword">auto</span>&amp; adjacent_tri = edge_adjtriangle_map[<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>];</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                <span class="keywordflow">if</span> (adjacent_tri.first != i) {</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                    adj[linear_idx] = adjacent_tri.first;</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                } <span class="keywordflow">else</span> {</div>
@@ -351,10 +342,10 @@ $(document).ready(function(){initNavTree('UVUnwrapping_8cpp_source.html',''); in
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="keyword">const</span> uint32_t fidx_offset =</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                combined_output.ib.size() / (<span class="keyword">sizeof</span>(uint32_t) * 3);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        <span class="keyword">const</span> uint32_t invalid = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;uint32_t&gt;::max</a>();</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; x : output.partition_result_adjacency) {</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            <span class="keywordflow">if</span> (x != invalid) {</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                x += fidx_offset;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        <span class="keyword">const</span> uint32_t invalid = std::numeric_limits&lt;uint32_t&gt;::max();</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">auto</span>&amp; <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> : output.partition_result_adjacency) {</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> != invalid) {</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> += fidx_offset;</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            }</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        }</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        combined_output.ib.insert(combined_output.ib.end(), output.ib.begin(),</div>
@@ -370,7 +361,7 @@ $(document).ready(function(){initNavTree('UVUnwrapping_8cpp_source.html',''); in
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                output.original_face_idx.end());</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        <span class="comment">// update stats</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        combined_output.max_stretch_out = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        combined_output.max_stretch_out = std::max(</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                combined_output.max_stretch_out, output.max_stretch_out);</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        combined_output.num_charts_out += output.num_charts_out;</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160; </div>
@@ -459,21 +450,21 @@ $(document).ready(function(){initNavTree('UVUnwrapping_8cpp_source.html',''); in
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1geometry_1_1TriangleMesh_html_af78e7a4a215e5a7e2334f155ef0b3de0"><div class="ttname"><a href="classcloudViewer_1_1t_1_1geometry_1_1TriangleMesh.html#af78e7a4a215e5a7e2334f155ef0b3de0">cloudViewer::t::geometry::TriangleMesh::GetTriangleAttr</a></div><div class="ttdeci">const TensorMap &amp; GetTriangleAttr() const</div><div class="ttdoc">Getter for triangle_attr_ TensorMap. Used in Pybind.</div><div class="ttdef"><b>Definition:</b> <a href="t_2geometry_2TriangleMesh_8h_source.html#l00159">TriangleMesh.h:159</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a57eb3ffc98e6ad1bdbed0a980a54c484"><div class="ttname"><a href="core_2include_2Logging_8h.html#a57eb3ffc98e6ad1bdbed0a980a54c484">LogInfo</a></div><div class="ttdeci">#define LogInfo(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00081">Logging.h:81</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a56ab960a5052b926148cc2c48b5d6edd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a56ab960a5052b926148cc2c48b5d6edd">cloudViewer::core::Int64</a></div><div class="ttdeci">const Dtype Int64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00047">Dtype.cpp:47</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a58063fff4201654539d9ffc8cf24d9f7"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a58063fff4201654539d9ffc8cf24d9f7">cloudViewer::core::UInt32</a></div><div class="ttdeci">const Dtype UInt32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00050">Dtype.cpp:50</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a489adbc8a7e0672574853a19deb01076"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a489adbc8a7e0672574853a19deb01076">cloudViewer::geometry::TriangleMesh</a></div><div class="ttdeci">::ccMesh TriangleMesh</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2TriangleMesh_8h_source.html#l00019">TriangleMesh.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1uvunwrapping_html_a685aa6cd1316554a2ef2256e8ca33c9e"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1uvunwrapping.html#a685aa6cd1316554a2ef2256e8ca33c9e">cloudViewer::t::geometry::kernel::uvunwrapping::ComputeUVAtlas</a></div><div class="ttdeci">std::tuple&lt; float, int, int &gt; ComputeUVAtlas(TriangleMesh &amp;mesh, const size_t width, const size_t height, const float gutter, const float max_stretch, int parallel_partitions, int nthreads)</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00175">UVUnwrapping.cpp:175</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_bba286d50cb057707928f9dee244b9aa.html">geometry</a></li><li class="navelem"><a class="el" href="dir_3e6d23fef4819891c1e739ac149a8e20.html">kernel</a></li><li class="navelem"><a class="el" href="UVUnwrapping_8cpp.html">UVUnwrapping.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

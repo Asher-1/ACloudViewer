@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -156,7 +147,7 @@ $(document).ready(function(){initNavTree('core_2src_2ScalarField_8cpp_source.htm
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        mean = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(_mean);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <span class="keywordflow">if</span> (variance) {</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            _std2 = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(_std2 / <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> - _mean * _mean);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            _std2 = std::abs(_std2 / <a class="code" href="FileIOFactory_8cpp.html#ad43c3812e6d13e0518d9f8b8f463ffcf">count</a> - _mean * _mean);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            *variance = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(_std2);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        }</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    } <span class="keywordflow">else</span> {</div>
@@ -204,9 +195,8 @@ $(document).ready(function(){initNavTree('core_2src_2ScalarField_8cpp_source.htm
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_a8711d03f9cb6f5d2c4d63b35f3e4e6e0"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#a8711d03f9cb6f5d2c4d63b35f3e4e6e0">cloudViewer::ScalarField::setName</a></div><div class="ttdeci">void setName(const char *name)</div><div class="ttdoc">Sets scalar field name.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarField_8cpp_source.html#l00022">ScalarField.cpp:22</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_aa8a9a41063c08fd1d1c0a4109491cd9f"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#aa8a9a41063c08fd1d1c0a4109491cd9f">cloudViewer::ScalarField::resizeSafe</a></div><div class="ttdeci">bool resizeSafe(std::size_t count, bool initNewElements=false, ScalarType valueForNewElements=0)</div><div class="ttdoc">Resizes memory (no exception thrown)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarField_8cpp_source.html#l00081">ScalarField.cpp:81</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_abd71c5d761aba8eaba9c4b6d5754e16e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a></div><div class="ttdeci">static bool ValidValue(ScalarType value)</div><div class="ttdoc">Returns whether a scalar value is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00061">ScalarField.h:61</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="anamespaceecvColor_1_1LookUpTable_html_ab8f79b9962a244c3a68fd2bb22a595ba"><div class="ttname"><a href="namespaceecvColor_1_1LookUpTable.html#ab8f79b9962a244c3a68fd2bb22a595ba">ecvColor::LookUpTable::at</a></div><div class="ttdeci">Rgb at(size_t color_id)</div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="anamespaceecvColor_1_1LookUpTable_html_ab8f79b9962a244c3a68fd2bb22a595ba"><div class="ttname"><a href="namespaceecvColor_1_1LookUpTable.html#ab8f79b9962a244c3a68fd2bb22a595ba">ecvColor::LookUpTable::at</a></div><div class="ttdeci">Rgb at(size_t color_id)</div><div class="ttdef"><b>Definition:</b> <a href="ecvColorTypes_8cpp_source.html#l00077">ecvColorTypes.cpp:77</a></div></div>
 <div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> <a href="Eigen_8h_source.html#l00085">Eigen.h:85</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -214,7 +204,7 @@ $(document).ready(function(){initNavTree('core_2src_2ScalarField_8cpp_source.htm
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2ScalarField_8cpp.html">ScalarField.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

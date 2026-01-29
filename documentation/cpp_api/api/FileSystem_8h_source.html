@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -276,18 +267,18 @@ $(document).ready(function(){initNavTree('FileSystem_8h_source.html',''); initRe
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    int64_t CurPos();</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    int64_t GetFileSize();</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    int64_t <a class="code" href="namespacecolmap.html#a17718f6b5f1bbb4c22efc8254719e028">GetFileSize</a>();</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    int64_t GetNumLines();</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160; </div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *ReadLine();</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00253"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">  253</a></span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">ReadData</a>(T *data, <span class="keywordtype">size_t</span> num_elems) {</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        <span class="keywordflow">return</span> ReadData(data, <span class="keyword">sizeof</span>(T), num_elems);</div>
+<div class="line"><a name="l00253"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">  253</a></span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">ReadData</a>(T *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <span class="keywordtype">size_t</span> num_elems) {</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        <span class="keywordflow">return</span> ReadData(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <span class="keyword">sizeof</span>(T), num_elems);</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    }</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keywordtype">size_t</span> ReadData(<span class="keywordtype">void</span> *data, <span class="keywordtype">size_t</span> elem_size, <span class="keywordtype">size_t</span> num_elems);</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keywordtype">size_t</span> ReadData(<span class="keywordtype">void</span> *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <span class="keywordtype">size_t</span> elem_size, <span class="keywordtype">size_t</span> num_elems);</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160; </div>
 <div class="line"><a name="l00264"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8a395e562e2d4a29feb88b916230ec36">  264</a></span>&#160;    FILE *<a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8a395e562e2d4a29feb88b916230ec36">GetFILE</a>() { <span class="keywordflow">return</span> file_; }</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160; </div>
@@ -308,6 +299,7 @@ $(document).ready(function(){initNavTree('FileSystem_8h_source.html',''); initRe
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html">cloudViewer::utility::filesystem::CFile</a></div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00219">FileSystem.h:219</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_a8a395e562e2d4a29feb88b916230ec36"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8a395e562e2d4a29feb88b916230ec36">cloudViewer::utility::filesystem::CFile::GetFILE</a></div><div class="ttdeci">FILE * GetFILE()</div><div class="ttdoc">Returns the underlying C FILE pointer.</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00264">FileSystem.h:264</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1filesystem_1_1CFile_html_afbc6c830de00098be64d643ee5fcb047"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">cloudViewer::utility::filesystem::CFile::ReadData</a></div><div class="ttdeci">size_t ReadData(T *data, size_t num_elems)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8h_source.html#l00253">FileSystem.h:253</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a079c7f82f200c5c52b25bbe770f75d96"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a079c7f82f200c5c52b25bbe770f75d96">cloudViewer::utility::filesystem::ChangeWorkingDirectory</a></div><div class="ttdeci">bool ChangeWorkingDirectory(const std::string &amp;directory)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00427">FileSystem.cpp:427</a></div></div>
@@ -353,14 +345,15 @@ $(document).ready(function(){initNavTree('FileSystem_8h_source.html',''); initRe
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a757367adaaa8a138fd5861d8ec52ec1c"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a757367adaaa8a138fd5861d8ec52ec1c">cloudViewer::utility::StringReplaceLast</a></div><div class="ttdeci">std::string StringReplaceLast(const std::string &amp;str, const std::string &amp;old_str, const std::string &amp;new_str)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00144">Helper.cpp:144</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a7a4d50b769803e5384c183526f13f580"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a7a4d50b769803e5384c183526f13f580">cloudViewer::utility::StringContains</a></div><div class="ttdeci">bool StringContains(const std::string &amp;src, const std::string &amp;dst)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00154">Helper.cpp:154</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aeded7571358384977ccc5407299f9c88"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aeded7571358384977ccc5407299f9c88">cloudViewer::utility::StringReplace</a></div><div class="ttdeci">std::string StringReplace(const std::string &amp;str, const std::string &amp;old_str, const std::string &amp;new_str)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00119">Helper.cpp:119</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="anamespacecolmap_html_a17718f6b5f1bbb4c22efc8254719e028"><div class="ttname"><a href="namespacecolmap.html#a17718f6b5f1bbb4c22efc8254719e028">colmap::GetFileSize</a></div><div class="ttdeci">size_t GetFileSize(const std::string &amp;path)</div><div class="ttdef"><b>Definition:</b> <a href="misc_8cc_source.html#l00219">misc.cc:219</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_24d671cfcbc5d5238a6bd565a49d198f.html">include</a></li><li class="navelem"><a class="el" href="FileSystem_8h.html">FileSystem.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

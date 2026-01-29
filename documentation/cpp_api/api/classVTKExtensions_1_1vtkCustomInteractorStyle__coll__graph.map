@@ -1,0 +1,8 @@
+<map id="VTKExtensions::vtkCustomInteractorStyle" name="VTKExtensions::vtkCustomInteractorStyle">
+<area shape="rect" id="node1" title="vtkCustomInteractorStyle defines an unique, custom VTK based interactory style for PCL Visualizer app..." alt="" coords="173,275,371,316"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,171,219,212"/>
+<area shape="rect" id="node3" title=" " alt="" coords="243,178,301,205"/>
+<area shape="rect" id="node4" href="$classvtkCameraManipulator.html" title=" " alt="" coords="326,178,498,205"/>
+<area shape="rect" id="node5" title=" " alt="" coords="335,5,420,32"/>
+<area shape="rect" id="node6" href="$classvtkCameraManipulatorGUIHelper.html" title=" " alt="" coords="399,81,638,108"/>
+</map>

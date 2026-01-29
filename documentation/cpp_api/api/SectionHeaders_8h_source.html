@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -131,13 +122,13 @@ $(document).ready(function(){initNavTree('SectionHeaders_8h_source.html',''); in
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;{</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;   <span class="keyword">enum</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;   {</div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="namespacee57.html#a4c683121e59956dd52f7832058ad863fabfd2132bc91620d871df670229d4dde6">   35</a></span>&#160;      <a class="code" href="namespacee57.html#a4c683121e59956dd52f7832058ad863fabfd2132bc91620d871df670229d4dde6">BLOB_SECTION</a> = 0,</div>
-<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="namespacee57.html#a4c683121e59956dd52f7832058ad863fa243c8902120908b2cafb5040772485fe">   36</a></span>&#160;      <a class="code" href="namespacee57.html#a4c683121e59956dd52f7832058ad863fa243c8902120908b2cafb5040772485fe">COMPRESSED_VECTOR_SECTION</a>,</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="namespacee57.html#afadcd53edc99ea6268188db361923ee1abfd2132bc91620d871df670229d4dde6">   35</a></span>&#160;      <a class="code" href="namespacee57.html#afadcd53edc99ea6268188db361923ee1abfd2132bc91620d871df670229d4dde6">BLOB_SECTION</a> = 0,</div>
+<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="namespacee57.html#afadcd53edc99ea6268188db361923ee1a243c8902120908b2cafb5040772485fe">   36</a></span>&#160;      <a class="code" href="namespacee57.html#afadcd53edc99ea6268188db361923ee1a243c8902120908b2cafb5040772485fe">COMPRESSED_VECTOR_SECTION</a>,</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   };</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="structe57_1_1BlobSectionHeader.html">   39</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structe57_1_1BlobSectionHeader.html">BlobSectionHeader</a></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;   {</div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="structe57_1_1BlobSectionHeader.html#a646ac4e4f949f32393e7c8fa98c85680">   41</a></span>&#160;      <span class="keyword">const</span> uint8_t <a class="code" href="structe57_1_1BlobSectionHeader.html#a646ac4e4f949f32393e7c8fa98c85680">sectionId</a> = <a class="code" href="namespacee57.html#a4c683121e59956dd52f7832058ad863fabfd2132bc91620d871df670229d4dde6">BLOB_SECTION</a>;</div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="structe57_1_1BlobSectionHeader.html#a646ac4e4f949f32393e7c8fa98c85680">   41</a></span>&#160;      <span class="keyword">const</span> uint8_t <a class="code" href="structe57_1_1BlobSectionHeader.html#a646ac4e4f949f32393e7c8fa98c85680">sectionId</a> = <a class="code" href="namespacee57.html#afadcd53edc99ea6268188db361923ee1abfd2132bc91620d871df670229d4dde6">BLOB_SECTION</a>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="structe57_1_1BlobSectionHeader.html#a46b1f03cffe32c7660218acf4a06f0a0">   43</a></span>&#160;      uint8_t <a class="code" href="structe57_1_1BlobSectionHeader.html#a46b1f03cffe32c7660218acf4a06f0a0">reserved1</a>[7] = {};         <span class="comment">// must be zero</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="structe57_1_1BlobSectionHeader.html#a3873342db222484503eca5dd76222488">   44</a></span>&#160;      uint64_t <a class="code" href="structe57_1_1BlobSectionHeader.html#a3873342db222484503eca5dd76222488">sectionLogicalLength</a> = 0; <span class="comment">// byte length of whole section</span></div>
@@ -149,7 +140,7 @@ $(document).ready(function(){initNavTree('SectionHeaders_8h_source.html',''); in
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="structe57_1_1CompressedVectorSectionHeader.html">   51</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structe57_1_1CompressedVectorSectionHeader.html">CompressedVectorSectionHeader</a></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;   {</div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="structe57_1_1CompressedVectorSectionHeader.html#afb0e046f3986cf252412165eb1f6a840">   53</a></span>&#160;      <span class="keyword">const</span> uint8_t <a class="code" href="structe57_1_1CompressedVectorSectionHeader.html#afb0e046f3986cf252412165eb1f6a840">sectionId</a> = <a class="code" href="namespacee57.html#a4c683121e59956dd52f7832058ad863fa243c8902120908b2cafb5040772485fe">COMPRESSED_VECTOR_SECTION</a>;</div>
+<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="structe57_1_1CompressedVectorSectionHeader.html#afb0e046f3986cf252412165eb1f6a840">   53</a></span>&#160;      <span class="keyword">const</span> uint8_t <a class="code" href="structe57_1_1CompressedVectorSectionHeader.html#afb0e046f3986cf252412165eb1f6a840">sectionId</a> = <a class="code" href="namespacee57.html#afadcd53edc99ea6268188db361923ee1a243c8902120908b2cafb5040772485fe">COMPRESSED_VECTOR_SECTION</a>;</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="structe57_1_1CompressedVectorSectionHeader.html#a9443fb9578d029b61a83dcdbe2759c90">   55</a></span>&#160;      uint8_t <a class="code" href="structe57_1_1CompressedVectorSectionHeader.html#a9443fb9578d029b61a83dcdbe2759c90">reserved1</a>[7] = {};         <span class="comment">// must be zero</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="structe57_1_1CompressedVectorSectionHeader.html#a2efd46b52ed648ca256503d6e32e2f47">   56</a></span>&#160;      uint64_t <a class="code" href="structe57_1_1CompressedVectorSectionHeader.html#a2efd46b52ed648ca256503d6e32e2f47">sectionLogicalLength</a> = 0; <span class="comment">// byte length of whole section</span></div>
@@ -166,8 +157,8 @@ $(document).ready(function(){initNavTree('SectionHeaders_8h_source.html',''); in
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}</div>
 <div class="ttc" id="aStandard_2qTreeIso_2include_2Common_8h_html"><div class="ttname"><a href="Standard_2qTreeIso_2include_2Common_8h.html">Common.h</a></div></div>
 <div class="ttc" id="anamespacee57_html"><div class="ttname"><a href="namespacee57.html">e57</a></div><div class="ttdef"><b>Definition:</b> <a href="E57Exception_8h_source.html#l00036">E57Exception.h:37</a></div></div>
-<div class="ttc" id="anamespacee57_html_a4c683121e59956dd52f7832058ad863fa243c8902120908b2cafb5040772485fe"><div class="ttname"><a href="namespacee57.html#a4c683121e59956dd52f7832058ad863fa243c8902120908b2cafb5040772485fe">e57::COMPRESSED_VECTOR_SECTION</a></div><div class="ttdeci">@ COMPRESSED_VECTOR_SECTION</div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00036">SectionHeaders.h:36</a></div></div>
-<div class="ttc" id="anamespacee57_html_a4c683121e59956dd52f7832058ad863fabfd2132bc91620d871df670229d4dde6"><div class="ttname"><a href="namespacee57.html#a4c683121e59956dd52f7832058ad863fabfd2132bc91620d871df670229d4dde6">e57::BLOB_SECTION</a></div><div class="ttdeci">@ BLOB_SECTION</div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00035">SectionHeaders.h:35</a></div></div>
+<div class="ttc" id="anamespacee57_html_afadcd53edc99ea6268188db361923ee1a243c8902120908b2cafb5040772485fe"><div class="ttname"><a href="namespacee57.html#afadcd53edc99ea6268188db361923ee1a243c8902120908b2cafb5040772485fe">e57::COMPRESSED_VECTOR_SECTION</a></div><div class="ttdeci">@ COMPRESSED_VECTOR_SECTION</div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00036">SectionHeaders.h:36</a></div></div>
+<div class="ttc" id="anamespacee57_html_afadcd53edc99ea6268188db361923ee1abfd2132bc91620d871df670229d4dde6"><div class="ttname"><a href="namespacee57.html#afadcd53edc99ea6268188db361923ee1abfd2132bc91620d871df670229d4dde6">e57::BLOB_SECTION</a></div><div class="ttdeci">@ BLOB_SECTION</div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00035">SectionHeaders.h:35</a></div></div>
 <div class="ttc" id="astructe57_1_1BlobSectionHeader_html"><div class="ttname"><a href="structe57_1_1BlobSectionHeader.html">e57::BlobSectionHeader</a></div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00039">SectionHeaders.h:40</a></div></div>
 <div class="ttc" id="astructe57_1_1BlobSectionHeader_html_a3873342db222484503eca5dd76222488"><div class="ttname"><a href="structe57_1_1BlobSectionHeader.html#a3873342db222484503eca5dd76222488">e57::BlobSectionHeader::sectionLogicalLength</a></div><div class="ttdeci">uint64_t sectionLogicalLength</div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00044">SectionHeaders.h:44</a></div></div>
 <div class="ttc" id="astructe57_1_1BlobSectionHeader_html_a46b1f03cffe32c7660218acf4a06f0a0"><div class="ttname"><a href="structe57_1_1BlobSectionHeader.html#a46b1f03cffe32c7660218acf4a06f0a0">e57::BlobSectionHeader::reserved1</a></div><div class="ttdeci">uint8_t reserved1[7]</div><div class="ttdef"><b>Definition:</b> <a href="SectionHeaders_8h_source.html#l00043">SectionHeaders.h:43</a></div></div>
@@ -188,7 +179,7 @@ $(document).ready(function(){initNavTree('SectionHeaders_8h_source.html',''); in
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_dd6f6f5021f39c3dc0dc5c635f8efcf8.html">qE57IO</a></li><li class="navelem"><a class="el" href="dir_5bcc929ac8f0ecc267509c4d86d95f3a.html">extern</a></li><li class="navelem"><a class="el" href="dir_4fb9aeb533ed2aaeb8aa7b54ce2b5bdc.html">libE57Format</a></li><li class="navelem"><a class="el" href="dir_d5815e19ad8e9536ffb8de8e09ded2ce.html">src</a></li><li class="navelem"><a class="el" href="SectionHeaders_8h.html">SectionHeaders.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:06 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

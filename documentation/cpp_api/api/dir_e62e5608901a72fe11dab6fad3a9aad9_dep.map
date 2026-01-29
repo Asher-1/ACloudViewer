@@ -1,16 +1,12 @@
 <map id="/root/ACloudViewer/libs/cloudViewer/ml/impl" name="/root/ACloudViewer/libs/cloudViewer/ml/impl">
 <area shape="rect" id="node2" href="dir_e268451e138e9c954479ddd77a305e3b.html" title="continuous_conv" alt="" coords="261,63,392,111"/>
 <area shape="rect" id="node3" href="dir_d54bc810d5dab81cc604852a9c950917.html" title="misc" alt="" coords="165,63,237,111"/>
-<area shape="rect" id="node5" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html" title="core" alt="" coords="165,159,237,207"/>
-<area shape="rect" id="edge5-headlabel" href="dir_000069_000056.html" title="2" alt="" coords="205,133,214,148"/>
-<area shape="rect" id="node6" href="dir_7b5ebac62a3aba65563cf0268cd5d7fd.html" title="utility" alt="" coords="104,255,176,303"/>
-<area shape="rect" id="edge6-headlabel" href="dir_000069_000051.html" title="4" alt="" coords="143,229,153,244"/>
-<area shape="rect" id="node7" href="dir_4270bfced15e0e73154b13468c7c9ad9.html" title="core" alt="" coords="177,351,249,399"/>
-<area shape="rect" id="edge4-headlabel" href="dir_000069_000046.html" title="1" alt="" coords="234,329,243,344"/>
+<area shape="rect" id="node5" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html" title="core" alt="" coords="128,159,200,207"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000058_000045.html" title="2" alt="" coords="183,138,192,152"/>
+<area shape="rect" id="node6" href="dir_7b5ebac62a3aba65563cf0268cd5d7fd.html" title="utility" alt="" coords="164,255,236,303"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000058_000039.html" title="4" alt="" coords="212,231,221,246"/>
 <area shape="rect" id="node4" href="dir_45b3fb62e90e2153fba41b298c82b8ad.html" title="sparse_conv" alt="" coords="38,63,141,111"/>
-<area shape="rect" id="edge3-headlabel" href="dir_000056_000051.html" title="9" alt="" coords="167,237,177,251"/>
-<area shape="rect" id="edge2-headlabel" href="dir_000056_000046.html" title="87" alt="" coords="211,324,228,339"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000051_000046.html" title="3" alt="" coords="186,324,196,338"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000045_000039.html" title="9" alt="" coords="188,227,197,242"/>
 <area shape="rect" id="clust2" href="dir_e62e5608901a72fe11dab6fad3a9aad9.html" alt="" coords="27,52,499,121"/>
 <area shape="rect" id="clust1" href="dir_3dc8e1f0fca76116a3cc33f414346ed8.html" title="ml" alt="" coords="16,16,509,132"/>
 </map>

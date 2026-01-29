@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -107,9 +98,9 @@ $(document).ready(function(){initNavTree('ColorMapUtils_8h_source.html',''); ini
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Eigen_8h.html">Eigen.h</a>&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CV__db_2include_2Image_8h.html">Image.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;Image.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="Optional_8h.html">Optional.h</a>&gt;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="CV__db_2include_2RGBDImage_8h.html">RGBDImage.h</a>&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;RGBDImage.h&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMesh_8h.html">ecvMesh.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
@@ -166,8 +157,6 @@ $(document).ready(function(){initNavTree('ColorMapUtils_8h_source.html',''); ini
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}  <span class="comment">// namespace color_map</span></div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}  <span class="comment">// namespace pipelines</span></div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
-<div class="ttc" id="aCV__db_2include_2Image_8h_html"><div class="ttname"><a href="CV__db_2include_2Image_8h.html">Image.h</a></div></div>
-<div class="ttc" id="aCV__db_2include_2RGBDImage_8h_html"><div class="ttname"><a href="CV__db_2include_2RGBDImage_8h.html">RGBDImage.h</a></div></div>
 <div class="ttc" id="aEigen_8h_html"><div class="ttname"><a href="Eigen_8h.html">Eigen.h</a></div></div>
 <div class="ttc" id="aImageWarpingField_8h_html"><div class="ttname"><a href="ImageWarpingField_8h.html">ImageWarpingField.h</a></div></div>
 <div class="ttc" id="aOptional_8h_html"><div class="ttname"><a href="Optional_8h.html">Optional.h</a></div></div>
@@ -180,14 +169,14 @@ $(document).ready(function(){initNavTree('ColorMapUtils_8h_source.html',''); ini
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1color__map_html_a53f669d239a298adad260f770be86080"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1color__map.html#a53f669d239a298adad260f770be86080">cloudViewer::pipelines::color_map::CreateUtilImagesFromRGBD</a></div><div class="ttdeci">std::tuple&lt; std::vector&lt; geometry::Image &gt;, std::vector&lt; geometry::Image &gt;, std::vector&lt; geometry::Image &gt;, std::vector&lt; geometry::Image &gt;, std::vector&lt; geometry::Image &gt; &gt; CreateUtilImagesFromRGBD(const std::vector&lt; geometry::RGBDImage &gt; &amp;images_rgbd)</div><div class="ttdef"><b>Definition:</b> <a href="ColorMapUtils_8cpp_source.html#l00080">ColorMapUtils.cpp:80</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1color__map_html_a6397f721719f8c6710d618b77d5569b1"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1color__map.html#a6397f721719f8c6710d618b77d5569b1">cloudViewer::pipelines::color_map::CreateDepthBoundaryMasks</a></div><div class="ttdeci">std::vector&lt; geometry::Image &gt; CreateDepthBoundaryMasks(const std::vector&lt; geometry::Image &gt; &amp;images_depth, double depth_threshold_for_discontinuity_check, int half_dilation_kernel_size_for_discontinuity_map)</div><div class="ttdef"><b>Definition:</b> <a href="ColorMapUtils_8cpp_source.html#l00104">ColorMapUtils.cpp:104</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1pipelines_1_1color__map_html_a85ffdc28180568bbab56e75219b6a8b3"><div class="ttname"><a href="namespacecloudViewer_1_1pipelines_1_1color__map.html#a85ffdc28180568bbab56e75219b6a8b3">cloudViewer::pipelines::color_map::SetGeometryColorAverage</a></div><div class="ttdeci">void SetGeometryColorAverage(ccMesh &amp;mesh, const std::vector&lt; geometry::Image &gt; &amp;images_color, const utility::optional&lt; std::vector&lt; ImageWarpingField &gt;&gt; &amp;warping_fields, const camera::PinholeCameraTrajectory &amp;camera_trajectory, const std::vector&lt; std::vector&lt; int &gt;&gt; &amp;visibility_vertex_to_image, int image_boundary_margin, int invisible_vertex_color_knn)</div><div class="ttdef"><b>Definition:</b> <a href="ColorMapUtils_8cpp_source.html#l00232">ColorMapUtils.cpp:232</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_1dae787fb744a4b03c8f8fea4d8c2e37.html">color_map</a></li><li class="navelem"><a class="el" href="ColorMapUtils_8h.html">ColorMapUtils.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

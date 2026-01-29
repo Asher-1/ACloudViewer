@@ -17,6 +17,7 @@ var namespacestd =
     [ "hash< cloudViewer::utility::optional< T & > >", "structstd_1_1hash_3_01cloudViewer_1_1utility_1_1optional_3_01T_01_6_01_4_01_4.html", "structstd_1_1hash_3_01cloudViewer_1_1utility_1_1optional_3_01T_01_6_01_4_01_4" ],
     [ "hash< cloudViewer::core::Device >", "structstd_1_1hash_3_01cloudViewer_1_1core_1_1Device_01_4.html", "structstd_1_1hash_3_01cloudViewer_1_1core_1_1Device_01_4" ],
     [ "less< cloudViewer::core::Device >", "structstd_1_1less_3_01cloudViewer_1_1core_1_1Device_01_4.html", "structstd_1_1less_3_01cloudViewer_1_1core_1_1Device_01_4" ],
+    [ "hash< std::pair< uint32_t, uint32_t > >", "structstd_1_1hash_3_01std_1_1pair_3_01uint32__t_00_01uint32__t_01_4_01_4.html", "structstd_1_1hash_3_01std_1_1pair_3_01uint32__t_00_01uint32__t_01_4_01_4" ],
     [ "swap", "namespacestd.html#a7bad8359ac3fa8b4152867396f57169e", null ],
     [ "swap", "namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b", null ]
 ];

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -277,7 +268,7 @@ $(document).ready(function(){initNavTree('qCSFCommands_8h_source.html',''); init
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> j = 0; j &lt; groundIndexes.size(); ++j) {</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                    groundpc.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(groundIndexes[j]);</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                }</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                groundpoint = pc-&gt;<a class="code" href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">partialClone</a>(&amp;groundpc);</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                groundpoint = pc-&gt;<a class="code" href="classccPointCloud.html#a5494fd1d28ff6c77dfafa774853789b9">partialClone</a>(&amp;groundpc);</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            }</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        }</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;        <span class="keywordflow">if</span> (!groundpoint) {</div>
@@ -293,7 +284,7 @@ $(document).ready(function(){initNavTree('qCSFCommands_8h_source.html',''); init
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> k = 0; k &lt; offGroundIndexes.size(); ++k) {</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                    offgroundpc.<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(offGroundIndexes[k]);</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                }</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                offgroundpoint = pc-&gt;<a class="code" href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">partialClone</a>(&amp;offgroundpc);</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                offgroundpoint = pc-&gt;<a class="code" href="classccPointCloud.html#a5494fd1d28ff6c77dfafa774853789b9">partialClone</a>(&amp;offgroundpc);</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;            }</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        }</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <span class="keywordflow">if</span> (!offgroundpoint) {</div>
@@ -364,7 +355,7 @@ $(document).ready(function(){initNavTree('qCSFCommands_8h_source.html',''); init
 <div class="ttc" id="aclassccCommandLineInterface_html_aff5c07ec8e7f1e8b40330262ea21fb17"><div class="ttname"><a href="classccCommandLineInterface.html#aff5c07ec8e7f1e8b40330262ea21fb17">ccCommandLineInterface::clouds</a></div><div class="ttdeci">virtual std::vector&lt; CLCloudDesc &gt; &amp; clouds()</div><div class="ttdoc">Currently opened point clouds and their filename.</div><div class="ttdef"><b>Definition:</b> <a href="ecvCommandLineInterface_8cpp_source.html#l00133">ecvCommandLineInterface.cpp:133</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
-<div class="ttc" id="aclassccPointCloud_html_ae38119ce382d4781aedcddd422e9d0c3"><div class="ttname"><a href="classccPointCloud.html#ae38119ce382d4781aedcddd422e9d0c3">ccPointCloud::partialClone</a></div><div class="ttdeci">ccPointCloud * partialClone(const cloudViewer::ReferenceCloud *selection, int *warnings=nullptr, bool withChildEntities=true) const</div><div class="ttdoc">Creates a new point cloud object from a ReferenceCloud (selection)</div></div>
+<div class="ttc" id="aclassccPointCloud_html_a5494fd1d28ff6c77dfafa774853789b9"><div class="ttname"><a href="classccPointCloud.html#a5494fd1d28ff6c77dfafa774853789b9">ccPointCloud::partialClone</a></div><div class="ttdeci">ccPointCloud * partialClone(const cloudViewer::ReferenceCloud *selection, int *warnings=nullptr, bool withChildEntities=true) const</div><div class="ttdoc">Creates a new point cloud object from a ReferenceCloud (selection)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8cpp_source.html#l00290">ecvPointCloud.cpp:290</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a77ac52a883aa8009e5b3a2e8f7d4a208"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a77ac52a883aa8009e5b3a2e8f7d4a208">cloudViewer::PointCloudTpl::size</a></div><div class="ttdeci">unsigned size() const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00038">PointCloudTpl.h:38</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_ae034bad005881269d7a571c144185d6d"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#ae034bad005881269d7a571c144185d6d">cloudViewer::PointCloudTpl::getPoint</a></div><div class="ttdeci">const CCVector3 * getPoint(unsigned index) const override</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00143">PointCloudTpl.h:143</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ReferenceCloud_html"><div class="ttname"><a href="classcloudViewer_1_1ReferenceCloud.html">cloudViewer::ReferenceCloud</a></div><div class="ttdoc">A very simple point cloud (no point duplication)</div><div class="ttdef"><b>Definition:</b> <a href="ReferenceCloud_8h_source.html#l00029">ReferenceCloud.h:29</a></div></div>
@@ -406,7 +397,7 @@ $(document).ready(function(){initNavTree('qCSFCommands_8h_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html">qCSF</a></li><li class="navelem"><a class="el" href="dir_6e143f2a132939b1d8f12d4591e274b5.html">include</a></li><li class="navelem"><a class="el" href="qCSFCommands_8h.html">qCSFCommands.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

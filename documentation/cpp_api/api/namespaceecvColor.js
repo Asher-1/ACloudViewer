@@ -69,6 +69,8 @@ var namespaceecvColor =
     [ "red", "namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a", null ],
     [ "white", "namespaceecvColor.html#a288cd41e05c164f571da35a209740aea", null ],
     [ "yellow", "namespaceecvColor.html#ad2272be8f247b9ce52d904ff41938de4", null ],
+    [ "COLOR_LUT", "namespaceecvColor.html#a34b1591ebf5b1efa264d1051704b150f", null ],
+    [ "COLOR_LUT_SIZE", "namespaceecvColor.html#a79a926cd10192471ed86979174230ce6", null ],
     [ "MAX", "namespaceecvColor.html#a33d9b27b9a0560ed19602d36a47fadca", null ],
     [ "OPACITY", "namespaceecvColor.html#a368b2158af5862ac284eba820f06632e", null ]
 ];

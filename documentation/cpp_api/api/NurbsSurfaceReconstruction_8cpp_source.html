@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,11 +97,11 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NurbsSurfaceReconstruction_8h.html">NurbsSurfaceReconstruction.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Utils/cc2sm.h&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;Utils/sm2cc.h&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="cc2sm_8h.html">Utils/cc2sm.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="sm2cc_8h.html">Utils/sm2cc.h</a>&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;PclUtils/PCLModules.h&quot;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;Tools/Common/ecvTools.h&quot;</span>  <span class="comment">// must below above three</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PCLModules_8h.html">PclUtils/PCLModules.h</a>&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ecvTools_8h.html">Tools/Common/ecvTools.h</a>&quot;</span>  <span class="comment">// must below above three</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="NurbsSurfaceDlg_8h.html">dialogs/NurbsSurfaceDlg.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// CV_DB_LIB</span></div>
@@ -198,7 +189,7 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keywordflow">if</span> (!cloud) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="comment">// get xyz as pcl point cloud</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    pcl::PointCloud&lt;pcl::PointXYZ&gt;::Ptr xyzCloud = cc2smReader(cloud).getXYZ2();</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    pcl::PointCloud&lt;pcl::PointXYZ&gt;::Ptr xyzCloud = <a class="code" href="classcc2smReader.html">cc2smReader</a>(cloud).<a class="code" href="classcc2smReader.html#af090009e25fc3d41443e7af58868400f">getXYZ2</a>();</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordflow">if</span> (!xyzCloud) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="comment">// 2. voxel grid filter</span></div>
@@ -206,8 +197,8 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordtype">double</span> leafSize =</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                3 * PCLModules::ComputeCloudResolution&lt;PointT&gt;(xyzCloud);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <span class="keywordflow">if</span> (leafSize &gt; 0) {</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            PointCloudT::Ptr tempCloud(<span class="keyword">new</span> PointCloudT);</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            <span class="keywordflow">if</span> (!PCLModules::VoxelGridFilter&lt;PointT&gt;(</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            PointCloudT::Ptr tempCloud(<span class="keyword">new</span> <a class="code" href="PCLCloud_8h.html#a65f84e52c22989ffdf2ff723b7f49185">PointCloudT</a>);</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            <span class="keywordflow">if</span> (!<a class="code" href="namespacePCLModules.html#ab739911a24429650896e9ea4f663bf65">PCLModules::VoxelGridFilter&lt;PointT&gt;</a>(</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                        xyzCloud, tempCloud, leafSize, leafSize, leafSize)) {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;            }</div>
@@ -216,8 +207,8 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    }</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="comment">// reconstruction</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    PCLMesh mesh;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    PointCloudRGB::Ptr outCurve(<span class="keyword">new</span> PointCloudRGB);</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <a class="code" href="PCLCloud_8h.html#afc6c3b6d7ade6c873f9a8406afeb7570">PCLMesh</a> mesh;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    PointCloudRGB::Ptr outCurve(<span class="keyword">new</span> <a class="code" href="PCLCloud_8h.html#ab5ff901a5b62437e339421c9de526a7b">PointCloudRGB</a>);</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor">#if defined(WITH_PCL_NURBS)</span></div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="comment">// init parameters</span></div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    PCLModules::NurbsParameters nurbsParams;</div>
@@ -256,38 +247,38 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="comment">// convert output curve to polyline</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <a class="code" href="classccPolyline.html">ccPolyline</a>* curvePoly = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classNurbsSurfaceReconstruction.html#a66d1fa13822734a2a531bcc2ff054148">m_fitBSplineCurve</a> &amp;&amp; outCurve-&gt;points.size() &gt; 1) {</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        PCLCloud::Ptr curve_sm(<span class="keyword">new</span> PCLCloud);</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        TO_PCL_CLOUD(*outCurve, *curve_sm);</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        curvePoly = ecvTools::GetPolylines(curve_sm, <span class="stringliteral">&quot;nurbs-curve&quot;</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        PCLCloud::Ptr curve_sm(<span class="keyword">new</span> <a class="code" href="PCLCloud_8h.html#a6b80a3a168fd75d021343307b49b8706">PCLCloud</a>);</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <a class="code" href="PCLConv_8h.html#a9b2a547f9a8709ba98055e250fd192e4">TO_PCL_CLOUD</a>(*outCurve, *curve_sm);</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        curvePoly = <a class="code" href="namespaceecvTools.html#af56356aa6ec8faaa751bfb90548439a7">ecvTools::GetPolylines</a>(curve_sm, <span class="stringliteral">&quot;nurbs-curve&quot;</span>, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    }</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    PCLCloud out_cloud_sm(mesh.cloud);</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <a class="code" href="PCLCloud_8h.html#a6b80a3a168fd75d021343307b49b8706">PCLCloud</a> out_cloud_sm(mesh.cloud);</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keywordflow">if</span> (out_cloud_sm.height * out_cloud_sm.width == 0) {</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        <span class="comment">// cloud is empty</span></div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        <span class="keywordflow">return</span> -53;</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    }</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a>* out_mesh = pcl2cc::Convert(out_cloud_sm, mesh.polygons);</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <a class="code" href="classccMesh.html">ccMesh</a>* out_mesh = <a class="code" href="classpcl2cc.html#acf0f0a1c74217618036c8dc30304adf1">pcl2cc::Convert</a>(out_cloud_sm, mesh.polygons);</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keywordflow">if</span> (!out_mesh) {</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="comment">// conversion failed (not enough memory?)</span></div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    }</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <span class="keywordtype">unsigned</span> vertCount = out_mesh-&gt;<a class="code" href="classccMesh.html#a74311e2d479202ef3ebee9e1051f661e">getAssociatedCloud</a>()-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">size</a>();</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keywordtype">unsigned</span> faceCount = out_mesh-&gt;<a class="code" href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">size</a>();</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keywordtype">unsigned</span> faceCount = out_mesh-&gt;<a class="code" href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">size</a>();</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <a class="code" href="classCVLog.html#a3d2082aa909f4090da3caa69d709e2cb">CVLog::Print</a>(tr(<span class="stringliteral">&quot;[NurbsSurfaceReconstruction] %1 points, %2 face(s)&quot;</span>)</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                         .arg(vertCount)</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                         .arg(faceCount));</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    out_mesh-&gt;<a class="code" href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">setName</a>(tr(<span class="stringliteral">&quot;nurbs-surface-%1&quot;</span>).arg(<a class="code" href="classNurbsSurfaceReconstruction.html#a479c39736510988508bddaa837d975ba">m_order</a>));</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="comment">// copy global shift &amp; scale</span></div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    out_mesh-&gt;<a class="code" href="classccMesh.html#a74311e2d479202ef3ebee9e1051f661e">getAssociatedCloud</a>()-&gt;<a class="code" href="classccShiftedObject.html#a1fec0f86703cc37bd5962d9192c6e017">setGlobalScale</a>(cloud-&gt;<a class="code" href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">getGlobalScale</a>());</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    out_mesh-&gt;<a class="code" href="classccMesh.html#a74311e2d479202ef3ebee9e1051f661e">getAssociatedCloud</a>()-&gt;<a class="code" href="classccShiftedObject.html#ac5ea4cf308a8a6afcd5a1b0c84b49d5d">setGlobalScale</a>(cloud-&gt;<a class="code" href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">getGlobalScale</a>());</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    out_mesh-&gt;<a class="code" href="classccMesh.html#a74311e2d479202ef3ebee9e1051f661e">getAssociatedCloud</a>()-&gt;<a class="code" href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">setGlobalShift</a>(cloud-&gt;<a class="code" href="classccShiftedObject.html#aa69aa4885030aee94471ed4e1211c451">getGlobalShift</a>());</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; </div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()) cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(out_mesh);</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()) cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(out_mesh);</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keywordflow">if</span> (curvePoly) {</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()) cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(curvePoly);</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()) cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(curvePoly);</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;        emit <a class="code" href="classBasePclModule.html#a41999a0ce85cacc2f4acbb0179e7d87c">newEntity</a>(curvePoly);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    }</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160; </div>
@@ -321,6 +312,13 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;}</div>
 <div class="ttc" id="aNurbsSurfaceDlg_8h_html"><div class="ttname"><a href="NurbsSurfaceDlg_8h.html">NurbsSurfaceDlg.h</a></div></div>
 <div class="ttc" id="aNurbsSurfaceReconstruction_8h_html"><div class="ttname"><a href="NurbsSurfaceReconstruction_8h.html">NurbsSurfaceReconstruction.h</a></div></div>
+<div class="ttc" id="aPCLCloud_8h_html_a65f84e52c22989ffdf2ff723b7f49185"><div class="ttname"><a href="PCLCloud_8h.html#a65f84e52c22989ffdf2ff723b7f49185">PointCloudT</a></div><div class="ttdeci">pcl::PointCloud&lt; PointT &gt; PointCloudT</div><div class="ttdef"><b>Definition:</b> <a href="PCLCloud_8h_source.html#l00017">PCLCloud.h:17</a></div></div>
+<div class="ttc" id="aPCLCloud_8h_html_a6b80a3a168fd75d021343307b49b8706"><div class="ttname"><a href="PCLCloud_8h.html#a6b80a3a168fd75d021343307b49b8706">PCLCloud</a></div><div class="ttdeci">pcl::PCLPointCloud2 PCLCloud</div><div class="ttdef"><b>Definition:</b> <a href="PCLCloud_8h_source.html#l00034">PCLCloud.h:34</a></div></div>
+<div class="ttc" id="aPCLCloud_8h_html_ab5ff901a5b62437e339421c9de526a7b"><div class="ttname"><a href="PCLCloud_8h.html#ab5ff901a5b62437e339421c9de526a7b">PointCloudRGB</a></div><div class="ttdeci">pcl::PointCloud&lt; PointRGB &gt; PointCloudRGB</div><div class="ttdef"><b>Definition:</b> <a href="PCLCloud_8h_source.html#l00021">PCLCloud.h:21</a></div></div>
+<div class="ttc" id="aPCLCloud_8h_html_afc6c3b6d7ade6c873f9a8406afeb7570"><div class="ttname"><a href="PCLCloud_8h.html#afc6c3b6d7ade6c873f9a8406afeb7570">PCLMesh</a></div><div class="ttdeci">pcl::PolygonMesh PCLMesh</div><div class="ttdef"><b>Definition:</b> <a href="PCLCloud_8h_source.html#l00031">PCLCloud.h:31</a></div></div>
+<div class="ttc" id="aPCLConv_8h_html_a9b2a547f9a8709ba98055e250fd192e4"><div class="ttname"><a href="PCLConv_8h.html#a9b2a547f9a8709ba98055e250fd192e4">TO_PCL_CLOUD</a></div><div class="ttdeci">#define TO_PCL_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="PCLConv_8h_source.html#l00012">PCLConv.h:12</a></div></div>
+<div class="ttc" id="aPCLModules_8h_html"><div class="ttname"><a href="PCLModules_8h.html">PCLModules.h</a></div></div>
+<div class="ttc" id="acc2sm_8h_html"><div class="ttname"><a href="cc2sm_8h.html">cc2sm.h</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html"><div class="ttname"><a href="classBasePclModule.html">BasePclModule</a></div><div class="ttdoc">Base abstract class for each implemented PCL filter.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00053">BasePclModule.h:53</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a2e757794a0e84095868d8caca8dbc2dc"><div class="ttname"><a href="classBasePclModule.html#a2e757794a0e84095868d8caca8dbc2dc">BasePclModule::isFirstSelectedCcPointCloud</a></div><div class="ttdeci">int isFirstSelectedCcPointCloud()</div><div class="ttdoc">Returns 1 if the first selected object is a ccPointCloud.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00358">BasePclModule.cpp:358</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a41999a0ce85cacc2f4acbb0179e7d87c"><div class="ttname"><a href="classBasePclModule.html#a41999a0ce85cacc2f4acbb0179e7d87c">BasePclModule::newEntity</a></div><div class="ttdeci">void newEntity(ccHObject *)</div><div class="ttdoc">Signal emitted when a new entity is created by the filter.</div></div>
@@ -350,24 +348,31 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div class="ttc" id="aclassNurbsSurfaceReconstruction_html_ae0db5dd9c0f17bdb1cf226dfc0b78e75"><div class="ttname"><a href="classNurbsSurfaceReconstruction.html#ae0db5dd9c0f17bdb1cf226dfc0b78e75">NurbsSurfaceReconstruction::NurbsSurfaceReconstruction</a></div><div class="ttdeci">NurbsSurfaceReconstruction()</div><div class="ttdef"><b>Definition:</b> <a href="NurbsSurfaceReconstruction_8cpp_source.html#l00031">NurbsSurfaceReconstruction.cpp:31</a></div></div>
 <div class="ttc" id="aclassNurbsSurfaceReconstruction_html_aff49669bed285ec56edee69894fb46b3"><div class="ttname"><a href="classNurbsSurfaceReconstruction.html#aff49669bed285ec56edee69894fb46b3">NurbsSurfaceReconstruction::m_interiorWeight</a></div><div class="ttdeci">float m_interiorWeight</div><div class="ttdef"><b>Definition:</b> <a href="NurbsSurfaceReconstruction_8h_source.html#l00046">NurbsSurfaceReconstruction.h:46</a></div></div>
 <div class="ttc" id="aclassNurbsSurfaceReconstruction_html_aff6f5942c066fbcd2bb9e0cb101bab99"><div class="ttname"><a href="classNurbsSurfaceReconstruction.html#aff6f5942c066fbcd2bb9e0cb101bab99">NurbsSurfaceReconstruction::m_refinements</a></div><div class="ttdeci">int m_refinements</div><div class="ttdef"><b>Definition:</b> <a href="NurbsSurfaceReconstruction_8h_source.html#l00040">NurbsSurfaceReconstruction.h:40</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a7ee62cff1282c3f7d99acdabfa709fc0"><div class="ttname"><a href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div></div>
+<div class="ttc" id="aclasscc2smReader_html"><div class="ttname"><a href="classcc2smReader.html">cc2smReader</a></div><div class="ttdoc">CC to PCL cloud converter.</div><div class="ttdef"><b>Definition:</b> <a href="cc2sm_8h_source.html#l00043">cc2sm.h:43</a></div></div>
+<div class="ttc" id="aclasscc2smReader_html_af090009e25fc3d41443e7af58868400f"><div class="ttname"><a href="classcc2smReader.html#af090009e25fc3d41443e7af58868400f">cc2smReader::getXYZ2</a></div><div class="ttdeci">pcl::PointCloud&lt; pcl::PointXYZ &gt;::Ptr getXYZ2() const</div><div class="ttdef"><b>Definition:</b> <a href="cc2sm_8cpp_source.html#l00218">cc2sm.cpp:218</a></div></div>
 <div class="ttc" id="aclassccHObject_html_aad8e05c6068a3a8089f1fdce795c3066"><div class="ttname"><a href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">ccHObject::getParent</a></div><div class="ttdeci">ccHObject * getParent() const</div><div class="ttdoc">Returns parent object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00245">ecvHObject.h:245</a></div></div>
+<div class="ttc" id="aclassccHObject_html_ad618a89e257a6b831543fcd1192fc733"><div class="ttname"><a href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00534">ecvHObject.cpp:534</a></div></div>
 <div class="ttc" id="aclassccMesh_html"><div class="ttname"><a href="classccMesh.html">ccMesh</a></div><div class="ttdoc">Triangular mesh.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00035">ecvMesh.h:35</a></div></div>
+<div class="ttc" id="aclassccMesh_html_a49a432c0284fff5e8fccc51845e49cbe"><div class="ttname"><a href="classccMesh.html#a49a432c0284fff5e8fccc51845e49cbe">ccMesh::size</a></div><div class="ttdeci">virtual unsigned size() const override</div><div class="ttdoc">Returns the number of triangles.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l02143">ecvMesh.cpp:2143</a></div></div>
 <div class="ttc" id="aclassccMesh_html_a74311e2d479202ef3ebee9e1051f661e"><div class="ttname"><a href="classccMesh.html#a74311e2d479202ef3ebee9e1051f661e">ccMesh::getAssociatedCloud</a></div><div class="ttdeci">ccGenericPointCloud * getAssociatedCloud() const override</div><div class="ttdoc">Returns the vertices cloud.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8h_source.html#l00143">ecvMesh.h:143</a></div></div>
-<div class="ttc" id="aclassccMesh_html_ac7ff917d8d21843eaa1b92bb824a2c9e"><div class="ttname"><a href="classccMesh.html#ac7ff917d8d21843eaa1b92bb824a2c9e">ccMesh::size</a></div><div class="ttdeci">virtual unsigned size() const override</div><div class="ttdoc">Returns the number of triangles.</div></div>
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPolyline_html"><div class="ttname"><a href="classccPolyline.html">ccPolyline</a></div><div class="ttdoc">Colored polyline.</div><div class="ttdef"><b>Definition:</b> <a href="ecvPolyline_8h_source.html#l00023">ecvPolyline.h:24</a></div></div>
-<div class="ttc" id="aclassccShiftedObject_html_a1fec0f86703cc37bd5962d9192c6e017"><div class="ttname"><a href="classccShiftedObject.html#a1fec0f86703cc37bd5962d9192c6e017">ccShiftedObject::setGlobalScale</a></div><div class="ttdeci">virtual void setGlobalScale(double scale)</div></div>
 <div class="ttc" id="aclassccShiftedObject_html_a9e16ee02507c2e5390fd9e5bb5ad20b7"><div class="ttname"><a href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">ccShiftedObject::setGlobalShift</a></div><div class="ttdeci">virtual void setGlobalShift(double x, double y, double z)</div><div class="ttdoc">Sets shift applied to original coordinates (information storage only)</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00033">ecvShiftedObject.h:33</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_aa69aa4885030aee94471ed4e1211c451"><div class="ttname"><a href="classccShiftedObject.html#aa69aa4885030aee94471ed4e1211c451">ccShiftedObject::getGlobalShift</a></div><div class="ttdeci">virtual const CCVector3d &amp; getGlobalShift() const</div><div class="ttdoc">Returns the shift applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00046">ecvShiftedObject.h:46</a></div></div>
+<div class="ttc" id="aclassccShiftedObject_html_ac5ea4cf308a8a6afcd5a1b0c84b49d5d"><div class="ttname"><a href="classccShiftedObject.html#ac5ea4cf308a8a6afcd5a1b0c84b49d5d">ccShiftedObject::setGlobalScale</a></div><div class="ttdeci">virtual void setGlobalScale(double scale)</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8cpp_source.html#l00033">ecvShiftedObject.cpp:33</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_ac6a17ca5216af799eaf4cac4166d8610"><div class="ttname"><a href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">ccShiftedObject::getGlobalScale</a></div><div class="ttdeci">virtual double getGlobalScale() const</div><div class="ttdoc">Returns the scale applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00053">ecvShiftedObject.h:53</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1GenericCloud_html_aa24d123b33022a7ff03f15e6a8618b55"><div class="ttname"><a href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">cloudViewer::GenericCloud::size</a></div><div class="ttdeci">virtual unsigned size() const =0</div><div class="ttdoc">Returns the number of points.</div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclasspcl2cc_html_acf0f0a1c74217618036c8dc30304adf1"><div class="ttname"><a href="classpcl2cc.html#acf0f0a1c74217618036c8dc30304adf1">pcl2cc::Convert</a></div><div class="ttdeci">static ccMesh * Convert(PCLTextureMesh::ConstPtr textureMesh)</div><div class="ttdoc">Converts a PCL point cloud to a ccPointCloud.</div></div>
 <div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvPolyline_8h_html"><div class="ttname"><a href="ecvPolyline_8h.html">ecvPolyline.h</a></div></div>
+<div class="ttc" id="aecvTools_8h_html"><div class="ttname"><a href="ecvTools_8h.html">ecvTools.h</a></div></div>
+<div class="ttc" id="anamespacePCLModules_html_ab739911a24429650896e9ea4f663bf65"><div class="ttname"><a href="namespacePCLModules.html#ab739911a24429650896e9ea4f663bf65">PCLModules::VoxelGridFilter&lt; PointT &gt;</a></div><div class="ttdeci">template int VoxelGridFilter&lt; PointT &gt;(const PointCloudT::ConstPtr inCloud, PointCloudT::Ptr outcloud, const float &amp;leafSizeX, const float &amp;leafSizeY, const float &amp;leafSizeZ)</div></div>
+<div class="ttc" id="anamespaceecvTools_html_af56356aa6ec8faaa751bfb90548439a7"><div class="ttname"><a href="namespaceecvTools.html#af56356aa6ec8faaa751bfb90548439a7">ecvTools::GetPolylines</a></div><div class="ttdeci">static ccPolyline * GetPolylines(PCLCloud::Ptr &amp;curve_sm, const QString &amp;name=&quot;curve&quot;, bool closed=true, const ecvColor::Rgb &amp;color=ecvColor::green)</div><div class="ttdef"><b>Definition:</b> <a href="ecvTools_8h_source.html#l00069">ecvTools.h:69</a></div></div>
+<div class="ttc" id="asm2cc_8h_html"><div class="ttname"><a href="sm2cc_8h.html">sm2cc.h</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -375,7 +380,7 @@ $(document).ready(function(){initNavTree('NurbsSurfaceReconstruction_8cpp_source
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_5850ee9049dacb63664f250860351471.html">Surfaces</a></li><li class="navelem"><a class="el" href="NurbsSurfaceReconstruction_8cpp.html">NurbsSurfaceReconstruction.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

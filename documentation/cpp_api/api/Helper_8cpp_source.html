@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,7 +95,7 @@ $(document).ready(function(){initNavTree('Helper_8cpp_source.html',''); initResi
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&quot;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;Helper.h&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;fmt/chrono.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
@@ -199,9 +190,9 @@ $(document).ready(function(){initNavTree('Helper_8cpp_source.html',''); initResi
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    }</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;}</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keywordtype">bool</span> IsNotWhiteSpace(<span class="keyword">const</span> <span class="keywordtype">int</span> character) {</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keywordflow">return</span> character != <span class="charliteral">&#39; &#39;</span> &amp;&amp; character != <span class="charliteral">&#39;\n&#39;</span> &amp;&amp; character != <span class="charliteral">&#39;\r&#39;</span> &amp;&amp;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;           character != <span class="charliteral">&#39;\t&#39;</span>;</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keywordtype">bool</span> IsNotWhiteSpace(<span class="keyword">const</span> <span class="keywordtype">int</span> <a class="code" href="namespaceUtils.html#a7774c3d0e28eb73a52156ca5ec5d7d45">character</a>) {</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespaceUtils.html#a7774c3d0e28eb73a52156ca5ec5d7d45">character</a> != <span class="charliteral">&#39; &#39;</span> &amp;&amp; <a class="code" href="namespaceUtils.html#a7774c3d0e28eb73a52156ca5ec5d7d45">character</a> != <span class="charliteral">&#39;\n&#39;</span> &amp;&amp; <a class="code" href="namespaceUtils.html#a7774c3d0e28eb73a52156ca5ec5d7d45">character</a> != <span class="charliteral">&#39;\r&#39;</span> &amp;&amp;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;           <a class="code" href="namespaceUtils.html#a7774c3d0e28eb73a52156ca5ec5d7d45">character</a> != <span class="charliteral">&#39;\t&#39;</span>;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;}</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;}  <span class="comment">// namespace</span></div>
@@ -364,14 +355,14 @@ $(document).ready(function(){initNavTree('Helper_8cpp_source.html',''); initResi
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <span class="keywordflow">return</span> std::isalnum(c) ||</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;               valid_chars_set.find(c) != valid_chars_set.end();</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    };</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a> = 0;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keywordtype">size_t</span> length = 0;</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> pos = start_pos; pos &lt; doc.size(); ++pos) {</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;        <span class="keywordflow">if</span> (!is_word_char(doc[pos])) {</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;        }</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>++;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        length++;</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    }</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a>;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    <span class="keywordflow">return</span> length;</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;}</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160; </div>
 <div class="line"><a name="l00278"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">  278</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1utility.html#a841b56bbb03f75b2952a783a34eff584">Sleep</a>(<span class="keywordtype">int</span> milliseconds) {</div>
@@ -392,8 +383,7 @@ $(document).ready(function(){initNavTree('Helper_8cpp_source.html',''); initResi
 <div class="ttc" id="aFilamentResourceManager_8cpp_html_a1acaede49c416601578d9bbd854f5106"><div class="ttname"><a href="FilamentResourceManager_8cpp.html#a1acaede49c416601578d9bbd854f5106">format</a></div><div class="ttdeci">filament::Texture::InternalFormat format</div><div class="ttdef"><b>Definition:</b> <a href="FilamentResourceManager_8cpp_source.html#l00181">FilamentResourceManager.cpp:181</a></div></div>
 <div class="ttc" id="aLineSetBuffers_8cpp_html_ad0325471d482a632d8854fcc0614b217"><div class="ttname"><a href="LineSetBuffers_8cpp.html#ad0325471d482a632d8854fcc0614b217">position</a></div><div class="ttdeci">math::float3 position</div><div class="ttdef"><b>Definition:</b> <a href="LineSetBuffers_8cpp_source.html#l00044">LineSetBuffers.cpp:44</a></div></div>
 <div class="ttc" id="aVtkUtils_8cpp_html_a870625677394f032dc07ac7762fc6255"><div class="ttname"><a href="VtkUtils_8cpp.html#a870625677394f032dc07ac7762fc6255">result</a></div><div class="ttdeci">core::Tensor result</div><div class="ttdef"><b>Definition:</b> <a href="VtkUtils_8cpp_source.html#l00076">VtkUtils.cpp:76</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_a2fcd5057894d92219f3d8e11e6ace2ff"><div class="ttname"><a href="cutil__math_8h.html#a2fcd5057894d92219f3d8e11e6ace2ff">length</a></div><div class="ttdeci">__host__ __device__ float length(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01162">cutil_math.h:1162</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
+<div class="ttc" id="anamespaceUtils_html_a7774c3d0e28eb73a52156ca5ec5d7d45"><div class="ttname"><a href="namespaceUtils.html#a7774c3d0e28eb73a52156ca5ec5d7d45">Utils::character</a></div><div class="ttdeci">QString character(int index)</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00019">utils.cpp:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a04c8973fb0a889ec34f81a7eebecdcb0"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a04c8973fb0a889ec34f81a7eebecdcb0">cloudViewer::utility::WordLength</a></div><div class="ttdeci">size_t WordLength(const std::string &amp;doc, size_t start_pos, const std::string &amp;valid_chars=&quot;_&quot;)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00257">Helper.cpp:257</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a32eeb9c29ebfcbfaf37bdee5f7298ad6"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a32eeb9c29ebfcbfaf37bdee5f7298ad6">cloudViewer::utility::StringPrintf</a></div><div class="ttdeci">std::string StringPrintf(const char *format,...)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00110">Helper.cpp:110</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00197">Helper.cpp:197</a></div></div>
@@ -412,14 +402,14 @@ $(document).ready(function(){initNavTree('Helper_8cpp_source.html',''); initResi
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aeded7571358384977ccc5407299f9c88"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aeded7571358384977ccc5407299f9c88">cloudViewer::utility::StringReplace</a></div><div class="ttdeci">std::string StringReplace(const std::string &amp;str, const std::string &amp;old_str, const std::string &amp;new_str)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00119">Helper.cpp:119</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_afb4deee1f9228835c26d20239e80cce3"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afb4deee1f9228835c26d20239e80cce3">cloudViewer::utility::StringReplaceFirst</a></div><div class="ttdeci">std::string StringReplaceFirst(const std::string &amp;str, const std::string &amp;old_str, const std::string &amp;new_str)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00134">Helper.cpp:134</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_afe713a70c59d1095228c94388991a472"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afe713a70c59d1095228c94388991a472">cloudViewer::utility::StringStartsWith</a></div><div class="ttdeci">bool StringStartsWith(const std::string &amp;str, const std::string &amp;prefix)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00158">Helper.cpp:158</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="Helper_8cpp.html">Helper.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

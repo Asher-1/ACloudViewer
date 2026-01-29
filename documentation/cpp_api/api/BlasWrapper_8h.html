@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -100,7 +91,7 @@ $(document).ready(function(){initNavTree('BlasWrapper_8h.html',''); initResizabl
 <div class="title">BlasWrapper.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="core_2include_2Logging_8h_source.html">Logging.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;Logging.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="LinalgHeadersCPU_8h_source.html">cloudViewer/core/linalg/LinalgHeadersCPU.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LinalgHeadersCUDA_8h_source.html">cloudViewer/core/linalg/LinalgHeadersCUDA.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
@@ -108,21 +99,11 @@ Include dependency graph for BlasWrapper.h:</div>
 <div class="dyncontent">
 <div class="center"><img src="BlasWrapper_8h__incl.png" border="0" usemap="#a_2root_2ACloudViewer_2libs_2cloudViewer_2core_2linalg_2BlasWrapper_8h" alt=""/></div>
 <map name="a_2root_2ACloudViewer_2libs_2cloudViewer_2core_2linalg_2BlasWrapper_8h" id="a_2root_2ACloudViewer_2libs_2cloudViewer_2core_2linalg_2BlasWrapper_8h">
-<area shape="rect" title=" " alt="" coords="679,5,845,61"/>
-<area shape="rect" href="core_2include_2Logging_8h.html" title=" " alt="" coords="410,117,495,143"/>
-<area shape="rect" href="LinalgHeadersCPU_8h.html" title=" " alt="" coords="675,109,849,151"/>
-<area shape="rect" href="LinalgHeadersCUDA_8h.html" title=" " alt="" coords="873,109,1048,151"/>
-<area shape="rect" title=" " alt="" coords="5,199,92,225"/>
-<area shape="rect" title=" " alt="" coords="117,199,197,225"/>
-<area shape="rect" title=" " alt="" coords="221,199,295,225"/>
-<area shape="rect" title=" " alt="" coords="319,199,378,225"/>
-<area shape="rect" href="CVCoreLib_8h.html" title=" " alt="" coords="402,199,503,225"/>
-<area shape="rect" title=" " alt="" coords="528,199,617,225"/>
-<area shape="rect" title=" " alt="" coords="641,199,736,225"/>
-<area shape="rect" title=" " alt="" coords="760,199,865,225"/>
-<area shape="rect" href="CVCoreLibWin_8h.html" title=" " alt="" coords="389,273,516,300"/>
-<area shape="rect" title=" " alt="" coords="389,348,517,375"/>
-<area shape="rect" title=" " alt="" coords="889,199,947,225"/>
+<area shape="rect" title=" " alt="" coords="120,5,285,61"/>
+<area shape="rect" title=" " alt="" coords="5,117,91,143"/>
+<area shape="rect" href="LinalgHeadersCPU_8h.html" title=" " alt="" coords="115,109,290,151"/>
+<area shape="rect" href="LinalgHeadersCUDA_8h.html" title=" " alt="" coords="314,109,489,151"/>
+<area shape="rect" title=" " alt="" coords="173,199,232,225"/>
 </map>
 </div>
 </div><div class="textblock"><div class="dynheader">
@@ -156,7 +137,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a70e9b13291bb7bc628ee044841998b14"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1core.html#a70e9b13291bb7bc628ee044841998b14">cloudViewer::core::gemm_cpu</a> (CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans_A, CBLAS_TRANSPOSE trans_B, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> m, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> n, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> k, scalar_t alpha, const scalar_t *A_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> lda, const scalar_t *B_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldb, scalar_t beta, scalar_t *C_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldc)</td></tr>
 <tr class="separator:a70e9b13291bb7bc628ee044841998b14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac1df2c691f6d8e8f691c130b228bde06"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
-<tr class="memitem:ac1df2c691f6d8e8f691c130b228bde06"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1core.html#ac1df2c691f6d8e8f691c130b228bde06">cloudViewer::core::gemm_cpu&lt; float &gt;</a> (CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans_A, CBLAS_TRANSPOSE trans_B, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> m, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> n, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> k, float alpha, const float *A_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> lda, const float *B_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldb, float beta, float *C_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldc)</td></tr>
+<tr class="memitem:ac1df2c691f6d8e8f691c130b228bde06"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1core.html#ac1df2c691f6d8e8f691c130b228bde06">cloudViewer::core::gemm_cpu&lt; float &gt;</a> (CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans_A, CBLAS_TRANSPOSE trans_B, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> m, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> n, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> k, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> alpha, const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *A_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> lda, const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *B_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldb, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> beta, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *C_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldc)</td></tr>
 <tr class="separator:ac1df2c691f6d8e8f691c130b228bde06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac8c9ca9d46ed147b414d69774044e6aa"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
 <tr class="memitem:ac8c9ca9d46ed147b414d69774044e6aa"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1core.html#ac8c9ca9d46ed147b414d69774044e6aa">cloudViewer::core::gemm_cpu&lt; double &gt;</a> (CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans_A, CBLAS_TRANSPOSE trans_B, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> m, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> n, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> k, double alpha, const double *A_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> lda, const double *B_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldb, double beta, double *C_data, <a class="el" href="LinalgHeadersCPU_8h.html#a82ff79924cad755ca3edef28d5f546e9">CLOUDVIEWER_CPU_LINALG_INT</a> ldc)</td></tr>
@@ -168,7 +149,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_34199ad14a26b2602fe4e831eacaf8df.html">linalg</a></li><li class="navelem"><a class="el" href="BlasWrapper_8h.html">BlasWrapper.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:09 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:50 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

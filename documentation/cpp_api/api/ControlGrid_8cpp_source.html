@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -200,7 +191,7 @@ $(document).ready(function(){initNavTree('ControlGrid_8cpp_source.html',''); ini
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    std::sort(active_keys_indexed.begin(), active_keys_indexed.end(),</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;              [=](<span class="keyword">const</span> <a class="code" href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">Eigen::Vector4i</a>&amp; a, <span class="keyword">const</span> <a class="code" href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">Eigen::Vector4i</a>&amp; b) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;              [=](<span class="keyword">const</span> <a class="code" href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">Eigen::Vector4i</a>&amp; <a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, <span class="keyword">const</span> <a class="code" href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">Eigen::Vector4i</a>&amp; b) -&gt; <span class="keywordtype">bool</span> {</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                  return (a(2) &lt; b(2)) || (a(2) == b(2) &amp;&amp; a(1) &lt; b(1)) ||</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                         (a(2) == b(2) &amp;&amp; a(1) == b(1) &amp;&amp; a(0) &lt; b(0));</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;              });</div>
@@ -372,7 +363,7 @@ $(document).ready(function(){initNavTree('ControlGrid_8cpp_source.html',''); ini
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                (nb_grid_positions * nb_grid_normal_interp.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a9e045ce7682093f83a4ce9dc7166c7a6">View</a>({-1, 8, 1}))</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                        .<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a25ac7d8cc5ce3fbb796e8088e29e5ce0">Sum</a>({1});</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        <a class="code" href="classcloudViewer_1_1core_1_1Tensor.html">core::Tensor</a> interp_normals_len =</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                (interp_normals * interp_normals).Sum({1}).<a class="code" href="Factor_8cpp.html#a47f99f92577e57de8752061704e8241d">Sqrt</a>();</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                (interp_normals * interp_normals).Sum({1}).Sqrt();</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        interp_normals = interp_normals / interp_normals_len.<a class="code" href="classcloudViewer_1_1core_1_1Tensor.html#a9e045ce7682093f83a4ce9dc7166c7a6">View</a>({-1, 1});</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        interp_pcd.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#a003e9fb7bd53d265e18b12f924e4eecb">SetPointNormals</a>(interp_normals);</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    }</div>
@@ -423,7 +414,6 @@ $(document).ready(function(){initNavTree('ControlGrid_8cpp_source.html',''); ini
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aControlGrid_8h_html"><div class="ttname"><a href="ControlGrid_8h.html">ControlGrid.h</a></div></div>
 <div class="ttc" id="aEigenConverter_8h_html"><div class="ttname"><a href="EigenConverter_8h.html">EigenConverter.h</a></div></div>
-<div class="ttc" id="aFactor_8cpp_html_a47f99f92577e57de8752061704e8241d"><div class="ttname"><a href="Factor_8cpp.html#a47f99f92577e57de8752061704e8241d">Sqrt</a></div><div class="ttdeci">void Sqrt(const double in[2], double out[2])</div><div class="ttdef"><b>Definition:</b> <a href="Factor_8cpp_source.html#l00124">Factor.cpp:124</a></div></div>
 <div class="ttc" id="aHashSet_8h_html"><div class="ttname"><a href="HashSet_8h.html">HashSet.h</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Device_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Device.html">cloudViewer::core::Device</a></div><div class="ttdef"><b>Definition:</b> <a href="Device_8h_source.html#l00018">Device.h:18</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1HashSet_html"><div class="ttname"><a href="classcloudViewer_1_1core_1_1HashSet.html">cloudViewer::core::HashSet</a></div><div class="ttdef"><b>Definition:</b> <a href="HashSet_8h_source.html#l00019">HashSet.h:19</a></div></div>
@@ -472,13 +462,14 @@ $(document).ready(function(){initNavTree('ControlGrid_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1pipelines_1_1slac_1_1ControlGrid_html_af56174a51ba726b7889988f393576813"><div class="ttname"><a href="classcloudViewer_1_1t_1_1pipelines_1_1slac_1_1ControlGrid.html#af56174a51ba726b7889988f393576813">cloudViewer::t::pipelines::slac::ControlGrid::Parameterize</a></div><div class="ttdeci">geometry::PointCloud Parameterize(const geometry::PointCloud &amp;pcd)</div><div class="ttdef"><b>Definition:</b> <a href="ControlGrid_8cpp_source.html#l00150">ControlGrid.cpp:150</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1t_1_1pipelines_1_1slac_1_1ControlGrid_html_afada58ece953d0a73720f7c0fc4893cb"><div class="ttname"><a href="classcloudViewer_1_1t_1_1pipelines_1_1slac_1_1ControlGrid.html#afada58ece953d0a73720f7c0fc4893cb">cloudViewer::t::pipelines::slac::ControlGrid::kGrid8NbNormalInterpRatios</a></div><div class="ttdeci">static const std::string kGrid8NbNormalInterpRatios</div><div class="ttdoc">8 neighbor grid interpolation ratio for normal per point.</div><div class="ttdef"><b>Definition:</b> <a href="ControlGrid_8h_source.html#l00038">ControlGrid.h:38</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1eigen__converter_html_a97005d0f2e0225aaeb2cc96138dd5b59"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1eigen__converter.html#a97005d0f2e0225aaeb2cc96138dd5b59">cloudViewer::core::eigen_converter::TensorToEigenVector3iVector</a></div><div class="ttdeci">std::vector&lt; Eigen::Vector3i &gt; TensorToEigenVector3iVector(const core::Tensor &amp;tensor)</div><div class="ttdoc">Converts a tensor of shape (N, 3) to std::vector&lt;Eigen::Vector3i&gt;. An exception will be thrown if the...</div><div class="ttdef"><b>Definition:</b> <a href="EigenConverter_8cpp_source.html#l00155">EigenConverter.cpp:155</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a56ab960a5052b926148cc2c48b5d6edd"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a56ab960a5052b926148cc2c48b5d6edd">cloudViewer::core::Int64</a></div><div class="ttdeci">const Dtype Int64</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00047">Dtype.cpp:47</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ae2fa792c81d8d9344d5b392a9a279fd2"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ae2fa792c81d8d9344d5b392a9a279fd2">cloudViewer::core::None</a></div><div class="ttdeci">constexpr utility::nullopt_t None</div><div class="ttdef"><b>Definition:</b> <a href="TensorKey_8h_source.html#l00020">TensorKey.h:20</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_aedaeda1b0a61b8b67540bb735bd48bbb"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#aedaeda1b0a61b8b67540bb735bd48bbb">cloudViewer::core::Int32</a></div><div class="ttdeci">const Dtype Int32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00046">Dtype.cpp:46</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image_html_ace77713993ef38117c5e93442ab02a42"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image.html#ace77713993ef38117c5e93442ab02a42">cloudViewer::t::geometry::kernel::image::To</a></div><div class="ttdeci">void To(const core::Tensor &amp;src, core::Tensor &amp;dst, double scale, double offset)</div><div class="ttdef"><b>Definition:</b> <a href="kernel_2Image_8cpp_source.html#l00017">Image.cpp:17</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image_html_ace77713993ef38117c5e93442ab02a42"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry_1_1kernel_1_1image.html#ace77713993ef38117c5e93442ab02a42">cloudViewer::t::geometry::kernel::image::To</a></div><div class="ttdeci">void To(const core::Tensor &amp;src, core::Tensor &amp;dst, double scale, double offset)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2t_2geometry_2kernel_2Image_8cpp_source.html#l00017">Image.cpp:17</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespaceknncpp_html_a6b4ea2e2b0f41835c2a18d0a21c55608"><div class="ttname"><a href="namespaceknncpp.html#a6b4ea2e2b0f41835c2a18d0a21c55608">knncpp::Vector4i</a></div><div class="ttdeci">Eigen::Matrix&lt; Index, 4, 1 &gt; Vector4i</div><div class="ttdef"><b>Definition:</b> <a href="knncpp_8h_source.html#l00031">knncpp.h:31</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -486,7 +477,7 @@ $(document).ready(function(){initNavTree('ControlGrid_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_a08992636fef739a0d649c626484c32b.html">t</a></li><li class="navelem"><a class="el" href="dir_0da8f8fbf693040b7dc37f26c330e75d.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_2d1cdef7c81d543631503c40b58f6d61.html">slac</a></li><li class="navelem"><a class="el" href="ControlGrid_8cpp.html">ControlGrid.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:28 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -191,8 +182,8 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> maxDD = 0;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    {</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <a class="code" href="classVector3Tpl.html">CCVector3</a> diag = dimMax - dimMin;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        maxDD = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(diag.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, diag.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>);</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        maxDD = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(maxDD, diag.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        maxDD = std::max(diag.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, diag.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        maxDD = std::max(maxDD, diag.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>);</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="comment">// enlarge it if necessary</span></div>
@@ -251,12 +242,12 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> rad, fex, fey,</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            fez;  <span class="comment">// -NJMP- &quot;d&quot; local variable removed</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="comment">// fex = std::abs(e0[0]);</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    fey = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e0[1]);</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    fez = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e0[2]);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    fey = std::abs(e0[1]);</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    fez = std::abs(e0[2]);</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160; </div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> minV, maxV;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#aa455fd95e25e2df0f1cf93a2de985fd8">AXISTEST_X01</a>(e0[2], e0[1], fez, fey);</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    fex = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e0[0]);  <span class="comment">// DGM: not necessary before!</span></div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    fex = std::abs(e0[0]);  <span class="comment">// DGM: not necessary before!</span></div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2409651c6dcde598145e0434cc80f8cb">AXISTEST_Y02</a>(e0[2], e0[0], fez, fex);</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2f2534d1e427de530b66531a42a7af82">AXISTEST_Z12</a>(e0[1], e0[0], fey, fex);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
@@ -264,25 +255,25 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <a class="code" href="classVector3Tpl.html#a94fcf608bbbd2458979b6103ad154b21">CCVector3::vsubstract</a>(v2, v1, e1); <span class="comment">/* compute triangle edge 1 */</span></div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="comment">// fex = std::abs(e1[0]);</span></div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    fey = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e1[1]);</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    fez = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e1[2]);</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    fey = std::abs(e1[1]);</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    fez = std::abs(e1[2]);</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#aa455fd95e25e2df0f1cf93a2de985fd8">AXISTEST_X01</a>(e1[2], e1[1], fez, fey);</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    fex = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e1[0]);  <span class="comment">// DGM: not necessary before!</span></div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    fex = std::abs(e1[0]);  <span class="comment">// DGM: not necessary before!</span></div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2409651c6dcde598145e0434cc80f8cb">AXISTEST_Y02</a>(e1[2], e1[0], fez, fex);</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#ae7c0544b51ee58f7b8891c5906d554ce">AXISTEST_Z0</a>(e1[1], e1[0], fey, fex);</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> e2[3];</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <a class="code" href="classVector3Tpl.html#a94fcf608bbbd2458979b6103ad154b21">CCVector3::vsubstract</a>(v0, v2, e2); <span class="comment">/* compute triangle edge 2 */</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <a class="code" href="CVTypes_8h.html#a25840190c028987d81b49d2addf2cc9d">PointCoordinateType</a> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[3];</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <a class="code" href="classVector3Tpl.html#a94fcf608bbbd2458979b6103ad154b21">CCVector3::vsubstract</a>(v0, v2, <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>); <span class="comment">/* compute triangle edge 2 */</span></div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="comment">// fex = std::abs(e2[0]);</span></div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    fey = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e2[1]);</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    fez = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e2[2]);</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    fey = std::abs(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1]);</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    fez = std::abs(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2]);</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a7f81d4a738f6ce0916cda8d449f1e757">AXISTEST_X2</a>(e2[2], e2[1], fez, fey);</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    fex = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e2[0]);  <span class="comment">// DGM: not necessary before!</span></div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a77a3cf69f7cdf4e359d10a50a0498a75">AXISTEST_Y1</a>(e2[2], e2[0], fez, fex);</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2f2534d1e427de530b66531a42a7af82">AXISTEST_Z12</a>(e2[1], e2[0], fey, fex);</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a7f81d4a738f6ce0916cda8d449f1e757">AXISTEST_X2</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2], <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1], fez, fey);</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    fex = std::abs(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0]);  <span class="comment">// DGM: not necessary before!</span></div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a77a3cf69f7cdf4e359d10a50a0498a75">AXISTEST_Y1</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2], <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0], fez, fex);</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2f2534d1e427de530b66531a42a7af82">AXISTEST_Z12</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1], <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0], fey, fex);</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; </div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="comment">/* Bullet 1: */</span></div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
@@ -309,26 +300,26 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    <span class="comment">/*  compute plane equation of triangle: normal*0+d=0 */</span></div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="comment">// PointCoordinateType normal[3];</span></div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <a class="code" href="classVector3Tpl.html#af89db7e5a26488ef029b52e388de8fd4">CCVector3::vcross</a>(e0, e1, <span class="comment">/*normal*/</span> e2);  <span class="comment">// DGM: we use &#39;e2&#39; instead of</span></div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <a class="code" href="classVector3Tpl.html#af89db7e5a26488ef029b52e388de8fd4">CCVector3::vcross</a>(e0, e1, <span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>);  <span class="comment">// DGM: we use &#39;e2&#39; instead of</span></div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                                               <span class="comment">// &#39;normal&#39; to save heap memory</span></div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    {</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;        <span class="comment">// PointCoordinateType vmin[3],vmax[3]; //DGM: we use e0 and e1 instead</span></div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        <span class="comment">// of vmin and vmax</span></div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> e2[0] &gt; 0) {</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0] &gt; 0) {</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;            <span class="comment">/*vmin*/</span> e0[0] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;            <span class="comment">/*vmax*/</span> e1[0] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;            <span class="comment">/*vmin*/</span> e0[0] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;            <span class="comment">/*vmax*/</span> e1[0] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        }</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> e2[1] &gt; 0) {</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1] &gt; 0) {</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;            <span class="comment">/*vmin*/</span> e0[1] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            <span class="comment">/*vmax*/</span> e1[1] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            <span class="comment">/*vmin*/</span> e0[1] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;            <span class="comment">/*vmax*/</span> e1[1] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        }</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> e2[2] &gt; 0) {</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2] &gt; 0) {</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;            <span class="comment">/*vmin*/</span> e0[2] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> - v0[2];</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;            <span class="comment">/*vmax*/</span> e1[2] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> - v0[2];</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        } <span class="keywordflow">else</span> {</div>
@@ -336,8 +327,8 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            <span class="comment">/*vmax*/</span> e1[2] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> - v0[2];</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        }</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3::vdot</a>(<span class="comment">/*normal*/</span> e2, <span class="comment">/*vmin*/</span> e0) &gt; 0 ||</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            <a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3::vdot</a>(<span class="comment">/*normal*/</span> e2, <span class="comment">/*vmax*/</span> e1) &lt; 0) {</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3::vdot</a>(<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>, <span class="comment">/*vmin*/</span> e0) &gt; 0 ||</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            <a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3::vdot</a>(<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>, <span class="comment">/*vmax*/</span> e1) &lt; 0) {</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        }</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    }</div>
@@ -372,12 +363,12 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    <span class="comment">/*  test the 9 tests first (this was faster) */</span></div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="keywordtype">double</span> rad, fex, fey, fez;  <span class="comment">// -NJMP- &quot;d&quot; local variable removed</span></div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    <span class="comment">// fex = std::abs(e0[0]);</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    fey = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e0[1]);</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    fez = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e0[2]);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    fey = std::abs(e0[1]);</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    fez = std::abs(e0[2]);</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="keywordtype">double</span> minV, maxV;</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#aa455fd95e25e2df0f1cf93a2de985fd8">AXISTEST_X01</a>(e0[2], e0[1], fez, fey);</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    fex = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e0[0]);  <span class="comment">// DGM: not necessary before!</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    fex = std::abs(e0[0]);  <span class="comment">// DGM: not necessary before!</span></div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2409651c6dcde598145e0434cc80f8cb">AXISTEST_Y02</a>(e0[2], e0[0], fez, fex);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2f2534d1e427de530b66531a42a7af82">AXISTEST_Z12</a>(e0[1], e0[0], fey, fex);</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160; </div>
@@ -385,25 +376,25 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    <a class="code" href="classVector3Tpl.html#a94fcf608bbbd2458979b6103ad154b21">CCVector3d::vsubstract</a>(v2, v1, e1); <span class="comment">/* compute triangle edge 1 */</span></div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160; </div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    <span class="comment">// fex = std::abs(e1[0]);</span></div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    fey = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e1[1]);</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    fez = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e1[2]);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    fey = std::abs(e1[1]);</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    fez = std::abs(e1[2]);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160; </div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#aa455fd95e25e2df0f1cf93a2de985fd8">AXISTEST_X01</a>(e1[2], e1[1], fez, fey);</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    fex = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e1[0]);  <span class="comment">// DGM: not necessary before!</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    fex = std::abs(e1[0]);  <span class="comment">// DGM: not necessary before!</span></div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2409651c6dcde598145e0434cc80f8cb">AXISTEST_Y02</a>(e1[2], e1[0], fez, fex);</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#ae7c0544b51ee58f7b8891c5906d554ce">AXISTEST_Z0</a>(e1[1], e1[0], fey, fex);</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160; </div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    <span class="keywordtype">double</span> e2[3];</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    <a class="code" href="classVector3Tpl.html#a94fcf608bbbd2458979b6103ad154b21">CCVector3d::vsubstract</a>(v0, v2, e2); <span class="comment">/* compute triangle edge 2 */</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[3];</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    <a class="code" href="classVector3Tpl.html#a94fcf608bbbd2458979b6103ad154b21">CCVector3d::vsubstract</a>(v0, v2, <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>); <span class="comment">/* compute triangle edge 2 */</span></div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="comment">// fex = std::abs(e2[0]);</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    fey = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e2[1]);</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    fez = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e2[2]);</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    fey = std::abs(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1]);</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    fez = std::abs(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2]);</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160; </div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a7f81d4a738f6ce0916cda8d449f1e757">AXISTEST_X2</a>(e2[2], e2[1], fez, fey);</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    fex = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(e2[0]);  <span class="comment">// DGM: not necessary before!</span></div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a77a3cf69f7cdf4e359d10a50a0498a75">AXISTEST_Y1</a>(e2[2], e2[0], fez, fex);</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2f2534d1e427de530b66531a42a7af82">AXISTEST_Z12</a>(e2[1], e2[0], fey, fex);</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a7f81d4a738f6ce0916cda8d449f1e757">AXISTEST_X2</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2], <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1], fez, fey);</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    fex = std::abs(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0]);  <span class="comment">// DGM: not necessary before!</span></div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a77a3cf69f7cdf4e359d10a50a0498a75">AXISTEST_Y1</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2], <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0], fez, fex);</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <a class="code" href="CVMiscTools_8cpp.html#a2f2534d1e427de530b66531a42a7af82">AXISTEST_Z12</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1], <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0], fey, fex);</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160; </div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="comment">/* Bullet 1: */</span></div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160; </div>
@@ -430,26 +421,26 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="comment">/*  compute plane equation of triangle: normal*0+d=0 */</span></div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160; </div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="comment">// double normal[3];</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <a class="code" href="classVector3Tpl.html#af89db7e5a26488ef029b52e388de8fd4">CCVector3d::vcross</a>(e0, e1, <span class="comment">/*normal*/</span> e2);  <span class="comment">// DGM: we use &#39;e2&#39; instead of</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <a class="code" href="classVector3Tpl.html#af89db7e5a26488ef029b52e388de8fd4">CCVector3d::vcross</a>(e0, e1, <span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>);  <span class="comment">// DGM: we use &#39;e2&#39; instead of</span></div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                                                <span class="comment">// &#39;normal&#39; to save heap memory</span></div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    {</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <span class="comment">// double vmin[3],vmax[3]; //DGM: we use e0 and e1 instead of vmin and</span></div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        <span class="comment">// vmax</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> e2[0] &gt; 0) {</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[0] &gt; 0) {</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;            <span class="comment">/*vmin*/</span> e0[0] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;            <span class="comment">/*vmax*/</span> e1[0] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;            <span class="comment">/*vmin*/</span> e0[0] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;            <span class="comment">/*vmax*/</span> e1[0] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a> - v0[0];</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        }</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> e2[1] &gt; 0) {</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[1] &gt; 0) {</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;            <span class="comment">/*vmin*/</span> e0[1] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            <span class="comment">/*vmax*/</span> e1[1] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;            <span class="comment">/*vmin*/</span> e0[1] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;            <span class="comment">/*vmax*/</span> e1[1] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a> - v0[1];</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        }</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> e2[2] &gt; 0) {</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        <span class="keywordflow">if</span> (<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>[2] &gt; 0) {</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;            <span class="comment">/*vmin*/</span> e0[2] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> - v0[2];</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;            <span class="comment">/*vmax*/</span> e1[2] = boxhalfSize.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> - v0[2];</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        } <span class="keywordflow">else</span> {</div>
@@ -457,8 +448,8 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;            <span class="comment">/*vmax*/</span> e1[2] = -boxhalfSize.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a> - v0[2];</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        }</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160; </div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3d::vdot</a>(<span class="comment">/*normal*/</span> e2, <span class="comment">/*vmin*/</span> e0) &gt; 0 ||</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;            <a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3d::vdot</a>(<span class="comment">/*normal*/</span> e2, <span class="comment">/*vmax*/</span> e1) &lt; 0) {</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3d::vdot</a>(<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>, <span class="comment">/*vmin*/</span> e0) &gt; 0 ||</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;            <a class="code" href="classVector3Tpl.html#abcbe185cca332d93e65faab7630fa6cc">CCVector3d::vdot</a>(<span class="comment">/*normal*/</span> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>, <span class="comment">/*vmax*/</span> e1) &lt; 0) {</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;        }</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    }</div>
@@ -520,16 +511,15 @@ $(document).ready(function(){initNavTree('CVMiscTools_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_ae9ae80a0e2a6f43f65d27066b8f0a448"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#ae9ae80a0e2a6f43f65d27066b8f0a448">cloudViewer::CCMiscTools::EnlargeBox</a></div><div class="ttdeci">static void EnlargeBox(CCVector3 &amp;dimMin, CCVector3 &amp;dimMax, double coef)</div><div class="ttdoc">Proportionally enlarges a 3D box.</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8cpp_source.html#l00114">CVMiscTools.cpp:114</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_af1135c05bce194862826fe452bcfa9c4"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#af1135c05bce194862826fe452bcfa9c4">cloudViewer::CCMiscTools::TriBoxOverlapd</a></div><div class="ttdeci">static bool TriBoxOverlapd(const CCVector3d &amp;boxcenter, const CCVector3d &amp;boxhalfsize, const CCVector3d triverts[3])</div><div class="ttdoc">Ovelap test between a 3D box and a triangle (double version)</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8cpp_source.html#l00249">CVMiscTools.cpp:249</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_afab66fac3a46160ee3796d231ecbfdd6"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#afab66fac3a46160ee3796d231ecbfdd6">cloudViewer::CCMiscTools::MakeMinAndMaxCubical</a></div><div class="ttdeci">static void MakeMinAndMaxCubical(CCVector3 &amp;dimMin, CCVector3 &amp;dimMax, double enlargeFactor=0.01)</div><div class="ttdoc">Transforms a 3D box into a 3D cube.</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8cpp_source.html#l00088">CVMiscTools.cpp:88</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_abff2bfe384096b8892d5eb3a6a51c8b4"><div class="ttname"><a href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a></div><div class="ttdeci">double e2[36]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00012">essential_matrix_poly.h:12</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="CVMiscTools_8cpp.html">CVMiscTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

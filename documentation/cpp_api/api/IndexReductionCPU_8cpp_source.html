@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,7 +95,7 @@ $(document).ready(function(){initNavTree('IndexReductionCPU_8cpp_source.html',''
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Dispatch_8h.html">cloudViewer/core/Dispatch.h</a>&quot;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Indexer_8h.html">cloudViewer/core/Indexer.h</a>&quot;</span></div>
@@ -190,19 +181,18 @@ $(document).ready(function(){initNavTree('IndexReductionCPU_8cpp_source.html',''
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_a4597d40db7dff103f5d595960a31c589"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#a4597d40db7dff103f5d595960a31c589">cloudViewer::core::Tensor::GetDtype</a></div><div class="ttdeci">Dtype GetDtype() const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01164">Tensor.h:1164</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_a77fbd3bcb55e9c1f6246edfc00d55831"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#a77fbd3bcb55e9c1f6246edfc00d55831">cloudViewer::core::Tensor::GetDataPtr</a></div><div class="ttdeci">T * GetDataPtr()</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01144">Tensor.h:1144</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1core_1_1Tensor_html_ad70864269871ee67c753328bc1a6082b"><div class="ttname"><a href="classcloudViewer_1_1core_1_1Tensor.html#ad70864269871ee67c753328bc1a6082b">cloudViewer::core::Tensor::GetShape</a></div><div class="ttdeci">SizeVector GetShape() const</div><div class="ttdef"><b>Definition:</b> <a href="Tensor_8h_source.html#l01127">Tensor.h:1127</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ab943b2ce8e8c792d9e3912c7f1e2258a"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ab943b2ce8e8c792d9e3912c7f1e2258a">cloudViewer::core::kernel::CPUSumKernel</a></div><div class="ttdeci">static CLOUDVIEWER_HOST_DEVICE void CPUSumKernel(const void *src, void *dst)</div><div class="ttdef"><b>Definition:</b> <a href="IndexReductionCPU_8cpp_source.html#l00060">IndexReductionCPU.cpp:60</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ac0657496dcd2dc2c32cfa9201bc6cf26"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ac0657496dcd2dc2c32cfa9201bc6cf26">cloudViewer::core::kernel::LaunchIndexReductionKernel</a></div><div class="ttdeci">void LaunchIndexReductionKernel(int64_t dim, const Device &amp;device, const Tensor &amp;index, const Tensor &amp;src, Tensor &amp;dst, const func_t &amp;element_kernel)</div><div class="ttdef"><b>Definition:</b> <a href="IndexReductionCPU_8cpp_source.html#l00019">IndexReductionCPU.cpp:19</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1kernel_html_ae98350cc1f81d2f59a665991905aa729"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1kernel.html#ae98350cc1f81d2f59a665991905aa729">cloudViewer::core::kernel::IndexAddCPU_</a></div><div class="ttdeci">void IndexAddCPU_(int64_t dim, const Tensor &amp;index, const Tensor &amp;src, Tensor &amp;dst)</div><div class="ttdef"><b>Definition:</b> <a href="IndexReductionCPU_8cpp_source.html#l00066">IndexReductionCPU.cpp:66</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_a7d6af70b0fa825b5644efbc88001b0ccab50339a10e1de285ac99d4c3990b8693"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#a7d6af70b0fa825b5644efbc88001b0ccab50339a10e1de285ac99d4c3990b8693">cloudViewer::core::DtypePolicy::NONE</a></div><div class="ttdeci">@ NONE</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_45b440cfe532bda991cb85e5a82a2a21.html">kernel</a></li><li class="navelem"><a class="el" href="IndexReductionCPU_8cpp.html">IndexReductionCPU.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

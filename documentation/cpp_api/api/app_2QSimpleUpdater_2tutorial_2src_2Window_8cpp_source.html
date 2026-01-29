@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,7 +95,7 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="app_2QSimpleUpdater_2tutorial_2src_2Window_8h.html">Window.h</a>&quot;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2visualization_2gui_2Window_8h.html">Window.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &quot;ui_Window.h&quot;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;QDebug&gt;</span></div>
@@ -122,10 +113,10 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">// Window::Window</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="structWindow.html#ab27fe44e0834066236f79f244b02f67e">   26</a></span>&#160;<a class="code" href="structWindow.html#ab27fe44e0834066236f79f244b02f67e">Window::Window</a>(QWidget *parent)</div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classWindow.html#ab27fe44e0834066236f79f244b02f67e">   26</a></span>&#160;<a class="code" href="classWindow.html#ab27fe44e0834066236f79f244b02f67e">Window::Window</a>(QWidget *parent)</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;   : QMainWindow(parent)</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;{</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;   m_ui = <span class="keyword">new</span> <a class="code" href="sqlite3_8c.html#adb2a551453af16dd3214a23b16e67544">Ui::Window</a>;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;   m_ui = <span class="keyword">new</span> Ui::Window;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   m_ui-&gt;setupUi(<span class="keyword">this</span>);</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;   setWindowTitle(qApp-&gt;applicationName());</div>
@@ -134,27 +125,27 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;   m_updater = <a class="code" href="classQSimpleUpdater.html#adea7d414a9430fc2b653231a87eaacc6">QSimpleUpdater::getInstance</a>();</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   <span class="comment">/* Check for updates when the &quot;Check For Updates&quot; button is clicked */</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;   connect(m_updater, SIGNAL(checkingFinished(QString)), <span class="keyword">this</span>, SLOT(<a class="code" href="structWindow.html#a6a03330cfdc5a6df74a5ec018080452a">updateChangelog</a>(QString)));</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;   connect(m_updater, SIGNAL(appcastDownloaded(QString, QByteArray)), <span class="keyword">this</span>, SLOT(<a class="code" href="structWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">displayAppcast</a>(QString, QByteArray)));</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;   connect(m_updater, SIGNAL(checkingFinished(QString)), <span class="keyword">this</span>, SLOT(<a class="code" href="classWindow.html#a6a03330cfdc5a6df74a5ec018080452a">updateChangelog</a>(QString)));</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;   connect(m_updater, SIGNAL(appcastDownloaded(QString, QByteArray)), <span class="keyword">this</span>, SLOT(<a class="code" href="classWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">displayAppcast</a>(QString, QByteArray)));</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;   <span class="comment">/* React to button clicks */</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   connect(m_ui-&gt;resetButton, SIGNAL(clicked()), <span class="keyword">this</span>, SLOT(<a class="code" href="structWindow.html#a5a4dc2616083b0f720468c1faf99e28a">resetFields</a>()));</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   connect(m_ui-&gt;resetButton, SIGNAL(clicked()), <span class="keyword">this</span>, SLOT(<a class="code" href="classWindow.html#a5a4dc2616083b0f720468c1faf99e28a">resetFields</a>()));</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;   connect(m_ui-&gt;closeButton, SIGNAL(clicked()), <span class="keyword">this</span>, SLOT(close()));</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;   connect(m_ui-&gt;checkButton, SIGNAL(clicked()), <span class="keyword">this</span>, SLOT(<a class="code" href="structWindow.html#a0362f95ff67728ae549dec360111b112">checkForUpdates</a>()));</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;   connect(m_ui-&gt;checkButton, SIGNAL(clicked()), <span class="keyword">this</span>, SLOT(<a class="code" href="classWindow.html#a0362f95ff67728ae549dec360111b112">checkForUpdates</a>()));</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;   <span class="comment">/* Resize the dialog to fit */</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;   setMinimumSize(minimumSizeHint());</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;   resize(minimumSizeHint());</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;   <span class="comment">/* Reset the UI state */</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;   <a class="code" href="structWindow.html#a5a4dc2616083b0f720468c1faf99e28a">resetFields</a>();</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;   <a class="code" href="classWindow.html#a5a4dc2616083b0f720468c1faf99e28a">resetFields</a>();</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;}</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">// Window::~Window</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="structWindow.html#a245d821e6016fa1f6970ccbbedd635f6">   58</a></span>&#160;<a class="code" href="structWindow.html#a245d821e6016fa1f6970ccbbedd635f6">Window::~Window</a>()</div>
+<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="classWindow.html#a245d821e6016fa1f6970ccbbedd635f6">   58</a></span>&#160;<a class="code" href="classWindow.html#a245d821e6016fa1f6970ccbbedd635f6">Window::~Window</a>()</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;{</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;   <span class="keyword">delete</span> m_ui;</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;}</div>
@@ -163,7 +154,7 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">// Window::checkForUpdates</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="structWindow.html#a5a4dc2616083b0f720468c1faf99e28a">   67</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="structWindow.html#a5a4dc2616083b0f720468c1faf99e28a">Window::resetFields</a>()</div>
+<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classWindow.html#a5a4dc2616083b0f720468c1faf99e28a">   67</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classWindow.html#a5a4dc2616083b0f720468c1faf99e28a">Window::resetFields</a>()</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;{</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;   m_ui-&gt;installedVersion-&gt;setText(<span class="stringliteral">&quot;0.1&quot;</span>);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;   m_ui-&gt;customAppcast-&gt;setChecked(<span class="keyword">false</span>);</div>
@@ -177,7 +168,7 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment">// Window::checkForUpdates</span></div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="structWindow.html#a0362f95ff67728ae549dec360111b112">   81</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="structWindow.html#a0362f95ff67728ae549dec360111b112">Window::checkForUpdates</a>()</div>
+<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="classWindow.html#a0362f95ff67728ae549dec360111b112">   81</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classWindow.html#a0362f95ff67728ae549dec360111b112">Window::checkForUpdates</a>()</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;{</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;   <span class="comment">/* Get settings from the UI */</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;   QString <a class="code" href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a> = m_ui-&gt;installedVersion-&gt;text();</div>
@@ -203,7 +194,7 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">// Window::updateChangelog</span></div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno"><a class="line" href="structWindow.html#a6a03330cfdc5a6df74a5ec018080452a">  107</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="structWindow.html#a6a03330cfdc5a6df74a5ec018080452a">Window::updateChangelog</a>(<span class="keyword">const</span> QString &amp;url)</div>
+<div class="line"><a name="l00107"></a><span class="lineno"><a class="line" href="classWindow.html#a6a03330cfdc5a6df74a5ec018080452a">  107</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classWindow.html#a6a03330cfdc5a6df74a5ec018080452a">Window::updateChangelog</a>(<span class="keyword">const</span> QString &amp;url)</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;{</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;   <span class="keywordflow">if</span> (url == <a class="code" href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp.html#aaf00cd4f0fbc7a3d77b0d8f0db40c8bb">DEFS_URL</a>)</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;      m_ui-&gt;changelogText-&gt;setText(m_updater-&gt;<a class="code" href="classQSimpleUpdater.html#a7239931ecaba395472d33a0cd4b4892f">getChangelog</a>(url));</div>
@@ -213,7 +204,7 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="comment">// Window::displayAppcast</span></div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="comment">//==============================================================================</span></div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
-<div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="structWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">  117</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="structWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">Window::displayAppcast</a>(<span class="keyword">const</span> QString &amp;url, <span class="keyword">const</span> QByteArray &amp;reply)</div>
+<div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="classWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">  117</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">Window::displayAppcast</a>(<span class="keyword">const</span> QString &amp;url, <span class="keyword">const</span> QByteArray &amp;reply)</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;{</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;   <span class="keywordflow">if</span> (url == <a class="code" href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp.html#aaf00cd4f0fbc7a3d77b0d8f0db40c8bb">DEFS_URL</a>)</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;   {</div>
@@ -230,7 +221,6 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="ttc" id="aFileIOFactory_8cpp_html_a728b969e374aba4020e39aea7e02e64f"><div class="ttname"><a href="FileIOFactory_8cpp.html#a728b969e374aba4020e39aea7e02e64f">version</a></div><div class="ttdeci">std::string version</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00140">FileIOFactory.cpp:140</a></div></div>
 <div class="ttc" id="aQSimpleUpdater_8h_html"><div class="ttname"><a href="QSimpleUpdater_8h.html">QSimpleUpdater.h</a></div></div>
 <div class="ttc" id="aapp_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_html_aaf00cd4f0fbc7a3d77b0d8f0db40c8bb"><div class="ttname"><a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp.html#aaf00cd4f0fbc7a3d77b0d8f0db40c8bb">DEFS_URL</a></div><div class="ttdeci">static const QString DEFS_URL</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00018">Window.cpp:18</a></div></div>
-<div class="ttc" id="aapp_2QSimpleUpdater_2tutorial_2src_2Window_8h_html"><div class="ttname"><a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8h.html">Window.h</a></div></div>
 <div class="ttc" id="aclassQSimpleUpdater_html_a1a2a03f01c7ba081637268910fc50919"><div class="ttname"><a href="classQSimpleUpdater.html#a1a2a03f01c7ba081637268910fc50919">QSimpleUpdater::setModuleVersion</a></div><div class="ttdeci">void setModuleVersion(const QString &amp;url, const QString &amp;version)</div><div class="ttdef"><b>Definition:</b> <a href="QSimpleUpdater_8cpp_source.html#l00300">QSimpleUpdater.cpp:300</a></div></div>
 <div class="ttc" id="aclassQSimpleUpdater_html_a381c2f61802fa1f5716b197df3df7dad"><div class="ttname"><a href="classQSimpleUpdater.html#a381c2f61802fa1f5716b197df3df7dad">QSimpleUpdater::setNotifyOnUpdate</a></div><div class="ttdeci">void setNotifyOnUpdate(const QString &amp;url, const bool notify)</div><div class="ttdef"><b>Definition:</b> <a href="QSimpleUpdater_8cpp_source.html#l00255">QSimpleUpdater.cpp:255</a></div></div>
 <div class="ttc" id="aclassQSimpleUpdater_html_a41b6ca9ae540786c37e71f31ff087213"><div class="ttname"><a href="classQSimpleUpdater.html#a41b6ca9ae540786c37e71f31ff087213">QSimpleUpdater::setNotifyOnFinish</a></div><div class="ttdeci">void setNotifyOnFinish(const QString &amp;url, const bool notify)</div><div class="ttdef"><b>Definition:</b> <a href="QSimpleUpdater_8cpp_source.html#l00268">QSimpleUpdater.cpp:268</a></div></div>
@@ -240,20 +230,20 @@ $(document).ready(function(){initNavTree('app_2QSimpleUpdater_2tutorial_2src_2Wi
 <div class="ttc" id="aclassQSimpleUpdater_html_ab7a248ddfc35d02f42b7e769d27b7bb4"><div class="ttname"><a href="classQSimpleUpdater.html#ab7a248ddfc35d02f42b7e769d27b7bb4">QSimpleUpdater::setDownloaderEnabled</a></div><div class="ttdeci">void setDownloaderEnabled(const QString &amp;url, const bool enabled)</div><div class="ttdef"><b>Definition:</b> <a href="QSimpleUpdater_8cpp_source.html#l00313">QSimpleUpdater.cpp:313</a></div></div>
 <div class="ttc" id="aclassQSimpleUpdater_html_ab91bc51375b6abd9665ffe298a5d6c2a"><div class="ttname"><a href="classQSimpleUpdater.html#ab91bc51375b6abd9665ffe298a5d6c2a">QSimpleUpdater::setUseCustomAppcast</a></div><div class="ttdeci">void setUseCustomAppcast(const QString &amp;url, const bool customAppcast)</div><div class="ttdef"><b>Definition:</b> <a href="QSimpleUpdater_8cpp_source.html#l00339">QSimpleUpdater.cpp:339</a></div></div>
 <div class="ttc" id="aclassQSimpleUpdater_html_adea7d414a9430fc2b653231a87eaacc6"><div class="ttname"><a href="classQSimpleUpdater.html#adea7d414a9430fc2b653231a87eaacc6">QSimpleUpdater::getInstance</a></div><div class="ttdeci">static QSimpleUpdater * getInstance()</div><div class="ttdef"><b>Definition:</b> <a href="QSimpleUpdater_8cpp_source.html#l00027">QSimpleUpdater.cpp:27</a></div></div>
-<div class="ttc" id="asqlite3_8c_html_adb2a551453af16dd3214a23b16e67544"><div class="ttname"><a href="sqlite3_8c.html#adb2a551453af16dd3214a23b16e67544">Window</a></div><div class="ttdeci">struct Window Window</div><div class="ttdef"><b>Definition:</b> <a href="sqlite3_8c_source.html#l14435">sqlite3.c:14678</a></div></div>
-<div class="ttc" id="astructWindow_html_a0362f95ff67728ae549dec360111b112"><div class="ttname"><a href="structWindow.html#a0362f95ff67728ae549dec360111b112">Window::checkForUpdates</a></div><div class="ttdeci">void checkForUpdates()</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00081">Window.cpp:81</a></div></div>
-<div class="ttc" id="astructWindow_html_a245d821e6016fa1f6970ccbbedd635f6"><div class="ttname"><a href="structWindow.html#a245d821e6016fa1f6970ccbbedd635f6">Window::~Window</a></div><div class="ttdeci">~Window()</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00058">Window.cpp:58</a></div></div>
-<div class="ttc" id="astructWindow_html_a2fa31bc6a77417fa2d5db86a57321cbd"><div class="ttname"><a href="structWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">Window::displayAppcast</a></div><div class="ttdeci">void displayAppcast(const QString &amp;url, const QByteArray &amp;reply)</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00117">Window.cpp:117</a></div></div>
-<div class="ttc" id="astructWindow_html_a5a4dc2616083b0f720468c1faf99e28a"><div class="ttname"><a href="structWindow.html#a5a4dc2616083b0f720468c1faf99e28a">Window::resetFields</a></div><div class="ttdeci">void resetFields()</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00067">Window.cpp:67</a></div></div>
-<div class="ttc" id="astructWindow_html_a6a03330cfdc5a6df74a5ec018080452a"><div class="ttname"><a href="structWindow.html#a6a03330cfdc5a6df74a5ec018080452a">Window::updateChangelog</a></div><div class="ttdeci">void updateChangelog(const QString &amp;url)</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00107">Window.cpp:107</a></div></div>
-<div class="ttc" id="astructWindow_html_ab27fe44e0834066236f79f244b02f67e"><div class="ttname"><a href="structWindow.html#ab27fe44e0834066236f79f244b02f67e">Window::Window</a></div><div class="ttdeci">Window(QWidget *parent=0)</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00026">Window.cpp:26</a></div></div>
+<div class="ttc" id="aclassWindow_html_a0362f95ff67728ae549dec360111b112"><div class="ttname"><a href="classWindow.html#a0362f95ff67728ae549dec360111b112">Window::checkForUpdates</a></div><div class="ttdeci">void checkForUpdates()</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00081">Window.cpp:81</a></div></div>
+<div class="ttc" id="aclassWindow_html_a245d821e6016fa1f6970ccbbedd635f6"><div class="ttname"><a href="classWindow.html#a245d821e6016fa1f6970ccbbedd635f6">Window::~Window</a></div><div class="ttdeci">~Window()</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00058">Window.cpp:58</a></div></div>
+<div class="ttc" id="aclassWindow_html_a2fa31bc6a77417fa2d5db86a57321cbd"><div class="ttname"><a href="classWindow.html#a2fa31bc6a77417fa2d5db86a57321cbd">Window::displayAppcast</a></div><div class="ttdeci">void displayAppcast(const QString &amp;url, const QByteArray &amp;reply)</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00117">Window.cpp:117</a></div></div>
+<div class="ttc" id="aclassWindow_html_a5a4dc2616083b0f720468c1faf99e28a"><div class="ttname"><a href="classWindow.html#a5a4dc2616083b0f720468c1faf99e28a">Window::resetFields</a></div><div class="ttdeci">void resetFields()</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00067">Window.cpp:67</a></div></div>
+<div class="ttc" id="aclassWindow_html_a6a03330cfdc5a6df74a5ec018080452a"><div class="ttname"><a href="classWindow.html#a6a03330cfdc5a6df74a5ec018080452a">Window::updateChangelog</a></div><div class="ttdeci">void updateChangelog(const QString &amp;url)</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00107">Window.cpp:107</a></div></div>
+<div class="ttc" id="aclassWindow_html_ab27fe44e0834066236f79f244b02f67e"><div class="ttname"><a href="classWindow.html#ab27fe44e0834066236f79f244b02f67e">Window::Window</a></div><div class="ttdeci">Window(QWidget *parent=0)</div><div class="ttdef"><b>Definition:</b> <a href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp_source.html#l00026">Window.cpp:26</a></div></div>
+<div class="ttc" id="alibs_2cloudViewer_2visualization_2gui_2Window_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2visualization_2gui_2Window_8h.html">Window.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_58ba022c201de9d1274ebc144ceba4a6.html">QSimpleUpdater</a></li><li class="navelem"><a class="el" href="dir_c31cbf61024cf82b87a2c83f675e3a4a.html">tutorial</a></li><li class="navelem"><a class="el" href="dir_61672e934f0cf409007ee238a5f86dff.html">src</a></li><li class="navelem"><a class="el" href="app_2QSimpleUpdater_2tutorial_2src_2Window_8cpp.html">Window.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:12 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

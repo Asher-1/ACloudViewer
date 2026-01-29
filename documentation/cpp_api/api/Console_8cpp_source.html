@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -110,7 +101,7 @@ $(document).ready(function(){initNavTree('Console_8cpp_source.html',''); initRes
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a>&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;Helper.h&quot;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span>utility {</div>
@@ -214,7 +205,6 @@ $(document).ready(function(){initNavTree('Console_8cpp_source.html',''); initRes
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;}  <span class="comment">// namespace utility</span></div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
 <div class="ttc" id="aConsole_8h_html"><div class="ttname"><a href="Console_8h.html">Console.h</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2ml_2Helper_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2ml_2Helper_8h.html">Helper.h</a></div><div class="ttdoc">Helper functions for the ml ops.</div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a0f17d8c88ebdeb7cbfd57f4b4d6b805e"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a0f17d8c88ebdeb7cbfd57f4b4d6b805e">cloudViewer::utility::GetProgramOptionAsInt</a></div><div class="ttdeci">int GetProgramOptionAsInt(int argc, char **argv, const std::string &amp;option, const int default_value=0)</div><div class="ttdef"><b>Definition:</b> <a href="Console_8cpp_source.html#l00031">Console.cpp:31</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a1eda10cf0273d6b5669fa8aef66a85ea"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a1eda10cf0273d6b5669fa8aef66a85ea">cloudViewer::utility::ProgramOptionExistsAny</a></div><div class="ttdeci">bool ProgramOptionExistsAny(int argc, char **argv, const std::vector&lt; std::string &gt; &amp;options)</div><div class="ttdef"><b>Definition:</b> <a href="Console_8cpp_source.html#l00104">Console.cpp:104</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a3783839135815339b7f20156a6c2f5ff"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a3783839135815339b7f20156a6c2f5ff">cloudViewer::utility::ProgramOptionExists</a></div><div class="ttdeci">bool ProgramOptionExists(int argc, char **argv, const std::string &amp;option)</div><div class="ttdef"><b>Definition:</b> <a href="Console_8cpp_source.html#l00100">Console.cpp:100</a></div></div>
@@ -222,14 +212,14 @@ $(document).ready(function(){initNavTree('Console_8cpp_source.html',''); initRes
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a4743e788710a38729e052ebb1558ef2a"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a4743e788710a38729e052ebb1558ef2a">cloudViewer::utility::SplitString</a></div><div class="ttdeci">void SplitString(std::vector&lt; std::string &gt; &amp;tokens, const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00197">Helper.cpp:197</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aecd599d3ca190aa7a73f17a624e6cb82"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aecd599d3ca190aa7a73f17a624e6cb82">cloudViewer::utility::GetProgramOptionAsEigenVectorXd</a></div><div class="ttdeci">Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv, const std::string &amp;option, const Eigen::VectorXd default_value=Eigen::VectorXd::Zero(0))</div><div class="ttdef"><b>Definition:</b> <a href="Console_8cpp_source.html#l00071">Console.cpp:71</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_afc4dfca9002a00f15dcbfd63e3c69d62"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#afc4dfca9002a00f15dcbfd63e3c69d62">cloudViewer::utility::GetProgramOptionAsDouble</a></div><div class="ttdeci">double GetProgramOptionAsDouble(int argc, char **argv, const std::string &amp;option, const double default_value=0.0)</div><div class="ttdef"><b>Definition:</b> <a href="Console_8cpp_source.html#l00052">Console.cpp:52</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="Console_8cpp.html">Console.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

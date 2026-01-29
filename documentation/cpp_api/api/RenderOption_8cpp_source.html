@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -107,7 +98,7 @@ $(document).ready(function(){initNavTree('RenderOption_8cpp_source.html',''); in
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RenderOption_8h.html">visualization/visualizer/RenderOption.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;GL/glew.h&gt;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
@@ -115,7 +106,7 @@ $(document).ready(function(){initNavTree('RenderOption_8cpp_source.html',''); in
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span>visualization {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">   19</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">RenderOption::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">   19</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">RenderOption::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    value[<span class="stringliteral">&quot;class_name&quot;</span>] = <span class="stringliteral">&quot;RenderOption&quot;</span>;</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    value[<span class="stringliteral">&quot;version_major&quot;</span>] = 1;</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    value[<span class="stringliteral">&quot;version_minor&quot;</span>] = 0;</div>
@@ -194,7 +185,7 @@ $(document).ready(function(){initNavTree('RenderOption_8cpp_source.html',''); in
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
-<div class="line"><a name="l00098"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">   98</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">RenderOption::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00098"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">   98</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">RenderOption::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keywordflow">if</span> (!value.isObject()) {</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                <span class="stringliteral">&quot;ViewTrajectory read JSON failed: unsupported json format.&quot;</span>);</div>
@@ -326,18 +317,18 @@ $(document).ready(function(){initNavTree('RenderOption_8cpp_source.html',''); in
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;}</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160; </div>
 <div class="line"><a name="l00229"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a27e025111058460b25269dc7a1cd3ac0">  229</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a27e025111058460b25269dc7a1cd3ac0">RenderOption::ChangePointSize</a>(<span class="keywordtype">double</span> change) {</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c">point_size_</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;            <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c">point_size_</a> + change * <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ac596980cc70869dddc141cde147e742a">POINT_SIZE_STEP</a>, <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a0058010fc2d9cca73950c7705dffd92b">POINT_SIZE_MAX</a>),</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c">point_size_</a> = std::max(</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;            std::min(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c">point_size_</a> + change * <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ac596980cc70869dddc141cde147e742a">POINT_SIZE_STEP</a>, <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a0058010fc2d9cca73950c7705dffd92b">POINT_SIZE_MAX</a>),</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab32c1315b9a1d74de70382c2ba78c166">POINT_SIZE_MIN</a>);</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;}</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160; </div>
 <div class="line"><a name="l00235"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#af96361df3fae3e108706265ca62e4646">  235</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#af96361df3fae3e108706265ca62e4646">RenderOption::SetPointSize</a>(<span class="keywordtype">double</span> <a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>) {</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c">point_size_</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(<a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>, <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a0058010fc2d9cca73950c7705dffd92b">POINT_SIZE_MAX</a>), <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab32c1315b9a1d74de70382c2ba78c166">POINT_SIZE_MIN</a>);</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c">point_size_</a> = std::max(std::min(<a class="code" href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a>, <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a0058010fc2d9cca73950c7705dffd92b">POINT_SIZE_MAX</a>), <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ab32c1315b9a1d74de70382c2ba78c166">POINT_SIZE_MIN</a>);</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;}</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
 <div class="line"><a name="l00239"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOption.html#abdcaa4f5ba2e1f5161dfded79b21aa39">  239</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#abdcaa4f5ba2e1f5161dfded79b21aa39">RenderOption::ChangeLineWidth</a>(<span class="keywordtype">double</span> change) {</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ac47ebf1de74472c48216fc9a8b2a6042">line_width_</a> = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ac47ebf1de74472c48216fc9a8b2a6042">line_width_</a> + change * <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ae60163c809c5db1a58e319fe3c82fbf8">LINE_WIDTH_STEP</a>, <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a0ee5ea41e35ed530df24fa12d2632592">LINE_WIDTH_MAX</a>),</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ac47ebf1de74472c48216fc9a8b2a6042">line_width_</a> = std::max(</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            std::min(<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ac47ebf1de74472c48216fc9a8b2a6042">line_width_</a> + change * <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#ae60163c809c5db1a58e319fe3c82fbf8">LINE_WIDTH_STEP</a>, <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a0ee5ea41e35ed530df24fa12d2632592">LINE_WIDTH_MAX</a>),</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a33117741244eaa244bfcabe52100e08b">LINE_WIDTH_MIN</a>);</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;}</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160; </div>
@@ -417,17 +408,15 @@ $(document).ready(function(){initNavTree('RenderOption_8cpp_source.html',''); in
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOption_html_af4204b068d1f1fdf5ba1ddbc101d7cde"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOption.html#af4204b068d1f1fdf5ba1ddbc101d7cde">cloudViewer::visualization::RenderOption::mesh_show_wireframe_</a></div><div class="ttdeci">bool mesh_show_wireframe_</div><div class="ttdef"><b>Definition:</b> <a href="RenderOption_8h_source.html#l00192">RenderOption.h:192</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOption_html_af96361df3fae3e108706265ca62e4646"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOption.html#af96361df3fae3e108706265ca62e4646">cloudViewer::visualization::RenderOption::SetPointSize</a></div><div class="ttdeci">void SetPointSize(double size)</div><div class="ttdef"><b>Definition:</b> <a href="RenderOption_8cpp_source.html#l00235">RenderOption.cpp:235</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="avtkDistributedTrivialProducer_8cxx_html_a1ee6276fc24448fd28f1d17b9f02e438"><div class="ttname"><a href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Value</a></div><div class="ttdeci">static vtkPVTrivialProducerStaticInternal Value</div><div class="ttdef"><b>Definition:</b> <a href="vtkDistributedTrivialProducer_8cxx_source.html#l00065">vtkDistributedTrivialProducer.cxx:65</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="RenderOption_8cpp.html">RenderOption.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

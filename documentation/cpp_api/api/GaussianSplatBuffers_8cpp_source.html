@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -224,7 +215,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="keywordflow">return</span> {};</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    }</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> vertex_array_size = n_vertices * 3 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> vertex_array_size = n_vertices * 3 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">float</span>* vertex_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(vertex_array_size));</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    memcpy(vertex_array, <a class="code" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>.GetDataPtr(), vertex_array_size);</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    VertexBuffer::BufferDescriptor pts_descriptor(</div>
@@ -232,7 +223,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1GeometryBuffersBuilder.html#a971b16ad44a6fc468794e046c907f61c">GeometryBuffersBuilder::DeallocateBuffer</a>);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    vbuf-&gt;setBufferAt(engine, 0, std::move(pts_descriptor));</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> scale_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> scale_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordtype">float</span>* scale_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(scale_array_size));</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    std::memset(scale_array, 0, scale_array_size);</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    <span class="keywordtype">float</span>* scale_src = <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1TPointCloudBuffersBuilder.html#ae45a6905e73a677248e6fe76a06e5ca9">geometry_</a>.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#ac02cb13d19096acb036f546fce52e2d2">GetPointAttr</a>(<span class="stringliteral">&quot;scale&quot;</span>).GetDataPtr&lt;<span class="keywordtype">float</span>&gt;();</div>
@@ -246,7 +237,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <span class="comment">// We need to allocate a buffer for TANGENTS; otherwise, Filament will issue</span></div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="comment">// a warning.</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> empty_array_size = n_vertices * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> empty_array_size = n_vertices * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keywordtype">float</span>* empty_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(empty_array_size));</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    std::memset(empty_array, 0, empty_array_size);</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    VertexBuffer::BufferDescriptor empty_descriptor(</div>
@@ -254,7 +245,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1GeometryBuffersBuilder.html#a971b16ad44a6fc468794e046c907f61c">GeometryBuffersBuilder::DeallocateBuffer</a>);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    vbuf-&gt;setBufferAt(engine, 2, std::move(empty_descriptor));</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160; </div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> color_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> color_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordtype">float</span>* color_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(color_array_size));</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keywordtype">float</span>* f_dc_ptr = <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1TPointCloudBuffersBuilder.html#ae45a6905e73a677248e6fe76a06e5ca9">geometry_</a>.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#ac02cb13d19096acb036f546fce52e2d2">GetPointAttr</a>(<span class="stringliteral">&quot;f_dc&quot;</span>).GetDataPtr&lt;<span class="keywordtype">float</span>&gt;();</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <span class="keywordtype">float</span>* opacity_ptr = <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1TPointCloudBuffersBuilder.html#ae45a6905e73a677248e6fe76a06e5ca9">geometry_</a>.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#ac02cb13d19096acb036f546fce52e2d2">GetPointAttr</a>(<span class="stringliteral">&quot;opacity&quot;</span>).GetDataPtr&lt;<span class="keywordtype">float</span>&gt;();</div>
@@ -267,7 +258,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1GeometryBuffersBuilder.html#a971b16ad44a6fc468794e046c907f61c">GeometryBuffersBuilder::DeallocateBuffer</a>);</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    vbuf-&gt;setBufferAt(engine, 3, std::move(color_descriptor));</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> rot_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> rot_array_size = n_vertices * 4 * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keywordtype">float</span>* rot_array = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span>*<span class="keyword">&gt;</span>(malloc(rot_array_size));</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    std::memcpy(rot_array, <a class="code" href="classcloudViewer_1_1visualization_1_1rendering_1_1TPointCloudBuffersBuilder.html#ae45a6905e73a677248e6fe76a06e5ca9">geometry_</a>.<a class="code" href="classcloudViewer_1_1t_1_1geometry_1_1PointCloud.html#ac02cb13d19096acb036f546fce52e2d2">GetPointAttr</a>(<span class="stringliteral">&quot;rot&quot;</span>).GetDataPtr(),</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;                rot_array_size);</div>
@@ -278,7 +269,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keywordtype">int</span> data_count_in_one_buffer = 4;</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> f_rest_array_size =</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            n_vertices * data_count_in_one_buffer * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            n_vertices * data_count_in_one_buffer * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">size_t</span> custom_buffer_start_index = 5;</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordtype">float</span>* f_rest_src =</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;            (f_rest_buffer_count &gt; 0)</div>
@@ -294,7 +285,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                    (f_rest_coeffs_count -</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                     f_rest_buffer_count * data_count_in_one_buffer);</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;            copy_data_size =</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                    n_vertices * remaining_count_in_last_iter * <span class="keyword">sizeof</span>(float);</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                    n_vertices * remaining_count_in_last_iter * <span class="keyword">sizeof</span>(<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>);</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            std::memset(f_rest_array, 0, f_rest_array_size);</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        }</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
@@ -342,10 +333,11 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="ageometry_2BoundingVolume_8h_html"><div class="ttname"><a href="geometry_2BoundingVolume_8h.html">BoundingVolume.h</a></div></div>
 <div class="ttc" id="ageometry_2PointCloud_8h_html"><div class="ttname"><a href="geometry_2PointCloud_8h.html">PointCloud.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_affc0f4027f45d3f0f415a860ab369a3b"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#affc0f4027f45d3f0f415a860ab369a3b">cloudViewer::core::Float32</a></div><div class="ttdeci">const Dtype Float32</div><div class="ttdef"><b>Definition:</b> <a href="Dtype_8cpp_source.html#l00042">Dtype.cpp:42</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_ac88f646fffcec1fb1453388718559c5d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#ac88f646fffcec1fb1453388718559c5d">cloudViewer::utility::ceil</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; ceil(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00089">MiniVec.h:89</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1rendering_html_aba45d7000d7177199d55a016b8c179b0a10461f19cdb5aadba2fc9986be6400bd"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1rendering.html#aba45d7000d7177199d55a016b8c179b0a10461f19cdb5aadba2fc9986be6400bd">cloudViewer::visualization::rendering::EntityType::VertexBuffer</a></div><div class="ttdeci">@ VertexBuffer</div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacefilament_html"><div class="ttname"><a href="namespacefilament.html">filament</a></div><div class="ttdef"><b>Definition:</b> <a href="FilamentEngine_8h_source.html#l00012">FilamentEngine.h:12</a></div></div>
 <div class="ttc" id="astructcloudViewer_1_1visualization_1_1rendering_1_1REHandle_html"><div class="ttname"><a href="structcloudViewer_1_1visualization_1_1rendering_1_1REHandle.html">cloudViewer::visualization::rendering::REHandle&lt; EntityType::VertexBuffer &gt;</a></div></div>
 <div class="ttc" id="at_2geometry_2PointCloud_8h_html"><div class="ttname"><a href="t_2geometry_2PointCloud_8h.html">PointCloud.h</a></div></div>
@@ -355,7 +347,7 @@ $(document).ready(function(){initNavTree('GaussianSplatBuffers_8cpp_source.html'
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_b499a281afeca67f84e0ab4cbebb6d96.html">rendering</a></li><li class="navelem"><a class="el" href="dir_d7c0e608d18fcb568181e1612c5c2a19.html">filament</a></li><li class="navelem"><a class="el" href="GaussianSplatBuffers_8cpp.html">GaussianSplatBuffers.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:30 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

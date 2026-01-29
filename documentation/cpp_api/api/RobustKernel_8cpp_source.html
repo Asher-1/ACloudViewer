@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -114,7 +105,7 @@ $(document).ready(function(){initNavTree('RobustKernel_8cpp_source.html',''); in
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;cmath&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span>{</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keywordtype">double</span> <span class="keyword">inline</span> square(<span class="keywordtype">double</span> x) { <span class="keywordflow">return</span> x * x; }</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keywordtype">double</span> <span class="keyword">inline</span> square(<span class="keywordtype">double</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>) { <span class="keywordflow">return</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> * <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>; }</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;}  <span class="comment">// namespace</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
@@ -124,12 +115,12 @@ $(document).ready(function(){initNavTree('RobustKernel_8cpp_source.html',''); in
 <div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1L2Loss.html#a56def143b20e0e22e703a7717924e586">   25</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1L2Loss.html#a56def143b20e0e22e703a7717924e586">L2Loss::Weight</a>(<span class="keywordtype">double</span> <span class="comment">/*residual*/</span>)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> 1.0; }</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1L1Loss.html#a439bbd62288c369541287fb05a3c16fb">   27</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1L1Loss.html#a439bbd62288c369541287fb05a3c16fb">L1Loss::Weight</a>(<span class="keywordtype">double</span> residual)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordflow">return</span> 1.0 / <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(residual);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keywordflow">return</span> 1.0 / std::abs(residual);</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;}</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html#ab42c3a03127ee4beab8e08ecfe18734c">   31</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html#ab42c3a03127ee4beab8e08ecfe18734c">HuberLoss::Weight</a>(<span class="keywordtype">double</span> residual)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> e = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(residual);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html#aa22f059ba3a6279119d8501efd7e38d2">k_</a> / <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(e, <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html#aa22f059ba3a6279119d8501efd7e38d2">k_</a>);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = std::abs(residual);</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html#aa22f059ba3a6279119d8501efd7e38d2">k_</a> / std::max(<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>, <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1HuberLoss.html#aa22f059ba3a6279119d8501efd7e38d2">k_</a>);</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;}</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1CauchyLoss.html#a4877ce281c8a7b9d022a9dee51e12aec">   36</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1CauchyLoss.html#a4877ce281c8a7b9d022a9dee51e12aec">CauchyLoss::Weight</a>(<span class="keywordtype">double</span> residual)<span class="keyword"> const </span>{</div>
@@ -141,8 +132,8 @@ $(document).ready(function(){initNavTree('RobustKernel_8cpp_source.html',''); in
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;}</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html#ab8cdb6bc3a2154f48eaa4371c3d1efd1">   44</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html#ab8cdb6bc3a2154f48eaa4371c3d1efd1">TukeyLoss::Weight</a>(<span class="keywordtype">double</span> residual)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> e = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(residual);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">return</span> square(1.0 - square(<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(1.0, e / <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html#a27ed0b197fb3de11799e3cca5fb76f47">k_</a>)));</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> = std::abs(residual);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">return</span> square(1.0 - square(std::min(1.0, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a> / <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html#a27ed0b197fb3de11799e3cca5fb76f47">k_</a>)));</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;}</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;}  <span class="comment">// namespace registration</span></div>
@@ -158,17 +149,16 @@ $(document).ready(function(){initNavTree('RobustKernel_8cpp_source.html',''); in
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1L2Loss_html_a56def143b20e0e22e703a7717924e586"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1L2Loss.html#a56def143b20e0e22e703a7717924e586">cloudViewer::pipelines::registration::L2Loss::Weight</a></div><div class="ttdeci">double Weight(double residual) const override</div><div class="ttdef"><b>Definition:</b> <a href="RobustKernel_8cpp_source.html#l00025">RobustKernel.cpp:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss_html_a27ed0b197fb3de11799e3cca5fb76f47"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html#a27ed0b197fb3de11799e3cca5fb76f47">cloudViewer::pipelines::registration::TukeyLoss::k_</a></div><div class="ttdeci">double k_</div><div class="ttdef"><b>Definition:</b> <a href="pipelines_2registration_2RobustKernel_8h_source.html#l00192">RobustKernel.h:192</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss_html_ab8cdb6bc3a2154f48eaa4371c3d1efd1"><div class="ttname"><a href="classcloudViewer_1_1pipelines_1_1registration_1_1TukeyLoss.html#ab8cdb6bc3a2154f48eaa4371c3d1efd1">cloudViewer::pipelines::registration::TukeyLoss::Weight</a></div><div class="ttdeci">double Weight(double residual) const override</div><div class="ttdef"><b>Definition:</b> <a href="RobustKernel_8cpp_source.html#l00044">RobustKernel.cpp:44</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="RobustKernel_8cpp.html">RobustKernel.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

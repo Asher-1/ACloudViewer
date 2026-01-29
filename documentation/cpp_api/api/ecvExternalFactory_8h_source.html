@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -119,24 +110,24 @@ $(document).ready(function(){initNavTree('ecvExternalFactory_8h_source.html','')
 <div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#ab7c373a67cf2c15d17650dbbea45fd3a">   28</a></span>&#160;        <a class="code" href="classccExternalFactory_1_1Container.html#ab7c373a67cf2c15d17650dbbea45fd3a">Container</a>() {}</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#abd5d7b1836bdd489a6dbd8adcc383ab1">   34</a></span>&#160;        <a class="code" href="classccExternalFactory.html">ccExternalFactory</a>* <a class="code" href="classccExternalFactory_1_1Container.html#abd5d7b1836bdd489a6dbd8adcc383ab1">getFactoryByName</a>(<span class="keyword">const</span> QString&amp; factoryName) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        <a class="code" href="classccExternalFactory.html">ccExternalFactory</a>* getFactoryByName(<span class="keyword">const</span> QString&amp; factoryName) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#a8d9f725d53d5bf848b72dfb25ef5f8a2">   40</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classccExternalFactory_1_1Container.html#a8d9f725d53d5bf848b72dfb25ef5f8a2">addFactory</a>(<a class="code" href="classccExternalFactory.html">ccExternalFactory</a>* factory);</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        <span class="keywordtype">void</span> addFactory(<a class="code" href="classccExternalFactory.html">ccExternalFactory</a>* factory);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">   43</a></span>&#160;        <span class="keyword">typedef</span> QSharedPointer&lt;Container&gt; <a class="code" href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">Shared</a>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#af7ee11e278810f8b7a73c228d45d0846">   47</a></span>&#160;        <span class="keyword">static</span> <a class="code" href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">Container::Shared</a> <a class="code" href="classccExternalFactory_1_1Container.html#af7ee11e278810f8b7a73c228d45d0846">GetUniqueInstance</a>();</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="keyword">static</span> <a class="code" href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">Container::Shared</a> GetUniqueInstance();</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#ac615cc7911c0a8d2ae3e1859ef27f950">   53</a></span>&#160;        <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classccExternalFactory_1_1Container.html#ac615cc7911c0a8d2ae3e1859ef27f950">SetUniqueInstance</a>(<a class="code" href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">Container::Shared</a> container);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="keyword">static</span> <span class="keywordtype">void</span> SetUniqueInstance(<a class="code" href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">Container::Shared</a> container);</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="classccExternalFactory_1_1Container.html#aeae1d1f908ecc6316f6d757383b024b3">   57</a></span>&#160;        QMap&lt;QString, ccExternalFactory*&gt; <a class="code" href="classccExternalFactory_1_1Container.html#aeae1d1f908ecc6316f6d757383b024b3">m_factories</a>;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    };</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="classccExternalFactory.html#a10d0a5d7123b98b1ebb49ededd196d80">   63</a></span>&#160;    <a class="code" href="classccExternalFactory.html#a10d0a5d7123b98b1ebb49ededd196d80">ccExternalFactory</a>(QString factoryName);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <a class="code" href="classccExternalFactory.html">ccExternalFactory</a>(QString factoryName);</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="classccExternalFactory.html#acf1136054f0261c95b9c4381854e3c69">   66</a></span>&#160;    <span class="keyword">inline</span> QString <a class="code" href="classccExternalFactory.html#acf1136054f0261c95b9c4381854e3c69">getFactoryName</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_factoryName; }</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
@@ -148,15 +139,10 @@ $(document).ready(function(){initNavTree('ecvExternalFactory_8h_source.html','')
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;};</div>
 <div class="ttc" id="aCV__db_8h_html_af9cdb7817e8eba3015e082fe4e6cbbf2"><div class="ttname"><a href="CV__db_8h.html#af9cdb7817e8eba3015e082fe4e6cbbf2">CV_DB_LIB_API</a></div><div class="ttdeci">#define CV_DB_LIB_API</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_8h_source.html#l00015">CV_db.h:15</a></div></div>
 <div class="ttc" id="aclassccExternalFactory_1_1Container_html"><div class="ttname"><a href="classccExternalFactory_1_1Container.html">ccExternalFactory::Container</a></div><div class="ttdoc">A convenience holder for all factories.</div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00025">ecvExternalFactory.h:25</a></div></div>
-<div class="ttc" id="aclassccExternalFactory_1_1Container_html_a8d9f725d53d5bf848b72dfb25ef5f8a2"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#a8d9f725d53d5bf848b72dfb25ef5f8a2">ccExternalFactory::Container::addFactory</a></div><div class="ttdeci">void addFactory(ccExternalFactory *factory)</div><div class="ttdoc">Adds a new factory to the container.</div></div>
 <div class="ttc" id="aclassccExternalFactory_1_1Container_html_ab7c373a67cf2c15d17650dbbea45fd3a"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#ab7c373a67cf2c15d17650dbbea45fd3a">ccExternalFactory::Container::Container</a></div><div class="ttdeci">Container()</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00028">ecvExternalFactory.h:28</a></div></div>
-<div class="ttc" id="aclassccExternalFactory_1_1Container_html_abd5d7b1836bdd489a6dbd8adcc383ab1"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#abd5d7b1836bdd489a6dbd8adcc383ab1">ccExternalFactory::Container::getFactoryByName</a></div><div class="ttdeci">ccExternalFactory * getFactoryByName(const QString &amp;factoryName) const</div><div class="ttdoc">Returns factory using its (unique) name as key.</div></div>
-<div class="ttc" id="aclassccExternalFactory_1_1Container_html_ac615cc7911c0a8d2ae3e1859ef27f950"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#ac615cc7911c0a8d2ae3e1859ef27f950">ccExternalFactory::Container::SetUniqueInstance</a></div><div class="ttdeci">static void SetUniqueInstance(Container::Shared container)</div><div class="ttdoc">Sets the unqiue static instance of the external factories container.</div></div>
 <div class="ttc" id="aclassccExternalFactory_1_1Container_html_aeae1d1f908ecc6316f6d757383b024b3"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#aeae1d1f908ecc6316f6d757383b024b3">ccExternalFactory::Container::m_factories</a></div><div class="ttdeci">QMap&lt; QString, ccExternalFactory * &gt; m_factories</div><div class="ttdoc">Set of factories.</div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00057">ecvExternalFactory.h:57</a></div></div>
 <div class="ttc" id="aclassccExternalFactory_1_1Container_html_aec892f105d954501e3f01d495480ccc4"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#aec892f105d954501e3f01d495480ccc4">ccExternalFactory::Container::Shared</a></div><div class="ttdeci">QSharedPointer&lt; Container &gt; Shared</div><div class="ttdoc">Shared pointer type.</div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00043">ecvExternalFactory.h:43</a></div></div>
-<div class="ttc" id="aclassccExternalFactory_1_1Container_html_af7ee11e278810f8b7a73c228d45d0846"><div class="ttname"><a href="classccExternalFactory_1_1Container.html#af7ee11e278810f8b7a73c228d45d0846">ccExternalFactory::Container::GetUniqueInstance</a></div><div class="ttdeci">static Container::Shared GetUniqueInstance()</div></div>
 <div class="ttc" id="aclassccExternalFactory_html"><div class="ttname"><a href="classccExternalFactory.html">ccExternalFactory</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00022">ecvExternalFactory.h:22</a></div></div>
-<div class="ttc" id="aclassccExternalFactory_html_a10d0a5d7123b98b1ebb49ededd196d80"><div class="ttname"><a href="classccExternalFactory.html#a10d0a5d7123b98b1ebb49ededd196d80">ccExternalFactory::ccExternalFactory</a></div><div class="ttdeci">ccExternalFactory(QString factoryName)</div><div class="ttdoc">Default constructor.</div></div>
 <div class="ttc" id="aclassccExternalFactory_html_a81e392c1b6502859167c0ec279b41af3"><div class="ttname"><a href="classccExternalFactory.html#a81e392c1b6502859167c0ec279b41af3">ccExternalFactory::m_factoryName</a></div><div class="ttdeci">QString m_factoryName</div><div class="ttdoc">Name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00077">ecvExternalFactory.h:77</a></div></div>
 <div class="ttc" id="aclassccExternalFactory_html_a95439e298ff421d8274e2a785f71e408"><div class="ttname"><a href="classccExternalFactory.html#a95439e298ff421d8274e2a785f71e408">ccExternalFactory::buildObject</a></div><div class="ttdeci">virtual ccHObject * buildObject(const QString &amp;metaName)=0</div><div class="ttdoc">Custom object building method.</div></div>
 <div class="ttc" id="aclassccExternalFactory_html_acf1136054f0261c95b9c4381854e3c69"><div class="ttname"><a href="classccExternalFactory.html#acf1136054f0261c95b9c4381854e3c69">ccExternalFactory::getFactoryName</a></div><div class="ttdeci">QString getFactoryName() const</div><div class="ttdoc">Returns the (unique) name of the factory.</div><div class="ttdef"><b>Definition:</b> <a href="ecvExternalFactory_8h_source.html#l00066">ecvExternalFactory.h:66</a></div></div>
@@ -168,7 +154,7 @@ $(document).ready(function(){initNavTree('ecvExternalFactory_8h_source.html','')
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvExternalFactory_8h.html">ecvExternalFactory.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

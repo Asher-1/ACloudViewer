@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structRowSetEntry.html" title=" " alt="" coords="5,5,111,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,31,116,57"/>
+<area shape="rect" id="node2" href="$classvtkCommandOptionsXMLParser.html" title=" " alt="" coords="164,5,392,32"/>
+<area shape="rect" id="node3" href="$classvtkPVXMLParser.html" title=" " alt="" coords="214,56,342,83"/>
 </map>

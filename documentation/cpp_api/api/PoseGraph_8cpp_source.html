@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PoseGraph_8h.html">pipelines/registration/PoseGraph.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
@@ -115,12 +106,12 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a4deaa900d322ce0196a8340e4df0f4fc">   17</a></span>&#160;<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a4deaa900d322ce0196a8340e4df0f4fc">PoseGraphNode::~PoseGraphNode</a>() {}</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a1f1744f85a4a09ffed4b4e743e5841bf">   19</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a1f1744f85a4a09ffed4b4e743e5841bf">PoseGraphNode::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a1f1744f85a4a09ffed4b4e743e5841bf">   19</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a1f1744f85a4a09ffed4b4e743e5841bf">PoseGraphNode::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    value[<span class="stringliteral">&quot;class_name&quot;</span>] = <span class="stringliteral">&quot;PoseGraphNode&quot;</span>;</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    value[<span class="stringliteral">&quot;version_major&quot;</span>] = 1;</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    value[<span class="stringliteral">&quot;version_minor&quot;</span>] = 0;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    Json::Value pose_object;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> pose_object;</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">EigenMatrix4dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>, pose_object)) {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    }</div>
@@ -128,7 +119,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;}</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">   32</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">PoseGraphNode::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">   32</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">PoseGraphNode::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordflow">if</span> (!value.isObject()) {</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                <span class="stringliteral">&quot;PoseGraphNode read JSON failed: unsupported json format.&quot;</span>);</div>
@@ -142,7 +133,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    }</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">const</span> Json::Value &amp;pose_object = value[<span class="stringliteral">&quot;pose&quot;</span>];</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;pose_object = value[<span class="stringliteral">&quot;pose&quot;</span>];</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">EigenMatrix4dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#a3c55baf18619795381e67f5c0f144abf">pose_</a>, pose_object)) {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    }</div>
@@ -151,7 +142,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a6ec0c2a3a7e1715fee7f7fb63c77e3b3">   53</a></span>&#160;<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a6ec0c2a3a7e1715fee7f7fb63c77e3b3">PoseGraphEdge::~PoseGraphEdge</a>() {}</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aa376be5d0f563a9e9f048e7fa485546b">   55</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aa376be5d0f563a9e9f048e7fa485546b">PoseGraphEdge::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aa376be5d0f563a9e9f048e7fa485546b">   55</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aa376be5d0f563a9e9f048e7fa485546b">PoseGraphEdge::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    value[<span class="stringliteral">&quot;class_name&quot;</span>] = <span class="stringliteral">&quot;PoseGraphEdge&quot;</span>;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    value[<span class="stringliteral">&quot;version_major&quot;</span>] = 1;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    value[<span class="stringliteral">&quot;version_minor&quot;</span>] = 0;</div>
@@ -160,12 +151,12 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    value[<span class="stringliteral">&quot;target_node_id&quot;</span>] = <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a2d1896e1ac782f399b3f0e98b584ee14">target_node_id_</a>;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    value[<span class="stringliteral">&quot;uncertain&quot;</span>] = <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a8db7e1a0538ed0e0579eba10adbbd83b">uncertain_</a>;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    value[<span class="stringliteral">&quot;confidence&quot;</span>] = <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#af923fd56ace27be56d76e19a5301b433">confidence_</a>;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    Json::Value transformation_object;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> transformation_object;</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">EigenMatrix4dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a18eef90fa5e256b3e2411da2eafd10c0">transformation_</a>, transformation_object)) {</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    }</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    value[<span class="stringliteral">&quot;transformation&quot;</span>] = transformation_object;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    Json::Value information_object;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> information_object;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#aa2b7bb44502977638106be0ce421d721">EigenMatrix6dToJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aee8779626fa4968b98d7581d0bdba914">information_</a>, information_object)) {</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    }</div>
@@ -173,7 +164,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;}</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">   77</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">PoseGraphEdge::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">   77</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">PoseGraphEdge::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">if</span> (!value.isObject()) {</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                <span class="stringliteral">&quot;PoseGraphEdge read JSON failed: unsupported json format.&quot;</span>);</div>
@@ -191,11 +182,11 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a2d1896e1ac782f399b3f0e98b584ee14">target_node_id_</a> = value.get(<span class="stringliteral">&quot;target_node_id&quot;</span>, -1).asInt();</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a8db7e1a0538ed0e0579eba10adbbd83b">uncertain_</a> = value.get(<span class="stringliteral">&quot;uncertain&quot;</span>, <span class="keyword">false</span>).asBool();</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#af923fd56ace27be56d76e19a5301b433">confidence_</a> = value.get(<span class="stringliteral">&quot;confidence&quot;</span>, 1.0).asDouble();</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keyword">const</span> Json::Value &amp;transformation_object = value[<span class="stringliteral">&quot;transformation&quot;</span>];</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;transformation_object = value[<span class="stringliteral">&quot;transformation&quot;</span>];</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">EigenMatrix4dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#a18eef90fa5e256b3e2411da2eafd10c0">transformation_</a>, transformation_object)) {</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    }</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">const</span> Json::Value &amp;information_object = value[<span class="stringliteral">&quot;information&quot;</span>];</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;information_object = value[<span class="stringliteral">&quot;information&quot;</span>];</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#a8dc0cd83b5aa6b6b3508a455a84f4b91">EigenMatrix6dFromJsonArray</a>(<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aee8779626fa4968b98d7581d0bdba914">information_</a>, information_object)) {</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    }</div>
@@ -206,14 +197,14 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a59ce0fadb04d97d8414e8c4f5907e3f8">  108</a></span>&#160;<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a59ce0fadb04d97d8414e8c4f5907e3f8">PoseGraph::~PoseGraph</a>() {}</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00110"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a87669e9bee235a63f2427127c15f8f6f">  110</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a87669e9bee235a63f2427127c15f8f6f">PoseGraph::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00110"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a87669e9bee235a63f2427127c15f8f6f">  110</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a87669e9bee235a63f2427127c15f8f6f">PoseGraph::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    value[<span class="stringliteral">&quot;class_name&quot;</span>] = <span class="stringliteral">&quot;PoseGraph&quot;</span>;</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    value[<span class="stringliteral">&quot;version_major&quot;</span>] = 1;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    value[<span class="stringliteral">&quot;version_minor&quot;</span>] = 0;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    Json::Value node_array;</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> node_array;</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;node : <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">nodes_</a>) {</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        Json::Value node_object;</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> node_object;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        <span class="keywordflow">if</span> (!node.ConvertToJsonValue(node_object)) {</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        }</div>
@@ -221,9 +212,9 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    }</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    value[<span class="stringliteral">&quot;nodes&quot;</span>] = node_array;</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    Json::Value edge_array;</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> edge_array;</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;edge : <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#af774a10e3f1795a9dbedacae093417ee">edges_</a>) {</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        Json::Value edge_object;</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> edge_object;</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keywordflow">if</span> (!edge.ConvertToJsonValue(edge_object)) {</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        }</div>
@@ -233,7 +224,7 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;}</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
-<div class="line"><a name="l00137"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a838d10da7eb79bce4bf0ab8c45fd567d">  137</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a838d10da7eb79bce4bf0ab8c45fd567d">PoseGraph::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00137"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a838d10da7eb79bce4bf0ab8c45fd567d">  137</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#a838d10da7eb79bce4bf0ab8c45fd567d">PoseGraph::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keywordflow">if</span> (!value.isObject()) {</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                <span class="stringliteral">&quot;PoseGraph read JSON failed: unsupported json format.&quot;</span>);</div>
@@ -247,14 +238,14 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    }</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keyword">const</span> Json::Value &amp;node_array = value[<span class="stringliteral">&quot;nodes&quot;</span>];</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;node_array = value[<span class="stringliteral">&quot;nodes&quot;</span>];</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordflow">if</span> (node_array.empty()) {</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;PoseGraph read JSON failed: empty nodes.&quot;</span>);</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    }</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">nodes_</a>.clear();</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; (int)node_array.size(); i++) {</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keyword">const</span> Json::Value &amp;node_object = node_array[i];</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;node_object = node_array[i];</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html">PoseGraphNode</a> new_node;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="keywordflow">if</span> (!new_node.<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphNode.html#ad57a59f08b49258b515e3e01a80554b9">ConvertFromJsonValue</a>(node_object)) {</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -262,14 +253,14 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#ad7486247462d5ebd03cebdd9adc217c0">nodes_</a>.push_back(new_node);</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    }</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160; </div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keyword">const</span> Json::Value &amp;edge_array = value[<span class="stringliteral">&quot;edges&quot;</span>];</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;edge_array = value[<span class="stringliteral">&quot;edges&quot;</span>];</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="keywordflow">if</span> (edge_array.empty()) {</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;PoseGraph read JSON failed: empty edges.&quot;</span>);</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    }</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraph.html#af774a10e3f1795a9dbedacae093417ee">edges_</a>.clear();</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; (int)edge_array.size(); i++) {</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="keyword">const</span> Json::Value &amp;edge_object = edge_array[i];</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;edge_object = edge_array[i];</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html">PoseGraphEdge</a> new_edge;</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="keywordflow">if</span> (!new_edge.<a class="code" href="classcloudViewer_1_1pipelines_1_1registration_1_1PoseGraphEdge.html#aedd4be20b604bf39d8e522ceec344331">ConvertFromJsonValue</a>(edge_object)) {</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -309,15 +300,15 @@ $(document).ready(function(){initNavTree('PoseGraph_8cpp_source.html',''); initR
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_ae6fd69ef2426c5ec67dd890d7fbc724c"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#ae6fd69ef2426c5ec67dd890d7fbc724c">cloudViewer::utility::IJsonConvertible::EigenMatrix4dFromJsonArray</a></div><div class="ttdeci">static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &amp;mat, const Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00108">IJsonConvertible.cpp:108</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1utility_1_1IJsonConvertible_html_af1b19a42dc0ec6d4a5fc7e5d2a992819"><div class="ttname"><a href="classcloudViewer_1_1utility_1_1IJsonConvertible.html#af1b19a42dc0ec6d4a5fc7e5d2a992819">cloudViewer::utility::IJsonConvertible::EigenMatrix4dToJsonArray</a></div><div class="ttdeci">static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &amp;mat, Json::Value &amp;value)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertible_8cpp_source.html#l00120">IJsonConvertible.cpp:120</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="avtkDistributedTrivialProducer_8cxx_html_a1ee6276fc24448fd28f1d17b9f02e438"><div class="ttname"><a href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Value</a></div><div class="ttdeci">static vtkPVTrivialProducerStaticInternal Value</div><div class="ttdef"><b>Definition:</b> <a href="vtkDistributedTrivialProducer_8cxx_source.html#l00065">vtkDistributedTrivialProducer.cxx:65</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_784bd61829a2412ab42c628faee35d7c.html">pipelines</a></li><li class="navelem"><a class="el" href="dir_afc46a377ed9a78db1dd8463c7dd44a9.html">registration</a></li><li class="navelem"><a class="el" href="PoseGraph_8cpp.html">PoseGraph.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:55 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:27 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

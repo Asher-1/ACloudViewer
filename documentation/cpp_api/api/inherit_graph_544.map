@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structcloudViewer_1_1visualization_1_1rendering_1_1LightDescription.html" title=" " alt="" coords="5,5,212,47"/>
+<area shape="rect" id="node1" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="5,5,240,47"/>
+<area shape="rect" id="node2" href="$structcolmap_1_1RadialFisheyeCameraModel.html" title=" " alt="" coords="288,5,508,47"/>
 </map>

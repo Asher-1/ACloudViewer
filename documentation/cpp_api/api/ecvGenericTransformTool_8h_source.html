@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -123,14 +114,14 @@ $(document).ready(function(){initNavTree('ecvGenericTransformTool_8h_source.html
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#a3df46686914525d55b8deac0f40b52d0aebb3d070ff0a638502cd24344b1a9a76">   30</a></span>&#160;    <span class="keyword">enum</span> <a class="code" href="classecvGenericTransformTool.html#a3df46686914525d55b8deac0f40b52d0">TranslationMOde</a> { T_X, T_Y, T_Z, T_XY, T_XZ, T_ZY, T_XYZ, T_NONE };</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#ab3fc7542c99a0f09c520ae9eb7d3cb28">   32</a></span>&#160;    <a class="code" href="classecvGenericTransformTool.html#ab3fc7542c99a0f09c520ae9eb7d3cb28">ecvGenericTransformTool</a>();</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <a class="code" href="classecvGenericTransformTool.html">ecvGenericTransformTool</a>();</div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#aa23df2d174deeaffe12396c0c77bc479">   33</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classecvGenericTransformTool.html#aa23df2d174deeaffe12396c0c77bc479">~ecvGenericTransformTool</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
 <div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#aa029a713aa738eb5e86360d2d2adeb9c">   35</a></span>&#160;    <a class="code" href="classccHObject.html">ccHObject</a>* <a class="code" href="classecvGenericTransformTool.html#aa029a713aa738eb5e86360d2d2adeb9c">getAssociatedEntity</a>() { <span class="keywordflow">return</span> m_associatedEntity; }</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#a0b073861afb15b6e6a2a8f96fe155137">   38</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classecvGenericTransformTool.html#a0b073861afb15b6e6a2a8f96fe155137">setVisualizer</a>(<a class="code" href="classecvGenericVisualizer3D.html">ecvGenericVisualizer3D</a>* viewer = <span class="keyword">nullptr</span>) = 0;</div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#ae719452e204997884e3797e51f994430">   39</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classecvGenericTransformTool.html#ae719452e204997884e3797e51f994430">setInputData</a>(<a class="code" href="classccHObject.html">ccHObject</a>* entity, <span class="keywordtype">int</span> viewport = 0);</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> setInputData(<a class="code" href="classccHObject.html">ccHObject</a>* entity, <span class="keywordtype">int</span> viewport = 0);</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classecvGenericTransformTool.html#a83c674ce171d5da647611a16b38290d4">   41</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classecvGenericTransformTool.html#a83c674ce171d5da647611a16b38290d4">showInteractor</a>(<span class="keywordtype">bool</span> state) = 0;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
@@ -176,10 +167,8 @@ $(document).ready(function(){initNavTree('ecvGenericTransformTool_8h_source.html
 <div class="ttc" id="aclassecvGenericTransformTool_html_aa1a9401ef4c857808a0c85eb8fc0da0a"><div class="ttname"><a href="classecvGenericTransformTool.html#aa1a9401ef4c857808a0c85eb8fc0da0a">ecvGenericTransformTool::setScaleEnabled</a></div><div class="ttdeci">virtual void setScaleEnabled(bool state)=0</div></div>
 <div class="ttc" id="aclassecvGenericTransformTool_html_aa23df2d174deeaffe12396c0c77bc479"><div class="ttname"><a href="classecvGenericTransformTool.html#aa23df2d174deeaffe12396c0c77bc479">ecvGenericTransformTool::~ecvGenericTransformTool</a></div><div class="ttdeci">virtual ~ecvGenericTransformTool()=default</div></div>
 <div class="ttc" id="aclassecvGenericTransformTool_html_aa34f647e3bb523ba3cabba2f60532308"><div class="ttname"><a href="classecvGenericTransformTool.html#aa34f647e3bb523ba3cabba2f60532308">ecvGenericTransformTool::setRotationMode</a></div><div class="ttdeci">virtual void setRotationMode(RotationMode mode)=0</div></div>
-<div class="ttc" id="aclassecvGenericTransformTool_html_ab3fc7542c99a0f09c520ae9eb7d3cb28"><div class="ttname"><a href="classecvGenericTransformTool.html#ab3fc7542c99a0f09c520ae9eb7d3cb28">ecvGenericTransformTool::ecvGenericTransformTool</a></div><div class="ttdeci">ecvGenericTransformTool()</div></div>
 <div class="ttc" id="aclassecvGenericTransformTool_html_adcf850f6164b349d31e14755a24dfc80"><div class="ttname"><a href="classecvGenericTransformTool.html#adcf850f6164b349d31e14755a24dfc80">ecvGenericTransformTool::start</a></div><div class="ttdeci">virtual bool start()=0</div></div>
 <div class="ttc" id="aclassecvGenericTransformTool_html_ae1889e91d9b4ffb894eb8b1297c30e7f"><div class="ttname"><a href="classecvGenericTransformTool.html#ae1889e91d9b4ffb894eb8b1297c30e7f">ecvGenericTransformTool::stop</a></div><div class="ttdeci">virtual void stop()=0</div></div>
-<div class="ttc" id="aclassecvGenericTransformTool_html_ae719452e204997884e3797e51f994430"><div class="ttname"><a href="classecvGenericTransformTool.html#ae719452e204997884e3797e51f994430">ecvGenericTransformTool::setInputData</a></div><div class="ttdeci">virtual bool setInputData(ccHObject *entity, int viewport=0)</div></div>
 <div class="ttc" id="aclassecvGenericVisualizer3D_html"><div class="ttname"><a href="classecvGenericVisualizer3D.html">ecvGenericVisualizer3D</a></div><div class="ttdoc">Generic visualizer 3D interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGenericVisualizer3D_8h_source.html#l00015">ecvGenericVisualizer3D.h:15</a></div></div>
 <div class="ttc" id="aecvGLMatrix_8h_html"><div class="ttname"><a href="ecvGLMatrix_8h.html">ecvGLMatrix.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -188,7 +177,7 @@ $(document).ready(function(){initNavTree('ecvGenericTransformTool_8h_source.html
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_498792515503267d38cb2f40cb88e5cc.html">CV_db</a></li><li class="navelem"><a class="el" href="dir_acf9243eb316eeebeeccb23100ec65ef.html">include</a></li><li class="navelem"><a class="el" href="ecvGenericTransformTool_8h.html">ecvGenericTransformTool.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:36 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

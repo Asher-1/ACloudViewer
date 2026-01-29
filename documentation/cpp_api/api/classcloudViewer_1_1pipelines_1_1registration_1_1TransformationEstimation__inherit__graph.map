@@ -1,8 +1,7 @@
 <map id="cloudViewer::pipelines::registration::TransformationEstimation" name="cloudViewer::pipelines::registration::TransformationEstimation">
-<area shape="rect" id="node1" title=" " alt="" coords="5,165,216,221"/>
-<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1PyTransformationEstimation.html" title=" " alt="" coords="264,5,587,61"/>
-<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationForColoredICP.html" title=" " alt="" coords="320,85,531,141"/>
-<area shape="rect" id="node4" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationForGeneralizedICP.html" title=" " alt="" coords="320,165,531,221"/>
-<area shape="rect" id="node5" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPlane.html" title=" " alt="" coords="320,245,531,301"/>
-<area shape="rect" id="node6" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPoint.html" title=" " alt="" coords="320,325,531,381"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,125,216,181"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationForColoredICP.html" title=" " alt="" coords="264,5,475,61"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationForGeneralizedICP.html" title=" " alt="" coords="264,85,475,141"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPlane.html" title=" " alt="" coords="264,165,475,221"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1pipelines_1_1registration_1_1TransformationEstimationPointToPoint.html" title=" " alt="" coords="264,245,475,301"/>
 </map>

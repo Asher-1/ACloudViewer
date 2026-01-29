@@ -1,4 +1,5 @@
 <map id="cloudViewer::MapperGeneralOptionsWidget" name="cloudViewer::MapperGeneralOptionsWidget">
-<area shape="rect" id="node1" title=" " alt="" coords="5,80,216,121"/>
-<area shape="rect" id="node2" title=" " alt="" coords="23,5,198,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,155,216,196"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1OptionsWidget.html" title=" " alt="" coords="23,80,198,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="71,5,150,32"/>
 </map>

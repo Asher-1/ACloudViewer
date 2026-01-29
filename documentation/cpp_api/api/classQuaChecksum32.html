@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -118,7 +109,7 @@ Inheritance diagram for QuaChecksum32:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a14d800fcfd55b2ae11ef07d3924fe0b1"><td class="memItemLeft" align="right" valign="top">virtual quint32&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classQuaChecksum32.html#a14d800fcfd55b2ae11ef07d3924fe0b1">calculate</a> (const QByteArray &amp;data)=0</td></tr>
+<tr class="memitem:a14d800fcfd55b2ae11ef07d3924fe0b1"><td class="memItemLeft" align="right" valign="top">virtual quint32&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classQuaChecksum32.html#a14d800fcfd55b2ae11ef07d3924fe0b1">calculate</a> (const QByteArray &amp;<a class="el" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>)=0</td></tr>
 <tr class="memdesc:a14d800fcfd55b2ae11ef07d3924fe0b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the checksum for data.  <a href="classQuaChecksum32.html#a14d800fcfd55b2ae11ef07d3924fe0b1">More...</a><br /></td></tr>
 <tr class="separator:a14d800fcfd55b2ae11ef07d3924fe0b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad3f5db3c76b00069db9bda333cb49d57"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classQuaChecksum32.html#ad3f5db3c76b00069db9bda333cb49d57">reset</a> ()=0</td></tr>
@@ -134,8 +125,9 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Checksum interface. </p>
 <p>This is an interface for 32 bit checksums. Classes implementing this interface can calcunate a certin checksum in a single step: </p><div class="fragment"><div class="line">QChecksum32 *crc32 = <span class="keyword">new</span> <a class="code" href="classQuaCrc32.html">QuaCrc32</a>();</div>
-<div class="line">rasoult = crc32-&gt;calculate(data);</div>
+<div class="line">rasoult = crc32-&gt;calculate(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>);</div>
 <div class="ttc" id="aclassQuaCrc32_html"><div class="ttname"><a href="classQuaCrc32.html">QuaCrc32</a></div><div class="ttdoc">CRC32 checksum.</div><div class="ttdef"><b>Definition:</b> <a href="quacrc32_8h_source.html#l00035">quacrc32.h:35</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 </div><!-- fragment --><p> or by streaming the data: </p><div class="fragment"><div class="line">QChecksum32 *crc32 = <span class="keyword">new</span> <a class="code" href="classQuaCrc32.html">QuaCrc32</a>();</div>
 <div class="line"><span class="keywordflow">while</span>(!fileA.atEnd())</div>
 <div class="line">    crc32-&gt;update(fileA.read(bufSize));</div>
@@ -278,7 +270,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classQuaChecksum32.html">QuaChecksum32</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:14 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:56 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

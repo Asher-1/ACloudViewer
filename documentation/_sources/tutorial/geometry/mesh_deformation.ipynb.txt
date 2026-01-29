@@ -5,10 +5,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:22.200479Z",
-     "iopub.status.busy": "2026-01-28T16:52:22.200009Z",
-     "iopub.status.idle": "2026-01-28T16:52:22.919215Z",
-     "shell.execute_reply": "2026-01-28T16:52:22.918577Z"
+     "iopub.execute_input": "2026-01-29T04:47:50.026268Z",
+     "iopub.status.busy": "2026-01-29T04:47:50.026081Z",
+     "iopub.status.idle": "2026-01-29T04:47:50.740280Z",
+     "shell.execute_reply": "2026-01-29T04:47:50.739714Z"
     },
     "nbsphinx": "hidden"
    },
@@ -55,10 +55,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:22.921848Z",
-     "iopub.status.busy": "2026-01-28T16:52:22.921336Z",
-     "iopub.status.idle": "2026-01-28T16:52:58.796949Z",
-     "shell.execute_reply": "2026-01-28T16:52:58.796396Z"
+     "iopub.execute_input": "2026-01-29T04:47:50.742576Z",
+     "iopub.status.busy": "2026-01-29T04:47:50.742325Z",
+     "iopub.status.idle": "2026-01-29T04:48:20.963325Z",
+     "shell.execute_reply": "2026-01-29T04:48:20.962650Z"
     }
    },
    "outputs": [
@@ -77,34 +77,22 @@
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] setting up system matrix L\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] done setting up system matrix L\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] setting up sparse solver\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] done setting up sparse solver\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=0, energy=4.199704e+03\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] done setting up sparse solver\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=0, energy=4.199704e+03\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=1, energy=1.902614e+03\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=2, energy=1.315890e+03\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=3, energy=1.004800e+03\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=4, energy=8.093277e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=5, energy=6.758838e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=6, energy=5.799616e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=7, energy=5.084363e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=8, energy=4.535642e+02\n"
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=4, energy=8.093277e+02\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=5, energy=6.758838e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=6, energy=5.799616e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=7, energy=5.084363e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=8, energy=4.535642e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=9, energy=4.104631e+02\n"
      ]
     },
@@ -112,18 +100,30 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=10, energy=3.759097e+02\n"
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=10, energy=3.759097e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=11, energy=3.477059e+02\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=11, energy=3.477059e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=12, energy=3.243156e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=12, energy=3.243156e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=13, energy=3.046429e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=14, energy=2.878899e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=15, energy=2.734642e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=15, energy=2.734642e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=16, energy=2.609177e+02\n"
      ]
     },
@@ -132,7 +132,13 @@
      "output_type": "stream",
      "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=17, energy=2.499063e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=18, energy=2.401625e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=18, energy=2.401625e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=19, energy=2.314760e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=20, energy=2.236803e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=21, energy=2.166421e+02\n"
@@ -143,23 +149,17 @@
      "output_type": "stream",
      "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=22, energy=2.102539e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=23, energy=2.044279e+02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=24, energy=1.990918e+02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=23, energy=2.044279e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=24, energy=1.990918e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=25, energy=1.941850e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=26, energy=1.896564e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=27, energy=1.854625e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=27, energy=1.854625e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=28, energy=1.815662e+02\n"
      ]
     },
@@ -167,18 +167,24 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=29, energy=1.779355e+02\n"
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=29, energy=1.779355e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=30, energy=1.745426e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=31, energy=1.713637e+02\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=30, energy=1.745426e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=31, energy=1.713637e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=32, energy=1.683781e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=33, energy=1.655677e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=34, energy=1.629167e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=34, energy=1.629167e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=35, energy=1.604115e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=36, energy=1.580397e+02\n"
      ]
@@ -187,26 +193,38 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=37, energy=1.557908e+02\n"
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=37, energy=1.557908e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=38, energy=1.536553e+02\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=38, energy=1.536553e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=39, energy=1.516247e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=40, energy=1.496916e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=41, energy=1.478494e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=42, energy=1.460920e+02\n"
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=40, energy=1.496916e+02\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=41, energy=1.478494e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=42, energy=1.460920e+02\n",
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=43, energy=1.444141e+02\n",
-      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=44, energy=1.428109e+02\n",
+      "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=44, energy=1.428109e+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "[CloudViewer DEBUG] [DeformAsRigidAsPossible] iter=45, energy=1.412780e+02\n"
      ]
     },
@@ -247,10 +265,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-01-28T16:52:58.799336Z",
-     "iopub.status.busy": "2026-01-28T16:52:58.798966Z",
-     "iopub.status.idle": "2026-01-28T16:52:59.588990Z",
-     "shell.execute_reply": "2026-01-28T16:52:59.588353Z"
+     "iopub.execute_input": "2026-01-29T04:48:20.965758Z",
+     "iopub.status.busy": "2026-01-29T04:48:20.965381Z",
+     "iopub.status.idle": "2026-01-29T04:48:21.730674Z",
+     "shell.execute_reply": "2026-01-29T04:48:21.730044Z"
     }
    },
    "outputs": [

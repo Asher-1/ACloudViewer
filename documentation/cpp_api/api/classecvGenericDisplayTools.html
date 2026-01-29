@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -116,6 +107,7 @@ Inheritance diagram for ecvGenericDisplayTools:</div>
 <area shape="rect" title="Generic display tools." alt="" coords="6,80,183,107"/>
 <area shape="rect" href="classecvDisplayTools.html" title=" " alt="" coords="31,155,158,181"/>
 <area shape="rect" href="classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="5,5,184,32"/>
+<area shape="rect" href="classPCLDisplayTools.html" title="CC to PCL cloud converter." alt="" coords="31,229,159,256"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -162,11 +154,11 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ae29ec52e92052b499fbad8dedf0358a1"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#ae29ec52e92052b499fbad8dedf0358a1">GetInstance</a> ()</td></tr>
-<tr class="separator:ae29ec52e92052b499fbad8dedf0358a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aede29462740b9c764e2c83263e7c7d73"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#aede29462740b9c764e2c83263e7c7d73">SetInstance</a> (<a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a> *tool)</td></tr>
-<tr class="separator:aede29462740b9c764e2c83263e7c7d73"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46d47aaa8198fd2a9a9849c913ae0b50"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a46d47aaa8198fd2a9a9849c913ae0b50">FontSizeModifier</a> (int fontSize, float zoomFactor)</td></tr>
+<tr class="memitem:a03349f6679239ae8fd0856d97324afb7"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a03349f6679239ae8fd0856d97324afb7">GetInstance</a> ()</td></tr>
+<tr class="separator:a03349f6679239ae8fd0856d97324afb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a500593e0ece998518511447dc7f3fc9e"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a500593e0ece998518511447dc7f3fc9e">SetInstance</a> (<a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a> *tool)</td></tr>
+<tr class="separator:a500593e0ece998518511447dc7f3fc9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46d47aaa8198fd2a9a9849c913ae0b50"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a46d47aaa8198fd2a9a9849c913ae0b50">FontSizeModifier</a> (int fontSize, <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> zoomFactor)</td></tr>
 <tr class="separator:a46d47aaa8198fd2a9a9849c913ae0b50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1dad4aef26af08746471aa93ca61daa"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#ad1dad4aef26af08746471aa93ca61daa">GetPerspectiveState</a> ()</td></tr>
 <tr class="memdesc:ad1dad4aef26af08746471aa93ca61daa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns perspective mode.  <a href="classecvGenericDisplayTools.html#ad1dad4aef26af08746471aa93ca61daa">More...</a><br /></td></tr>
@@ -190,11 +182,11 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:aa54802430adbd67eaf001b67329933df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2abd04acdb26269a7ecc72fbb1b060db"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a2abd04acdb26269a7ecc72fbb1b060db">MAT</a> (const double *m, int r, int c)</td></tr>
 <tr class="separator:a2abd04acdb26269a7ecc72fbb1b060db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca9cab1025c457ae7728d647609da5c8"><td class="memItemLeft" align="right" valign="top">static float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#aca9cab1025c457ae7728d647609da5c8">MAT</a> (const float *m, int r, int c)</td></tr>
+<tr class="memitem:aca9cab1025c457ae7728d647609da5c8"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#aca9cab1025c457ae7728d647609da5c8">MAT</a> (const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *m, int r, int c)</td></tr>
 <tr class="separator:aca9cab1025c457ae7728d647609da5c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a895c4e8207bda0d493258f29954602d0"><td class="memItemLeft" align="right" valign="top">static double &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a895c4e8207bda0d493258f29954602d0">MAT</a> (double *m, int r, int c)</td></tr>
 <tr class="separator:a895c4e8207bda0d493258f29954602d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b06c8c483c152255f394b29f256928a"><td class="memItemLeft" align="right" valign="top">static float &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a4b06c8c483c152255f394b29f256928a">MAT</a> (float *m, int r, int c)</td></tr>
+<tr class="memitem:a4b06c8c483c152255f394b29f256928a"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a4b06c8c483c152255f394b29f256928a">MAT</a> (<a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *m, int r, int c)</td></tr>
 <tr class="separator:a4b06c8c483c152255f394b29f256928a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a227e0ba2f32b388a647a2f9147f20e40"><td class="memTemplParams" colspan="2">template&lt;typename Type &gt; </td></tr>
 <tr class="memitem:a227e0ba2f32b388a647a2f9147f20e40"><td class="memTemplItemLeft" align="right" valign="top">static bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a227e0ba2f32b388a647a2f9147f20e40">InvertMatrix</a> (const Type *m, Type *out)</td></tr>
@@ -202,7 +194,7 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ae7da81ea1ca402937c61224e08a066c5"><td class="memTemplParams" colspan="2">template&lt;typename iType , typename oType &gt; </td></tr>
 <tr class="memitem:ae7da81ea1ca402937c61224e08a066c5"><td class="memTemplItemLeft" align="right" valign="top">static bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#ae7da81ea1ca402937c61224e08a066c5">Unproject</a> (const <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; iType &gt; &amp;input2D, const oType *modelview, const oType *projection, const int *viewport, <a class="el" href="classVector3Tpl.html">Vector3Tpl</a>&lt; oType &gt; &amp;output3D)</td></tr>
 <tr class="separator:ae7da81ea1ca402937c61224e08a066c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a735bddf1967d1dea1d74930dd840b3af"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a735bddf1967d1dea1d74930dd840b3af">PickMatrix</a> (double x, double y, double <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>, double <a class="el" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>, int viewport[4], double m[16])</td></tr>
+<tr class="memitem:a735bddf1967d1dea1d74930dd840b3af"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classecvGenericDisplayTools.html#a735bddf1967d1dea1d74930dd840b3af">PickMatrix</a> (double <a class="el" href="my__point__types_8h.html#a3a45b2c0ffcedc2103e9bec8aeaf36b1">x</a>, double <a class="el" href="my__point__types_8h.html#a80afdb9f99c0a129c93e8bbe7b41e2dc">y</a>, double <a class="el" href="FileIOFactory_8cpp.html#a2474a5474cbff19523a51eb1de01cda4">width</a>, double <a class="el" href="FileIOFactory_8cpp.html#ad12fc34ce789bce6c8a05d8a17138534">height</a>, int viewport[4], double m[16])</td></tr>
 <tr class="separator:a735bddf1967d1dea1d74930dd840b3af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
@@ -298,6 +290,8 @@ Protected Member Functions</h2></td></tr>
 
 <p>Default constructor. </p>
 
+<p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8cpp_source.html#l00012">12</a> of file <a class="el" href="ecvGenericDisplayTools_8cpp_source.html">ecvGenericDisplayTools.cpp</a>.</p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -319,7 +313,7 @@ Protected Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
+          <td class="paramtype"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&#160;</td>
           <td class="paramname"><em>zoomFactor</em>&#160;</td>
         </tr>
         <tr>
@@ -338,6 +332,8 @@ Protected Member Functions</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00033">33</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
 <p class="reference">References <a class="el" href="MiniVec_8h_source.html#l00075">cloudViewer::utility::floor()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvDisplayTools_8cpp_source.html#l02814">ecvDisplayTools::GetFontPointSize()</a>, and <a class="el" href="ecvDisplayTools_8cpp_source.html#l02823">ecvDisplayTools::GetLabelFontPointSize()</a>.</p>
 
 </div>
 </div>
@@ -403,10 +399,12 @@ Protected Member Functions</h2></td></tr>
 
 <p class="reference">References <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00810">ccGLMatrixTpl&lt; T &gt;::data()</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="ecvDisplayTools_8cpp_source.html#l01625">ecvDisplayTools::ComputeProjectionMatrix()</a>.</p>
+
 </div>
 </div>
-<a id="ae29ec52e92052b499fbad8dedf0358a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae29ec52e92052b499fbad8dedf0358a1">&#9670;&nbsp;</a></span>GetInstance()</h2>
+<a id="a03349f6679239ae8fd0856d97324afb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03349f6679239ae8fd0856d97324afb7">&#9670;&nbsp;</a></span>GetInstance()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -415,7 +413,7 @@ Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static <a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a>* ecvGenericDisplayTools::GetInstance </td>
+          <td class="memname"><a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a> * ecvGenericDisplayTools::GetInstance </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -427,6 +425,10 @@ Protected Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8cpp_source.html#l00018">18</a> of file <a class="el" href="ecvGenericDisplayTools_8cpp_source.html">ecvGenericDisplayTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvGenericDisplayTools_8cpp_source.html#l00010">s_genericTools</a>.</p>
 
 </div>
 </div>
@@ -459,7 +461,7 @@ Protected Member Functions</h2></td></tr>
 
 <p class="reference">References <a class="el" href="Runtime_8cpp_source.html#l00072">Runtime::GetInstance()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="ccDisplayTools_8cpp_source.html#l00021">define_ccDisplayTools()</a>, <a class="el" href="ModelViewerWidget_8cpp_source.html#l00200">cloudViewer::ModelViewerWidget::GetProjectionType()</a>, and <a class="el" href="MainWindow_8cpp_source.html#l01888">MainWindow::updateViewModePopUpMenu()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="ccDisplayTools_8cpp_source.html#l00021">define_ccDisplayTools()</a>, <a class="el" href="ModelViewerWidget_8cpp_source.html#l00200">cloudViewer::ModelViewerWidget::GetProjectionType()</a>, <a class="el" href="ecvCameraParamEditDlg_8cpp_source.html#l00325">ecvCameraParamEditDlg::updateViewMode()</a>, and <a class="el" href="MainWindow_8cpp_source.html#l01888">MainWindow::updateViewModePopUpMenu()</a>.</p>
 
 </div>
 </div>
@@ -587,9 +589,9 @@ template&lt;typename Type &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static float ecvGenericDisplayTools::MAT </td>
+          <td class="memname">static <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> ecvGenericDisplayTools::MAT </td>
           <td>(</td>
-          <td class="paramtype">const float *&#160;</td>
+          <td class="paramtype">const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *&#160;</td>
           <td class="paramname"><em>m</em>, </td>
         </tr>
         <tr>
@@ -675,9 +677,9 @@ template&lt;typename Type &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static float&amp; ecvGenericDisplayTools::MAT </td>
+          <td class="memname">static <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>&amp; ecvGenericDisplayTools::MAT </td>
           <td>(</td>
-          <td class="paramtype">float *&#160;</td>
+          <td class="paramtype"><a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *&#160;</td>
           <td class="paramname"><em>m</em>, </td>
         </tr>
         <tr>
@@ -770,6 +772,8 @@ template&lt;typename Type &gt; </div>
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00174">174</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
 <p class="reference">References <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00810">ccGLMatrixTpl&lt; T &gt;::data()</a>, and <a class="el" href="ecvGLMatrixTpl_8h_source.html#l00622">ccGLMatrixTpl&lt; T &gt;::toIdentity()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvDisplayTools_8cpp_source.html#l01625">ecvDisplayTools::ComputeProjectionMatrix()</a>.</p>
 
 </div>
 </div>
@@ -931,7 +935,7 @@ template&lt;typename Type &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00519">519</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
-<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, and <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>.</p>
+<p class="reference">References <a class="el" href="FileIOFactory_8cpp_source.html#l00143">height</a>, <a class="el" href="FileIOFactory_8cpp_source.html#l00142">width</a>, <a class="el" href="my__point__types_8h_source.html#l00165">x</a>, and <a class="el" href="my__point__types_8h_source.html#l00168">y</a>.</p>
 
 </div>
 </div>
@@ -997,12 +1001,12 @@ template&lt;typename iType , typename oType &gt; </div>
 
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00245">245</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
-<p class="reference">References <a class="el" href="cutil__math_8h_source.html#l01267">abs()</a>, <a class="el" href="Runtime_8cpp_source.html#l00072">Runtime::GetInstance()</a>, <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::w</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::y</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>, and <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::z</a>.</p>
+<p class="reference">References <a class="el" href="Runtime_8cpp_source.html#l00072">Runtime::GetInstance()</a>, <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::w</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::x</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::y</a>, <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::y</a>, <a class="el" href="CVGeom_8h_source.html#l00137">Tuple3Tpl&lt; Type &gt;::z</a>, and <a class="el" href="CVGeom_8h_source.html#l00653">Tuple4Tpl&lt; Type &gt;::z</a>.</p>
 
 </div>
 </div>
-<a id="aede29462740b9c764e2c83263e7c7d73"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aede29462740b9c764e2c83263e7c7d73">&#9670;&nbsp;</a></span>SetInstance()</h2>
+<a id="a500593e0ece998518511447dc7f3fc9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a500593e0ece998518511447dc7f3fc9e">&#9670;&nbsp;</a></span>SetInstance()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1011,7 +1015,7 @@ template&lt;typename iType , typename oType &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void ecvGenericDisplayTools::SetInstance </td>
+          <td class="memname">void ecvGenericDisplayTools::SetInstance </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a> *&#160;</td>
           <td class="paramname"><em>tool</em></td><td>)</td>
@@ -1024,6 +1028,12 @@ template&lt;typename iType , typename oType &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8cpp_source.html#l00014">14</a> of file <a class="el" href="ecvGenericDisplayTools_8cpp_source.html">ecvGenericDisplayTools.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvGenericDisplayTools_8cpp_source.html#l00010">s_genericTools</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvDisplayTools_8cpp_source.html#l00102">ecvDisplayTools::Init()</a>.</p>
 
 </div>
 </div>
@@ -1060,6 +1070,8 @@ template&lt;typename iType , typename oType &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classPCLDisplayTools.html#abc8eeb4917316e42db19a2050b0b9a74">PCLDisplayTools</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00073">73</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
@@ -1098,6 +1110,8 @@ template&lt;typename iType , typename oType &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classPCLDisplayTools.html#afe118c0430b3fedb8e3da98efc34b96e">PCLDisplayTools</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00068">68</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
@@ -1179,6 +1193,8 @@ template&lt;typename iType , typename oType &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Reimplemented in <a class="el" href="classPCLDisplayTools.html#aef6264dd72f6e42e34399937c0645be9">PCLDisplayTools</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00060">60</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
 </div>
@@ -1217,7 +1233,11 @@ template&lt;typename iType , typename oType &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Reimplemented in <a class="el" href="classPCLDisplayTools.html#a4a1c3155349ed0c1b27c1b9c09acb975">PCLDisplayTools</a>.</p>
+
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00056">56</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="cc2sm_8cpp_source.html#l01538">cc2smReader::getPclPolygon()</a>.</p>
 
 </div>
 </div>
@@ -1260,6 +1280,8 @@ template&lt;typename iType , typename oType &gt; </div>
 <p class="definition">Definition at line <a class="el" href="ecvGenericDisplayTools_8h_source.html#l00051">51</a> of file <a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a>.</p>
 
 <p class="reference">References <a class="el" href="Runtime_8cpp_source.html#l00072">Runtime::GetInstance()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvDisplayTools_8cpp_source.html#l03376">ecvDisplayTools::RenderText()</a>.</p>
 
 </div>
 </div>
@@ -1323,8 +1345,9 @@ template&lt;typename iType , typename oType &gt; </div>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/libs/CV_db/include/<a class="el" href="ecvGenericDisplayTools_8h_source.html">ecvGenericDisplayTools.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/src/<a class="el" href="ecvGenericDisplayTools_8cpp_source.html">ecvGenericDisplayTools.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -1332,7 +1355,7 @@ template&lt;typename iType , typename oType &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classecvGenericDisplayTools.html">ecvGenericDisplayTools</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

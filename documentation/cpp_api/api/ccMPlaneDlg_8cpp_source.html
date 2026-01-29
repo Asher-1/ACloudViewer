@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -290,7 +281,7 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordflow">return</span> deleteButton;</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;}</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
-<div class="line"><a name="l00194"></a><span class="lineno"><a class="line" href="classccMPlaneDlg.html#a536548d7304c2c9cb8f06a7f3d614043">  194</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccMPlaneDlg.html#a536548d7304c2c9cb8f06a7f3d614043">ccMPlaneDlg::addFittingPoint</a>(<span class="keywordtype">int</span> rowIndex, <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> &amp;<a class="code" href="structpoint.html">point</a>) {</div>
+<div class="line"><a name="l00194"></a><span class="lineno"><a class="line" href="classccMPlaneDlg.html#a536548d7304c2c9cb8f06a7f3d614043">  194</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccMPlaneDlg.html#a536548d7304c2c9cb8f06a7f3d614043">ccMPlaneDlg::addFittingPoint</a>(<span class="keywordtype">int</span> rowIndex, <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3</a> &amp;point) {</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    m_pointTableWidget-&gt;horizontalHeader()-&gt;setSectionResizeMode(</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            QHeaderView::ResizeToContents);</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160; </div>
@@ -305,15 +296,15 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            rowIndex, <span class="keyword">new</span> QTableWidgetItem(QString(<span class="stringliteral">&quot;Point %1&quot;</span>).arg(rowIndex)));</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    QTableWidgetItem *xItem = itemPrefab.clone();</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    xItem-&gt;setText(QString::number(<a class="code" href="structpoint.html">point</a>.<a class="code" href="structpoint.html#ad679b07fb69d55f5ad454d0f1f2891d5">x</a>, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    xItem-&gt;setText(QString::number(point.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    m_pointTableWidget-&gt;setItem(rowIndex, 0, xItem);</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    QTableWidgetItem *yItem = itemPrefab.clone();</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    yItem-&gt;setText(QString::number(<a class="code" href="structpoint.html">point</a>.<a class="code" href="structpoint.html#a9a82ca9504acabb1e30569f89c805471">y</a>, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    yItem-&gt;setText(QString::number(point.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    m_pointTableWidget-&gt;setItem(rowIndex, 1, yItem);</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160; </div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    QTableWidgetItem *zItem = itemPrefab.clone();</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    zItem-&gt;setText(QString::number(<a class="code" href="structpoint.html">point</a>.z, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    zItem-&gt;setText(QString::number(point.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    m_pointTableWidget-&gt;setItem(rowIndex, 2, zItem);</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160; </div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    m_pointTableWidget-&gt;setCellWidget(rowIndex, 3, createDeleteButton());</div>
@@ -339,7 +330,7 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <a class="code" href="classccMPlaneDlg.html#a6f6fd458699af05fb3dd23b66abf4767">initializeFittingPointTable</a>();</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;}</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160; </div>
-<div class="line"><a name="l00243"></a><span class="lineno"><a class="line" href="classccMPlaneDlg.html#ab4af4fe658266110a517024d6b4a2be7">  243</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccMPlaneDlg.html#ab4af4fe658266110a517024d6b4a2be7">ccMPlaneDlg::addMeasurementPoint</a>(<span class="keyword">const</span> QString &amp;<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <span class="keywordtype">float</span> distance) {</div>
+<div class="line"><a name="l00243"></a><span class="lineno"><a class="line" href="classccMPlaneDlg.html#ab4af4fe658266110a517024d6b4a2be7">  243</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="classccMPlaneDlg.html#ab4af4fe658266110a517024d6b4a2be7">ccMPlaneDlg::addMeasurementPoint</a>(<span class="keyword">const</span> QString &amp;<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>, <span class="keywordtype">float</span> <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">distance</a>) {</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    QTableWidgetItem itemPrefab;</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    itemPrefab.setTextAlignment(Qt::AlignCenter);</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
@@ -353,7 +344,7 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    m_measurementTableWidget-&gt;setItem(rowCount, 0, idItem);</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160; </div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    QTableWidgetItem *distanceItem = itemPrefab.clone();</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    distanceItem-&gt;setText(QString::number(distance, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    distanceItem-&gt;setText(QString::number(<a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">distance</a>, <span class="charliteral">&#39;f&#39;</span>, 3));</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    distanceItem-&gt;setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    m_measurementTableWidget-&gt;setItem(rowCount, 1, distanceItem);</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    m_measurementTableWidget-&gt;selectRow(rowCount);</div>
@@ -427,6 +418,9 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;}</div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
 <div class="ttc" id="accMPlaneDlg_8h_html"><div class="ttname"><a href="ccMPlaneDlg_8h.html">ccMPlaneDlg.h</a></div></div>
+<div class="ttc" id="aclassTuple3Tpl_html_a64cc8e49fc845aff7a2a0592c5610447"><div class="ttname"><a href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">Tuple3Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
+<div class="ttc" id="aclassTuple3Tpl_html_ac8d05ce413d7659429e2e7243b8a8257"><div class="ttname"><a href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">Tuple3Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
+<div class="ttc" id="aclassTuple3Tpl_html_aea57f32b7c87f9388205c027216ba132"><div class="ttname"><a href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">Tuple3Tpl::z</a></div><div class="ttdeci">Type z</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00137">CVGeom.h:137</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccMPlaneDlg_html_a0ad920530bc10665ee64855037ee2440"><div class="ttname"><a href="classccMPlaneDlg.html#a0ad920530bc10665ee64855037ee2440">ccMPlaneDlg::onMeasurementPointNameChanged</a></div><div class="ttdeci">void onMeasurementPointNameChanged(QTableWidgetItem *item)</div><div class="ttdef"><b>Definition:</b> <a href="ccMPlaneDlg_8cpp_source.html#l00326">ccMPlaneDlg.cpp:326</a></div></div>
 <div class="ttc" id="aclassccMPlaneDlg_html_a0e4b48f2c12bdcc0b0cd8131025134fd"><div class="ttname"><a href="classccMPlaneDlg.html#a0e4b48f2c12bdcc0b0cd8131025134fd">ccMPlaneDlg::onTabChanged</a></div><div class="ttdeci">void onTabChanged(int tab)</div><div class="ttdef"><b>Definition:</b> <a href="ccMPlaneDlg_8cpp_source.html#l00305">ccMPlaneDlg.cpp:305</a></div></div>
@@ -454,18 +448,16 @@ $(document).ready(function(){initNavTree('ccMPlaneDlg_8cpp_source.html',''); ini
 <div class="ttc" id="aclassccMPlaneDlg_html_af35ff08901f9d037021dfc30f6918d47"><div class="ttname"><a href="classccMPlaneDlg.html#af35ff08901f9d037021dfc30f6918d47">ccMPlaneDlg::signalCloseButtonPressed</a></div><div class="ttdeci">void signalCloseButtonPressed()</div></div>
 <div class="ttc" id="aclassccMPlaneDlg_html_afc24a8d3ff7fda9d45abe84b6d35e139"><div class="ttname"><a href="classccMPlaneDlg.html#afc24a8d3ff7fda9d45abe84b6d35e139">ccMPlaneDlg::signalMeasurementModeChanged</a></div><div class="ttdeci">void signalMeasurementModeChanged()</div></div>
 <div class="ttc" id="aclassccOverlayDialog_html"><div class="ttname"><a href="classccOverlayDialog.html">ccOverlayDialog</a></div><div class="ttdoc">Generic overlay dialog interface.</div><div class="ttdef"><b>Definition:</b> <a href="ecvOverlayDialog_8h_source.html#l00017">ecvOverlayDialog.h:17</a></div></div>
-<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
+<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="sfEditDlg_8h_source.html#l00016">sfEditDlg.h:16</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_ae430a5de18ca81ff5600530347e7d0fa"><div class="ttname"><a href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">Utils::distance</a></div><div class="ttdeci">static double distance(T *pot1, T *pot2)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00111">utils.h:111</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_html_ad61cfbd5fab94dee7b1b685d960355fa"><div class="ttname"><a href="namespacecloudViewer_1_1core.html#ad61cfbd5fab94dee7b1b685d960355fa">cloudViewer::core::Minimum</a></div><div class="ttdeci">Tensor Minimum(const Tensor &amp;input, const Tensor &amp;other)</div><div class="ttdoc">Computes the element-wise minimum of input and other. The tensors must have same data type and device...</div><div class="ttdef"><b>Definition:</b> <a href="TensorFunction_8cpp_source.html#l00136">TensorFunction.cpp:136</a></div></div>
-<div class="ttc" id="astructpoint_html"><div class="ttname"><a href="structpoint.html">point</a></div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
-<div class="ttc" id="astructpoint_html_a9a82ca9504acabb1e30569f89c805471"><div class="ttname"><a href="structpoint.html#a9a82ca9504acabb1e30569f89c805471">point::y</a></div><div class="ttdeci">int y</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
-<div class="ttc" id="astructpoint_html_ad679b07fb69d55f5ad454d0f1f2891d5"><div class="ttname"><a href="structpoint.html#ad679b07fb69d55f5ad454d0f1f2891d5">point::x</a></div><div class="ttdeci">int x</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00149">lsd.c:149</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_ce629cbf5f85d13a133a531751423446.html">qMPlane</a></li><li class="navelem"><a class="el" href="dir_da5442ed587cf661d9135e485e58e5ce.html">src</a></li><li class="navelem"><a class="el" href="ccMPlaneDlg_8cpp.html">ccMPlaneDlg.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

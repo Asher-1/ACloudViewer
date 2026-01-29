@@ -25,7 +25,7 @@ var classccWaveform =
     [ "setEchoTime_ps", "classccWaveform.html#afb445195515b66c50f9e996ee7d03aac", null ],
     [ "setReturnIndex", "classccWaveform.html#a2045d637ba55138a3f02dc40c558c2bc", null ],
     [ "toASCII", "classccWaveform.html#a304e84d2ce76305c62e9944bd0197895", null ],
-    [ "ToASCII", "classccWaveform.html#ae88d80c10479520e8d2e1d2b9c20735e", null ],
+    [ "ToASCII", "classccWaveform.html#aa543faa6c8e07338aa47ad509dc56b00", null ],
     [ "toFile", "classccWaveform.html#adb6d73acaf2a75b505e38b5a8b5457e9", null ],
     [ "m_beamDir", "classccWaveform.html#a953f923f85c64c54aaf2f3be567386ee", null ],
     [ "m_byteCount", "classccWaveform.html#a1b00490872080ef7e4db4c4fd4bb05bd", null ],

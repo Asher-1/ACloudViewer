@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ViewTrajectory_8h.html">visualization/visualizer/ViewTrajectory.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;Eigen/Dense&gt;</span></div>
@@ -195,15 +186,15 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        }</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <span class="comment">// Solve the linear system</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        Eigen::VectorXd x = llt_solver.solve(b);</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        Eigen::VectorXd <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = llt_solver.solve(b);</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; n; i++) {</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <span class="keywordtype">int</span> i1 = (i + 1) % n;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 1) = x(i);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 1) = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(i);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 2) = 3.0 * (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i1](k, 0) - <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 0)) -</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                              2.0 * x(i) - x(i1);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                              2.0 * <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(i) - <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(i1);</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 3) =</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    2.0 * (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 0) - <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i1](k, 0)) + x(i) + x(i1);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                    2.0 * (<a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i](k, 0) - <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a4166223f6aabf97e5af93170b6a606c7">coeff_</a>[i1](k, 0)) + <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(i) + <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>(i1);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        }</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    }</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;}</div>
@@ -225,10 +216,10 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="keywordflow">return</span> std::make_tuple(<span class="keyword">true</span>, status);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;}</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
-<div class="line"><a name="l00129"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a624caaa589f0f851d89785b72c967921">  129</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a624caaa589f0f851d89785b72c967921">ViewTrajectory::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    Json::Value trajectory_array;</div>
+<div class="line"><a name="l00129"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a624caaa589f0f851d89785b72c967921">  129</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a624caaa589f0f851d89785b72c967921">ViewTrajectory::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> trajectory_array;</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;status : <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a730a750e741cb4ebeaa7ba4598c03410">view_status_</a>) {</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        Json::Value status_object;</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> status_object;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <span class="keywordflow">if</span> (!status.ConvertToJsonValue(status_object)) {</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        }</div>
@@ -243,7 +234,7 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;}</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160; </div>
-<div class="line"><a name="l00147"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a861bc627471cc566112d4b18a3008050">  147</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a861bc627471cc566112d4b18a3008050">ViewTrajectory::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00147"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a861bc627471cc566112d4b18a3008050">  147</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a861bc627471cc566112d4b18a3008050">ViewTrajectory::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <span class="keywordflow">if</span> (!value.isObject()) {</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;                <span class="stringliteral">&quot;ViewTrajectory read JSON failed: unsupported json format.&quot;</span>);</div>
@@ -258,7 +249,7 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    }</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#aa29c506da6ab240c6655dfb304b17da5">is_loop_</a> = value.get(<span class="stringliteral">&quot;is_loop&quot;</span>, <span class="keyword">false</span>).asBool();</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#ab0c46d0af399e69c367dc2d8b13314ad">interval_</a> = value.get(<span class="stringliteral">&quot;interval&quot;</span>, 29).asInt();</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keyword">const</span> Json::Value &amp;trajectory_array = value[<span class="stringliteral">&quot;trajectory&quot;</span>];</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;trajectory_array = value[<span class="stringliteral">&quot;trajectory&quot;</span>];</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="keywordflow">if</span> (trajectory_array.empty()) {</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                <span class="stringliteral">&quot;ViewTrajectory read JSON failed: empty trajectory.&quot;</span>);</div>
@@ -266,7 +257,7 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    }</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <a class="code" href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#a730a750e741cb4ebeaa7ba4598c03410">view_status_</a>.resize(trajectory_array.size());</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; (int)trajectory_array.size(); i++) {</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        <span class="keyword">const</span> Json::Value &amp;status_object = trajectory_array[i];</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        <span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;status_object = trajectory_array[i];</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <a class="code" href="classcloudViewer_1_1visualization_1_1ViewParameters.html">ViewParameters</a> status;</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="keywordflow">if</span> (!status.<a class="code" href="classcloudViewer_1_1visualization_1_1ViewParameters.html#afa8d9287e5f6a9a9ba9fa3e7432600aa">ConvertFromJsonValue</a>(status_object)) {</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -297,15 +288,16 @@ $(document).ready(function(){initNavTree('ViewTrajectory_8cpp_source.html',''); 
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1ViewTrajectory_html_ab0ccbdef50036d22a4beb9f9a4ea68af"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#ab0ccbdef50036d22a4beb9f9a4ea68af">cloudViewer::visualization::ViewTrajectory::INTERVAL_STEP</a></div><div class="ttdeci">static const int INTERVAL_STEP</div><div class="ttdef"><b>Definition:</b> <a href="ViewTrajectory_8h_source.html#l00025">ViewTrajectory.h:25</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1ViewTrajectory_html_af46686a3c911b2db807f02f5d1237bcc"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1ViewTrajectory.html#af46686a3c911b2db807f02f5d1237bcc">cloudViewer::visualization::ViewTrajectory::ComputeInterpolationCoefficients</a></div><div class="ttdeci">void ComputeInterpolationCoefficients()</div><div class="ttdef"><b>Definition:</b> <a href="ViewTrajectory_8cpp_source.html#l00024">ViewTrajectory.cpp:24</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="avtkDistributedTrivialProducer_8cxx_html_a1ee6276fc24448fd28f1d17b9f02e438"><div class="ttname"><a href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Value</a></div><div class="ttdeci">static vtkPVTrivialProducerStaticInternal Value</div><div class="ttdef"><b>Definition:</b> <a href="vtkDistributedTrivialProducer_8cxx_source.html#l00065">vtkDistributedTrivialProducer.cxx:65</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="ViewTrajectory_8cpp.html">ViewTrajectory.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

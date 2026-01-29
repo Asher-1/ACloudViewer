@@ -1,4 +1,7 @@
 <map id="/root/ACloudViewer/libs/CV_db/include/ecvGenericAnnotationTool.h" name="/root/ACloudViewer/libs/CV_db/include/ecvGenericAnnotationTool.h">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,213,61"/>
-<area shape="rect" id="node2" href="$ecvAnnotationsTool_8cpp.html" title=" " alt="" coords="5,109,213,151"/>
+<area shape="rect" id="node1" title=" " alt="" coords="231,5,439,61"/>
+<area shape="rect" id="node2" href="$ecvAnnotationsTool_8cpp.html" title=" " alt="" coords="5,124,213,165"/>
+<area shape="rect" id="node3" href="$ecvGenericAnnotationTool_8cpp.html" title=" " alt="" coords="237,117,432,173"/>
+<area shape="rect" id="node4" href="$PclAnnotationTool_8h.html" title=" " alt="" coords="456,109,680,180"/>
+<area shape="rect" id="node5" href="$PclAnnotationTool_8cpp.html" title=" " alt="" coords="456,228,680,299"/>
 </map>

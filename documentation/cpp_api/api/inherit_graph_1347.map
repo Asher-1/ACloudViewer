@@ -1,3 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structTable.html" title=" " alt="" coords="5,5,61,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,56,168,83"/>
+<area shape="rect" id="node2" href="$classVtkUtils_1_1DoubleSpinBoxDelegate.html" title=" " alt="" coords="216,5,456,32"/>
+<area shape="rect" id="node3" href="$classccColorStyledDelegate.html" title=" " alt="" coords="251,56,421,83"/>
+<area shape="rect" id="node4" href="$classccPropertiesTreeDelegate.html" title="GUI properties list dialog element." alt="" coords="242,107,430,133"/>
 </map>

@@ -1,10 +1,10 @@
 var dir_d422163b96683743ed3963d4aac17747 =
 [
     [ "db_tree", "dir_119119a2f403430a374e03f7d81cfb20.html", "dir_119119a2f403430a374e03f7d81cfb20" ],
+    [ "extern", "dir_4a20be9178f9fc028d1c7d9ce1e56b74.html", "dir_4a20be9178f9fc028d1c7d9ce1e56b74" ],
     [ "pluginManager", "dir_e549e7756c34a0fadeed2393ed595e33.html", "dir_e549e7756c34a0fadeed2393ed595e33" ],
     [ "QSimpleUpdater", "dir_58ba022c201de9d1274ebc144ceba4a6.html", "dir_58ba022c201de9d1274ebc144ceba4a6" ],
     [ "reconstruction", "dir_67526aa5542316903cde4bb6271ab0d0.html", "dir_67526aa5542316903cde4bb6271ab0d0" ],
-    [ "Resources", "dir_9672054d1388f953ea73720b75e1c13e.html", "dir_9672054d1388f953ea73720b75e1c13e" ],
     [ "ecv2.5DimEditor.cpp", "ecv2_85DimEditor_8cpp.html", null ],
     [ "ecv2.5DimEditor.h", "ecv2_85DimEditor_8h.html", [
       [ "cc2Point5DimEditor", "classcc2Point5DimEditor.html", "classcc2Point5DimEditor" ]

@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -183,7 +174,7 @@ Protected Attributes</h2></td></tr>
 <div class="line"><span class="keyword">auto</span>* modalShortcut = <span class="keyword">new</span> <a class="code" href="classecvModalShortcut.html#a45bcf297d9a039c8ecbfacebe2bee64d">ecvModalShortcut</a>(</div>
 <div class="line">    QKeySequence(Qt::Key_S), myAction, myWidget);</div>
 <div class="line">modalShortcut-&gt;setEnabled(<span class="keyword">true</span>);</div>
-<div class="ttc" id="aclassecvModalShortcut_html_a45bcf297d9a039c8ecbfacebe2bee64d"><div class="ttname"><a href="classecvModalShortcut.html#a45bcf297d9a039c8ecbfacebe2bee64d">ecvModalShortcut::ecvModalShortcut</a></div><div class="ttdeci">ecvModalShortcut(const QKeySequence &amp;key, QAction *action=nullptr, QWidget *parent=nullptr)</div></div>
+<div class="ttc" id="aclassecvModalShortcut_html_a45bcf297d9a039c8ecbfacebe2bee64d"><div class="ttname"><a href="classecvModalShortcut.html#a45bcf297d9a039c8ecbfacebe2bee64d">ecvModalShortcut::ecvModalShortcut</a></div><div class="ttdeci">ecvModalShortcut(const QKeySequence &amp;key, QAction *action=nullptr, QWidget *parent=nullptr)</div><div class="ttdef"><b>Definition:</b> <a href="ecvModalShortcut_8cpp_source.html#l00018">ecvModalShortcut.cpp:18</a></div></div>
 </div><!-- fragment --> 
 <p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8h_source.html#l00043">43</a> of file <a class="el" href="ecvModalShortcut_8h_source.html">ecvModalShortcut.h</a>.</p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
@@ -227,6 +218,10 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8cpp_source.html#l00039">39</a> of file <a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvModalShortcut_8h_source.html#l00122">m_shortcut</a>, and <a class="el" href="classecvModalShortcut.html#a24c91a50138dd4148ed02405cad72abe">unregister()</a>.</p>
+
 </div>
 </div>
 <a id="a45bcf297d9a039c8ecbfacebe2bee64d"></a>
@@ -268,7 +263,11 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Constructor (protected - use <a class="el" href="classecvKeySequences.html#a5c4fdba3678364244309ea4357c3b266">ecvKeySequences::addModalShortcut()</a>). </p>
+<p>Constructor (protected - use <a class="el" href="classecvKeySequences.html#a96454331cf39ce2e4cdb3d10fa055da6">ecvKeySequences::addModalShortcut()</a>). </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8cpp_source.html#l00018">18</a> of file <a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classecvModalShortcut.html#a0d17b5dcc6cd5a4973f9b39b75f55d28">activated()</a>, <a class="el" href="ecvModalShortcut_8h_source.html#l00123">m_action</a>, and <a class="el" href="ecvModalShortcut_8h_source.html#l00122">m_shortcut</a>.</p>
 
 </div>
 </div>
@@ -297,6 +296,8 @@ Protected Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Invoked when the key sequence is pressed. </p>
 
+<p class="reference">Referenced by <a class="el" href="cvPointPickingHelper_8cpp_source.html#l00047">cvPointPickingHelper::cvPointPickingHelper()</a>, <a class="el" href="ecvModalShortcut_8cpp_source.html#l00018">ecvModalShortcut()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">setContextWidget()</a>.</p>
+
 </div>
 </div>
 <a id="abf196c3571305e8d562e93fb6ee0e8ac"></a>
@@ -323,6 +324,8 @@ Protected Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Called from <a class="el" href="classecvModalShortcut.html#a0dbaa35fc19481f2935fbf28e47c05d9">setEnabled()</a> whenever it is passed false.</p>
 <p>This may be used by widgets to update their visual state, indicating they are no longer accepting shortcuts. </p>
+
+<p class="reference">Referenced by <a class="el" href="ecvShortcutDecorator_8cpp_source.html#l00041">ecvShortcutDecorator::addShortcut()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00111">setEnabled()</a>.</p>
 
 </div>
 </div>
@@ -352,6 +355,8 @@ Protected Attributes</h2></td></tr>
 <p>This is used by <a class="el" href="classecvKeySequences.html" title="Manage key sequences used for shortcuts.">ecvKeySequences</a> to disable any sibling shortcuts with the same keysequence.</p>
 <p>This may also be used by widgets to update their visual state, indicating they are now accepting shortcuts. </p>
 
+<p class="reference">Referenced by <a class="el" href="ecvKeySequences_8cpp_source.html#l00083">ecvKeySequences::addModalShortcut()</a>, <a class="el" href="ecvShortcutDecorator_8cpp_source.html#l00041">ecvShortcutDecorator::addShortcut()</a>, <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">setContextWidget()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00111">setEnabled()</a>.</p>
+
 </div>
 </div>
 <a id="aa7164cc7346c5a53f2fd5ff8b3a87833"></a>
@@ -370,6 +375,12 @@ Protected Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Check if the shortcut is currently enabled. </p>
 
+<p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8cpp_source.html#l00106">106</a> of file <a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvModalShortcut_8h_source.html#l00122">m_shortcut</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvKeySequences_8cpp_source.html#l00123">ecvKeySequences::reorder()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">setContextWidget()</a>.</p>
+
 </div>
 </div>
 <a id="abb767f7c7c3e4f62124a9487f7cce0c3"></a>
@@ -387,6 +398,12 @@ Protected Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Get the key sequence this shortcut responds to. </p>
+
+<p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8cpp_source.html#l00144">144</a> of file <a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="ecvModalShortcut_8h_source.html#l00121">m_key</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvShortcutDecorator_8cpp_source.html#l00041">ecvShortcutDecorator::addShortcut()</a>, and <a class="el" href="ecvKeySequences_8cpp_source.html#l00123">ecvKeySequences::reorder()</a>.</p>
 
 </div>
 </div>
@@ -424,6 +441,10 @@ Protected Attributes</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">45</a> of file <a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classecvModalShortcut.html#a0d17b5dcc6cd5a4973f9b39b75f55d28">activated()</a>, <a class="el" href="classecvModalShortcut.html#a228daced9f18e474258c3791b6438303">enabled()</a>, <a class="el" href="ecvModalShortcut_8cpp_source.html#l00106">isEnabled()</a>, <a class="el" href="ecvModalShortcut_8h_source.html#l00123">m_action</a>, <a class="el" href="ecvModalShortcut_8h_source.html#l00121">m_key</a>, and <a class="el" href="ecvModalShortcut_8h_source.html#l00122">m_shortcut</a>.</p>
+
 </div>
 </div>
 <a id="a0dbaa35fc19481f2935fbf28e47c05d9"></a>
@@ -460,6 +481,10 @@ Protected Attributes</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8cpp_source.html#l00111">111</a> of file <a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a>.</p>
+
+<p class="reference">References <a class="el" href="classecvModalShortcut.html#abf196c3571305e8d562e93fb6ee0e8ac">disabled()</a>, <a class="el" href="classecvModalShortcut.html#a228daced9f18e474258c3791b6438303">enabled()</a>, and <a class="el" href="ecvModalShortcut_8h_source.html#l00122">m_shortcut</a>.</p>
+
 </div>
 </div>
 <a id="a24c91a50138dd4148ed02405cad72abe"></a>
@@ -487,6 +512,8 @@ Protected Attributes</h2></td></tr>
 <p>Called from the destructor.</p>
 <p>This is used by <a class="el" href="classecvKeySequences.html" title="Manage key sequences used for shortcuts.">ecvKeySequences</a> to clean its records. </p>
 
+<p class="reference">Referenced by <a class="el" href="ecvKeySequences_8cpp_source.html#l00083">ecvKeySequences::addModalShortcut()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00039">~ecvModalShortcut()</a>.</p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -512,6 +539,8 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8h_source.html#l00123">123</a> of file <a class="el" href="ecvModalShortcut_8h_source.html">ecvModalShortcut.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="ecvModalShortcut_8cpp_source.html#l00018">ecvModalShortcut()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">setContextWidget()</a>.</p>
+
 </div>
 </div>
 <a id="a95261a38672f65dba010e92b3fcd21b7"></a>
@@ -535,6 +564,8 @@ Protected Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8h_source.html#l00121">121</a> of file <a class="el" href="ecvModalShortcut_8h_source.html">ecvModalShortcut.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="ecvModalShortcut_8cpp_source.html#l00144">keySequence()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">setContextWidget()</a>.</p>
 
 </div>
 </div>
@@ -560,10 +591,13 @@ Protected Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="ecvModalShortcut_8h_source.html#l00122">122</a> of file <a class="el" href="ecvModalShortcut_8h_source.html">ecvModalShortcut.h</a>.</p>
 
+<p class="reference">Referenced by <a class="el" href="ecvModalShortcut_8cpp_source.html#l00018">ecvModalShortcut()</a>, <a class="el" href="ecvModalShortcut_8cpp_source.html#l00106">isEnabled()</a>, <a class="el" href="ecvModalShortcut_8cpp_source.html#l00045">setContextWidget()</a>, <a class="el" href="ecvModalShortcut_8cpp_source.html#l00111">setEnabled()</a>, and <a class="el" href="ecvModalShortcut_8cpp_source.html#l00039">~ecvModalShortcut()</a>.</p>
+
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/root/ACloudViewer/libs/CV_db/include/Shortcuts/<a class="el" href="ecvModalShortcut_8h_source.html">ecvModalShortcut.h</a></li>
+<li>/root/ACloudViewer/libs/CV_db/src/Shortcuts/<a class="el" href="ecvModalShortcut_8cpp_source.html">ecvModalShortcut.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -571,7 +605,7 @@ Protected Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classecvModalShortcut.html">ecvModalShortcut</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:13 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

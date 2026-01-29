@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -139,7 +130,7 @@ $(document).ready(function(){initNavTree('qVoxFallTools_8cpp_source.html',''); i
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        dotProduct += direction[i] * xyView[i];</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    }</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordtype">float</span> zRot = acos(<a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(-1.0, <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(dotProduct, 1.0)));</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordtype">float</span> zRot = acos(std::max(-1.0, std::min(dotProduct, 1.0)));</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordflow">return</span> zRot;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;}</div>
@@ -182,16 +173,16 @@ $(document).ready(function(){initNavTree('qVoxFallTools_8cpp_source.html',''); i
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    }</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> n = 0; n &lt; adjacencyMatrix.size(); n++) {</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordtype">int</span> x = int(V.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>) + adjacencyMatrix[n][0];</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordtype">int</span> y = int(V.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>) + adjacencyMatrix[n][1];</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordtype">int</span> z = int(V.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>) + adjacencyMatrix[n][2];</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = int(V.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>) + adjacencyMatrix[n][0];</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = int(V.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>) + adjacencyMatrix[n][1];</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordtype">int</span> <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> = int(V.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>) + adjacencyMatrix[n][2];</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="keywordflow">if</span> (x &lt; 0 || y &lt; 0 || z &lt; 0 || x &gt;= <span class="keywordtype">int</span>(steps.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>) || y &gt;= <span class="keywordtype">int</span>(steps.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>) ||</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            z &gt;= <span class="keywordtype">int</span>(steps.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>)) {</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> &lt; 0 || <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> &lt; 0 || z &lt; 0 || x &gt;= <span class="keywordtype">int</span>(steps.<a class="code" href="classTuple3Tpl.html#ac8d05ce413d7659429e2e7243b8a8257">x</a>) || <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> &gt;= <span class="keywordtype">int</span>(steps.<a class="code" href="classTuple3Tpl.html#a64cc8e49fc845aff7a2a0592c5610447">y</a>) ||</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a> &gt;= <span class="keywordtype">int</span>(steps.<a class="code" href="classTuple3Tpl.html#aea57f32b7c87f9388205c027216ba132">z</a>)) {</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        }</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        set.push_back({x, y, z});</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        set.push_back({<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>, <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>, <a class="code" href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a>});</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    }</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordflow">return</span> set;</div>
@@ -224,17 +215,18 @@ $(document).ready(function(){initNavTree('qVoxFallTools_8cpp_source.html',''); i
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl&lt; PointCoordinateType &gt;</a></div></div>
 <div class="ttc" id="aclassccBox_html"><div class="ttname"><a href="classccBox.html">ccBox</a></div><div class="ttdoc">Box (primitive)</div><div class="ttdef"><b>Definition:</b> <a href="ecvBox_8h_source.html#l00016">ecvBox.h:16</a></div></div>
 <div class="ttc" id="aclassccGLMatrix_html"><div class="ttname"><a href="classccGLMatrix.html">ccGLMatrix</a></div><div class="ttdoc">Float version of ccGLMatrixTpl.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGLMatrix_8h_source.html#l00019">ecvGLMatrix.h:19</a></div></div>
-<div class="ttc" id="aclassccMesh_html_a6ac28dd9378e73d01d47c0295a1d71ae"><div class="ttname"><a href="classccMesh.html#a6ac28dd9378e73d01d47c0295a1d71ae">ccMesh::computePerTriangleNormals</a></div><div class="ttdeci">bool computePerTriangleNormals()</div><div class="ttdoc">Computes per-triangle normals.</div></div>
+<div class="ttc" id="aclassccMesh_html_a6ac28dd9378e73d01d47c0295a1d71ae"><div class="ttname"><a href="classccMesh.html#a6ac28dd9378e73d01d47c0295a1d71ae">ccMesh::computePerTriangleNormals</a></div><div class="ttdeci">bool computePerTriangleNormals()</div><div class="ttdoc">Computes per-triangle normals.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMesh_8cpp_source.html#l00331">ecvMesh.cpp:331</a></div></div>
 <div class="ttc" id="aclassqVoxFallTools_html_a181be22ea694c935df273ac2a73ef5db"><div class="ttname"><a href="classqVoxFallTools.html#a181be22ea694c935df273ac2a73ef5db">qVoxFallTools::FindAdjacents</a></div><div class="ttdeci">static std::vector&lt; Tuple3i &gt; FindAdjacents(Tuple3i V, CCVector3 steps, bool facetsOnly)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallTools_8cpp_source.html#l00064">qVoxFallTools.cpp:64</a></div></div>
 <div class="ttc" id="aclassqVoxFallTools_html_a640b3275e069d82cb1139d17c2ad6301"><div class="ttname"><a href="classqVoxFallTools.html#a640b3275e069d82cb1139d17c2ad6301">qVoxFallTools::Grid2Index</a></div><div class="ttdeci">static int Grid2Index(Tuple3i n, CCVector3 steps)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallTools_8cpp_source.html#l00101">qVoxFallTools.cpp:101</a></div></div>
 <div class="ttc" id="aclassqVoxFallTools_html_adee1c7aee3840c68a0f6f69d89cd977f"><div class="ttname"><a href="classqVoxFallTools.html#adee1c7aee3840c68a0f6f69d89cd977f">qVoxFallTools::Index2Grid</a></div><div class="ttdeci">static Tuple3i Index2Grid(unsigned index, CCVector3 steps)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallTools_8cpp_source.html#l00110">qVoxFallTools.cpp:110</a></div></div>
 <div class="ttc" id="aclassqVoxFallTransform_html_a8fbc65c99ef0706d1f39c1a0083a16db"><div class="ttname"><a href="classqVoxFallTransform.html#a8fbc65c99ef0706d1f39c1a0083a16db">qVoxFallTransform::matrix</a></div><div class="ttdeci">ccGLMatrix matrix</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallTools_8h_source.html#l00030">qVoxFallTools.h:30</a></div></div>
 <div class="ttc" id="aclassqVoxFallTransform_html_adb621fcda4a798e52a41e683e0d53974"><div class="ttname"><a href="classqVoxFallTransform.html#adb621fcda4a798e52a41e683e0d53974">qVoxFallTransform::CreateVoxelMesh</a></div><div class="ttdeci">static ccBox * CreateVoxelMesh(CCVector3 V, float voxelSize, int voxelIdx)</div><div class="ttdef"><b>Definition:</b> <a href="qVoxFallTools_8cpp_source.html#l00048">qVoxFallTools.cpp:48</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
 <div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="aecvQtHelpers_8h_html"><div class="ttname"><a href="ecvQtHelpers_8h.html">ecvQtHelpers.h</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a98156be7bd5bb4bfe78e2541d057cab6"><div class="ttname"><a href="my__point__types_8h.html#a98156be7bd5bb4bfe78e2541d057cab6">z</a></div><div class="ttdeci">normal_z z</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa2763013e3ec9c4434c6f9a82d2752fc"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa2763013e3ec9c4434c6f9a82d2752fc">cloudViewer::utility::floor</a></div><div class="ttdeci">MiniVec&lt; float, N &gt; floor(const MiniVec&lt; float, N &gt; &amp;a)</div><div class="ttdef"><b>Definition:</b> <a href="MiniVec_8h_source.html#l00075">MiniVec.h:75</a></div></div>
 <div class="ttc" id="aqVoxFallDialog_8h_html"><div class="ttname"><a href="qVoxFallDialog_8h.html">qVoxFallDialog.h</a></div></div>
 <div class="ttc" id="aqVoxFallTools_8h_html"><div class="ttname"><a href="qVoxFallTools_8h.html">qVoxFallTools.h</a></div></div>
@@ -244,7 +236,7 @@ $(document).ready(function(){initNavTree('qVoxFallTools_8cpp_source.html',''); i
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4bac82d6d66125057afc5b6a16ccbd7c.html">qVoxFall</a></li><li class="navelem"><a class="el" href="dir_8968ffa52cafc454537db249a1a7ae52.html">src</a></li><li class="navelem"><a class="el" href="qVoxFallTools_8cpp.html">qVoxFallTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

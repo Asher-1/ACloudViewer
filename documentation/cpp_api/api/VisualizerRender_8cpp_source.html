@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -109,7 +100,7 @@ $(document).ready(function(){initNavTree('VisualizerRender_8cpp_source.html','')
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// clang-format on</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;IJsonConvertibleIO.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;ImageIO.h&gt;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvMesh_8h.html">ecvMesh.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="ecvPointCloud_8h.html">ecvPointCloud.h</a>&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
@@ -255,7 +246,7 @@ $(document).ready(function(){initNavTree('VisualizerRender_8cpp_source.html','')
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        }</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f931369d722e46eafabf3722f44fece">coordinate_frame_mesh_ptr_</a> &amp;&amp; <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#afbb95e17446649a8b3e6fe8ea23f4a97">coordinate_frame_mesh_renderer_ptr_</a>) {</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            <span class="keyword">const</span> <span class="keyword">auto</span> &amp;boundingbox = <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#ac62fcda27e3495610574689a8669b16d">view_control_ptr_</a>-&gt;GetBoundingBox();</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            *<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f931369d722e46eafabf3722f44fece">coordinate_frame_mesh_ptr_</a> = *<a class="code" href="classccMesh.html#a340ac85e02c96e97993784cc7b147a34">ccMesh::CreateCoordinateFrame</a>(</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            *<a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#a4f931369d722e46eafabf3722f44fece">coordinate_frame_mesh_ptr_</a> = *<a class="code" href="classccMesh.html#a4c2eb8233d2c69f0a65bdbd570297aee">ccMesh::CreateCoordinateFrame</a>(</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;                    boundingbox.GetMaxExtent() * 0.2,</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                    boundingbox.GetMinBound());</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            <a class="code" href="classcloudViewer_1_1visualization_1_1Visualizer.html#afbb95e17446649a8b3e6fe8ea23f4a97">coordinate_frame_mesh_renderer_ptr_</a>-&gt;UpdateGeometry();</div>
@@ -432,7 +423,7 @@ $(document).ready(function(){initNavTree('VisualizerRender_8cpp_source.html','')
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                    2.0 * z_near * z_far /</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                    (z_far + z_near -</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                     (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            p_image[j] = (float)z_depth;</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            p_image[j] = (<a class="code" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a>)z_depth;</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        }</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    }</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <span class="keywordflow">return</span> image_ptr;</div>
@@ -505,7 +496,7 @@ $(document).ready(function(){initNavTree('VisualizerRender_8cpp_source.html','')
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;                    2.0 * z_near * z_far /</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;                    (z_far + z_near -</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                     (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;            p_png[j] = (uint16_t)<a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(std::round(depth_scale * z_depth),</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;            p_png[j] = (uint16_t)std::min(std::round(depth_scale * z_depth),</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;                                          (double)INT16_MAX);</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;        }</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    }</div>
@@ -623,7 +614,7 @@ $(document).ready(function(){initNavTree('VisualizerRender_8cpp_source.html','')
 <div class="ttc" id="aViewParameters_8h_html"><div class="ttname"><a href="ViewParameters_8h.html">ViewParameters.h</a></div></div>
 <div class="ttc" id="aViewTrajectory_8h_html"><div class="ttname"><a href="ViewTrajectory_8h.html">ViewTrajectory.h</a></div></div>
 <div class="ttc" id="aVisualizer_8h_html"><div class="ttname"><a href="Visualizer_8h.html">Visualizer.h</a></div></div>
-<div class="ttc" id="aclassccMesh_html_a340ac85e02c96e97993784cc7b147a34"><div class="ttname"><a href="classccMesh.html#a340ac85e02c96e97993784cc7b147a34">ccMesh::CreateCoordinateFrame</a></div><div class="ttdeci">static std::shared_ptr&lt; ccMesh &gt; CreateCoordinateFrame(double size=1.0, const Eigen::Vector3d &amp;origin=Eigen::Vector3d(0.0, 0.0, 0.0))</div></div>
+<div class="ttc" id="aclassccMesh_html_a4c2eb8233d2c69f0a65bdbd570297aee"><div class="ttname"><a href="classccMesh.html#a4c2eb8233d2c69f0a65bdbd570297aee">ccMesh::CreateCoordinateFrame</a></div><div class="ttdeci">static std::shared_ptr&lt; ccMesh &gt; CreateCoordinateFrame(double size=1.0, const Eigen::Vector3d &amp;origin=Eigen::Vector3d(0.0, 0.0, 0.0))</div><div class="ttdef"><b>Definition:</b> <a href="CV__db_2src_2TriangleMeshFactory_8cpp_source.html#l02808">TriangleMeshFactory.cpp:2808</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1PointCloudTpl_html_a6783bc67462c8829dc1c364a995695a8"><div class="ttname"><a href="classcloudViewer_1_1PointCloudTpl.html#a6783bc67462c8829dc1c364a995695a8">cloudViewer::PointCloudTpl::addPoint</a></div><div class="ttdeci">void addPoint(const CCVector3 &amp;P)</div><div class="ttdoc">Adds a 3D point to the database.</div><div class="ttdef"><b>Definition:</b> <a href="PointCloudTpl_8h_source.html#l00246">PointCloudTpl.h:246</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1camera_1_1PinholeCameraParameters_html"><div class="ttname"><a href="classcloudViewer_1_1camera_1_1PinholeCameraParameters.html">cloudViewer::camera::PinholeCameraParameters</a></div><div class="ttdoc">Contains both intrinsic and extrinsic pinhole camera parameters.</div><div class="ttdef"><b>Definition:</b> <a href="PinholeCameraParameters_8h_source.html#l00022">PinholeCameraParameters.h:23</a></div></div>
@@ -664,26 +655,25 @@ $(document).ready(function(){initNavTree('VisualizerRender_8cpp_source.html','')
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1Visualizer_html_afbb95e17446649a8b3e6fe8ea23f4a97"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1Visualizer.html#afbb95e17446649a8b3e6fe8ea23f4a97">cloudViewer::visualization::Visualizer::coordinate_frame_mesh_renderer_ptr_</a></div><div class="ttdeci">std::shared_ptr&lt; glsl::CoordinateFrameRenderer &gt; coordinate_frame_mesh_renderer_ptr_</div><div class="ttdef"><b>Definition:</b> <a href="Visualizer_8h_source.html#l00306">Visualizer.h:306</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_af347100a11f303535485cc3acbf3e6b0"><div class="ttname"><a href="core_2include_2Logging_8h.html#af347100a11f303535485cc3acbf3e6b0">LogDebug</a></div><div class="ttdeci">#define LogDebug(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00090">Logging.h:90</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
 <div class="ttc" id="aecvMesh_8h_html"><div class="ttname"><a href="ecvMesh_8h.html">ecvMesh.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a05a064eb3b09f601ad2660eb0b5392ca"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a05a064eb3b09f601ad2660eb0b5392ca">cloudViewer::io::ReadIJsonConvertibleFromJSONString</a></div><div class="ttdeci">bool ReadIJsonConvertibleFromJSONString(const std::string &amp;json_string, cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a0fea3e9d6cec35df3a68bb3d096c3428"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible</a></div><div class="ttdeci">bool WriteIJsonConvertible(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a132da10b11a97f8bd434c7af4a07ab5f"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a132da10b11a97f8bd434c7af4a07ab5f">cloudViewer::io::WriteIJsonConvertibleToJSONString</a></div><div class="ttdeci">bool WriteIJsonConvertibleToJSONString(std::string &amp;json_string, const cloudViewer::utility::IJsonConvertible &amp;object)</div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1io_html_a1bab392a3210598a6eb903f135f2a28a"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage</a></div><div class="ttdeci">bool WriteImage(const std::string &amp;filename, const geometry::Image &amp;image, int quality=kCloudViewerImageIODefaultQuality)</div></div>
+<div class="ttc" id="amy__point__types_8h_html_a7662c367c43965465ee958946ac56ca1"><div class="ttname"><a href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a></div><div class="ttdeci">float</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00154">my_point_types.h:154</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a05a064eb3b09f601ad2660eb0b5392ca"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a05a064eb3b09f601ad2660eb0b5392ca">cloudViewer::io::ReadIJsonConvertibleFromJSONString</a></div><div class="ttdeci">bool ReadIJsonConvertibleFromJSONString(const std::string &amp;json_string, cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00106">IJsonConvertibleIO.cpp:106</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a0fea3e9d6cec35df3a68bb3d096c3428"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a0fea3e9d6cec35df3a68bb3d096c3428">cloudViewer::io::WriteIJsonConvertible</a></div><div class="ttdeci">bool WriteIJsonConvertible(const std::string &amp;filename, const cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00144">IJsonConvertibleIO.cpp:144</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a132da10b11a97f8bd434c7af4a07ab5f"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a132da10b11a97f8bd434c7af4a07ab5f">cloudViewer::io::WriteIJsonConvertibleToJSONString</a></div><div class="ttdeci">bool WriteIJsonConvertibleToJSONString(std::string &amp;json_string, const cloudViewer::utility::IJsonConvertible &amp;object)</div><div class="ttdef"><b>Definition:</b> <a href="IJsonConvertibleIO_8cpp_source.html#l00113">IJsonConvertibleIO.cpp:113</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_1_1io_html_a1bab392a3210598a6eb903f135f2a28a"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a1bab392a3210598a6eb903f135f2a28a">cloudViewer::io::WriteImage</a></div><div class="ttdeci">bool WriteImage(const std::string &amp;filename, const geometry::Image &amp;image, int quality=kCloudViewerImageIODefaultQuality)</div><div class="ttdef"><b>Definition:</b> <a href="CV__io_2src_2ImageIO_8cpp_source.html#l00139">ImageIO.cpp:139</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1io_html_a629182cc8a7a195370945a51b4427964"><div class="ttname"><a href="namespacecloudViewer_1_1io.html#a629182cc8a7a195370945a51b4427964">cloudViewer::io::WritePointCloud</a></div><div class="ttdeci">bool WritePointCloud(const std::string &amp;filename, const ccPointCloud &amp;pointcloud, const WritePointCloudOption &amp;params)</div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer_2io_2PointCloudIO_8cpp_source.html#l00191">PointCloudIO.cpp:191</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aa6877a3b1468f7e8ad6958a035087d6d"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aa6877a3b1468f7e8ad6958a035087d6d">cloudViewer::utility::GetCurrentTimeStamp</a></div><div class="ttdeci">std::string GetCurrentTimeStamp()</div><div class="ttdoc">Returns current time stamp.</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00286">Helper.cpp:286</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gl__util_html_a3f4c6e774d89c10a76ca31ccb551631e"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gl__util.html#a3f4c6e774d89c10a76ca31ccb551631e">cloudViewer::visualization::gl_util::GLMatrix4f</a></div><div class="ttdeci">Eigen::Matrix&lt; float, 4, 4, Eigen::ColMajor &gt; GLMatrix4f</div><div class="ttdef"><b>Definition:</b> <a href="GLHelper_8h_source.html#l00035">GLHelper.h:35</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1visualization_1_1gl__util_html_a83d634acd9cf291bd3e1963b86edca61"><div class="ttname"><a href="namespacecloudViewer_1_1visualization_1_1gl__util.html#a83d634acd9cf291bd3e1963b86edca61">cloudViewer::visualization::gl_util::Unproject</a></div><div class="ttdeci">Eigen::Vector3d Unproject(const Eigen::Vector3d &amp;screen_point, const GLMatrix4f &amp;mvp_matrix, const int width, const int height)</div><div class="ttdef"><b>Definition:</b> <a href="GLHelper_8cpp_source.html#l00097">GLHelper.cpp:97</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="VisualizerRender_8cpp.html">VisualizerRender.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

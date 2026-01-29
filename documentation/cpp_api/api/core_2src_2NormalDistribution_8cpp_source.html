@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -160,8 +151,8 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1GenericDistribution.html#a8f1a2e19be9082d0d1b8e7f6a8350c96">isValid</a>();</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;}</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1NormalDistribution.html#aff6eb9549150ba886df5cf4f54a71f70">   64</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aff6eb9549150ba886df5cf4f54a71f70">NormalDistribution::computeP</a>(ScalarType x)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordtype">double</span> p = <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(x - <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a>);</div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1NormalDistribution.html#aff6eb9549150ba886df5cf4f54a71f70">   64</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aff6eb9549150ba886df5cf4f54a71f70">NormalDistribution::computeP</a>(ScalarType <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordtype">double</span> p = <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> - <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a>);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">return</span> exp(-p * p * <a class="code" href="classcloudViewer_1_1NormalDistribution.html#a70d302fd14897ea6a9ae02d1d3aafa73">m_qFactor</a>) * <a class="code" href="classcloudViewer_1_1NormalDistribution.html#a9788c161de82f06d8c33c2007d6ff8fb">m_normFactor</a>;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
@@ -172,8 +163,8 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                                     sqrt(2 * <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aed5112501b656bf849fab37b4a9c3a27">m_sigma2</a>)));</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">   76</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">NormalDistribution::computePfromZero</a>(ScalarType x)<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> 0.5 * (<a class="code" href="classcloudViewer_1_1ErrorFunction.html#ac0251aa6c8a271260ad66156319e22de">ErrorFunction::erf</a>(<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(x - <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a>) /</div>
+<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">   76</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">NormalDistribution::computePfromZero</a>(ScalarType <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> 0.5 * (<a class="code" href="classcloudViewer_1_1ErrorFunction.html#ac0251aa6c8a271260ad66156319e22de">ErrorFunction::erf</a>(<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> - <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a>) /</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                     sqrt(2 * <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aed5112501b656bf849fab37b4a9c3a27">m_sigma2</a>)) +</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                  1.0);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}</div>
@@ -199,7 +190,7 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    }</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    mean /= counter;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    stddev2 = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(stddev2 / counter - mean * mean);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    stddev2 = std::abs(stddev2 / counter - mean * mean);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#a39a9dc5a6f24f3f2454285cff30019a0">setParameters</a>(<span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(mean),</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                         <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(stddev2));</div>
@@ -225,7 +216,7 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    }</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    mean /= counter;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    stddev2 = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(stddev2 / counter - mean * mean);</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    stddev2 = std::abs(stddev2 / counter - mean * mean);</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#a39a9dc5a6f24f3f2454285cff30019a0">setParameters</a>(<span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(mean),</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                         <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(stddev2));</div>
@@ -242,7 +233,7 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keywordtype">double</span> mean = 0.0, stddev2 = 0.0;</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordflow">for</span> (ScalarType v : values) {</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keywordflow">if</span> (<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(v - <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a>)) &lt; maxStddev) {</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keywordflow">if</span> (<span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(std::abs(v - <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a>)) &lt; maxStddev) {</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;            mean += v;</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;            stddev2 += <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(v) * v;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;            ++counter;</div>
@@ -254,7 +245,7 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    }</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    mean /= counter;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    stddev2 = <a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(stddev2 / counter - mean * mean);</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    stddev2 = std::abs(stddev2 / counter - mean * mean);</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classcloudViewer_1_1NormalDistribution.html#a39a9dc5a6f24f3f2454285cff30019a0">setParameters</a>(<span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(mean),</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;                         <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(stddev2));</div>
@@ -340,25 +331,25 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    {</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        ScalarType sigma = sqrt(<a class="code" href="classcloudViewer_1_1NormalDistribution.html#aed5112501b656bf849fab37b4a9c3a27">m_sigma2</a>);</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="comment">// 1st class between -inf and mu-2.sigma</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        ScalarType x = <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a> - 2 * sigma;</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        ScalarType y = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">computePfromZero</a>(x));</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aaf61f0fb75fb989fcb6ab6840877b57a">m_Pi</a>.push_back(y);</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aadf39c1778beefaf338ca957a2648a23">m_chi2ClassesPositions</a>.push_back(x);</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        ScalarType <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = <a class="code" href="classcloudViewer_1_1NormalDistribution.html#acb331f82c9b51ecdb86af8f42f5e6e08">m_mu</a> - 2 * sigma;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        ScalarType <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">computePfromZero</a>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>));</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aaf61f0fb75fb989fcb6ab6840877b57a">m_Pi</a>.push_back(<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aadf39c1778beefaf338ca957a2648a23">m_chi2ClassesPositions</a>.push_back(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="comment">// numberOfClasses-2 classes between mu-2.sigma and mu+2.sigma</span></div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        ScalarType pas = 4 * sigma / (numberOfClasses - 2);</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; numberOfClasses - 2; ++i) {</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            x = x + pas;</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            ScalarType oldy = y;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            y = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">computePfromZero</a>(x));</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aaf61f0fb75fb989fcb6ab6840877b57a">m_Pi</a>.push_back(y - oldy);</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aadf39c1778beefaf338ca957a2648a23">m_chi2ClassesPositions</a>.push_back(x);</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> = <a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a> + pas;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            ScalarType oldy = <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = <span class="keyword">static_cast&lt;</span>ScalarType<span class="keyword">&gt;</span>(<a class="code" href="classcloudViewer_1_1NormalDistribution.html#ada73720d43e7f7cc4334126afb7fcd26">computePfromZero</a>(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>));</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aaf61f0fb75fb989fcb6ab6840877b57a">m_Pi</a>.push_back(<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> - oldy);</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aadf39c1778beefaf338ca957a2648a23">m_chi2ClassesPositions</a>.push_back(<a class="code" href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a>);</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        }</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160; </div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="comment">// last class between mu+2.sigma and +inf</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <span class="comment">// x = m_mu + 2 * sigma;</span></div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        y = 1 - y;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aaf61f0fb75fb989fcb6ab6840877b57a">m_Pi</a>.push_back(y);</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a> = 1 - <a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>;</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <a class="code" href="classcloudViewer_1_1NormalDistribution.html#aaf61f0fb75fb989fcb6ab6840877b57a">m_Pi</a>.push_back(<a class="code" href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a>);</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    }</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -395,15 +386,16 @@ $(document).ready(function(){initNavTree('core_2src_2NormalDistribution_8cpp_sou
 <div class="ttc" id="aclasscloudViewer_1_1NormalDistribution_html_aff6eb9549150ba886df5cf4f54a71f70"><div class="ttname"><a href="classcloudViewer_1_1NormalDistribution.html#aff6eb9549150ba886df5cf4f54a71f70">cloudViewer::NormalDistribution::computeP</a></div><div class="ttdeci">double computeP(ScalarType x) const override</div><div class="ttdoc">Computes the probability of x.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2NormalDistribution_8cpp_source.html#l00064">NormalDistribution.cpp:64</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarFieldTools_html_a74a8cc1e928447df8ec1b7cb88ff7313"><div class="ttname"><a href="classcloudViewer_1_1ScalarFieldTools.html#a74a8cc1e928447df8ec1b7cb88ff7313">cloudViewer::ScalarFieldTools::countScalarFieldValidValues</a></div><div class="ttdeci">static unsigned countScalarFieldValidValues(const GenericCloud *theCloud)</div><div class="ttdoc">Count the number of valid values in a scalar field.</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ScalarFieldTools_8cpp_source.html#l00447">ScalarFieldTools.cpp:447</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1ScalarField_html_abd71c5d761aba8eaba9c4b6d5754e16e"><div class="ttname"><a href="classcloudViewer_1_1ScalarField.html#abd71c5d761aba8eaba9c4b6d5754e16e">cloudViewer::ScalarField::ValidValue</a></div><div class="ttdeci">static bool ValidValue(ScalarType value)</div><div class="ttdoc">Returns whether a scalar value is valid or not.</div><div class="ttdef"><b>Definition:</b> <a href="ScalarField_8h_source.html#l00061">ScalarField.h:61</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a21725e5636031defc19c411d36073feb"><div class="ttname"><a href="my__point__types_8h.html#a21725e5636031defc19c411d36073feb">y</a></div><div class="ttdeci">normal_z y</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00168">my_point_types.h:168</a></div></div>
+<div class="ttc" id="amy__point__types_8h_html_a83d09cc1d82eff49c611bc309f03903b"><div class="ttname"><a href="my__point__types_8h.html#a83d09cc1d82eff49c611bc309f03903b">x</a></div><div class="ttdeci">normal_z x</div><div class="ttdef"><b>Definition:</b> <a href="my__point__types_8h_source.html#l00165">my_point_types.h:165</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2NormalDistribution_8cpp.html">NormalDistribution.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

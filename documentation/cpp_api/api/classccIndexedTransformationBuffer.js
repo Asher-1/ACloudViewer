@@ -6,7 +6,7 @@ var classccIndexedTransformationBuffer =
     [ "fromFile_MeOnly", "classccIndexedTransformationBuffer.html#acae23275d27216fcb2eaf2f4ff56d6b0", null ],
     [ "getClassID", "classccIndexedTransformationBuffer.html#a356975187bd16ee001b20241281d09a9", null ],
     [ "getInterpolatedTransformation", "classccIndexedTransformationBuffer.html#a6e3a18b2a69cdadb7ae0666ffd0876f5", null ],
-    [ "getOwnBB", "classccIndexedTransformationBuffer.html#aa40349fea30f1fc928c0fd56affef25f", null ],
+    [ "getOwnBB", "classccIndexedTransformationBuffer.html#afca6790ee341215a97f682dcdf8cd084", null ],
     [ "invalidateBoundingBox", "classccIndexedTransformationBuffer.html#acea4d665f17667cbe1bd390fc46228f8", null ],
     [ "isPathShonwAsPolyline", "classccIndexedTransformationBuffer.html#a6bf38962e5537b0a1318cd825a1d3596", null ],
     [ "isSerializable", "classccIndexedTransformationBuffer.html#ac533fa2d5d72993624caa91c33065e02", null ],

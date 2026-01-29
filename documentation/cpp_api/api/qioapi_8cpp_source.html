@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -109,7 +100,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="string_8h.html">string.h</a>&gt;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;QIODevice&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
@@ -152,10 +143,10 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="qioapi_8cpp.html#ada5aca3e7379629c7a59776974f62877">   53</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="qioapi_8cpp.html#ada5aca3e7379629c7a59776974f62877">call_zseek64</a>(<span class="keyword">const</span> <a class="code" href="structzlib__filefunc64__32__def__s.html">zlib_filefunc64_32_def</a> *pfilefunc,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                 voidpf filestream,</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                 <a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a> <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>,</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                 <span class="keywordtype">int</span> origin) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                 <span class="keywordtype">int</span> <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>) {</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keywordflow">if</span> (pfilefunc-&gt;<a class="code" href="structzlib__filefunc64__32__def__s.html#a5b05687723a1a8cd310a73ab62fc31f5">zfile_func64</a>.<a class="code" href="structzlib__filefunc64__def__s.html#ab03b3242d363b748ea6e60b7b9e5e6d1">zseek64_file</a> != <a class="code" href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a>)</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="keywordflow">return</span> (*(pfilefunc-&gt;<a class="code" href="structzlib__filefunc64__32__def__s.html#a5b05687723a1a8cd310a73ab62fc31f5">zfile_func64</a>.<a class="code" href="structzlib__filefunc64__def__s.html#ab03b3242d363b748ea6e60b7b9e5e6d1">zseek64_file</a>))(</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                pfilefunc-&gt;<a class="code" href="structzlib__filefunc64__32__def__s.html#a5b05687723a1a8cd310a73ab62fc31f5">zfile_func64</a>.<a class="code" href="structzlib__filefunc64__def__s.html#a5f6d2267b03488a9edc3fdd9a2da0c2f">opaque</a>, filestream, <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>, origin);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                pfilefunc-&gt;<a class="code" href="structzlib__filefunc64__32__def__s.html#a5b05687723a1a8cd310a73ab62fc31f5">zfile_func64</a>.<a class="code" href="structzlib__filefunc64__def__s.html#a5f6d2267b03488a9edc3fdd9a2da0c2f">opaque</a>, filestream, <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>, <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        uLong offsetTruncated = (uLong)<a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordflow">if</span> (offsetTruncated != <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>)</div>
@@ -163,7 +154,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;            <span class="keywordflow">return</span> (*(pfilefunc-&gt;<a class="code" href="structzlib__filefunc64__32__def__s.html#a2c6e18405ec9c8b2d482055e9bf06766">zseek32_file</a>))(pfilefunc-&gt;<a class="code" href="structzlib__filefunc64__32__def__s.html#a5b05687723a1a8cd310a73ab62fc31f5">zfile_func64</a>.<a class="code" href="structzlib__filefunc64__def__s.html#a5f6d2267b03488a9edc3fdd9a2da0c2f">opaque</a>,</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                                filestream, offsetTruncated,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                                                origin);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                                                <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    }</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
@@ -298,10 +289,10 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00201"></a><span class="lineno"><a class="line" href="qioapi_8cpp.html#a04ec190ea924a608ba5f01b4644221e6">  201</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="ioapi_8h.html#aace96475a6dd2915bc55bc542d7aa8a5">ZCALLBACK</a> <a class="code" href="qioapi_8cpp.html#a04ec190ea924a608ba5f01b4644221e6">qiodevice_seek_file_func</a>(voidpf <span class="comment">/*opaque UNUSED*/</span>,</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                                       voidpf stream,</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                                       uLong <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>,</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                                       <span class="keywordtype">int</span> origin) {</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                                       <span class="keywordtype">int</span> <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>) {</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    QIODevice *iodevice = <span class="keyword">reinterpret_cast&lt;</span>QIODevice *<span class="keyword">&gt;</span>(stream);</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    <span class="keywordflow">if</span> (iodevice-&gt;isSequential()) {</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (origin == <a class="code" href="ioapi_8h.html#ace27d6d19b1005424d1fb4bd0c7c9602">ZLIB_FILEFUNC_SEEK_END</a> &amp;&amp; <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> == 0) {</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a> == <a class="code" href="ioapi_8h.html#ace27d6d19b1005424d1fb4bd0c7c9602">ZLIB_FILEFUNC_SEEK_END</a> &amp;&amp; <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> == 0) {</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            <span class="comment">// sequential devices are always at end (needed in mdAppend)</span></div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;            <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        } <span class="keywordflow">else</span> {</div>
@@ -311,7 +302,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    }</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    uLong qiodevice_seek_result = 0;</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="keywordflow">switch</span> (origin) {</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="keywordflow">switch</span> (<a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>) {</div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="ioapi_8h.html#a740e5a75e0d5ca1b093661d263f82e99">ZLIB_FILEFUNC_SEEK_CUR</a>:</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;            qiodevice_seek_result = ((QIODevice *)stream)-&gt;pos() + <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>;</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;            <span class="keywordflow">break</span>;</div>
@@ -331,10 +322,10 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00234"></a><span class="lineno"><a class="line" href="qioapi_8cpp.html#ab64e25237ce8d0748a8e63552c811a6c">  234</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="ioapi_8h.html#aace96475a6dd2915bc55bc542d7aa8a5">ZCALLBACK</a> <a class="code" href="qioapi_8cpp.html#ab64e25237ce8d0748a8e63552c811a6c">qiodevice64_seek_file_func</a>(voidpf <span class="comment">/*opaque UNUSED*/</span>,</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                                         voidpf stream,</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                                         <a class="code" href="ioapi_8h.html#afffed08ed7f2413fa38e12a223ae0e72">ZPOS64_T</a> <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>,</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                                         <span class="keywordtype">int</span> origin) {</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                                         <span class="keywordtype">int</span> <a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>) {</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    QIODevice *iodevice = <span class="keyword">reinterpret_cast&lt;</span>QIODevice *<span class="keyword">&gt;</span>(stream);</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="keywordflow">if</span> (iodevice-&gt;isSequential()) {</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordflow">if</span> (origin == <a class="code" href="ioapi_8h.html#ace27d6d19b1005424d1fb4bd0c7c9602">ZLIB_FILEFUNC_SEEK_END</a> &amp;&amp; <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> == 0) {</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a> == <a class="code" href="ioapi_8h.html#ace27d6d19b1005424d1fb4bd0c7c9602">ZLIB_FILEFUNC_SEEK_END</a> &amp;&amp; <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a> == 0) {</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            <span class="comment">// sequential devices are always at end (needed in mdAppend)</span></div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        } <span class="keywordflow">else</span> {</div>
@@ -344,7 +335,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    }</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    qint64 qiodevice_seek_result = 0;</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    <span class="keywordflow">switch</span> (origin) {</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    <span class="keywordflow">switch</span> (<a class="code" href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a>) {</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="ioapi_8h.html#a740e5a75e0d5ca1b093661d263f82e99">ZLIB_FILEFUNC_SEEK_CUR</a>:</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            qiodevice_seek_result = ((QIODevice *)stream)-&gt;pos() + <a class="code" href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a>;</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            <span class="keywordflow">break</span>;</div>
@@ -434,6 +425,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="ttc" id="aFileIOFactory_8cpp_html_a439227feff9d7f55384e8780cfc2eb82"><div class="ttname"><a href="FileIOFactory_8cpp.html#a439227feff9d7f55384e8780cfc2eb82">size</a></div><div class="ttdeci">int size</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00130">FileIOFactory.cpp:130</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_aed7ea92f45bd273dde380a45ddced592"><div class="ttname"><a href="FileIOFactory_8cpp.html#aed7ea92f45bd273dde380a45ddced592">offset</a></div><div class="ttdeci">int offset</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00135">FileIOFactory.cpp:135</a></div></div>
 <div class="ttc" id="aUVUnwrapping_8cpp_html_a070d2ce7b6bb7e5c05602aa8c308d0c4"><div class="ttname"><a href="UVUnwrapping_8cpp.html#a070d2ce7b6bb7e5c05602aa8c308d0c4">NULL</a></div><div class="ttdeci">#define NULL</div><div class="ttdef"><b>Definition:</b> <a href="UVUnwrapping_8cpp_source.html#l00040">UVUnwrapping.cpp:40</a></div></div>
+<div class="ttc" id="aVoxelGridIO_8cpp_html_ae4f3d20f086a53c39a1810193667374f"><div class="ttname"><a href="VoxelGridIO_8cpp.html#ae4f3d20f086a53c39a1810193667374f">origin</a></div><div class="ttdeci">Eigen::Vector3d origin</div><div class="ttdef"><b>Definition:</b> <a href="VoxelGridIO_8cpp_source.html#l00026">VoxelGridIO.cpp:26</a></div></div>
 <div class="ttc" id="aioapi_8h_html"><div class="ttname"><a href="ioapi_8h.html">ioapi.h</a></div></div>
 <div class="ttc" id="aioapi_8h_html_a389d35aa169a682776910718fad29487"><div class="ttname"><a href="ioapi_8h.html#a389d35aa169a682776910718fad29487">ZLIB_FILEFUNC_MODE_READWRITEFILTER</a></div><div class="ttdeci">#define ZLIB_FILEFUNC_MODE_READWRITEFILTER</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00116">ioapi.h:116</a></div></div>
 <div class="ttc" id="aioapi_8h_html_a726af69b3b72f7485db98fd06352761f"><div class="ttname"><a href="ioapi_8h.html#a726af69b3b72f7485db98fd06352761f">ZLIB_FILEFUNC_MODE_EXISTING</a></div><div class="ttdeci">#define ZLIB_FILEFUNC_MODE_EXISTING</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00118">ioapi.h:118</a></div></div>
@@ -461,6 +453,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div class="ttc" id="aqioapi_8cpp_html_ae865403be09e32051ca7a36fc6b0da3d"><div class="ttname"><a href="qioapi_8cpp.html#ae865403be09e32051ca7a36fc6b0da3d">qiodevice_read_file_func</a></div><div class="ttdeci">uLong qiodevice_read_file_func(voidpf opaque, voidpf stream, void *buf, uLong size)</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00145">qioapi.cpp:145</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_af65a39ff0265a40151e9c15bead60db8"><div class="ttname"><a href="qioapi_8cpp.html#af65a39ff0265a40151e9c15bead60db8">qiodevice_fakeclose_file_func</a></div><div class="ttdeci">int qiodevice_fakeclose_file_func(voidpf opaque, voidpf)</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00284">qioapi.cpp:284</a></div></div>
 <div class="ttc" id="aquazip__global_8h_html"><div class="ttname"><a href="quazip__global_8h.html">quazip_global.h</a></div></div>
+<div class="ttc" id="astring_8h_html"><div class="ttname"><a href="string_8h.html">string.h</a></div></div>
 <div class="ttc" id="astructzlib__filefunc64__32__def__s_html"><div class="ttname"><a href="structzlib__filefunc64__32__def__s.html">zlib_filefunc64_32_def_s</a></div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00179">ioapi.h:179</a></div></div>
 <div class="ttc" id="astructzlib__filefunc64__32__def__s_html_a2c6e18405ec9c8b2d482055e9bf06766"><div class="ttname"><a href="structzlib__filefunc64__32__def__s.html#a2c6e18405ec9c8b2d482055e9bf06766">zlib_filefunc64_32_def_s::zseek32_file</a></div><div class="ttdeci">seek_file_func zseek32_file</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00183">ioapi.h:183</a></div></div>
 <div class="ttc" id="astructzlib__filefunc64__32__def__s_html_a5b05687723a1a8cd310a73ab62fc31f5"><div class="ttname"><a href="structzlib__filefunc64__32__def__s.html#a5b05687723a1a8cd310a73ab62fc31f5">zlib_filefunc64_32_def_s::zfile_func64</a></div><div class="ttdeci">zlib_filefunc64_def zfile_func64</div><div class="ttdef"><b>Definition:</b> <a href="ioapi_8h_source.html#l00180">ioapi.h:180</a></div></div>
@@ -491,7 +484,7 @@ $(document).ready(function(){initNavTree('qioapi_8cpp_source.html',''); initResi
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_9f1c91a719c6d2c352714b25e6ae45ee.html">IO</a></li><li class="navelem"><a class="el" href="dir_8a6369cb44f8824efc1f2d2ad37855b0.html">qPhotoscanIO</a></li><li class="navelem"><a class="el" href="dir_240dbf590cf521d348ba3a8e60db7bf9.html">extern</a></li><li class="navelem"><a class="el" href="dir_0ece5dca8cadedcd6518b7ce3f6be342.html">quazip</a></li><li class="navelem"><a class="el" href="dir_94c0a9e8b582ab106ccb848acb54b094.html">quazip</a></li><li class="navelem"><a class="el" href="dir_428927716e3f356335cccf4e053ea6e9.html">quazip</a></li><li class="navelem"><a class="el" href="qioapi_8cpp.html">qioapi.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

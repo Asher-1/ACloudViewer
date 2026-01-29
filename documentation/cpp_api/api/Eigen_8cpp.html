@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -101,7 +92,7 @@ $(document).ready(function(){initNavTree('Eigen_8cpp.html',''); initResizable();
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Eigen_8h_source.html">Eigen.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="core_2include_2Logging_8h_source.html">Logging.h</a>&quot;</code><br />
+<code>#include &quot;Logging.h&quot;</code><br />
 <code>#include &lt;Eigen/Geometry&gt;</code><br />
 <code>#include &lt;Eigen/Sparse&gt;</code><br />
 <code>#include &lt;functional&gt;</code><br />
@@ -110,29 +101,23 @@ Include dependency graph for Eigen.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="Eigen_8cpp__incl.png" border="0" usemap="#a_2root_2ACloudViewer_2core_2src_2Eigen_8cpp" alt=""/></div>
 <map name="a_2root_2ACloudViewer_2core_2src_2Eigen_8cpp" id="a_2root_2ACloudViewer_2core_2src_2Eigen_8cpp">
-<area shape="rect" title=" " alt="" coords="878,5,1025,47"/>
-<area shape="rect" href="Eigen_8h.html" title=" " alt="" coords="1201,95,1272,121"/>
-<area shape="rect" title=" " alt="" coords="888,169,1015,196"/>
-<area shape="rect" href="core_2include_2Logging_8h.html" title=" " alt="" coords="474,95,559,121"/>
-<area shape="rect" title=" " alt="" coords="5,169,92,196"/>
-<area shape="rect" title=" " alt="" coords="1297,95,1403,121"/>
-<area shape="rect" href="CVCoreLib_8h.html" title=" " alt="" coords="762,169,863,196"/>
-<area shape="rect" title=" " alt="" coords="1571,169,1663,196"/>
-<area shape="rect" title=" " alt="" coords="1687,169,1811,196"/>
-<area shape="rect" title=" " alt="" coords="1835,169,1913,196"/>
-<area shape="rect" title=" " alt="" coords="1039,169,1093,196"/>
-<area shape="rect" title=" " alt="" coords="1117,169,1241,196"/>
-<area shape="rect" title=" " alt="" coords="1265,169,1325,196"/>
-<area shape="rect" title=" " alt="" coords="1349,169,1412,196"/>
-<area shape="rect" title=" " alt="" coords="1436,169,1547,196"/>
-<area shape="rect" href="CVCoreLibWin_8h.html" title=" " alt="" coords="749,244,876,271"/>
-<area shape="rect" title=" " alt="" coords="749,319,877,345"/>
-<area shape="rect" title=" " alt="" coords="477,169,557,196"/>
-<area shape="rect" title=" " alt="" coords="581,169,655,196"/>
-<area shape="rect" title=" " alt="" coords="679,169,738,196"/>
-<area shape="rect" title=" " alt="" coords="116,169,205,196"/>
-<area shape="rect" title=" " alt="" coords="229,169,324,196"/>
-<area shape="rect" title=" " alt="" coords="348,169,453,196"/>
+<area shape="rect" title=" " alt="" coords="615,5,762,47"/>
+<area shape="rect" href="Eigen_8h.html" title=" " alt="" coords="551,95,621,121"/>
+<area shape="rect" title=" " alt="" coords="5,169,132,196"/>
+<area shape="rect" title=" " alt="" coords="646,95,731,121"/>
+<area shape="rect" title=" " alt="" coords="755,95,862,121"/>
+<area shape="rect" title=" " alt="" coords="887,95,973,121"/>
+<area shape="rect" href="CVCoreLib_8h.html" title=" " alt="" coords="157,169,258,196"/>
+<area shape="rect" title=" " alt="" coords="283,169,375,196"/>
+<area shape="rect" title=" " alt="" coords="399,169,523,196"/>
+<area shape="rect" title=" " alt="" coords="547,169,625,196"/>
+<area shape="rect" title=" " alt="" coords="649,169,704,196"/>
+<area shape="rect" title=" " alt="" coords="728,169,852,196"/>
+<area shape="rect" title=" " alt="" coords="876,169,936,196"/>
+<area shape="rect" title=" " alt="" coords="960,169,1023,196"/>
+<area shape="rect" title=" " alt="" coords="1047,169,1157,196"/>
+<area shape="rect" href="CVCoreLibWin_8h.html" title=" " alt="" coords="144,244,271,271"/>
+<area shape="rect" title=" " alt="" coords="143,319,271,345"/>
 </map>
 </div>
 </div>
@@ -151,11 +136,11 @@ Functions</h2></td></tr>
 <tr class="memitem:a49e438c8916e5075a03171db433df4a4"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; bool, Eigen::VectorXd &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">cloudViewer::utility::SolveLinearSystemPSD</a> (const Eigen::MatrixXd &amp;A, const Eigen::VectorXd &amp;b, bool prefer_sparse=false, bool check_symmetric=false, bool check_det=false, bool check_psd=false)</td></tr>
 <tr class="memdesc:a49e438c8916e5075a03171db433df4a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to solve Ax=b.  <a href="namespacecloudViewer_1_1utility.html#a49e438c8916e5075a03171db433df4a4">More...</a><br /></td></tr>
 <tr class="separator:a49e438c8916e5075a03171db433df4a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c203be6c52984c361b887c22839a1ab"><td class="memItemLeft" align="right" valign="top">Eigen::Matrix4d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">cloudViewer::utility::TransformVector6dToMatrix4d</a> (const <a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a> &amp;input)</td></tr>
+<tr class="memitem:a7c203be6c52984c361b887c22839a1ab"><td class="memItemLeft" align="right" valign="top">Eigen::Matrix4d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a7c203be6c52984c361b887c22839a1ab">cloudViewer::utility::TransformVector6dToMatrix4d</a> (const <a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a> &amp;input)</td></tr>
 <tr class="separator:a7c203be6c52984c361b887c22839a1ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a666d5eb181e8cc02c265576677dc3a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a6a666d5eb181e8cc02c265576677dc3a">cloudViewer::utility::TransformMatrix4dToVector6d</a> (const Eigen::Matrix4d &amp;input)</td></tr>
+<tr class="memitem:a6a666d5eb181e8cc02c265576677dc3a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a6a666d5eb181e8cc02c265576677dc3a">cloudViewer::utility::TransformMatrix4dToVector6d</a> (const Eigen::Matrix4d &amp;input)</td></tr>
 <tr class="separator:a6a666d5eb181e8cc02c265576677dc3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa82a4da70b423081bf72fb9bc41eba6b"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; bool, Eigen::Matrix4d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#aa82a4da70b423081bf72fb9bc41eba6b">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a> (const <a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a> &amp;JTJ, const <a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a> &amp;JTr)</td></tr>
+<tr class="memitem:aa82a4da70b423081bf72fb9bc41eba6b"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; bool, Eigen::Matrix4d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#aa82a4da70b423081bf72fb9bc41eba6b">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix</a> (const <a class="el" href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a> &amp;JTJ, const <a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a> &amp;JTr)</td></tr>
 <tr class="separator:aa82a4da70b423081bf72fb9bc41eba6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a086e2f72c06439df21eab57e481b411a"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; bool, std::vector&lt; Eigen::Matrix4d, Matrix4d_allocator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a086e2f72c06439df21eab57e481b411a">cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrixArray</a> (const Eigen::MatrixXd &amp;JTJ, const Eigen::VectorXd &amp;JTr)</td></tr>
 <tr class="separator:a086e2f72c06439df21eab57e481b411a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,9 +150,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ab294e3786a6990d18210cc2458cb3ef5"><td class="memTemplParams" colspan="2">template&lt;typename MatType , typename VecType &gt; </td></tr>
 <tr class="memitem:ab294e3786a6990d18210cc2458cb3ef5"><td class="memTemplItemLeft" align="right" valign="top">std::tuple&lt; MatType, VecType, double &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#ab294e3786a6990d18210cc2458cb3ef5">cloudViewer::utility::ComputeJTJandJTr</a> (std::function&lt; void(int, std::vector&lt; VecType, Eigen::aligned_allocator&lt; VecType &gt;&gt; &amp;, std::vector&lt; double &gt; &amp;, std::vector&lt; double &gt; &amp;)&gt; f, int iteration_num, bool verbose=true)</td></tr>
 <tr class="separator:ab294e3786a6990d18210cc2458cb3ef5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49c38710b85c9960e01191578ea91368"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; <a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a>, <a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a>, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a49c38710b85c9960e01191578ea91368">cloudViewer::utility::ComputeJTJandJTr</a> (std::function&lt; void(int, <a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a> &amp;, double &amp;, double &amp;)&gt; f, int iteration_num, bool verbose)</td></tr>
+<tr class="memitem:a49c38710b85c9960e01191578ea91368"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; <a class="el" href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a>, <a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a>, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a49c38710b85c9960e01191578ea91368">cloudViewer::utility::ComputeJTJandJTr</a> (std::function&lt; void(int, <a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a> &amp;, double &amp;, double &amp;)&gt; f, int iteration_num, bool verbose)</td></tr>
 <tr class="separator:a49c38710b85c9960e01191578ea91368"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a179fba9104fa91e773dc127543b7f843"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; <a class="el" href="namespaceEigen.html#ab6f8b8b11b0f6350ed45e7cd3437207f">Eigen::Matrix6d</a>, <a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a>, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a179fba9104fa91e773dc127543b7f843">cloudViewer::utility::ComputeJTJandJTr</a> (std::function&lt; void(int, std::vector&lt; <a class="el" href="namespaceEigen.html#a09219f5e0b822edbf24b125e0e2a4fe0">Eigen::Vector6d</a>, Vector6d_allocator &gt; &amp;, std::vector&lt; double &gt; &amp;, std::vector&lt; double &gt; &amp;)&gt; f, int iteration_num, bool verbose)</td></tr>
+<tr class="memitem:a179fba9104fa91e773dc127543b7f843"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; <a class="el" href="namespaceEigen.html#a8b8976b0ff4ff0c2f9af3b753a38f758">Eigen::Matrix6d</a>, <a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a>, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a179fba9104fa91e773dc127543b7f843">cloudViewer::utility::ComputeJTJandJTr</a> (std::function&lt; void(int, std::vector&lt; <a class="el" href="namespaceEigen.html#adbd6d9559991f78d0f980c3630a950a0">Eigen::Vector6d</a>, Vector6d_allocator &gt; &amp;, std::vector&lt; double &gt; &amp;, std::vector&lt; double &gt; &amp;)&gt; f, int iteration_num, bool verbose)</td></tr>
 <tr class="separator:a179fba9104fa91e773dc127543b7f843"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22c580891a2b6bb1a3f51f4d98308e41"><td class="memItemLeft" align="right" valign="top">Eigen::Matrix3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a22c580891a2b6bb1a3f51f4d98308e41">cloudViewer::utility::RotationMatrixX</a> (double radians)</td></tr>
 <tr class="separator:a22c580891a2b6bb1a3f51f4d98308e41"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -180,7 +165,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a892477ae117ff4b35452452cca7fef3a"><td class="memItemLeft" align="right" valign="top">Eigen::Vector3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a892477ae117ff4b35452452cca7fef3a">cloudViewer::utility::ColorToDouble</a> (uint8_t r, uint8_t g, uint8_t b)</td></tr>
 <tr class="memdesc:a892477ae117ff4b35452452cca7fef3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Color conversion from uint8_t 0-255 to double [0,1].  <a href="namespacecloudViewer_1_1utility.html#a892477ae117ff4b35452452cca7fef3a">More...</a><br /></td></tr>
 <tr class="separator:a892477ae117ff4b35452452cca7fef3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4a0a7b47e70da08772533c3cb42c628"><td class="memItemLeft" align="right" valign="top">Eigen::Vector3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#aa4a0a7b47e70da08772533c3cb42c628">cloudViewer::utility::ColorToDouble</a> (const <a class="el" href="namespaceEigen.html#ad33eb5beeda10f106e9fddfb9e647993">Eigen::Vector3uint8</a> &amp;rgb)</td></tr>
+<tr class="memitem:aa4a0a7b47e70da08772533c3cb42c628"><td class="memItemLeft" align="right" valign="top">Eigen::Vector3d&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#aa4a0a7b47e70da08772533c3cb42c628">cloudViewer::utility::ColorToDouble</a> (const <a class="el" href="namespaceEigen.html#ad33eb5beeda10f106e9fddfb9e647993">Eigen::Vector3uint8</a> &amp;<a class="el" href="my__point__types_8h.html#a50113373fe841481b3ff86b5526f569b">rgb</a>)</td></tr>
 <tr class="separator:aa4a0a7b47e70da08772533c3cb42c628"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a687c56023857a8429d1f212a0a0076b2"><td class="memTemplParams" colspan="2">template&lt;typename IdxType &gt; </td></tr>
 <tr class="memitem:a687c56023857a8429d1f212a0a0076b2"><td class="memTemplItemLeft" align="right" valign="top">Eigen::Matrix3d&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a687c56023857a8429d1f212a0a0076b2">cloudViewer::utility::ComputeCovariance</a> (const std::vector&lt; Eigen::Vector3d &gt; &amp;<a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; IdxType &gt; &amp;indices)</td></tr>
@@ -201,11 +186,11 @@ Functions</h2></td></tr>
 <tr class="memitem:a1c05cc8dc4660ea863b7c04ed949f682"><td class="memTemplParams" colspan="2">template&lt;typename RealType , typename IdxType &gt; </td></tr>
 <tr class="memitem:a1c05cc8dc4660ea863b7c04ed949f682"><td class="memTemplItemLeft" align="right" valign="top">std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a1c05cc8dc4660ea863b7c04ed949f682">cloudViewer::utility::ComputeMeanAndCovariance</a> (const RealType *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; IdxType &gt; &amp;indices)</td></tr>
 <tr class="separator:a1c05cc8dc4660ea863b7c04ed949f682"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a410705f9486cc4073b414394df2ae4b4"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a410705f9486cc4073b414394df2ae4b4">cloudViewer::utility::ComputeMeanAndCovariance</a> (const float *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; size_t &gt; &amp;indices)</td></tr>
+<tr class="memitem:a410705f9486cc4073b414394df2ae4b4"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a410705f9486cc4073b414394df2ae4b4">cloudViewer::utility::ComputeMeanAndCovariance</a> (const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; size_t &gt; &amp;indices)</td></tr>
 <tr class="separator:a410705f9486cc4073b414394df2ae4b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab0ddf225f9ce7f5eee81863000f1c9e5"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#ab0ddf225f9ce7f5eee81863000f1c9e5">cloudViewer::utility::ComputeMeanAndCovariance</a> (const double *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; size_t &gt; &amp;indices)</td></tr>
 <tr class="separator:ab0ddf225f9ce7f5eee81863000f1c9e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a151dd8b598dab030c1ad48abbdbe6c78"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a151dd8b598dab030c1ad48abbdbe6c78">cloudViewer::utility::ComputeMeanAndCovariance</a> (const float *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; int &gt; &amp;indices)</td></tr>
+<tr class="memitem:a151dd8b598dab030c1ad48abbdbe6c78"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#a151dd8b598dab030c1ad48abbdbe6c78">cloudViewer::utility::ComputeMeanAndCovariance</a> (const <a class="el" href="my__point__types_8h.html#a7662c367c43965465ee958946ac56ca1">float</a> *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; int &gt; &amp;indices)</td></tr>
 <tr class="separator:a151dd8b598dab030c1ad48abbdbe6c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcd4cd8e7d05259e91fe473e1204cd8f"><td class="memItemLeft" align="right" valign="top">template std::tuple&lt; Eigen::Vector3d, Eigen::Matrix3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecloudViewer_1_1utility.html#afcd4cd8e7d05259e91fe473e1204cd8f">cloudViewer::utility::ComputeMeanAndCovariance</a> (const double *const <a class="el" href="FileIOFactory_8cpp.html#af7f8f4a4e39e09fdb5e9f02330ecabef">points</a>, const std::vector&lt; int &gt; &amp;indices)</td></tr>
 <tr class="separator:afcd4cd8e7d05259e91fe473e1204cd8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,7 +204,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="Eigen_8cpp.html">Eigen.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

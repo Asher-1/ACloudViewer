@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['title_61985',['title',['../classQUIWidget.html#a6b14fd0de08d46a51452fe4af28ef7dd',1,'QUIWidget']]]
+  ['checked_59160',['checked',['../classcvExpanderButton.html#af050471c521af4d0b723addebe902c09',1,'cvExpanderButton']]],
+  ['colordialog_59161',['colorDialog',['../classWidgets_1_1QtColorPicker.html#a233c81932ffa417c2abf93bb850831d1',1,'Widgets::QtColorPicker']]]
 ];

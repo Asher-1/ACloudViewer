@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -110,7 +101,7 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="Graph_8h.html">Graph.h</a>&quot;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// System</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;math.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="math_8h.html">math.h</a>&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;fstream&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;iostream&gt;</span></div>
@@ -141,8 +132,8 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html">   44</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structCP_1_1CutPursuit.html">CutPursuit</a> {</div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#a3408f9187d898b924e6d55881850d904">   45</a></span>&#160;    <a class="code" href="namespaceCP.html#ace35da2621fb0cc9e65f565eaec1d82d">Graph&lt;T&gt;</a> <a class="code" href="structCP_1_1CutPursuit.html#a3408f9187d898b924e6d55881850d904">main_graph</a>;  <span class="comment">// the Graph structure containing the main structure</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#abb6b414c3c5490fdac8896d46f63e4ed">   46</a></span>&#160;    <a class="code" href="namespaceCP.html#ace35da2621fb0cc9e65f565eaec1d82d">Graph&lt;T&gt;</a> <a class="code" href="structCP_1_1CutPursuit.html#abb6b414c3c5490fdac8896d46f63e4ed">reduced_graph</a>;  <span class="comment">// the reduced graph whose vertices are the</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#a3408f9187d898b924e6d55881850d904">   45</a></span>&#160;    <a class="code" href="classGraph.html">Graph&lt;T&gt;</a> <a class="code" href="structCP_1_1CutPursuit.html#a3408f9187d898b924e6d55881850d904">main_graph</a>;  <span class="comment">// the Graph structure containing the main structure</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#abb6b414c3c5490fdac8896d46f63e4ed">   46</a></span>&#160;    <a class="code" href="classGraph.html">Graph&lt;T&gt;</a> <a class="code" href="structCP_1_1CutPursuit.html#abb6b414c3c5490fdac8896d46f63e4ed">reduced_graph</a>;  <span class="comment">// the reduced graph whose vertices are the</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                             <span class="comment">// connected component</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    std::vector&lt;std::vector&lt;VertexDescriptor&lt;T&gt;&gt;&gt;</div>
 <div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#a36f15429b80c5c05b12fea2e62fc6382">   49</a></span>&#160;            <a class="code" href="structCP_1_1CutPursuit.html#a36f15429b80c5c05b12fea2e62fc6382">components</a>;  <span class="comment">// contains the list of the vertices in each component</span></div>
@@ -164,8 +155,8 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#a2390fc2068452da63ec69cf7c829cf79">   65</a></span>&#160;    <a class="code" href="structCP_1_1CPparameter.html">CPparameter&lt;T&gt;</a> <a class="code" href="structCP_1_1CutPursuit.html#a2390fc2068452da63ec69cf7c829cf79">parameter</a>;</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="structCP_1_1CutPursuit.html#a33bbc7acc47cf5626c16d9eb7dfd0bb4">   67</a></span>&#160;    <a class="code" href="structCP_1_1CutPursuit.html#a33bbc7acc47cf5626c16d9eb7dfd0bb4">CutPursuit</a>(uint32_t nbVertex = 1) {</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        this-&gt;main_graph = <a class="code" href="namespaceCP.html#ace35da2621fb0cc9e65f565eaec1d82d">Graph&lt;T&gt;</a>(nbVertex);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        this-&gt;reduced_graph = <a class="code" href="namespaceCP.html#ace35da2621fb0cc9e65f565eaec1d82d">Graph&lt;T&gt;</a>(1);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        this-&gt;main_graph = <a class="code" href="classGraph.html">Graph&lt;T&gt;</a>(nbVertex);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        this-&gt;reduced_graph = <a class="code" href="classGraph.html">Graph&lt;T&gt;</a>(1);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        this-&gt;<a class="code" href="structCP_1_1CutPursuit.html#a36f15429b80c5c05b12fea2e62fc6382">components</a> = std::vector&lt;std::vector&lt;VertexDescriptor&lt;T&gt;&gt;&gt;(1);</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        this-&gt;<a class="code" href="structCP_1_1CutPursuit.html#ac9c6e34f70494fb8fa61141054337646">root_vertex</a> = std::vector&lt;VertexDescriptor&lt;T&gt;&gt;(1, 0);</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        this-&gt;<a class="code" href="structCP_1_1CutPursuit.html#aa34d8ae74f68bf806214b8d8dc51c743">saturated_components</a> = std::vector&lt;bool&gt;(1, <span class="keyword">false</span>);</div>
@@ -645,7 +636,7 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;                boost::get(boost::edge_bundle, this-&gt;main_graph);</div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;        <a class="code" href="namespaceCP.html#a73adc6990ad48e6819a0b71e4ba48ff3">VertexAttributeMap&lt;T&gt;</a> vertex_attribute_map =</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;                boost::get(boost::vertex_bundle, this-&gt;main_graph);</div>
-<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;        this-&gt;reduced_graph = <a class="code" href="namespaceCP.html#ace35da2621fb0cc9e65f565eaec1d82d">Graph&lt;T&gt;</a>(this-&gt;<a class="code" href="structCP_1_1CutPursuit.html#a36f15429b80c5c05b12fea2e62fc6382">components</a>.size());</div>
+<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;        this-&gt;reduced_graph = <a class="code" href="classGraph.html">Graph&lt;T&gt;</a>(this-&gt;<a class="code" href="structCP_1_1CutPursuit.html#a36f15429b80c5c05b12fea2e62fc6382">components</a>.size());</div>
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        <a class="code" href="namespaceCP.html#a73adc6990ad48e6819a0b71e4ba48ff3">VertexAttributeMap&lt;T&gt;</a> component_attribute_map =</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;                boost::get(boost::vertex_bundle, this-&gt;reduced_graph);</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        <span class="comment">//----fill the value sof the reduced graph----</span></div>
@@ -702,8 +693,8 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;            }</div>
 <div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;            <span class="comment">// by convention we note component_source the smallest index and</span></div>
 <div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;            <span class="comment">// component_target the largest</span></div>
-<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;            component_source = <a class="code" href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">std::min</a>(comp1, comp2);</div>
-<div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;            component_target = <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::max</a>(comp1, comp2);</div>
+<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;            component_source = std::min(comp1, comp2);</div>
+<div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;            component_target = std::max(comp1, comp2);</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;            <span class="comment">// retrieve the corresponding vertex in the reduced graph</span></div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;            source_component =</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;                    boost::vertex(component_source, this-&gt;reduced_graph);</div>
@@ -964,12 +955,12 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="ttc" id="aStandard_2qTreeIso_2include_2Common_8h_html_aab8523effdad1f4411604615d22fababa4cfc14cb896a2f4e003dd5eb5adef579"><div class="ttname"><a href="Standard_2qTreeIso_2include_2Common_8h.html#aab8523effdad1f4411604615d22fababa4cfc14cb896a2f4e003dd5eb5adef579">linear</a></div><div class="ttdeci">@ linear</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00027">Common.h:27</a></div></div>
 <div class="ttc" id="aStandard_2qTreeIso_2include_2Common_8h_html_aab8523effdad1f4411604615d22fababa4e5458c7d7690160494b1516aa326b94"><div class="ttname"><a href="Standard_2qTreeIso_2include_2Common_8h.html#aab8523effdad1f4411604615d22fababa4e5458c7d7690160494b1516aa326b94">KL</a></div><div class="ttdeci">@ KL</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00027">Common.h:27</a></div></div>
 <div class="ttc" id="aStandard_2qTreeIso_2include_2Common_8h_html_aab8523effdad1f4411604615d22fababacec975f0ae3535939953299b53e43321"><div class="ttname"><a href="Standard_2qTreeIso_2include_2Common_8h.html#aab8523effdad1f4411604615d22fababacec975f0ae3535939953299b53e43321">SPG</a></div><div class="ttdeci">@ SPG</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00027">Common.h:27</a></div></div>
+<div class="ttc" id="aclassGraph_html"><div class="ttname"><a href="classGraph.html">Graph</a></div><div class="ttdoc">Generic graph structure.</div><div class="ttdef"><b>Definition:</b> <a href="ecvMinimumSpanningTreeForNormsDirection_8cpp_source.html#l00062">ecvMinimumSpanningTreeForNormsDirection.cpp:62</a></div></div>
 <div class="ttc" id="aclassTimeStack_html"><div class="ttname"><a href="classTimeStack.html">TimeStack</a></div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00053">Common.h:53</a></div></div>
 <div class="ttc" id="aclassTimeStack_html_a8bcad7e6859f82b0e9443fa1e4c3703a"><div class="ttname"><a href="classTimeStack.html#a8bcad7e6859f82b0e9443fa1e4c3703a">TimeStack::toc</a></div><div class="ttdeci">std::string toc() const</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00059">Common.h:59</a></div></div>
 <div class="ttc" id="aclassTimeStack_html_a9a812f7c1b990ee2d0eb39c1ecda3bf5"><div class="ttname"><a href="classTimeStack.html#a9a812f7c1b990ee2d0eb39c1ecda3bf5">TimeStack::tocDouble</a></div><div class="ttdeci">double tocDouble() const</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00065">Common.h:65</a></div></div>
 <div class="ttc" id="aclassTimeStack_html_a9fd1b3912108d07e720136ccd6daad8b"><div class="ttname"><a href="classTimeStack.html#a9fd1b3912108d07e720136ccd6daad8b">TimeStack::tic</a></div><div class="ttdeci">void tic()</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00057">Common.h:57</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_abd8bbcfabb3ddef2ccaafb9928a37b95"><div class="ttname"><a href="cutil__math_8h.html#abd8bbcfabb3ddef2ccaafb9928a37b95">min</a></div><div class="ttdeci">int min(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00053">cutil_math.h:53</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="amath_8h_html"><div class="ttname"><a href="math_8h.html">math.h</a></div></div>
 <div class="ttc" id="anamespaceCP_html"><div class="ttname"><a href="namespaceCP.html">CP</a></div><div class="ttdef"><b>Definition:</b> <a href="API_8h_source.html#l00123">API.h:123</a></div></div>
 <div class="ttc" id="anamespaceCP_html_a73adc6990ad48e6819a0b71e4ba48ff3"><div class="ttname"><a href="namespaceCP.html#a73adc6990ad48e6819a0b71e4ba48ff3">CP::VertexAttributeMap</a></div><div class="ttdeci">boost::vec_adj_list_vertex_property_map&lt; Graph&lt; T &gt;, Graph&lt; T &gt; *, VertexAttribute&lt; T &gt;, VertexAttribute&lt; T &gt; &amp;, boost::vertex_bundle_t &gt; VertexAttributeMap</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00087">Graph.h:92</a></div></div>
 <div class="ttc" id="anamespaceCP_html_a7f72b897de74c57cae875b9b10f0a4f3"><div class="ttname"><a href="namespaceCP.html#a7f72b897de74c57cae875b9b10f0a4f3">CP::EdgeIterator</a></div><div class="ttdeci">typename boost::graph_traits&lt; Graph&lt; T &gt; &gt;::edge_iterator EdgeIterator</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00084">Graph.h:84</a></div></div>
@@ -977,7 +968,6 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div class="ttc" id="anamespaceCP_html_a89dc823a9a8bf40bfe02d810579cba34"><div class="ttname"><a href="namespaceCP.html#a89dc823a9a8bf40bfe02d810579cba34">CP::EdgeDescriptor</a></div><div class="ttdeci">boost::graph_traits&lt; boost::adjacency_list&lt; boost::vecS, boost::vecS, boost::directedS &gt; &gt;::edge_descriptor EdgeDescriptor</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00022">Graph.h:22</a></div></div>
 <div class="ttc" id="anamespaceCP_html_a8f13d828e320dd4b61397ed9f6404797"><div class="ttname"><a href="namespaceCP.html#a8f13d828e320dd4b61397ed9f6404797">CP::EdgeIndexMap</a></div><div class="ttdeci">typename boost::property_map&lt; Graph&lt; T &gt;, uint32_t EdgeAttribute&lt; T &gt;::* &gt;::type EdgeIndexMap</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00105">Graph.h:107</a></div></div>
 <div class="ttc" id="anamespaceCP_html_ac10dcdbed895b06391a6f814af3f69bd"><div class="ttname"><a href="namespaceCP.html#ac10dcdbed895b06391a6f814af3f69bd">CP::VertexDescriptor</a></div><div class="ttdeci">typename boost::graph_traits&lt; CP::Graph&lt; T &gt; &gt;::vertex_descriptor VertexDescriptor</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00074">Graph.h:75</a></div></div>
-<div class="ttc" id="anamespaceCP_html_ace35da2621fb0cc9e65f565eaec1d82d"><div class="ttname"><a href="namespaceCP.html#ace35da2621fb0cc9e65f565eaec1d82d">CP::Graph</a></div><div class="ttdeci">typename boost::adjacency_list&lt; boost::vecS, boost::vecS, boost::directedS, VertexAttribute&lt; T &gt;, EdgeAttribute&lt; T &gt; &gt; Graph</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00067">Graph.h:71</a></div></div>
 <div class="ttc" id="anamespaceCP_html_ae40ba2a4da598838f2e3a1b3364a2ce0"><div class="ttname"><a href="namespaceCP.html#ae40ba2a4da598838f2e3a1b3364a2ce0">CP::VertexIndexMap</a></div><div class="ttdeci">typename boost::property_map&lt; Graph&lt; T &gt;, boost::vertex_index_t &gt;::type VertexIndexMap</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00102">Graph.h:103</a></div></div>
 <div class="ttc" id="anamespaceCP_html_ae838987fc3d0aa2a2aeaebad358bc57e"><div class="ttname"><a href="namespaceCP.html#ae838987fc3d0aa2a2aeaebad358bc57e">CP::EdgeAttributeMap</a></div><div class="ttdeci">boost::adj_list_edge_property_map&lt; boost::directed_tag, EdgeAttribute&lt; T &gt;, EdgeAttribute&lt; T &gt; &amp;, uint64_t, CP::EdgeAttribute&lt; T &gt;, boost::edge_bundle_t &gt; EdgeAttributeMap</div><div class="ttdef"><b>Definition:</b> <a href="Graph_8h_source.html#l00094">Graph.h:100</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
@@ -1040,7 +1030,7 @@ $(document).ready(function(){initNavTree('CutPursuit_8h_source.html',''); initRe
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_4b928928a8ba753e3642cd3e99306298.html">qTreeIso</a></li><li class="navelem"><a class="el" href="dir_efca379785dd656b4950eb7870b79a24.html">include</a></li><li class="navelem"><a class="el" href="CutPursuit_8h.html">CutPursuit.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

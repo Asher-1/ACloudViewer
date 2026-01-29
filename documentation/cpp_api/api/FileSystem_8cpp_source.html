@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -115,7 +106,7 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;sstream&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="CVPlatform_8h.html">CVPlatform.h</a>&quot;</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&quot;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;Logging.h&quot;</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#ifdef CV_WINDOWS</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;direct.h&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;dirent/dirent.h&gt;</span></div>
@@ -337,9 +328,9 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <a class="code" href="VtkUtils_8cpp.html#acad86cc31af25e3d02b6d43041d0c6e9">fs::copy</a>(src_path, dst_path,</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                 fs::copy_options::recursive |</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                         fs::copy_options::overwrite_existing);</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    } <span class="keywordflow">catch</span> (std::exception &amp;e) {</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    } <span class="keywordflow">catch</span> (std::exception &amp;<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>) {</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Failed to copy {} to {}. Exception: {}.&quot;</span>, src_path,</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                            dst_path, e.what());</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                            dst_path, <a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>.what());</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    }</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -611,10 +602,10 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;}</div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160; </div>
 <div class="line"><a name="l00514"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a507da85b927c7840dca419e1464a27cb">  514</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1utility_1_1filesystem.html#a507da85b927c7840dca419e1464a27cb">DeleteDirectory</a>(<span class="keyword">const</span> std::string &amp;directory) {</div>
-<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;    std::error_code <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>;</div>
-<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;    <span class="keywordflow">if</span> (fs::remove_all(directory, <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) == <span class="keyword">static_cast&lt;</span>std::uintmax_t<span class="keyword">&gt;</span>(-1)) {</div>
+<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;    std::error_code error;</div>
+<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;    <span class="keywordflow">if</span> (fs::remove_all(directory, error) == <span class="keyword">static_cast&lt;</span>std::uintmax_t<span class="keyword">&gt;</span>(-1)) {</div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">utility::LogWarning</a>(<span class="stringliteral">&quot;Failed to remove directory {}: {}.&quot;</span>, directory,</div>
-<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;                            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>.message());</div>
+<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;                            error.message());</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    }</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -943,11 +934,11 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;    <span class="keywordflow">return</span> line_buffer_.data();</div>
 <div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;}</div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160; </div>
-<div class="line"><a name="l00847"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8fe07b2889523a40e2c8ead701fb7913">  847</a></span>&#160;<span class="keywordtype">size_t</span> <a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">CFile::ReadData</a>(<span class="keywordtype">void</span> *data, <span class="keywordtype">size_t</span> elem_size, <span class="keywordtype">size_t</span> num_elems) {</div>
+<div class="line"><a name="l00847"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#a8fe07b2889523a40e2c8ead701fb7913">  847</a></span>&#160;<span class="keywordtype">size_t</span> <a class="code" href="classcloudViewer_1_1utility_1_1filesystem_1_1CFile.html#afbc6c830de00098be64d643ee5fcb047">CFile::ReadData</a>(<span class="keywordtype">void</span> *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <span class="keywordtype">size_t</span> elem_size, <span class="keywordtype">size_t</span> num_elems) {</div>
 <div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;    <span class="keywordflow">if</span> (!file_) {</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;CFile::ReadData() called on a closed file&quot;</span>);</div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;    }</div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;    <span class="keywordtype">size_t</span> elems = fread(data, elem_size, num_elems, file_);</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;    <span class="keywordtype">size_t</span> elems = fread(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, elem_size, num_elems, file_);</div>
 <div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;    <span class="keywordflow">if</span> (ferror(file_)) {</div>
 <div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;        <a class="code" href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">utility::LogError</a>(<span class="stringliteral">&quot;CFile::ReadData() ferror encountered&quot;</span>);</div>
 <div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;    }</div>
@@ -984,8 +975,8 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div class="ttc" id="acore_2include_2Logging_8h_html_a2c6c3e9c356e14fb4a7139acf4fa7b18"><div class="ttname"><a href="core_2include_2Logging_8h.html#a2c6c3e9c356e14fb4a7139acf4fa7b18">LogWarning</a></div><div class="ttdeci">#define LogWarning(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00072">Logging.h:72</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_a611dbbfa5c2f148b7190b97a12835b5e"><div class="ttname"><a href="core_2include_2Logging_8h.html#a611dbbfa5c2f148b7190b97a12835b5e">LogError</a></div><div class="ttdeci">#define LogError(...)</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00060">Logging.h:60</a></div></div>
 <div class="ttc" id="acore_2include_2Logging_8h_html_abb9ec697f94a31a8fdffdbdf3eddd14c"><div class="ttname"><a href="core_2include_2Logging_8h.html#abb9ec697f94a31a8fdffdbdf3eddd14c">DEFAULT_IO_BUFFER_SIZE</a></div><div class="ttdeci">#define DEFAULT_IO_BUFFER_SIZE</div><div class="ttdef"><b>Definition:</b> <a href="core_2include_2Logging_8h_source.html#l00031">Logging.h:31</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1t_1_1geometry_html_aca8fa7412652f158d15a2ae1bfb15d8a"><div class="ttname"><a href="namespacecloudViewer_1_1t_1_1geometry.html#aca8fa7412652f158d15a2ae1bfb15d8a">cloudViewer::t::geometry::path</a></div><div class="ttdeci">static const std::string path</div><div class="ttdef"><b>Definition:</b> <a href="libs_2CVViewer_2benchmarks_2t_2geometry_2PointCloud_8cpp_source.html#l00059">PointCloud.cpp:59</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a079c7f82f200c5c52b25bbe770f75d96"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a079c7f82f200c5c52b25bbe770f75d96">cloudViewer::utility::filesystem::ChangeWorkingDirectory</a></div><div class="ttdeci">bool ChangeWorkingDirectory(const std::string &amp;directory)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00427">FileSystem.cpp:427</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_a084f69e0bea29dc2c6eb6bb31ec5739c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#a084f69e0bea29dc2c6eb6bb31ec5739c">cloudViewer::utility::filesystem::ListFilesInDirectory</a></div><div class="ttdeci">bool ListFilesInDirectory(const std::string &amp;directory, std::vector&lt; std::string &gt; &amp;filenames)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00561">FileSystem.cpp:561</a></div></div>
@@ -1028,7 +1019,7 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div class="ttc" id="anamespacecloudViewer_1_1utility_1_1filesystem_html_aff778ff16f308a9559f2a737408c126c"><div class="ttname"><a href="namespacecloudViewer_1_1utility_1_1filesystem.html#aff778ff16f308a9559f2a737408c126c">cloudViewer::utility::filesystem::ListDirectory</a></div><div class="ttdeci">bool ListDirectory(const std::string &amp;directory, std::vector&lt; std::string &gt; &amp;subdirs, std::vector&lt; std::string &gt; &amp;filenames)</div><div class="ttdef"><b>Definition:</b> <a href="FileSystem_8cpp_source.html#l00532">FileSystem.cpp:532</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_a58297f7ef8ed2ecb26b4674b2256fa93"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#a58297f7ef8ed2ecb26b4674b2256fa93">cloudViewer::utility::ToLower</a></div><div class="ttdeci">std::string ToLower(const std::string &amp;s)</div><div class="ttdoc">Convert string to the lower case.</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00242">Helper.cpp:242</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1utility_html_aed83945a45ad30bd2e2185431e91f8b0"><div class="ttname"><a href="namespacecloudViewer_1_1utility.html#aed83945a45ad30bd2e2185431e91f8b0">cloudViewer::utility::StringSplit</a></div><div class="ttdeci">std::vector&lt; std::string &gt; StringSplit(const std::string &amp;str, const std::string &amp;delimiters=&quot; &quot;, bool trim_empty_str=true)</div><div class="ttdef"><b>Definition:</b> <a href="Helper_8cpp_source.html#l00180">Helper.cpp:180</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_a0d112bae8fd35be772185b6ec6bcbe64"><div class="ttname"><a href="qioapi_8cpp.html#a0d112bae8fd35be772185b6ec6bcbe64">SEEK_SET</a></div><div class="ttdeci">#define SEEK_SET</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00038">qioapi.cpp:38</a></div></div>
 <div class="ttc" id="aqioapi_8cpp_html_ad2a2e6c114780c3071efd24f16c7f7d8"><div class="ttname"><a href="qioapi_8cpp.html#ad2a2e6c114780c3071efd24f16c7f7d8">SEEK_END</a></div><div class="ttdeci">#define SEEK_END</div><div class="ttdef"><b>Definition:</b> <a href="qioapi_8cpp_source.html#l00034">qioapi.cpp:34</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -1037,7 +1028,7 @@ $(document).ready(function(){initNavTree('FileSystem_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="FileSystem_8cpp.html">FileSystem.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:21 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

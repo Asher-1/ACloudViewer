@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -107,10 +98,10 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="ExtractSIFT_8h.html">ExtractSIFT.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// LOCAL</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;Utils/cc2sm.h&gt;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;Utils/sm2cc.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="cc2sm_8h.html">Utils/cc2sm.h</a>&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="sm2cc_8h.html">Utils/sm2cc.h</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;PclUtils/PCLModules.h&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="PCLModules_8h.html">PclUtils/PCLModules.h</a>&quot;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="SIFTExtractDlg_8h.html">dialogs/SIFTExtractDlg.h</a>&quot;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// CV_DB_LIB</span></div>
@@ -255,7 +246,7 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    }</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    PCLCloud::Ptr sm_cloud = cc2smReader(cloud).getAsSM(req_fields);</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    PCLCloud::Ptr sm_cloud = <a class="code" href="classcc2smReader.html">cc2smReader</a>(cloud).<a class="code" href="classcc2smReader.html#a6bc7c4e321151fc098c9da9babf6c86d">getAsSM</a>(req_fields);</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keywordflow">if</span> (!sm_cloud) <span class="keywordflow">return</span> -1;</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="comment">// Now change the name of the field to use to a standard name, only if in</span></div>
@@ -276,28 +267,28 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="classExtractSIFT.html#a1e2f4026121e115d58f16e334d6c2dc4">m_mode</a> == <a class="code" href="classExtractSIFT.html#a3e0b715a364d4d65907445896a7f12d9a9113bc29c9a3cfe7f80bcc79f6505498">SCALAR_FIELD</a>) {</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        pcl::PointCloud&lt;pcl::PointXYZI&gt;::Ptr cloud_i(</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                <span class="keyword">new</span> pcl::PointCloud&lt;pcl::PointXYZI&gt;);</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        FROM_PCL_CLOUD(*sm_cloud, *cloud_i);</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <a class="code" href="PCLConv_8h.html#adb82d65ae8fc1522c6a6318daaa08fb2">FROM_PCL_CLOUD</a>(*sm_cloud, *cloud_i);</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        PCLModules::EstimateSIFT&lt;pcl::PointXYZI, pcl::PointXYZ&gt;(</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                cloud_i, out_cloud, <a class="code" href="classExtractSIFT.html#a5f2d0513c4ed232b0489cb969460b0eb">m_nr_octaves</a>, <a class="code" href="classExtractSIFT.html#a1bb51d8b52312dd90e724d24853d153d">m_min_scale</a>,</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                <a class="code" href="classExtractSIFT.html#a37e113406dda7e34f3341568c1b14f23">m_nr_scales_per_octave</a>, <a class="code" href="classExtractSIFT.html#a6d6e9527c587d5abc92a575782d5130e">m_min_contrast</a>);</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="classExtractSIFT.html#a1e2f4026121e115d58f16e334d6c2dc4">m_mode</a> == <a class="code" href="classExtractSIFT.html#a3e0b715a364d4d65907445896a7f12d9a3a303ac9ab14702424bef05286d89a6b">RGB</a>) {</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;        pcl::PointCloud&lt;pcl::PointXYZRGB&gt;::Ptr cloud_rgb(</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                <span class="keyword">new</span> pcl::PointCloud&lt;pcl::PointXYZRGB&gt;);</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        FROM_PCL_CLOUD(*sm_cloud, *cloud_rgb);</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        <a class="code" href="PCLConv_8h.html#adb82d65ae8fc1522c6a6318daaa08fb2">FROM_PCL_CLOUD</a>(*sm_cloud, *cloud_rgb);</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        PCLModules::EstimateSIFT&lt;pcl::PointXYZRGB, pcl::PointXYZ&gt;(</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                cloud_rgb, out_cloud, <a class="code" href="classExtractSIFT.html#a5f2d0513c4ed232b0489cb969460b0eb">m_nr_octaves</a>, <a class="code" href="classExtractSIFT.html#a1bb51d8b52312dd90e724d24853d153d">m_min_scale</a>,</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                <a class="code" href="classExtractSIFT.html#a37e113406dda7e34f3341568c1b14f23">m_nr_scales_per_octave</a>, <a class="code" href="classExtractSIFT.html#a6d6e9527c587d5abc92a575782d5130e">m_min_contrast</a>);</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    }</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    PCLCloud out_cloud_sm;</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    TO_PCL_CLOUD(*out_cloud, out_cloud_sm);</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <a class="code" href="PCLCloud_8h.html#a6b80a3a168fd75d021343307b49b8706">PCLCloud</a> out_cloud_sm;</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <a class="code" href="PCLConv_8h.html#a9b2a547f9a8709ba98055e250fd192e4">TO_PCL_CLOUD</a>(*out_cloud, out_cloud_sm);</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160; </div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="keywordflow">if</span> (out_cloud_sm.height * out_cloud_sm.width == 0) {</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="comment">// cloud is empty</span></div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="keywordflow">return</span> -53;</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    }</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* out_cloud_cc = pcl2cc::Convert(out_cloud_sm);</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <a class="code" href="classccPointCloud.html">ccPointCloud</a>* out_cloud_cc = <a class="code" href="classpcl2cc.html#acf0f0a1c74217618036c8dc30304adf1">pcl2cc::Convert</a>(out_cloud_sm);</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="keywordflow">if</span> (!out_cloud_cc) {</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        <span class="comment">// conversion failed (not enough memory?)</span></div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="keywordflow">return</span> -1;</div>
@@ -325,10 +316,10 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    out_cloud_cc-&gt;<a class="code" href="classccGenericPointCloud.html#a76c29cde85d95c7102a8889bd562d22d">setPointSize</a>(5);</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    <span class="comment">// copy global shift &amp; scale</span></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    out_cloud_cc-&gt;<a class="code" href="classccShiftedObject.html#a1fec0f86703cc37bd5962d9192c6e017">setGlobalScale</a>(cloud-&gt;<a class="code" href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">getGlobalScale</a>());</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    out_cloud_cc-&gt;<a class="code" href="classccShiftedObject.html#ac5ea4cf308a8a6afcd5a1b0c84b49d5d">setGlobalScale</a>(cloud-&gt;<a class="code" href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">getGlobalScale</a>());</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    out_cloud_cc-&gt;<a class="code" href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">setGlobalShift</a>(cloud-&gt;<a class="code" href="classccShiftedObject.html#aa69aa4885030aee94471ed4e1211c451">getGlobalShift</a>());</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()) cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">addChild</a>(out_cloud_cc);</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordflow">if</span> (cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()) cloud-&gt;<a class="code" href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">getParent</a>()-&gt;<a class="code" href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">addChild</a>(out_cloud_cc);</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160; </div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    emit <a class="code" href="classBasePclModule.html#a41999a0ce85cacc2f4acbb0179e7d87c">newEntity</a>(out_cloud_cc);</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
@@ -360,7 +351,12 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div class="ttc" id="aExtractSIFT_8h_html"><div class="ttname"><a href="ExtractSIFT_8h.html">ExtractSIFT.h</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a99e2d79d16d12cf405830edf05bebce0"><div class="ttname"><a href="FileIOFactory_8cpp.html#a99e2d79d16d12cf405830edf05bebce0">fields</a></div><div class="ttdeci">std::vector&lt; PCLPointField &gt; fields</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00141">FileIOFactory.cpp:141</a></div></div>
 <div class="ttc" id="aFileIOFactory_8cpp_html_a9b45b3e13bd9167aab02e17e08916231"><div class="ttname"><a href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a></div><div class="ttdeci">std::string name</div><div class="ttdef"><b>Definition:</b> <a href="FileIOFactory_8cpp_source.html#l00129">FileIOFactory.cpp:129</a></div></div>
+<div class="ttc" id="aPCLCloud_8h_html_a6b80a3a168fd75d021343307b49b8706"><div class="ttname"><a href="PCLCloud_8h.html#a6b80a3a168fd75d021343307b49b8706">PCLCloud</a></div><div class="ttdeci">pcl::PCLPointCloud2 PCLCloud</div><div class="ttdef"><b>Definition:</b> <a href="PCLCloud_8h_source.html#l00034">PCLCloud.h:34</a></div></div>
+<div class="ttc" id="aPCLConv_8h_html_a9b2a547f9a8709ba98055e250fd192e4"><div class="ttname"><a href="PCLConv_8h.html#a9b2a547f9a8709ba98055e250fd192e4">TO_PCL_CLOUD</a></div><div class="ttdeci">#define TO_PCL_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="PCLConv_8h_source.html#l00012">PCLConv.h:12</a></div></div>
+<div class="ttc" id="aPCLConv_8h_html_adb82d65ae8fc1522c6a6318daaa08fb2"><div class="ttname"><a href="PCLConv_8h.html#adb82d65ae8fc1522c6a6318daaa08fb2">FROM_PCL_CLOUD</a></div><div class="ttdeci">#define FROM_PCL_CLOUD</div><div class="ttdef"><b>Definition:</b> <a href="PCLConv_8h_source.html#l00011">PCLConv.h:11</a></div></div>
+<div class="ttc" id="aPCLModules_8h_html"><div class="ttname"><a href="PCLModules_8h.html">PCLModules.h</a></div></div>
 <div class="ttc" id="aSIFTExtractDlg_8h_html"><div class="ttname"><a href="SIFTExtractDlg_8h.html">SIFTExtractDlg.h</a></div></div>
+<div class="ttc" id="acc2sm_8h_html"><div class="ttname"><a href="cc2sm_8h.html">cc2sm.h</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html"><div class="ttname"><a href="classBasePclModule.html">BasePclModule</a></div><div class="ttdoc">Base abstract class for each implemented PCL filter.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00053">BasePclModule.h:53</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a058610debe0cf7d9107d4e53adf27e15"><div class="ttname"><a href="classBasePclModule.html#a058610debe0cf7d9107d4e53adf27e15">BasePclModule::getSelectedAvailableScalarFields</a></div><div class="ttdeci">std::vector&lt; std::string &gt; getSelectedAvailableScalarFields()</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00344">BasePclModule.cpp:344</a></div></div>
 <div class="ttc" id="aclassBasePclModule_html_a133e63da1d98e44c48da23104f06c5d9"><div class="ttname"><a href="classBasePclModule.html#a133e63da1d98e44c48da23104f06c5d9">BasePclModule::hasSelectedRGB</a></div><div class="ttdeci">int hasSelectedRGB()</div><div class="ttdoc">Returns 1 if the first selected entity has RGB info.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8cpp_source.html#l00365">BasePclModule.cpp:365</a></div></div>
@@ -391,22 +387,26 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div class="ttc" id="aclassExtractSIFT_html_ae368a13f0d7ae9d9bc548e788a762412"><div class="ttname"><a href="classExtractSIFT.html#ae368a13f0d7ae9d9bc548e788a762412">ExtractSIFT::m_field_to_use</a></div><div class="ttdeci">QString m_field_to_use</div><div class="ttdef"><b>Definition:</b> <a href="ExtractSIFT_8h_source.html#l00040">ExtractSIFT.h:40</a></div></div>
 <div class="ttc" id="aclassSIFTExtractDlg_html"><div class="ttname"><a href="classSIFTExtractDlg.html">SIFTExtractDlg</a></div><div class="ttdef"><b>Definition:</b> <a href="SIFTExtractDlg_8h_source.html#l00018">SIFTExtractDlg.h:18</a></div></div>
 <div class="ttc" id="aclassSIFTExtractDlg_html_adc3ed1787344cae695eb3705bda69623"><div class="ttname"><a href="classSIFTExtractDlg.html#adc3ed1787344cae695eb3705bda69623">SIFTExtractDlg::updateComboBox</a></div><div class="ttdeci">void updateComboBox(const std::vector&lt; std::string &gt; &amp;fields)</div><div class="ttdef"><b>Definition:</b> <a href="SIFTExtractDlg_8cpp_source.html#l00015">SIFTExtractDlg.cpp:15</a></div></div>
+<div class="ttc" id="aclasscc2smReader_html"><div class="ttname"><a href="classcc2smReader.html">cc2smReader</a></div><div class="ttdoc">CC to PCL cloud converter.</div><div class="ttdef"><b>Definition:</b> <a href="cc2sm_8h_source.html#l00043">cc2sm.h:43</a></div></div>
+<div class="ttc" id="aclasscc2smReader_html_a6bc7c4e321151fc098c9da9babf6c86d"><div class="ttname"><a href="classcc2smReader.html#a6bc7c4e321151fc098c9da9babf6c86d">cc2smReader::getAsSM</a></div><div class="ttdeci">PCLCloud::Ptr getAsSM(std::list&lt; std::string &gt; &amp;requested_fields) const</div><div class="ttdef"><b>Definition:</b> <a href="cc2sm_8cpp_source.html#l00607">cc2sm.cpp:607</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_abafa4534cf5bd169084fcdbf9d636c9b"><div class="ttname"><a href="classccDrawableObject.html#abafa4534cf5bd169084fcdbf9d636c9b">ccDrawableObject::showColors</a></div><div class="ttdeci">virtual void showColors(bool state)</div><div class="ttdoc">Sets colors visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00084">ecvDrawableObject.h:84</a></div></div>
 <div class="ttc" id="aclassccDrawableObject_html_abc02127e71c2c1f2dcee2cb1662c6a93"><div class="ttname"><a href="classccDrawableObject.html#abc02127e71c2c1f2dcee2cb1662c6a93">ccDrawableObject::showSF</a></div><div class="ttdeci">virtual void showSF(bool state)</div><div class="ttdoc">Sets active scalarfield visibility.</div><div class="ttdef"><b>Definition:</b> <a href="ecvDrawableObject_8h_source.html#l00108">ecvDrawableObject.h:108</a></div></div>
 <div class="ttc" id="aclassccGenericPointCloud_html_a76c29cde85d95c7102a8889bd562d22d"><div class="ttname"><a href="classccGenericPointCloud.html#a76c29cde85d95c7102a8889bd562d22d">ccGenericPointCloud::setPointSize</a></div><div class="ttdeci">void setPointSize(unsigned size=0)</div><div class="ttdoc">Sets point size.</div><div class="ttdef"><b>Definition:</b> <a href="ecvGenericPointCloud_8h_source.html#l00275">ecvGenericPointCloud.h:275</a></div></div>
-<div class="ttc" id="aclassccHObject_html_a7ee62cff1282c3f7d99acdabfa709fc0"><div class="ttname"><a href="classccHObject.html#a7ee62cff1282c3f7d99acdabfa709fc0">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div></div>
 <div class="ttc" id="aclassccHObject_html_aad8e05c6068a3a8089f1fdce795c3066"><div class="ttname"><a href="classccHObject.html#aad8e05c6068a3a8089f1fdce795c3066">ccHObject::getParent</a></div><div class="ttdeci">ccHObject * getParent() const</div><div class="ttdoc">Returns parent object.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8h_source.html#l00245">ecvHObject.h:245</a></div></div>
+<div class="ttc" id="aclassccHObject_html_ad618a89e257a6b831543fcd1192fc733"><div class="ttname"><a href="classccHObject.html#ad618a89e257a6b831543fcd1192fc733">ccHObject::addChild</a></div><div class="ttdeci">virtual bool addChild(ccHObject *child, int dependencyFlags=DP_PARENT_OF_OTHER, int insertIndex=-1)</div><div class="ttdoc">Adds a child.</div><div class="ttdef"><b>Definition:</b> <a href="ecvHObject_8cpp_source.html#l00534">ecvHObject.cpp:534</a></div></div>
 <div class="ttc" id="aclassccObject_html_a9852604f7395647b7ba0a63682b0b42b"><div class="ttname"><a href="classccObject.html#a9852604f7395647b7ba0a63682b0b42b">ccObject::setName</a></div><div class="ttdeci">virtual void setName(const QString &amp;name)</div><div class="ttdoc">Sets object name.</div><div class="ttdef"><b>Definition:</b> <a href="ecvObject_8h_source.html#l00075">ecvObject.h:75</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html"><div class="ttname"><a href="classccPointCloud.html">ccPointCloud</a></div><div class="ttdoc">A 3D cloud and its associated features (color, normals, scalar fields, etc.)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00146">ecvPointCloud.h:147</a></div></div>
 <div class="ttc" id="aclassccPointCloud_html_ae1a4279cdc35c060c6dfa803978d26db"><div class="ttname"><a href="classccPointCloud.html#ae1a4279cdc35c060c6dfa803978d26db">ccPointCloud::setRGBColor</a></div><div class="ttdeci">bool setRGBColor(ColorCompType r, ColorCompType g, ColorCompType b)</div><div class="ttdoc">Set a unique color for the whole cloud (shortcut)</div><div class="ttdef"><b>Definition:</b> <a href="ecvPointCloud_8h_source.html#l00778">ecvPointCloud.h:778</a></div></div>
-<div class="ttc" id="aclassccShiftedObject_html_a1fec0f86703cc37bd5962d9192c6e017"><div class="ttname"><a href="classccShiftedObject.html#a1fec0f86703cc37bd5962d9192c6e017">ccShiftedObject::setGlobalScale</a></div><div class="ttdeci">virtual void setGlobalScale(double scale)</div></div>
 <div class="ttc" id="aclassccShiftedObject_html_a9e16ee02507c2e5390fd9e5bb5ad20b7"><div class="ttname"><a href="classccShiftedObject.html#a9e16ee02507c2e5390fd9e5bb5ad20b7">ccShiftedObject::setGlobalShift</a></div><div class="ttdeci">virtual void setGlobalShift(double x, double y, double z)</div><div class="ttdoc">Sets shift applied to original coordinates (information storage only)</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00033">ecvShiftedObject.h:33</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_aa69aa4885030aee94471ed4e1211c451"><div class="ttname"><a href="classccShiftedObject.html#aa69aa4885030aee94471ed4e1211c451">ccShiftedObject::getGlobalShift</a></div><div class="ttdeci">virtual const CCVector3d &amp; getGlobalShift() const</div><div class="ttdoc">Returns the shift applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00046">ecvShiftedObject.h:46</a></div></div>
+<div class="ttc" id="aclassccShiftedObject_html_ac5ea4cf308a8a6afcd5a1b0c84b49d5d"><div class="ttname"><a href="classccShiftedObject.html#ac5ea4cf308a8a6afcd5a1b0c84b49d5d">ccShiftedObject::setGlobalScale</a></div><div class="ttdeci">virtual void setGlobalScale(double scale)</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8cpp_source.html#l00033">ecvShiftedObject.cpp:33</a></div></div>
 <div class="ttc" id="aclassccShiftedObject_html_ac6a17ca5216af799eaf4cac4166d8610"><div class="ttname"><a href="classccShiftedObject.html#ac6a17ca5216af799eaf4cac4166d8610">ccShiftedObject::getGlobalScale</a></div><div class="ttdeci">virtual double getGlobalScale() const</div><div class="ttdoc">Returns the scale applied to original coordinates.</div><div class="ttdef"><b>Definition:</b> <a href="ecvShiftedObject_8h_source.html#l00053">ecvShiftedObject.h:53</a></div></div>
 <div class="ttc" id="aclassecvMainAppInterface_html_a1de12b4bb79d299bf8e2c15c3890a33f"><div class="ttname"><a href="classecvMainAppInterface.html#a1de12b4bb79d299bf8e2c15c3890a33f">ecvMainAppInterface::getActiveWindow</a></div><div class="ttdeci">virtual QWidget * getActiveWindow()=0</div></div>
+<div class="ttc" id="aclasspcl2cc_html_acf0f0a1c74217618036c8dc30304adf1"><div class="ttname"><a href="classpcl2cc.html#acf0f0a1c74217618036c8dc30304adf1">pcl2cc::Convert</a></div><div class="ttdeci">static ccMesh * Convert(PCLTextureMesh::ConstPtr textureMesh)</div><div class="ttdoc">Converts a PCL point cloud to a ccPointCloud.</div></div>
 <div class="ttc" id="aecvMainAppInterface_8h_html"><div class="ttname"><a href="ecvMainAppInterface_8h.html">ecvMainAppInterface.h</a></div></div>
 <div class="ttc" id="aecvPointCloud_8h_html"><div class="ttname"><a href="ecvPointCloud_8h.html">ecvPointCloud.h</a></div></div>
 <div class="ttc" id="anamespaceecvColor_html_a5a10c8a75a92da7b2628dfeeb13fcd2a"><div class="ttname"><a href="namespaceecvColor.html#a5a10c8a75a92da7b2628dfeeb13fcd2a">ecvColor::red</a></div><div class="ttdeci">constexpr Rgb red(MAX, 0, 0)</div></div>
+<div class="ttc" id="asm2cc_8h_html"><div class="ttname"><a href="sm2cc_8h.html">sm2cc.h</a></div></div>
 <div class="ttc" id="astructPclModuleDescription_html"><div class="ttname"><a href="structPclModuleDescription.html">PclModuleDescription</a></div><div class="ttdoc">PCL filter description.</div><div class="ttdef"><b>Definition:</b> <a href="BasePclModule_8h_source.html#l00026">BasePclModule.h:26</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -414,7 +414,7 @@ $(document).ready(function(){initNavTree('ExtractSIFT_8cpp_source.html',''); ini
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_3ff8539b2123aaaa25c315baf6aaefac.html">qPCL</a></li><li class="navelem"><a class="el" href="dir_46e48b6c258079a5b839bd3cff5e4729.html">PclAlgorithms</a></li><li class="navelem"><a class="el" href="dir_1ab9807fc05473169be6a637eb7211ed.html">Features</a></li><li class="navelem"><a class="el" href="ExtractSIFT_8cpp.html">ExtractSIFT.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:48 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2026.1.28)  28 JAN 2026 09:00
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2026.1.28)  28 JAN 2026 20:56
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -144,8 +144,8 @@ Overfull \hbox (36.17322pt too wide) in alignment at lines 57--57
  [][][] []
  []
 
-[16] [17] [18] [19] [20] [21] [22] [23] [24] [25] [26] [27] [28] [29] [30] [31]
-[32] [33] [34] [35] [36] [37] [38] [39] [40] (./_formulas.aux) ) 
+[16] [17] [18] [19] [20] [21] [22] [23] [24] [25] [26] [27] [28] [29] (./_formu
+las.aux) ) 
 Here is how much of TeX's memory you used:
  1005 strings out of 480248
  18055 string characters out of 5896177
@@ -155,4 +155,4 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  70i,7n,76p,640b,100s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on _formulas.dvi (40 pages, 8068 bytes).
+Output written on _formulas.dvi (29 pages, 5108 bytes).

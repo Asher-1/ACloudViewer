@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -111,7 +102,7 @@ $(document).ready(function(){initNavTree('CCMiscTools_8cpp_source.html',''); ini
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacepybind11.html">py</a> = <a class="code" href="namespacepybind11.html">pybind11</a>;</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">using namespace </span>pybind11::literals;</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="cccorelib_8cpp.html#a1b993388d9224d9f908ba18242716bb6">   15</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="CCMiscTools_8cpp.html#aa55a666549535c3a620e4959157f131e">define_CCMiscTools</a>(py::module &amp;cccorelib)</div>
+<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="cccorelib_8cpp.html#a1b993388d9224d9f908ba18242716bb6">   15</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="CCMiscTools_8cpp.html#aa55a666549535c3a620e4959157f131e">define_CCMiscTools</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;cccorelib)</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;{</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    py::class_&lt;cloudViewer::CCMiscTools&gt; CCMiscTools(cccorelib, <span class="stringliteral">&quot;CCMiscTools&quot;</span>);</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    CCMiscTools.def_static(</div>
@@ -166,14 +157,15 @@ $(document).ready(function(){initNavTree('CCMiscTools_8cpp_source.html',''); ini
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_ae9ae80a0e2a6f43f65d27066b8f0a448"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#ae9ae80a0e2a6f43f65d27066b8f0a448">cloudViewer::CCMiscTools::EnlargeBox</a></div><div class="ttdeci">static void EnlargeBox(CCVector3 &amp;dimMin, CCVector3 &amp;dimMax, double coef)</div><div class="ttdoc">Proportionally enlarges a 3D box.</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8cpp_source.html#l00114">CVMiscTools.cpp:114</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_af1135c05bce194862826fe452bcfa9c4"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#af1135c05bce194862826fe452bcfa9c4">cloudViewer::CCMiscTools::TriBoxOverlapd</a></div><div class="ttdeci">static bool TriBoxOverlapd(const CCVector3d &amp;boxcenter, const CCVector3d &amp;boxhalfsize, const CCVector3d triverts[3])</div><div class="ttdoc">Ovelap test between a 3D box and a triangle (double version)</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8cpp_source.html#l00249">CVMiscTools.cpp:249</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1CCMiscTools_html_afab66fac3a46160ee3796d231ecbfdd6"><div class="ttname"><a href="classcloudViewer_1_1CCMiscTools.html#afab66fac3a46160ee3796d231ecbfdd6">cloudViewer::CCMiscTools::MakeMinAndMaxCubical</a></div><div class="ttdeci">static void MakeMinAndMaxCubical(CCVector3 &amp;dimMin, CCVector3 &amp;dimMax, double enlargeFactor=0.01)</div><div class="ttdoc">Transforms a 3D box into a 3D cube.</div><div class="ttdef"><b>Definition:</b> <a href="CVMiscTools_8cpp_source.html#l00088">CVMiscTools.cpp:88</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_aeae743e84fe331928171854b17029eaf"><div class="ttname"><a href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">Utils::module</a></div><div class="ttdeci">static double module(T *vector)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00105">utils.h:105</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_932acd6304591f5a356d6890e438ae73.html">cccorelib</a></li><li class="navelem"><a class="el" href="dir_c17cf8b2e440d80463baea1f1e29a48d.html">src</a></li><li class="navelem"><a class="el" href="CCMiscTools_8cpp.html">CCMiscTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

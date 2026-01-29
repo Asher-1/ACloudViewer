@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -101,13 +92,13 @@ $(document).ready(function(){initNavTree('DenseReconstructionWidget_8cpp.html','
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="DenseReconstructionWidget_8h_source.html">DenseReconstructionWidget.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="ReconstructionWidget_8h_source.html">ReconstructionWidget.h</a>&quot;</code><br />
-<code>#include &quot;base/undistortion.h&quot;</code><br />
-<code>#include &quot;controllers/texturing_controller.h&quot;</code><br />
-<code>#include &quot;mvs/fusion.h&quot;</code><br />
-<code>#include &quot;mvs/meshing.h&quot;</code><br />
-<code>#include &quot;mvs/patch_match.h&quot;</code><br />
-<code>#include &quot;ui/render_options.h&quot;</code><br />
-<code>#include &quot;util/option_manager.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="undistortion_8h_source.html">base/undistortion.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="texturing__controller_8h_source.html">controllers/texturing_controller.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="fusion_8h_source.html">mvs/fusion.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="meshing_8h_source.html">mvs/meshing.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="patch__match_8h_source.html">mvs/patch_match.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="render__options_8h_source.html">ui/render_options.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="option__manager_8h_source.html">util/option_manager.h</a>&quot;</code><br />
 <code>#include &lt;<a class="el" href="FileSystem_8h_source.html">FileSystem.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="ecvDisplayTools_8h_source.html">ecvDisplayTools.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="ecvPointCloud_8h_source.html">ecvPointCloud.h</a>&gt;</code><br />
@@ -117,56 +108,56 @@ Include dependency graph for DenseReconstructionWidget.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="DenseReconstructionWidget_8cpp__incl.png" border="0" usemap="#a_2root_2ACloudViewer_2app_2reconstruction_2DenseReconstructionWidget_8cpp" alt=""/></div>
 <map name="a_2root_2ACloudViewer_2app_2reconstruction_2DenseReconstructionWidget_8cpp" id="a_2root_2ACloudViewer_2app_2reconstruction_2DenseReconstructionWidget_8cpp">
-<area shape="rect" title=" " alt="" coords="3307,5,3544,61"/>
-<area shape="rect" href="DenseReconstructionWidget_8h.html" title=" " alt="" coords="845,206,1064,233"/>
-<area shape="rect" title=" " alt="" coords="2245,363,2409,389"/>
-<area shape="rect" href="ReconstructionWidget_8h.html" title=" " alt="" coords="1653,117,1830,143"/>
-<area shape="rect" title=" " alt="" coords="2949,288,3096,315"/>
-<area shape="rect" title=" " alt="" coords="2389,288,2536,315"/>
-<area shape="rect" title=" " alt="" coords="3193,109,3348,151"/>
-<area shape="rect" title=" " alt="" coords="3372,117,3479,143"/>
-<area shape="rect" title=" " alt="" coords="3503,117,3625,143"/>
-<area shape="rect" title=" " alt="" coords="3650,117,3801,143"/>
-<area shape="rect" href="FileSystem_8h.html" title=" " alt="" coords="3825,117,3932,143"/>
-<area shape="rect" href="ecvDisplayTools_8h.html" title=" " alt="" coords="4344,117,4483,143"/>
-<area shape="rect" href="ecvPointCloud_8h.html" title=" " alt="" coords="4507,117,4634,143"/>
-<area shape="rect" href="MainWindow_8h.html" title=" " alt="" coords="3956,117,4073,143"/>
-<area shape="rect" title=" " alt="" coords="1643,363,1709,389"/>
-<area shape="rect" title=" " alt="" coords="853,363,944,389"/>
-<area shape="rect" href="ImageViewerWidget_8h.html" title=" " alt="" coords="1782,288,1949,315"/>
-<area shape="rect" title=" " alt="" coords="1088,288,1237,315"/>
-<area shape="rect" title=" " alt="" coords="733,288,811,315"/>
-<area shape="rect" title=" " alt="" coords="600,288,659,315"/>
-<area shape="rect" href="AutomaticReconstructionWidget_8h.html" title=" " alt="" coords="577,206,821,233"/>
-<area shape="rect" href="BundleAdjustmentWidget_8h.html" title=" " alt="" coords="2005,206,2205,233"/>
-<area shape="rect" title=" " alt="" coords="2661,288,2824,315"/>
-<area shape="rect" href="DatabaseManagementWidget_8h.html" title=" " alt="" coords="1089,206,1317,233"/>
-<area shape="rect" href="FeatureExtractionWidget_8h.html" title=" " alt="" coords="1512,288,1707,315"/>
-<area shape="rect" href="FeatureMatchingWidget_8h.html" title=" " alt="" coords="2024,288,2213,315"/>
-<area shape="rect" href="LogWidget_8h.html" title=" " alt="" coords="398,206,501,233"/>
-<area shape="rect" href="MatchMatrixWidget_8h.html" title=" " alt="" coords="2280,206,2443,233"/>
-<area shape="rect" href="ModelViewerWidget_8h.html" title=" " alt="" coords="2760,206,2925,233"/>
-<area shape="rect" href="ProjectWidget_8h.html" title=" " alt="" coords="1312,288,1437,315"/>
-<area shape="rect" href="ReconstructionManagerWidget_8h.html" title=" " alt="" coords="5,288,240,315"/>
-<area shape="rect" href="ReconstructionStatsWidget_8h.html" title=" " alt="" coords="315,288,525,315"/>
-<area shape="rect" href="UndistortionWidget_8h.html" title=" " alt="" coords="1720,206,1880,233"/>
-<area shape="rect" title=" " alt="" coords="2467,199,2618,240"/>
-<area shape="rect" title=" " alt="" coords="1341,199,1515,240"/>
-<area shape="rect" title=" " alt="" coords="1539,206,1645,233"/>
-<area shape="rect" title=" " alt="" coords="3745,288,3831,315"/>
-<area shape="rect" title=" " alt="" coords="3856,288,3915,315"/>
-<area shape="rect" title=" " alt="" coords="3943,288,4006,315"/>
-<area shape="rect" href="CVCoreLib_8h.html" title=" " alt="" coords="3619,288,3720,315"/>
-<area shape="rect" href="core_2include_2Helper_8h.html" title=" " alt="" coords="3765,206,3841,233"/>
-<area shape="rect" href="ecvGLMatrix_8h.html" title=" " alt="" coords="4507,363,4623,389"/>
-<area shape="rect" href="ecvGenericDisplayTools_8h.html" title=" " alt="" coords="4301,288,4491,315"/>
-<area shape="rect" href="ecvGuiParameters_8h.html" title=" " alt="" coords="4394,206,4547,233"/>
-<area shape="rect" href="ecvHObject_8h.html" title=" " alt="" coords="4209,206,4319,233"/>
-<area shape="rect" href="ecvViewportParameters_8h.html" title=" " alt="" coords="4640,288,4829,315"/>
-<area shape="rect" title=" " alt="" coords="4571,206,4677,233"/>
-<area shape="rect" title=" " alt="" coords="4701,206,4822,233"/>
-<area shape="rect" title=" " alt="" coords="4018,206,4134,233"/>
-<area shape="rect" title=" " alt="" coords="4897,206,4972,233"/>
+<area shape="rect" title=" " alt="" coords="3339,5,3577,61"/>
+<area shape="rect" href="DenseReconstructionWidget_8h.html" title=" " alt="" coords="307,206,526,233"/>
+<area shape="rect" href="option__manager_8h.html" title=" " alt="" coords="445,377,609,404"/>
+<area shape="rect" href="ReconstructionWidget_8h.html" title=" " alt="" coords="1712,117,1889,143"/>
+<area shape="rect" href="render__options_8h.html" title=" " alt="" coords="1819,295,1966,322"/>
+<area shape="rect" href="undistortion_8h.html" title=" " alt="" coords="3198,295,3345,322"/>
+<area shape="rect" href="texturing__controller_8h.html" title=" " alt="" coords="3381,109,3535,151"/>
+<area shape="rect" href="fusion_8h.html" title=" " alt="" coords="4270,117,4377,143"/>
+<area shape="rect" href="meshing_8h.html" title=" " alt="" coords="2955,117,3078,143"/>
+<area shape="rect" href="patch__match_8h.html" title=" " alt="" coords="3775,206,3925,233"/>
+<area shape="rect" href="FileSystem_8h.html" title=" " alt="" coords="4686,452,4793,479"/>
+<area shape="rect" href="ecvDisplayTools_8h.html" title=" " alt="" coords="4902,377,5041,404"/>
+<area shape="rect" href="ecvPointCloud_8h.html" title=" " alt="" coords="4865,117,4992,143"/>
+<area shape="rect" href="MainWindow_8h.html" title=" " alt="" coords="4817,452,4934,479"/>
+<area shape="rect" title=" " alt="" coords="1021,377,1087,404"/>
+<area shape="rect" title=" " alt="" coords="1493,377,1583,404"/>
+<area shape="rect" href="ImageViewerWidget_8h.html" title=" " alt="" coords="697,295,864,322"/>
+<area shape="rect" href="options__widget_8h.html" title=" " alt="" coords="1545,295,1694,322"/>
+<area shape="rect" href="ply_8h.html" title=" " alt="" coords="3975,452,4053,479"/>
+<area shape="rect" title=" " alt="" coords="3290,527,3367,553"/>
+<area shape="rect" title=" " alt="" coords="3833,527,3891,553"/>
+<area shape="rect" title=" " alt="" coords="4185,527,4248,553"/>
+<area shape="rect" title=" " alt="" coords="2142,295,2201,322"/>
+<area shape="rect" href="AutomaticReconstructionWidget_8h.html" title=" " alt="" coords="1803,206,2047,233"/>
+<area shape="rect" href="BundleAdjustmentWidget_8h.html" title=" " alt="" coords="1578,206,1778,233"/>
+<area shape="rect" href="reconstruction_8h.html" title=" " alt="" coords="3090,377,3253,404"/>
+<area shape="rect" href="DatabaseManagementWidget_8h.html" title=" " alt="" coords="839,206,1067,233"/>
+<area shape="rect" href="FeatureExtractionWidget_8h.html" title=" " alt="" coords="214,295,409,322"/>
+<area shape="rect" href="FeatureMatchingWidget_8h.html" title=" " alt="" coords="433,295,622,322"/>
+<area shape="rect" href="LogWidget_8h.html" title=" " alt="" coords="2235,206,2337,233"/>
+<area shape="rect" href="MatchMatrixWidget_8h.html" title=" " alt="" coords="601,206,763,233"/>
+<area shape="rect" href="ModelViewerWidget_8h.html" title=" " alt="" coords="1091,206,1257,233"/>
+<area shape="rect" href="ProjectWidget_8h.html" title=" " alt="" coords="1294,295,1419,322"/>
+<area shape="rect" href="ReconstructionManagerWidget_8h.html" title=" " alt="" coords="2275,295,2510,322"/>
+<area shape="rect" href="ReconstructionStatsWidget_8h.html" title=" " alt="" coords="2534,295,2745,322"/>
+<area shape="rect" href="UndistortionWidget_8h.html" title=" " alt="" coords="1394,206,1554,233"/>
+<area shape="rect" href="bitmap_8h.html" title=" " alt="" coords="3693,452,3799,479"/>
+<area shape="rect" href="reconstruction__manager_8h.html" title=" " alt="" coords="2871,288,3021,329"/>
+<area shape="rect" href="controllers_2incremental__mapper_8h.html" title=" " alt="" coords="2854,199,3027,240"/>
+<area shape="rect" href="alignment_8h.html" title=" " alt="" coords="3493,452,3618,479"/>
+<area shape="rect" title=" " alt="" coords="4547,452,4662,479"/>
+<area shape="rect" href="misc_8h.html" title=" " alt="" coords="3277,377,3367,404"/>
+<area shape="rect" href="threading_8h.html" title=" " alt="" coords="3595,377,3716,404"/>
+<area shape="rect" href="workspace_8h.html" title=" " alt="" coords="4013,206,4149,233"/>
+<area shape="rect" href="depth__map_8h.html" title=" " alt="" coords="4249,377,4387,404"/>
+<area shape="rect" href="mvs_2model_8h.html" title=" " alt="" coords="4078,295,4185,322"/>
+<area shape="rect" href="mat_8h.html" title=" " alt="" coords="4280,452,4372,479"/>
+<area shape="rect" href="mvs_2image_8h.html" title=" " alt="" coords="4063,377,4170,404"/>
+<area shape="rect" title=" " alt="" coords="4463,206,4555,233"/>
+<area shape="rect" title=" " alt="" coords="4579,206,4638,233"/>
 </map>
 </div>
 </div>
@@ -184,7 +175,7 @@ Namespaces</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d422163b96683743ed3963d4aac17747.html">app</a></li><li class="navelem"><a class="el" href="dir_67526aa5542316903cde4bb6271ab0d0.html">reconstruction</a></li><li class="navelem"><a class="el" href="DenseReconstructionWidget_8cpp.html">DenseReconstructionWidget.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

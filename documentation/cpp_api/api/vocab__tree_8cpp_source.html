@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -6,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ACloudViewer: /root/ACloudViewer/libs/Python/pybind/reconstruction/vocab_tree/vocab_tree.cpp Source File</title>
+<title>ACloudViewer: /root/ACloudViewer/libs/Reconstruction/src/pipelines/vocab_tree.cpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -104,92 +95,82 @@ $(document).ready(function(){initNavTree('vocab__tree_8cpp_source.html',''); ini
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// SPDX-License-Identifier: MIT</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// ----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="vocab__tree_8h.html">pybind/reconstruction/vocab_tree/vocab_tree.h</a>&quot;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="exe_2vocab__tree_8h.html">exe/vocab_tree.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;pipelines/vocab_tree.h&quot;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="docstring_8h.html">pybind/docstring.h</a>&quot;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="reconstruction__options_8h.html">pybind/reconstruction/reconstruction_options.h</a>&quot;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>reconstruction {</div>
-<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html">   16</a></span>&#160;<span class="keyword">namespace </span>vocab_tree {</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">// Reconstruction vocabulary tree functions have similar arguments, sharing arg</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">// docstrings</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">static</span> <span class="keyword">const</span> std::unordered_map&lt;std::string, std::string&gt;</div>
-<div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#a2d409c15d63eeee9848865dc17565d34">   21</a></span>&#160;        <a class="code" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#a2d409c15d63eeee9848865dc17565d34">map_shared_argument_docstrings</a> = {</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;                {<span class="stringliteral">&quot;database_path&quot;</span>,</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;                 <span class="stringliteral">&quot;Path to database in which to store the extracted data&quot;</span>},</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                {<span class="stringliteral">&quot;vocab_tree_path&quot;</span>, <span class="stringliteral">&quot;The vocabulary tree path.&quot;</span>},</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;                {<span class="stringliteral">&quot;num_visual_words&quot;</span>,</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;                 <span class="stringliteral">&quot;The desired number of visual words, i.e. the number of leaf &quot;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                 <span class="stringliteral">&quot;node clusters. Note that the actual number of visual words &quot;</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                 <span class="stringliteral">&quot;might be less.&quot;</span>},</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                {<span class="stringliteral">&quot;num_checks&quot;</span>,</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                 <span class="stringliteral">&quot;The number of checks in the nearest neighbor search.&quot;</span>},</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                {<span class="stringliteral">&quot;branching&quot;</span>,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                 <span class="stringliteral">&quot;The branching factor of the hierarchical k-means tree.&quot;</span>},</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                {<span class="stringliteral">&quot;num_iterations&quot;</span>,</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                 <span class="stringliteral">&quot;The number of iterations for the clustering.&quot;</span>},</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                {<span class="stringliteral">&quot;max_num_images&quot;</span>, <span class="stringliteral">&quot;The maximum number of images.&quot;</span>},</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                {<span class="stringliteral">&quot;database_image_list_path&quot;</span>, <span class="stringliteral">&quot;The database image list path.&quot;</span>},</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                {<span class="stringliteral">&quot;query_image_list_path&quot;</span>, <span class="stringliteral">&quot;The query image list path.&quot;</span>},</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                {<span class="stringliteral">&quot;output_index_path&quot;</span>, <span class="stringliteral">&quot;The output index path.&quot;</span>},</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                {<span class="stringliteral">&quot;max_num_images&quot;</span>,</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                 <span class="stringliteral">&quot;The maximum number of most similar images to retrieve.&quot;</span>},</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                {<span class="stringliteral">&quot;num_neighbors&quot;</span>,</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                 <span class="stringliteral">&quot;The number of nearest neighbor visual words that each &quot;</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                 <span class="stringliteral">&quot;feature descriptor is assigned to.&quot;</span>},</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                {<span class="stringliteral">&quot;num_images_after_verification&quot;</span>,</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                 <span class="stringliteral">&quot;Whether to perform spatial verification after image &quot;</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                 <span class="stringliteral">&quot;retrieval.&quot;</span>},</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                {<span class="stringliteral">&quot;max_num_features&quot;</span>, <span class="stringliteral">&quot;The maximum number of features.&quot;</span>}};</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ab715bf7827778a974b093b3e31de5700">   49</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ab715bf7827778a974b093b3e31de5700">pybind_vocab_tree_methods</a>(py::module &amp;m) {</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    m.def(<span class="stringliteral">&quot;build_vocab_tree&quot;</span>, &amp;BuildVocabTree,</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;          py::call_guard&lt;py::gil_scoped_release&gt;(),</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;          <span class="stringliteral">&quot;Function for the building of vocabulary tree&quot;</span>, <span class="stringliteral">&quot;database_path&quot;</span>_a,</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;          <span class="stringliteral">&quot;vocab_tree_path&quot;</span>_a, <span class="stringliteral">&quot;num_visual_words&quot;</span>_a = 256 * 256,</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;          <span class="stringliteral">&quot;num_checks&quot;</span>_a = 256, <span class="stringliteral">&quot;branching&quot;</span>_a = 256, <span class="stringliteral">&quot;num_iterations&quot;</span>_a = 11,</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;          <span class="stringliteral">&quot;max_num_images&quot;</span>_a = -1);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <a class="code" href="namespacecloudViewer_1_1docstring.html#a915962b2d25b2f5a69c48106e860a1a7">docstring::FunctionDocInject</a>(m, <span class="stringliteral">&quot;build_vocab_tree&quot;</span>,</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                 <a class="code" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#a2d409c15d63eeee9848865dc17565d34">map_shared_argument_docstrings</a>);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    m.def(<span class="stringliteral">&quot;retrieve_vocab_tree&quot;</span>, &amp;RetrieveVocabTree,</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;          py::call_guard&lt;py::gil_scoped_release&gt;(),</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;          <span class="stringliteral">&quot;Function for the retrieve of vocabulary tree&quot;</span>, <span class="stringliteral">&quot;database_path&quot;</span>_a,</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;          <span class="stringliteral">&quot;vocab_tree_path&quot;</span>_a, <span class="stringliteral">&quot;output_index_path&quot;</span>_a = <span class="stringliteral">&quot;&quot;</span>,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;          <span class="stringliteral">&quot;query_image_list_path&quot;</span>_a = <span class="stringliteral">&quot;&quot;</span>, <span class="stringliteral">&quot;database_image_list_path&quot;</span>_a = <span class="stringliteral">&quot;&quot;</span>,</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;          <span class="stringliteral">&quot;max_num_images&quot;</span>_a = -1, <span class="stringliteral">&quot;num_neighbors&quot;</span>_a = 5, <span class="stringliteral">&quot;num_checks&quot;</span>_a = 256,</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;          <span class="stringliteral">&quot;num_images_after_verification&quot;</span>_a = 0, <span class="stringliteral">&quot;max_num_features&quot;</span>_a = -1);</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <a class="code" href="namespacecloudViewer_1_1docstring.html#a915962b2d25b2f5a69c48106e860a1a7">docstring::FunctionDocInject</a>(m, <span class="stringliteral">&quot;retrieve_vocab_tree&quot;</span>,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                                 <a class="code" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#a2d409c15d63eeee9848865dc17565d34">map_shared_argument_docstrings</a>);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ae6466be2332b8df508204da4a672308a">   70</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ae6466be2332b8df508204da4a672308a">pybind_vocab_tree</a>(py::module &amp;m) {</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    py::module m_submodule =</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            m.def_submodule(<span class="stringliteral">&quot;vocab_tree&quot;</span>, <span class="stringliteral">&quot;Reconstruction vocabulary tree.&quot;</span>);</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <a class="code" href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ab715bf7827778a974b093b3e31de5700">pybind_vocab_tree_methods</a>(m_submodule);</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}  <span class="comment">// namespace vocab_tree</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;}  <span class="comment">// namespace reconstruction</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
-<div class="ttc" id="adocstring_8h_html"><div class="ttname"><a href="docstring_8h.html">docstring.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1docstring_html_a915962b2d25b2f5a69c48106e860a1a7"><div class="ttname"><a href="namespacecloudViewer_1_1docstring.html#a915962b2d25b2f5a69c48106e860a1a7">cloudViewer::docstring::FunctionDocInject</a></div><div class="ttdeci">void FunctionDocInject(py::module &amp;pybind_module, const std::string &amp;function_name, const std::unordered_map&lt; std::string, std::string &gt; &amp;map_parameter_body_docs)</div><div class="ttdef"><b>Definition:</b> <a href="docstring_8cpp_source.html#l00076">docstring.cpp:76</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1reconstruction_1_1vocab__tree_html_a2d409c15d63eeee9848865dc17565d34"><div class="ttname"><a href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#a2d409c15d63eeee9848865dc17565d34">cloudViewer::reconstruction::vocab_tree::map_shared_argument_docstrings</a></div><div class="ttdeci">static const std::unordered_map&lt; std::string, std::string &gt; map_shared_argument_docstrings</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cpp_source.html#l00021">vocab_tree.cpp:21</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1reconstruction_1_1vocab__tree_html_ab715bf7827778a974b093b3e31de5700"><div class="ttname"><a href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ab715bf7827778a974b093b3e31de5700">cloudViewer::reconstruction::vocab_tree::pybind_vocab_tree_methods</a></div><div class="ttdeci">void pybind_vocab_tree_methods(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cpp_source.html#l00049">vocab_tree.cpp:49</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_1_1reconstruction_1_1vocab__tree_html_ae6466be2332b8df508204da4a672308a"><div class="ttname"><a href="namespacecloudViewer_1_1reconstruction_1_1vocab__tree.html#ae6466be2332b8df508204da4a672308a">cloudViewer::reconstruction::vocab_tree::pybind_vocab_tree</a></div><div class="ttdeci">void pybind_vocab_tree(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cpp_source.html#l00070">vocab_tree.cpp:70</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
-<div class="ttc" id="areconstruction__options_8h_html"><div class="ttname"><a href="reconstruction__options_8h.html">reconstruction_options.h</a></div></div>
-<div class="ttc" id="avocab__tree_8h_html"><div class="ttname"><a href="vocab__tree_8h.html">vocab_tree.h</a></div></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="option__utils_8h.html">pipelines/option_utils.h</a>&quot;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="pipelines_2vocab__tree_8h.html">pipelines/vocab_tree.h</a>&quot;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
+<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#af85f7937266ec30242a807e23919f24f">   15</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer.html#af85f7937266ec30242a807e23919f24f">BuildVocabTree</a>(<span class="keyword">const</span> std::string&amp; database_path,</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;                   <span class="keyword">const</span> std::string&amp; vocab_tree_path,</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;                   <span class="keywordtype">int</span> num_visual_words <span class="comment">/*= 256 * 256*/</span>,</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;                   <span class="keywordtype">int</span> num_checks <span class="comment">/*= 256*/</span>,</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;                   <span class="keywordtype">int</span> branching <span class="comment">/*= 256*/</span>,</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;                   <span class="keywordtype">int</span> num_iterations <span class="comment">/*= 11*/</span>,</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;                   <span class="keywordtype">int</span> max_num_images <span class="comment">/*= -1*/</span>) {</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <a class="code" href="classcloudViewer_1_1OptionsParser.html">OptionsParser</a> parser;</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;database_path&quot;</span>, &amp;database_path);</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;vocab_tree_path&quot;</span>, &amp;vocab_tree_path);</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;num_visual_words&quot;</span>, &amp;num_visual_words);</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;num_checks&quot;</span>, &amp;num_checks);</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;branching&quot;</span>, &amp;branching);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;num_iterations&quot;</span>, &amp;num_iterations);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;max_num_images&quot;</span>, &amp;max_num_images);</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keywordflow">if</span> (!parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a95d0fb2cf491111783b6091930bfb962">parseOptions</a>()) <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacecolmap.html#a5e5d0a1c10649ddc8ec3265ef52c16df">colmap::RunVocabTreeBuilder</a>(parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a663dfcb5c6b4f396d9543f9895dc2f9a">getArgc</a>(), parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#afdb9e2002cf76156d0c0ef6e32546db3">getArgv</a>());</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;}</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="namespacecloudViewer.html#a784fa7ef24c6dad0925fde1374cc5f58">   35</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="namespacecloudViewer.html#a784fa7ef24c6dad0925fde1374cc5f58">RetrieveVocabTree</a>(<span class="keyword">const</span> std::string&amp; database_path,</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                      <span class="keyword">const</span> std::string&amp; vocab_tree_path,</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                      <span class="keyword">const</span> std::string&amp; output_index_path <span class="comment">/*= &quot;&quot;*/</span>,</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                      <span class="keyword">const</span> std::string&amp; query_image_list_path <span class="comment">/*= &quot;&quot;*/</span>,</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                      <span class="keyword">const</span> std::string&amp; database_image_list_path <span class="comment">/*= &quot;&quot;*/</span>,</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                      <span class="keywordtype">int</span> max_num_images <span class="comment">/*= -1*/</span>,</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                      <span class="keywordtype">int</span> num_neighbors <span class="comment">/*= 5*/</span>,</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                      <span class="keywordtype">int</span> num_checks <span class="comment">/*= 256*/</span>,</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                      <span class="keywordtype">int</span> num_images_after_verification <span class="comment">/*= 0*/</span>,</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                      <span class="keywordtype">int</span> max_num_features <span class="comment">/*= -1*/</span>) {</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <a class="code" href="classcloudViewer_1_1OptionsParser.html">OptionsParser</a> parser;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;database_path&quot;</span>, &amp;database_path);</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;vocab_tree_path&quot;</span>, &amp;vocab_tree_path);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;output_index_path&quot;</span>, &amp;output_index_path);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;query_image_list_path&quot;</span>, &amp;query_image_list_path);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;database_image_list_path&quot;</span>,</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                          &amp;database_image_list_path);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;max_num_images&quot;</span>, &amp;max_num_images);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;num_neighbors&quot;</span>, &amp;num_neighbors);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;num_checks&quot;</span>, &amp;num_checks);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;num_images_after_verification&quot;</span>,</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                          &amp;num_images_after_verification);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">registerOption</a>(<span class="stringliteral">&quot;max_num_features&quot;</span>, &amp;max_num_features);</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keywordflow">if</span> (!parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a95d0fb2cf491111783b6091930bfb962">parseOptions</a>()) <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacecolmap.html#a4f504e21b0ab114f91407fe217549933">colmap::RunVocabTreeRetriever</a>(parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#a663dfcb5c6b4f396d9543f9895dc2f9a">getArgc</a>(), parser.<a class="code" href="classcloudViewer_1_1OptionsParser.html#afdb9e2002cf76156d0c0ef6e32546db3">getArgv</a>());</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;}</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;}  <span class="comment">// namespace cloudViewer</span></div>
+<div class="ttc" id="aclasscloudViewer_1_1OptionsParser_html"><div class="ttname"><a href="classcloudViewer_1_1OptionsParser.html">cloudViewer::OptionsParser</a></div><div class="ttdef"><b>Definition:</b> <a href="option__utils_8h_source.html#l00027">option_utils.h:27</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1OptionsParser_html_a663dfcb5c6b4f396d9543f9895dc2f9a"><div class="ttname"><a href="classcloudViewer_1_1OptionsParser.html#a663dfcb5c6b4f396d9543f9895dc2f9a">cloudViewer::OptionsParser::getArgc</a></div><div class="ttdeci">int getArgc() const</div><div class="ttdef"><b>Definition:</b> <a href="option__utils_8h_source.html#l00039">option_utils.h:39</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1OptionsParser_html_a8f466d4574221ba4ea79002e0d10f527"><div class="ttname"><a href="classcloudViewer_1_1OptionsParser.html#a8f466d4574221ba4ea79002e0d10f527">cloudViewer::OptionsParser::registerOption</a></div><div class="ttdeci">void registerOption(const std::string &amp;name, const T *option)</div><div class="ttdef"><b>Definition:</b> <a href="option__utils_8h_source.html#l00043">option_utils.h:43</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1OptionsParser_html_a95d0fb2cf491111783b6091930bfb962"><div class="ttname"><a href="classcloudViewer_1_1OptionsParser.html#a95d0fb2cf491111783b6091930bfb962">cloudViewer::OptionsParser::parseOptions</a></div><div class="ttdeci">bool parseOptions()</div><div class="ttdef"><b>Definition:</b> <a href="option__utils_8h_source.html#l00034">option_utils.h:34</a></div></div>
+<div class="ttc" id="aclasscloudViewer_1_1OptionsParser_html_afdb9e2002cf76156d0c0ef6e32546db3"><div class="ttname"><a href="classcloudViewer_1_1OptionsParser.html#afdb9e2002cf76156d0c0ef6e32546db3">cloudViewer::OptionsParser::getArgv</a></div><div class="ttdeci">char ** getArgv()</div><div class="ttdef"><b>Definition:</b> <a href="option__utils_8h_source.html#l00040">option_utils.h:40</a></div></div>
+<div class="ttc" id="aexe_2vocab__tree_8h_html"><div class="ttname"><a href="exe_2vocab__tree_8h.html">vocab_tree.h</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html_a784fa7ef24c6dad0925fde1374cc5f58"><div class="ttname"><a href="namespacecloudViewer.html#a784fa7ef24c6dad0925fde1374cc5f58">cloudViewer::RetrieveVocabTree</a></div><div class="ttdeci">int RetrieveVocabTree(const std::string &amp;database_path, const std::string &amp;vocab_tree_path, const std::string &amp;output_index_path, const std::string &amp;query_image_list_path, const std::string &amp;database_image_list_path, int max_num_images, int num_neighbors, int num_checks, int num_images_after_verification, int max_num_features)</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cpp_source.html#l00035">vocab_tree.cpp:35</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html_af85f7937266ec30242a807e23919f24f"><div class="ttname"><a href="namespacecloudViewer.html#af85f7937266ec30242a807e23919f24f">cloudViewer::BuildVocabTree</a></div><div class="ttdeci">int BuildVocabTree(const std::string &amp;database_path, const std::string &amp;vocab_tree_path, int num_visual_words, int num_checks, int branching, int num_iterations, int max_num_images)</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cpp_source.html#l00015">vocab_tree.cpp:15</a></div></div>
+<div class="ttc" id="anamespacecolmap_html_a4f504e21b0ab114f91407fe217549933"><div class="ttname"><a href="namespacecolmap.html#a4f504e21b0ab114f91407fe217549933">colmap::RunVocabTreeRetriever</a></div><div class="ttdeci">int RunVocabTreeRetriever(int argc, char **argv)</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cc_source.html#l00157">vocab_tree.cc:157</a></div></div>
+<div class="ttc" id="anamespacecolmap_html_a5e5d0a1c10649ddc8ec3265ef52c16df"><div class="ttname"><a href="namespacecolmap.html#a5e5d0a1c10649ddc8ec3265ef52c16df">colmap::RunVocabTreeBuilder</a></div><div class="ttdeci">int RunVocabTreeBuilder(int argc, char **argv)</div><div class="ttdef"><b>Definition:</b> <a href="vocab__tree_8cc_source.html#l00123">vocab_tree.cc:123</a></div></div>
+<div class="ttc" id="aoption__utils_8h_html"><div class="ttname"><a href="option__utils_8h.html">option_utils.h</a></div></div>
+<div class="ttc" id="apipelines_2vocab__tree_8h_html"><div class="ttname"><a href="pipelines_2vocab__tree_8h.html">vocab_tree.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_cddc43bc0f0b61be6979055b74560329.html">Python</a></li><li class="navelem"><a class="el" href="dir_fed2e88c5253a54ca2cf39db5cee421b.html">pybind</a></li><li class="navelem"><a class="el" href="dir_180d5735f2cb59d1a4fd6dc7b9e64692.html">reconstruction</a></li><li class="navelem"><a class="el" href="dir_dba84ec80a737ea217c6adbdb11fd866.html">vocab_tree</a></li><li class="navelem"><a class="el" href="vocab__tree_8cpp.html">vocab_tree.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:58 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_bd031dda83acea3557ab1d9c3dc1b72a.html">Reconstruction</a></li><li class="navelem"><a class="el" href="dir_2b8701664a3fd4a351d9025408a4c0c7.html">src</a></li><li class="navelem"><a class="el" href="dir_91adf9823604a00e4850b5250ffaaefa.html">pipelines</a></li><li class="navelem"><a class="el" href="vocab__tree_8cpp.html">vocab_tree.cpp</a></li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:46 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

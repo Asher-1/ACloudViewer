@@ -1,7 +1,6 @@
 <map id="PdmsTools::PdmsCommands::Coordinates" name="PdmsTools::PdmsCommands::Coordinates">
-<area shape="rect" id="node1" title=" " alt="" coords="5,408,215,449"/>
-<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsCommands_1_1Command.html" title=" " alt="" coords="127,95,336,136"/>
-<area shape="rect" id="node5" href="$classPdmsTools_1_1PdmsCommands_1_1NumericalValue.html" title=" " alt="" coords="127,213,336,255"/>
-<area shape="rect" id="node3" href="$structToken.html" title=" " alt="" coords="273,5,331,32"/>
-<area shape="rect" id="node4" href="$classPdmsTools_1_1PdmsCommands_1_1DistanceValue.html" title=" " alt="" coords="127,304,336,345"/>
+<area shape="rect" id="node1" title=" " alt="" coords="11,291,220,332"/>
+<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsCommands_1_1Command.html" title=" " alt="" coords="5,5,215,47"/>
+<area shape="rect" id="node4" href="$classPdmsTools_1_1PdmsCommands_1_1NumericalValue.html" title=" " alt="" coords="132,96,341,137"/>
+<area shape="rect" id="node3" href="$classPdmsTools_1_1PdmsCommands_1_1DistanceValue.html" title=" " alt="" coords="132,187,341,228"/>
 </map>

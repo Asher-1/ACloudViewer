@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -165,16 +156,16 @@ $(document).ready(function(){initNavTree('wrappers_8h_source.html',''); initResi
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;{</div>
 <div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">   72</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code" href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">NoOpDelete</a>(<span class="keywordtype">void</span> *) {}</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="namespacePyCC.html#aa8529f51ac6731ff42b128293927cba6">   74</a></span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt; py::array_t&lt;T&gt; <a class="code" href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">SpanAsNumpyArray</a>(T *data, py::array::ShapeContainer shape)</div>
+<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="namespacePyCC.html#aa8529f51ac6731ff42b128293927cba6">   74</a></span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt; py::array_t&lt;T&gt; <a class="code" href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">SpanAsNumpyArray</a>(T *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, py::array::ShapeContainer shape)</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;{</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">auto</span> capsule = py::capsule(data, <a class="code" href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">NoOpDelete</a>);</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> py::array(shape, data, capsule);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">auto</span> capsule = py::capsule(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <a class="code" href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">NoOpDelete</a>);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> py::array(shape, <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, capsule);</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;}</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
-<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">   80</a></span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt; py::array_t&lt;T&gt; <a class="code" href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">SpanAsNumpyArray</a>(T *data, <span class="keywordtype">size_t</span> len)</div>
+<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">   80</a></span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt; py::array_t&lt;T&gt; <a class="code" href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">SpanAsNumpyArray</a>(T *<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <span class="keywordtype">size_t</span> len)</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;{</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">auto</span> capsule = py::capsule(data, <a class="code" href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">NoOpDelete</a>);</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keywordflow">return</span> py::array(len, data, capsule);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">auto</span> capsule = py::capsule(<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, <a class="code" href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">NoOpDelete</a>);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keywordflow">return</span> py::array(len, <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>, capsule);</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;}</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
 <div class="line"><a name="l00086"></a><span class="lineno"><a class="line" href="namespacePyCC.html#a6b806ed115f1af093c698286e74b6e56">   86</a></span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt; py::array_t&lt;T&gt; <a class="code" href="namespacePyCC.html#a6b806ed115f1af093c698286e74b6e56">VectorAsNumpyArray</a>(std::vector&lt;T&gt; &amp;vector)</div>
@@ -196,7 +187,7 @@ $(document).ready(function(){initNavTree('wrappers_8h_source.html',''); initResi
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    }</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">const</span> py::ssize_t numToReserve = <span class="keyword">self</span>.size() + xs.size();</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keywordflow">if</span> (numToReserve &gt; <a class="code" href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">std::numeric_limits&lt;unsigned int&gt;::max</a>())</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keywordflow">if</span> (numToReserve &gt; std::numeric_limits&lt;unsigned int&gt;::max())</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    {</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">throw</span> std::out_of_range(<a class="code" href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">std::to_string</a>(numToReserve) + <span class="stringliteral">&quot; cannot be casted to unsigned int&quot;</span>);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    }</div>
@@ -386,14 +377,14 @@ $(document).ready(function(){initNavTree('wrappers_8h_source.html',''); initResi
 <div class="ttc" id="aclassCCShareableHolder_html_aa888629624726889e65f121c53a1228d"><div class="ttname"><a href="classCCShareableHolder.html#aa888629624726889e65f121c53a1228d">CCShareableHolder::CCShareableHolder</a></div><div class="ttdeci">CCShareableHolder()=default</div></div>
 <div class="ttc" id="aclassCCShareableHolder_html_aaa668a243904862fdae94b684825a7e3"><div class="ttname"><a href="classCCShareableHolder.html#aaa668a243904862fdae94b684825a7e3">CCShareableHolder::get</a></div><div class="ttdeci">const T * get() const</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00050">wrappers.h:50</a></div></div>
 <div class="ttc" id="aclassCCShareableHolder_html_ac705e0f07c10f306f0ec740346574dc8"><div class="ttname"><a href="classCCShareableHolder.html#ac705e0f07c10f306f0ec740346574dc8">CCShareableHolder::get</a></div><div class="ttdeci">T * get()</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00045">wrappers.h:45</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_af082905f7eac6d03e92015146bbc1925"><div class="ttname"><a href="cutil__math_8h.html#af082905f7eac6d03e92015146bbc1925">max</a></div><div class="ttdeci">int max(int a, int b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l00048">cutil_math.h:48</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="anamespacePyCC_html"><div class="ttname"><a href="namespacePyCC.html">PyCC</a></div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00070">wrappers.h:71</a></div></div>
 <div class="ttc" id="anamespacePyCC_html_a01b1c16720278b7bf1a7dd23ac4c6eb6"><div class="ttname"><a href="namespacePyCC.html#a01b1c16720278b7bf1a7dd23ac4c6eb6">PyCC::SpanAsNumpyArray</a></div><div class="ttdeci">py::array_t&lt; T &gt; SpanAsNumpyArray(T *data, size_t len)</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00080">wrappers.h:80</a></div></div>
 <div class="ttc" id="anamespacePyCC_html_a605ff88c5612129eeb12db5dbd83d5d1"><div class="ttname"><a href="namespacePyCC.html#a605ff88c5612129eeb12db5dbd83d5d1">PyCC::NoOpDelete</a></div><div class="ttdeci">void NoOpDelete(void *)</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00072">wrappers.h:72</a></div></div>
 <div class="ttc" id="anamespacePyCC_html_a6b806ed115f1af093c698286e74b6e56"><div class="ttname"><a href="namespacePyCC.html#a6b806ed115f1af093c698286e74b6e56">PyCC::VectorAsNumpyArray</a></div><div class="ttdeci">py::array_t&lt; T &gt; VectorAsNumpyArray(std::vector&lt; T &gt; &amp;vector)</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00086">wrappers.h:86</a></div></div>
 <div class="ttc" id="anamespacePyCC_html_ae887e13ed59e34d46448283c3573fd61"><div class="ttname"><a href="namespacePyCC.html#ae887e13ed59e34d46448283c3573fd61">PyCC::addPointsFromArrays</a></div><div class="ttdeci">void addPointsFromArrays(PointCloudType &amp;self, py::array_t&lt; PointCoordinateType &gt; &amp;xs, py::array_t&lt; PointCoordinateType &gt; &amp;ys, py::array_t&lt; PointCoordinateType &gt; &amp;zs)</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00094">wrappers.h:94</a></div></div>
 <div class="ttc" id="anamespacepatch_html_a54d2400c78aef13e3748a87cd7c86ede"><div class="ttname"><a href="namespacepatch.html#a54d2400c78aef13e3748a87cd7c86ede">patch::to_string</a></div><div class="ttdeci">std::string to_string(const T &amp;n)</div><div class="ttdef"><b>Definition:</b> <a href="Standard_2qTreeIso_2include_2Common_8h_source.html#l00020">Common.h:20</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 <div class="ttc" id="awrappers_8h_html_a08cb75add568cb4aac0db029e672f54c"><div class="ttname"><a href="wrappers_8h.html#a08cb75add568cb4aac0db029e672f54c">PYBIND11_DECLARE_HOLDER_TYPE</a></div><div class="ttdeci">PYBIND11_DECLARE_HOLDER_TYPE(T, CCShareableHolder&lt; T &gt;)</div></div>
 <div class="ttc" id="awrappers_8h_html_a3350b3b2324e38d481745d876d70b31d"><div class="ttname"><a href="wrappers_8h.html#a3350b3b2324e38d481745d876d70b31d">SIZE_SCALAR_FIELD_DOCSTRING</a></div><div class="ttdeci">static constexpr const char SIZE_SCALAR_FIELD_DOCSTRING[]</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00144">wrappers.h:144</a></div></div>
 <div class="ttc" id="awrappers_8h_html_a6f1d3c8fe5415ed73b7c426d7c1bc2a0"><div class="ttname"><a href="wrappers_8h.html#a6f1d3c8fe5415ed73b7c426d7c1bc2a0">ADD_SCALAR_FIELD_DOCSTRING</a></div><div class="ttdeci">static constexpr const char ADD_SCALAR_FIELD_DOCSTRING[]</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00127">wrappers.h:127</a></div></div>
@@ -404,7 +395,7 @@ $(document).ready(function(){initNavTree('wrappers_8h_source.html',''); initResi
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_932acd6304591f5a356d6890e438ae73.html">cccorelib</a></li><li class="navelem"><a class="el" href="dir_c17cf8b2e440d80463baea1f1e29a48d.html">src</a></li><li class="navelem"><a class="el" href="wrappers_8h.html">wrappers.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['ioutils_34231',['IoUtils',['../namespaceIoUtils.html',1,'']]]
+  ['knncpp_31600',['knncpp',['../namespaceknncpp.html',1,'']]]
 ];

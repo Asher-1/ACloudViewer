@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -180,7 +171,7 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="comment">// ret.alpha.set_size(fdim);</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="comment">// for (int i=0; i&lt;fdim; ++i) ret.alpha(i) = w_vect(i);</span></div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        ret.alpha = w_vect;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        ret.b = <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(w_vect, (mu1 + mu2) * 0.5);</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        ret.b = dot(w_vect, (mu1 + mu2) * 0.5);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="comment">// linear kernel idiocy</span></div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        ret.basis_vectors.set_size(fdim);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; fdim; ++i) {</div>
@@ -254,7 +245,7 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <span class="comment">//ret.alpha.set_size(fdim);</span></div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="comment">//for (int i=0; i&lt;fdim; ++i) ret.alpha(i) = w_vect(i);</span></div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        ret.alpha = w_vect;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        ret.b = <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(w_vect,(mu1+mu2)*0.5);</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        ret.b = dot(w_vect,(mu1+mu2)*0.5);</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="comment">// linear kernel idiocy</span></div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        ret.basis_vectors.set_size(fdim);</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;fdim; ++i)</div>
@@ -295,14 +286,14 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[dim] += pdecfun.beta;</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160; </div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="comment">// TODO: check if necessary here</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        for (<span class="keywordtype">int</span> i = 0; i &lt;= dim; ++i) <a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[i] = -<a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[i];</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        <a class="code" href="essential__matrix__poly_8h.html#a3ce2b84995587ea215ddc01e4510ec15">for</a> (<span class="keywordtype">int</span> i = 0; i &lt;= dim; ++i) <a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[i] = -<a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[i];</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    }</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
-<div class="line"><a name="l00202"></a><span class="lineno"><a class="line" href="classLDATrainer.html#a032b17168e82463d7e4c2f8db0404e51">  202</a></span>&#160;    <span class="keywordtype">double</span> <a class="code" href="classLDATrainer.html#a032b17168e82463d7e4c2f8db0404e51">predict</a>(<span class="keyword">const</span> <a class="code" href="classLDATrainer.html#af8fa86c39d97fbdc4f809920b0373b76">sample_type</a>&amp; data)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00202"></a><span class="lineno"><a class="line" href="classLDATrainer.html#a032b17168e82463d7e4c2f8db0404e51">  202</a></span>&#160;    <span class="keywordtype">double</span> <a class="code" href="classLDATrainer.html#a032b17168e82463d7e4c2f8db0404e51">predict</a>(<span class="keyword">const</span> <a class="code" href="classLDATrainer.html#af8fa86c39d97fbdc4f809920b0373b76">sample_type</a>&amp; <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        assert(!<a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>.empty());</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="keywordtype">double</span> ret = <a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>.back();</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> d = 0; d &lt; <a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>.size() - 1; ++d)</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            ret += <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[d]) * data(d);</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            ret += <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(<a class="code" href="classLDATrainer.html#a0e6aa6039efdd23f95803a6c969af108">m_weights</a>[d]) * <a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>(d);</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    }</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160; </div>
@@ -320,7 +311,7 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    <span class="keywordtype">double</span> maxabsdp = -1.0;</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    <span class="keywordtype">long</span> selectedCoord = 0;</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">long</span> i = 0; i &lt; dim; ++i) {</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        <span class="keywordtype">double</span> absdp = <a class="code" href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a>(<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(basis(i), newX));</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        <span class="keywordtype">double</span> absdp = fabs(dot(basis(i), newX));</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keywordflow">if</span> (absdp &gt; maxabsdp) {</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            absdp = maxabsdp;</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            selectedCoord = i;</div>
@@ -334,10 +325,10 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="comment">// Thanks Wikipedia for the stabilized version</span></div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">long</span> j = 0; j &lt; dim; ++j) {</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">long</span> i = 0; i &lt; j; ++i)</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            basis(j) -= (<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(basis(j), basis(i)) / <a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(basis(i), basis(i))) *</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            basis(j) -= (dot(basis(j), basis(i)) / dot(basis(i), basis(i))) *</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                        basis(i);</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160; </div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        basis(j) /= sqrt(<a class="code" href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a>(basis(j), basis(j)));</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        basis(j) /= sqrt(dot(basis(j), basis(j)));</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    }</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;}</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
@@ -381,7 +372,7 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    <span class="comment">// m_app-&gt;dispToConsole(&quot;[Cloud dilatation]&quot;);</span></div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    <a class="code" href="classVector2Tpl.html">Classifier::Point2D</a> e1 = classifier.<a class="code" href="classClassifier.html#acb72cca2f4362ea09fb6b8dbcd8bafc5">refPointPos</a> - classifier.<a class="code" href="classClassifier.html#af6ece47d5bcaa3b1514a35af53567956">refPointNeg</a>;</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    e1.<a class="code" href="classVector2Tpl.html#a98435c07a6d52f83f320dffa7c358177">normalize</a>();</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <a class="code" href="classVector2Tpl.html">Classifier::Point2D</a> e2(-e1.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>, e1.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>);</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <a class="code" href="classVector2Tpl.html">Classifier::Point2D</a> <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>(-e1.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>, e1.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <a class="code" href="classVector2Tpl.html">Classifier::Point2D</a> ori =</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            (classifier.<a class="code" href="classClassifier.html#acb72cca2f4362ea09fb6b8dbcd8bafc5">refPointPos</a> + classifier.<a class="code" href="classClassifier.html#af6ece47d5bcaa3b1514a35af53567956">refPointNeg</a>) / 2;</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
@@ -395,7 +386,7 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        <a class="code" href="classVector2Tpl.html">Classifier::Point2D</a> p(proj1[i], proj2[i]);</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;        p -= ori;</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keywordtype">float</span> p1 = p.<a class="code" href="classVector2Tpl.html#a282cd08b70ad98b293bd7c26cd3cdcf6">dot</a>(e1);</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keywordtype">float</span> p2 = p.<a class="code" href="classVector2Tpl.html#a282cd08b70ad98b293bd7c26cd3cdcf6">dot</a>(e2);</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keywordtype">float</span> p2 = p.<a class="code" href="classVector2Tpl.html#a282cd08b70ad98b293bd7c26cd3cdcf6">dot</a>(<a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>);</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="keywordflow">if</span> (labels[i] &lt; 0) {</div>
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;            m11 += p1;</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            v11 += p1 * p1;</div>
@@ -423,11 +414,11 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="keywordtype">float</span> d2 = sqrt(v21 / v22);</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    classifier.<a class="code" href="classClassifier.html#a4df5f4cbadcacdf256377ca466bc84a9">axisScaleRatio</a> = sqrt(d1 * d2);</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keywordtype">float</span> bdValues[4] = {e1.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>, e1.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>, e2.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a> / classifier.<a class="code" href="classClassifier.html#a4df5f4cbadcacdf256377ca466bc84a9">axisScaleRatio</a>,</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                         e2.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a> / classifier.<a class="code" href="classClassifier.html#a4df5f4cbadcacdf256377ca466bc84a9">axisScaleRatio</a>};</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keywordtype">float</span> bdValues[4] = {e1.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>, e1.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>, <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>.x / classifier.<a class="code" href="classClassifier.html#a4df5f4cbadcacdf256377ca466bc84a9">axisScaleRatio</a>,</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                         <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>.y / classifier.<a class="code" href="classClassifier.html#a4df5f4cbadcacdf256377ca466bc84a9">axisScaleRatio</a>};</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    dlib::matrix&lt;float, 2, 2&gt; bd(bdValues);</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordtype">float</span> biValues[4] = {e1.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>, e2.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>, e1.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>, e2.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>};</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordtype">float</span> biValues[4] = {e1.<a class="code" href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">x</a>, <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>.x, e1.<a class="code" href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">y</a>, <a class="code" href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a>.y};</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    dlib::matrix&lt;float, 2, 2&gt; bi(biValues);</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    dlib::matrix&lt;float, 2, 2&gt; c = inv(trans(bd)) <span class="comment">/* bi * bd */</span>;</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
@@ -495,8 +486,9 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div class="ttc" id="aclassVector2Tpl_html_a81616567b348e66d8393967c334efdf2"><div class="ttname"><a href="classVector2Tpl.html#a81616567b348e66d8393967c334efdf2">Vector2Tpl::x</a></div><div class="ttdeci">Type x</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00036">CVGeom.h:36</a></div></div>
 <div class="ttc" id="aclassVector2Tpl_html_a98435c07a6d52f83f320dffa7c358177"><div class="ttname"><a href="classVector2Tpl.html#a98435c07a6d52f83f320dffa7c358177">Vector2Tpl::normalize</a></div><div class="ttdeci">void normalize()</div><div class="ttdoc">Sets vector norm to unity.</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00065">CVGeom.h:65</a></div></div>
 <div class="ttc" id="aclassVector2Tpl_html_afc3af87765b3c2b04f43605a7cd10b47"><div class="ttname"><a href="classVector2Tpl.html#afc3af87765b3c2b04f43605a7cd10b47">Vector2Tpl::y</a></div><div class="ttdeci">Type y</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00036">CVGeom.h:36</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aa81053cc504f50bd3cd8b5cc6f54b666"><div class="ttname"><a href="cutil__math_8h.html#aa81053cc504f50bd3cd8b5cc6f54b666">dot</a></div><div class="ttdeci">__host__ __device__ float dot(float2 a, float2 b)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01119">cutil_math.h:1119</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_aad6a2701675cd2a4bc1b1da7b79948ae"><div class="ttname"><a href="cutil__math_8h.html#aad6a2701675cd2a4bc1b1da7b79948ae">fabs</a></div><div class="ttdeci">__host__ __device__ float2 fabs(float2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01254">cutil_math.h:1254</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a3ce2b84995587ea215ddc01e4510ec15"><div class="ttname"><a href="essential__matrix__poly_8h.html#a3ce2b84995587ea215ddc01e4510ec15">for</a></div><div class="ttdeci">for(size_t i=0;i&lt; 36;++i)</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00014">essential_matrix_poly.h:14</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_abff2bfe384096b8892d5eb3a6a51c8b4"><div class="ttname"><a href="essential__matrix__poly_8h.html#abff2bfe384096b8892d5eb3a6a51c8b4">e2</a></div><div class="ttdeci">double e2[36]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00012">essential_matrix_poly.h:12</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="atrainer_8h_html_a92caae0aa0a38d8073dec66a0bc5e0fd"><div class="ttname"><a href="trainer_8h.html#a92caae0aa0a38d8073dec66a0bc5e0fd">GramSchmidt</a></div><div class="ttdeci">static void GramSchmidt(dlib::matrix&lt; LDATrainer::sample_type, 0, 1 &gt; &amp;basis, LDATrainer::sample_type &amp;newX)</div><div class="ttdoc">Gram-Schmidt process to re-orthonormalise the basis.</div><div class="ttdef"><b>Definition:</b> <a href="trainer_8h_source.html#l00215">trainer.h:215</a></div></div>
 <div class="ttc" id="atrainer_8h_html_a953b6cc85bc53f2553c9fb523818543e"><div class="ttname"><a href="trainer_8h.html#a953b6cc85bc53f2553c9fb523818543e">DilateClassifier</a></div><div class="ttdeci">static bool DilateClassifier(Classifier &amp;classifier, std::vector&lt; float &gt; &amp;proj1, std::vector&lt; float &gt; &amp;proj2, const std::vector&lt; float &gt; &amp;labels, const std::vector&lt; LDATrainer::sample_type &gt; &amp;samples, LDATrainer &amp;trainer, LDATrainer &amp;orthoTrainer)</div><div class="ttdef"><b>Definition:</b> <a href="trainer_8h_source.html#l00279">trainer.h:279</a></div></div>
 <div class="ttc" id="atrainer_8h_html_aee19236edd4517e22a1808601e40c82e"><div class="ttname"><a href="trainer_8h.html#aee19236edd4517e22a1808601e40c82e">ComputeReferencePoints</a></div><div class="ttdeci">static void ComputeReferencePoints(Classifier::Point2D &amp;refpt_pos, Classifier::Point2D &amp;refpt_neg, const std::vector&lt; float &gt; &amp;proj1, const std::vector&lt; float &gt; &amp;proj2, const std::vector&lt; float &gt; &amp;labels, unsigned *_npos=0, unsigned *_nneg=0)</div><div class="ttdoc">Compute pos. and neg. reference points.</div><div class="ttdef"><b>Definition:</b> <a href="trainer_8h_source.html#l00248">trainer.h:248</a></div></div>
@@ -506,7 +498,7 @@ $(document).ready(function(){initNavTree('trainer_8h_source.html',''); initResiz
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_039c29ee5c0bf40195ae620976ff5812.html">qCanupo</a></li><li class="navelem"><a class="el" href="dir_7d54bddc563c3ca5f78c49b09d346ce1.html">include</a></li><li class="navelem"><a class="el" href="trainer_8h.html">trainer.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

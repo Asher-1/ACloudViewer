@@ -34,7 +34,7 @@ var classecvGenericAnnotationTool =
     [ "trimMode", "classecvGenericAnnotationTool.html#ad27a04b9aeb06b525a8a5417e80f3eb1", null ],
     [ "unionMode", "classecvGenericAnnotationTool.html#aa20829df9c88254847be6bec76ceda75", null ],
     [ "updateCloud", "classecvGenericAnnotationTool.html#a114f2c2738874d113b896d851cbb641e", null ],
-    [ "vertices", "classecvGenericAnnotationTool.html#a52dd06df0e7d6d6a32f9c36506bc1c1e", null ],
+    [ "vertices", "classecvGenericAnnotationTool.html#aad57b939d49e46c3db2dab6e3dee06dc", null ],
     [ "m_annotationMode", "classecvGenericAnnotationTool.html#af1c52b1de0a79d684ecc975fb7e59495", null ],
     [ "m_associatedCloud", "classecvGenericAnnotationTool.html#a6d97e7f7fdd4540cbb4eb32296d188cf", null ]
 ];

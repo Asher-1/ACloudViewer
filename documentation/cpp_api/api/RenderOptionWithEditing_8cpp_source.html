@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -106,7 +97,7 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RenderOptionWithEditing_8h.html">visualization/visualizer/RenderOptionWithEditing.h</a>&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a>&gt;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;Logging.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;json/json.h&gt;</span></div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacecloudViewer.html">cloudViewer</a> {</div>
@@ -116,7 +107,7 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a22ed4ef3a7407f9ed5e17e3aba124b96">RenderOptionWithEditing::PICKER_SPHERE_SIZE_MAX</a> = 0.08;</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">const</span> <span class="keywordtype">double</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a5b9d1f72a0b838f2164a52a1301ce359">RenderOptionWithEditing::PICKER_SPHERE_SIZE_DEFAULT</a> = 0.01;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a600e7ea7dff5ef9ab5b6bf7ec7b2f2fa">   20</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a600e7ea7dff5ef9ab5b6bf7ec7b2f2fa">RenderOptionWithEditing::ConvertToJsonValue</a>(Json::Value &amp;value)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a600e7ea7dff5ef9ab5b6bf7ec7b2f2fa">   20</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#a600e7ea7dff5ef9ab5b6bf7ec7b2f2fa">RenderOptionWithEditing::ConvertToJsonValue</a>(<a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">RenderOption::ConvertToJsonValue</a>(value)) {</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    }</div>
@@ -133,7 +124,7 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;}</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ac1f9ffa05aef3ce9369aff4f10de5d4a">   37</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ac1f9ffa05aef3ce9369aff4f10de5d4a">RenderOptionWithEditing::ConvertFromJsonValue</a>(<span class="keyword">const</span> Json::Value &amp;value) {</div>
+<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ac1f9ffa05aef3ce9369aff4f10de5d4a">   37</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#ac1f9ffa05aef3ce9369aff4f10de5d4a">RenderOptionWithEditing::ConvertFromJsonValue</a>(<span class="keyword">const</span> <a class="code" href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Json::Value</a> &amp;value) {</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">RenderOption::ConvertFromJsonValue</a>(value)) {</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    }</div>
@@ -171,15 +162,15 @@ $(document).ready(function(){initNavTree('RenderOptionWithEditing_8cpp_source.ht
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOptionWithEditing_html_af0585288861f157efcde637bf015abe3"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOptionWithEditing.html#af0585288861f157efcde637bf015abe3">cloudViewer::visualization::RenderOptionWithEditing::selection_polygon_mask_color_</a></div><div class="ttdeci">Eigen::Vector3d selection_polygon_mask_color_</div><div class="ttdef"><b>Definition:</b> <a href="RenderOptionWithEditing_8h_source.html#l00043">RenderOptionWithEditing.h:43</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOption_html_a027e3154cde4489fd8bf326bf11bdf45"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45">cloudViewer::visualization::RenderOption::ConvertToJsonValue</a></div><div class="ttdeci">bool ConvertToJsonValue(Json::Value &amp;value) const override</div><div class="ttdef"><b>Definition:</b> <a href="RenderOption_8cpp_source.html#l00019">RenderOption.cpp:19</a></div></div>
 <div class="ttc" id="aclasscloudViewer_1_1visualization_1_1RenderOption_html_aa5e882dc844d14f7ff560cca9e26c04f"><div class="ttname"><a href="classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f">cloudViewer::visualization::RenderOption::ConvertFromJsonValue</a></div><div class="ttdeci">bool ConvertFromJsonValue(const Json::Value &amp;value) override</div><div class="ttdef"><b>Definition:</b> <a href="RenderOption_8cpp_source.html#l00098">RenderOption.cpp:98</a></div></div>
-<div class="ttc" id="alibs_2cloudViewer_2utility_2Logging_8h_html"><div class="ttname"><a href="libs_2cloudViewer_2utility_2Logging_8h.html">Logging.h</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
+<div class="ttc" id="avtkDistributedTrivialProducer_8cxx_html_a1ee6276fc24448fd28f1d17b9f02e438"><div class="ttname"><a href="vtkDistributedTrivialProducer_8cxx.html#a1ee6276fc24448fd28f1d17b9f02e438">Value</a></div><div class="ttdeci">static vtkPVTrivialProducerStaticInternal Value</div><div class="ttdef"><b>Definition:</b> <a href="vtkDistributedTrivialProducer_8cxx_source.html#l00065">vtkDistributedTrivialProducer.cxx:65</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_f741c6de0b4acaecc0a431f8da296d9b.html">visualization</a></li><li class="navelem"><a class="el" href="dir_56310d8a8080d6c5b5eb895c4a2e3f1d.html">visualizer</a></li><li class="navelem"><a class="el" href="RenderOptionWithEditing_8cpp.html">RenderOptionWithEditing.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:57 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:31 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

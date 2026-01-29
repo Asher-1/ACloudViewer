@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -225,10 +216,10 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="comment">// for each point</span></div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">size</a>(); ++i) {</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="keyword">const</span> ScalarType <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">getPointScalarValue</a>(i);</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="keyword">const</span> ScalarType dist = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">getPointScalarValue</a>(i);</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="comment">// we test if its associated scalar value falls inside the specified</span></div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="comment">// interval</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keywordflow">if</span> ((<a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> &gt;= minDist &amp;&amp; <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> &lt;= maxDist) ^ outside) {</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keywordflow">if</span> ((dist &gt;= minDist &amp;&amp; dist &lt;= maxDist) ^ outside) {</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            <span class="keywordflow">if</span> (!Y-&gt;<a class="code" href="classcloudViewer_1_1ReferenceCloud.html#a23676f2ac9ec66989f6e10928b1732d9">addPointIndex</a>(i)) {</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                <span class="comment">// not engouh memory</span></div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                <span class="keyword">delete</span> Y;</div>
@@ -254,10 +245,10 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <span class="comment">// for each point</span></div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> i = 0; i &lt; cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aa24d123b33022a7ff03f15e6a8618b55">size</a>(); ++i) {</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keyword">const</span> ScalarType <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a> = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">getPointScalarValue</a>(i);</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keyword">const</span> ScalarType dist = cloud-&gt;<a class="code" href="classcloudViewer_1_1GenericCloud.html#aee0b9a0ccbec80b0f9c0975a36340dff">getPointScalarValue</a>(i);</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="keywordtype">bool</span> find_flag = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">auto</span> label : values) {</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(label - <a class="code" href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a>) &lt; <a class="code" href="CVConst_8h.html#ab87d546aeec975a56d8006822da21707">EPSILON_VALUE</a>) {</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;            <span class="keywordflow">if</span> (std::abs(label - dist) &lt; <a class="code" href="CVConst_8h.html#ab87d546aeec975a56d8006822da21707">EPSILON_VALUE</a>) {</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                find_flag = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;            }</div>
@@ -766,7 +757,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;    <a class="code" href="classcloudViewer_1_1PointCloud.html">PointCloud</a>* outsideVertices = <span class="keyword">new</span> <a class="code" href="namespacecloudViewer_1_1geometry.html#a3ad6422d3fb0907abb608368ee88a0c3">PointCloud</a>;</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    <a class="code" href="classcloudViewer_1_1SimpleMesh.html">SimpleMesh</a>* plusMesh = <span class="keyword">new</span> <a class="code" href="classcloudViewer_1_1SimpleMesh.html">SimpleMesh</a>(outsideVertices, <span class="keyword">true</span>);</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160; </div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    <span class="keywordtype">bool</span> error = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160; </div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;    <span class="comment">// for each triangle</span></div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;    <span class="keywordflow">try</span> {</div>
@@ -788,7 +779,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;            std::vector&lt;unsigned char&gt; minusVertIndexes, plusVertIndexes;</div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> j = 0; j &lt; 3; ++j) {</div>
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;                <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; v = V[j];</div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(v.<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z] - planeZ) &lt; epsilon) {</div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                <span class="keywordflow">if</span> (std::abs(v.<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z] - planeZ) &lt; epsilon) {</div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;                    <span class="comment">// relativePos[j] = 0;</span></div>
 <div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                    <span class="keywordflow">if</span> (v.<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z] &lt; planeZ) {</div>
@@ -854,7 +845,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;                                    insideVertices)) {</div>
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;                            <span class="comment">// early stop</span></div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;                            i = triCount;</div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;                            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;                            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;                            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;                        }</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160; </div>
@@ -871,7 +862,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;                                            ((iCenter + 1) % 3) == iPlus)) {</div>
 <div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;                            <span class="comment">// early stop</span></div>
 <div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;                            i = triCount;</div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;                            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;                            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;                            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;                        }</div>
 <div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;                    }</div>
@@ -920,7 +911,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                                    insideVertices)) {</div>
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                            <span class="comment">// early stop</span></div>
 <div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                            i = triCount;</div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;                            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                        }</div>
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160; </div>
@@ -944,7 +935,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;                                            ((iRight2 + 1) % 3) == iRight1)) {</div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;                            <span class="comment">// early stop</span></div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                            i = triCount;</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;                        }</div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                    }</div>
@@ -956,23 +947,23 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;        <span class="comment">// now add the remaining triangles</span></div>
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;        <span class="comment">// not enough memory</span></div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;    }</div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160; </div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;    <span class="comment">// free some memory</span></div>
 <div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;    <a class="code" href="core_2src_2ManualSegmentationTools_8cpp.html#a7e5904a61817a9d9e9cf01d75c37a038">s_edgePoint</a>.clear();</div>
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160; </div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    <span class="keywordflow">if</span> (!error) {</div>
 <div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;        <span class="comment">// import the &#39;preserved&#39; (original) triangles</span></div>
 <div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="core_2src_2ManualSegmentationTools_8cpp.html#a9a0c592b10521c5436a9808187f8ac16">MergeOldTriangles</a>(mesh, vertices, minusMesh, insideVertices,</div>
 <div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;                               preservedTrianglesMinus) ||</div>
 <div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;            !<a class="code" href="core_2src_2ManualSegmentationTools_8cpp.html#a9a0c592b10521c5436a9808187f8ac16">MergeOldTriangles</a>(mesh, vertices, plusMesh, outsideVertices,</div>
 <div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;                               preservedTrianglesPlus)) {</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;        }</div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    }</div>
 <div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160; </div>
-<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;    <span class="keywordflow">if</span> (error) {</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;        <span class="keyword">delete</span> minusMesh;</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        <span class="keyword">delete</span> plusMesh;</div>
 <div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -1036,7 +1027,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160; </div>
 <div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3d</a> boxCenter = (ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#ad6749208b411e3a90946d8e61bfc89b9">bbMin</a> + ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#ae0beab3cdad7cdefb8b46f4c48c24fa0">bbMax</a>) / 2;</div>
 <div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;    <a class="code" href="classVector3Tpl.html">CCVector3d</a> boxHalfSize = (ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#ae0beab3cdad7cdefb8b46f4c48c24fa0">bbMax</a> - ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#ad6749208b411e3a90946d8e61bfc89b9">bbMin</a>) / 2;</div>
-<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;    <span class="keywordtype">bool</span> error = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160; </div>
 <div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;    <span class="comment">// for each triangle</span></div>
 <div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;    <span class="keywordflow">try</span> {</div>
@@ -1045,7 +1036,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;            <span class="comment">// Extract the &#39;plane&#39; information corresponding to the input box</span></div>
 <div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;            <span class="comment">// faces -X,+X,-Y,+Y,-Z,+Z</span></div>
 <div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;            <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> Z = <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(d / 2);</div>
-<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;            <span class="keywordtype">double</span> planeCoord = ((d &amp; 1) ? bbMax : bbMin).u[Z];</div>
+<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;            <span class="keywordtype">double</span> planeCoord = ((d &amp; 1) ? bbMax : bbMin).<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z];</div>
 <div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;            <span class="keywordtype">bool</span> keepBelow = ((d &amp; 1) ? <span class="keyword">true</span> : <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160; </div>
 <div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;            assert(preservedTrianglesInside &amp;&amp; formerPreservedTriangles);</div>
@@ -1147,7 +1138,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;                        outsideLocalVertIndexes;</div>
 <div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> j = 0; j &lt; 3; ++j) {</div>
 <div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;                    <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">CCVector3d</a>&amp; v = V[j];</div>
-<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;                    <span class="keywordflow">if</span> (<a class="code" href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">std::abs</a>(v.<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z] - planeCoord) &lt; epsilon) {</div>
+<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;                    <span class="keywordflow">if</span> (std::abs(v.<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z] - planeCoord) &lt; epsilon) {</div>
 <div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;                        <span class="comment">// relativePos[j] = 0;</span></div>
 <div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;                    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;                        <span class="keywordflow">if</span> (v.<a class="code" href="classTuple3Tpl.html#a84442d2b18e1d644350a4336ba889dbe">u</a>[Z] &lt; planeCoord) {</div>
@@ -1230,7 +1221,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01131"></a><span class="lineno"> 1131</span>&#160;                                           ((iCenter + 1) % 3) == iOuside)) {</div>
 <div class="line"><a name="l01132"></a><span class="lineno"> 1132</span>&#160;                                <span class="comment">// early stop</span></div>
 <div class="line"><a name="l01133"></a><span class="lineno"> 1133</span>&#160;                                i = triCount;</div>
-<div class="line"><a name="l01134"></a><span class="lineno"> 1134</span>&#160;                                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l01134"></a><span class="lineno"> 1134</span>&#160;                                error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01135"></a><span class="lineno"> 1135</span>&#160;                                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01136"></a><span class="lineno"> 1136</span>&#160;                            }</div>
 <div class="line"><a name="l01137"></a><span class="lineno"> 1137</span>&#160; </div>
@@ -1325,7 +1316,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01226"></a><span class="lineno"> 1226</span>&#160;                                        ((iRight2 + 1) % 3) == iRight1)) {</div>
 <div class="line"><a name="l01227"></a><span class="lineno"> 1227</span>&#160;                                <span class="comment">// early stop</span></div>
 <div class="line"><a name="l01228"></a><span class="lineno"> 1228</span>&#160;                                i = triCount;</div>
-<div class="line"><a name="l01229"></a><span class="lineno"> 1229</span>&#160;                                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l01229"></a><span class="lineno"> 1229</span>&#160;                                error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01230"></a><span class="lineno"> 1230</span>&#160;                                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01231"></a><span class="lineno"> 1231</span>&#160;                            }</div>
 <div class="line"><a name="l01232"></a><span class="lineno"> 1232</span>&#160; </div>
@@ -1376,7 +1367,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160;                                    isFullyInside ? insideMesh : outsideMesh,</div>
 <div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;                                    <span class="keyword">true</span>)) {</div>
 <div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160;                            <span class="comment">// early stop</span></div>
-<div class="line"><a name="l01280"></a><span class="lineno"> 1280</span>&#160;                            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l01280"></a><span class="lineno"> 1280</span>&#160;                            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01281"></a><span class="lineno"> 1281</span>&#160;                            <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01282"></a><span class="lineno"> 1282</span>&#160;                        }</div>
 <div class="line"><a name="l01283"></a><span class="lineno"> 1283</span>&#160;                        <span class="keywordflow">if</span> (ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#a2ce68a98dac260a5c4c082c498cd00d0">trackOrigIndexes</a>) {</div>
@@ -1403,7 +1394,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01304"></a><span class="lineno"> 1304</span>&#160;                 !<a class="code" href="core_2src_2ManualSegmentationTools_8cpp.html#a7c5348c976a8b73537f58b29df40aa23">ImportSourceVertices</a>(sourceVertices, outsideMesh,</div>
 <div class="line"><a name="l01305"></a><span class="lineno"> 1305</span>&#160;                                       outsideVertices))) {</div>
 <div class="line"><a name="l01306"></a><span class="lineno"> 1306</span>&#160;                <span class="comment">// early stop</span></div>
-<div class="line"><a name="l01307"></a><span class="lineno"> 1307</span>&#160;                <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l01307"></a><span class="lineno"> 1307</span>&#160;                error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01308"></a><span class="lineno"> 1308</span>&#160;                <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l01309"></a><span class="lineno"> 1309</span>&#160;            }</div>
 <div class="line"><a name="l01310"></a><span class="lineno"> 1310</span>&#160; </div>
@@ -1444,14 +1435,14 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01345"></a><span class="lineno"> 1345</span>&#160;        <span class="comment">// now add the remaining triangles</span></div>
 <div class="line"><a name="l01346"></a><span class="lineno"> 1346</span>&#160;    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> std::bad_alloc&amp;) {</div>
 <div class="line"><a name="l01347"></a><span class="lineno"> 1347</span>&#160;        <span class="comment">// not enough memory</span></div>
-<div class="line"><a name="l01348"></a><span class="lineno"> 1348</span>&#160;        <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l01348"></a><span class="lineno"> 1348</span>&#160;        error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01349"></a><span class="lineno"> 1349</span>&#160;    }</div>
 <div class="line"><a name="l01350"></a><span class="lineno"> 1350</span>&#160; </div>
 <div class="line"><a name="l01351"></a><span class="lineno"> 1351</span>&#160;    <span class="comment">// free some memory</span></div>
 <div class="line"><a name="l01352"></a><span class="lineno"> 1352</span>&#160;    <a class="code" href="core_2src_2ManualSegmentationTools_8cpp.html#a7e5904a61817a9d9e9cf01d75c37a038">s_edgePoint</a>.clear();</div>
 <div class="line"><a name="l01353"></a><span class="lineno"> 1353</span>&#160;    formerPreservedTriangles-&gt;resize(0);</div>
 <div class="line"><a name="l01354"></a><span class="lineno"> 1354</span>&#160; </div>
-<div class="line"><a name="l01355"></a><span class="lineno"> 1355</span>&#160;    <span class="keywordflow">if</span> (!<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l01355"></a><span class="lineno"> 1355</span>&#160;    <span class="keywordflow">if</span> (!error) {</div>
 <div class="line"><a name="l01356"></a><span class="lineno"> 1356</span>&#160;        <span class="comment">// import the &#39;preserved&#39; (original) triangles</span></div>
 <div class="line"><a name="l01357"></a><span class="lineno"> 1357</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="core_2src_2ManualSegmentationTools_8cpp.html#a9a0c592b10521c5436a9808187f8ac16">MergeOldTriangles</a>(origMesh, origVertices, insideMesh,</div>
 <div class="line"><a name="l01358"></a><span class="lineno"> 1358</span>&#160;                               insideVertices, *preservedTrianglesInside,</div>
@@ -1464,7 +1455,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01365"></a><span class="lineno"> 1365</span>&#160;                                ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#a2ce68a98dac260a5c4c082c498cd00d0">trackOrigIndexes</a></div>
 <div class="line"><a name="l01366"></a><span class="lineno"> 1366</span>&#160;                                        ? &amp;ioParams.<a class="code" href="structcloudViewer_1_1ManualSegmentationTools_1_1MeshCutterParams.html#ae662e73daceecd17310735e8ac14006a">origTriIndexesMapOutside</a></div>
 <div class="line"><a name="l01367"></a><span class="lineno"> 1367</span>&#160;                                        : 0))) {</div>
-<div class="line"><a name="l01368"></a><span class="lineno"> 1368</span>&#160;            <a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l01368"></a><span class="lineno"> 1368</span>&#160;            error = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01369"></a><span class="lineno"> 1369</span>&#160;        }</div>
 <div class="line"><a name="l01370"></a><span class="lineno"> 1370</span>&#160;    }</div>
 <div class="line"><a name="l01371"></a><span class="lineno"> 1371</span>&#160; </div>
@@ -1478,7 +1469,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="line"><a name="l01379"></a><span class="lineno"> 1379</span>&#160;        insideVertices1 = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l01380"></a><span class="lineno"> 1380</span>&#160;    }</div>
 <div class="line"><a name="l01381"></a><span class="lineno"> 1381</span>&#160; </div>
-<div class="line"><a name="l01382"></a><span class="lineno"> 1382</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a>) {</div>
+<div class="line"><a name="l01382"></a><span class="lineno"> 1382</span>&#160;    <span class="keywordflow">if</span> (error) {</div>
 <div class="line"><a name="l01383"></a><span class="lineno"> 1383</span>&#160;        <span class="keyword">delete</span> insideMesh;</div>
 <div class="line"><a name="l01384"></a><span class="lineno"> 1384</span>&#160;        <span class="keyword">delete</span> outsideMesh;</div>
 <div class="line"><a name="l01385"></a><span class="lineno"> 1385</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
@@ -1570,11 +1561,8 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div class="ttc" id="acore_2src_2ManualSegmentationTools_8cpp_html_ac44b7b7531bbe8b777775049f68204df"><div class="ttname"><a href="core_2src_2ManualSegmentationTools_8cpp.html#ac44b7b7531bbe8b777775049f68204df">ComputeEdgePoint</a></div><div class="ttdeci">bool ComputeEdgePoint(const CCVector3d &amp;A, unsigned iA, const CCVector3d &amp;B, unsigned iB, unsigned &amp;iCoutside, unsigned &amp;iCinside, double planeCoord, unsigned char planeDim, PointCloud *outsideVertices, PointCloud *insideVertices)</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00362">ManualSegmentationTools.cpp:362</a></div></div>
 <div class="ttc" id="acore_2src_2ManualSegmentationTools_8cpp_html_aea0049545afbca89eb69fedc3871fcf9"><div class="ttname"><a href="core_2src_2ManualSegmentationTools_8cpp.html#aea0049545afbca89eb69fedc3871fcf9">c_origIndexFlag</a></div><div class="ttdeci">const unsigned c_origIndexFlag</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00332">ManualSegmentationTools.cpp:332</a></div></div>
 <div class="ttc" id="acore_2src_2ManualSegmentationTools_8cpp_html_aeb1c6056a1bebd6d29f04532fce4c35c"><div class="ttname"><a href="core_2src_2ManualSegmentationTools_8cpp.html#aeb1c6056a1bebd6d29f04532fce4c35c">c_realIndexMask</a></div><div class="ttdeci">const unsigned c_realIndexMask</div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00334">ManualSegmentationTools.cpp:334</a></div></div>
-<div class="ttc" id="acutil__math_8h_html_ae4378072f9d836b0d4770a1514db2be3"><div class="ttname"><a href="cutil__math_8h.html#ae4378072f9d836b0d4770a1514db2be3">abs</a></div><div class="ttdeci">__host__ __device__ int2 abs(int2 v)</div><div class="ttdef"><b>Definition:</b> <a href="cutil__math_8h_source.html#l01267">cutil_math.h:1267</a></div></div>
-<div class="ttc" id="alsd_8c_html_a18f96cf18a1edbff677c0767ea4401c5"><div class="ttname"><a href="lsd_8c.html#a18f96cf18a1edbff677c0767ea4401c5">dist</a></div><div class="ttdeci">static double dist(double x1, double y1, double x2, double y2)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00207">lsd.c:207</a></div></div>
-<div class="ttc" id="alsd_8c_html_a9a17d0c19f2fb4ee55752f4b6840331e"><div class="ttname"><a href="lsd_8c.html#a9a17d0c19f2fb4ee55752f4b6840331e">error</a></div><div class="ttdeci">static void error(char *msg)</div><div class="ttdef"><b>Definition:</b> <a href="lsd_8c_source.html#l00159">lsd.c:159</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1geometry_html_a3ad6422d3fb0907abb608368ee88a0c3"><div class="ttname"><a href="namespacecloudViewer_1_1geometry.html#a3ad6422d3fb0907abb608368ee88a0c3">cloudViewer::geometry::PointCloud</a></div><div class="ttdeci">::ccPointCloud PointCloud</div><div class="ttdef"><b>Definition:</b> <a href="geometry_2PointCloud_8h_source.html#l00019">PointCloud.h:19</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_html_abdf2ffbb1e98c4ce5037240010cf9f30"><div class="ttname"><a href="namespacecloudViewer.html#abdf2ffbb1e98c4ce5037240010cf9f30">cloudViewer::SquareMatrix</a></div><div class="ttdeci">SquareMatrixTpl&lt; PointCoordinateType &gt; SquareMatrix</div><div class="ttdoc">Default CC square matrix type (PointCoordinateType)</div><div class="ttdef"><b>Definition:</b> <a href="SquareMatrix_8h_source.html#l01020">SquareMatrix.h:1020</a></div></div>
 <div class="ttc" id="anamespacestd_html_aa1de0d68a38c2d5e36cd0f1a6646076b"><div class="ttname"><a href="namespacestd.html#aa1de0d68a38c2d5e36cd0f1a6646076b">std::swap</a></div><div class="ttdeci">void swap(cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;LHS, cloudViewer::core::SmallVectorImpl&lt; T &gt; &amp;RHS)</div><div class="ttdoc">Implement std::swap in terms of SmallVector swap.</div><div class="ttdef"><b>Definition:</b> <a href="SmallVector_8h_source.html#l01370">SmallVector.h:1370</a></div></div>
 <div class="ttc" id="astructInsideOutsideIndexes_html"><div class="ttname"><a href="structInsideOutsideIndexes.html">InsideOutsideIndexes</a></div><div class="ttdef"><b>Definition:</b> <a href="core_2src_2ManualSegmentationTools_8cpp_source.html#l00339">ManualSegmentationTools.cpp:339</a></div></div>
@@ -1605,7 +1593,7 @@ $(document).ready(function(){initNavTree('core_2src_2ManualSegmentationTools_8cp
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_4270bfced15e0e73154b13468c7c9ad9.html">core</a></li><li class="navelem"><a class="el" href="dir_90fd98a0ba30abf7a6068a44995d2d6b.html">src</a></li><li class="navelem"><a class="el" href="core_2src_2ManualSegmentationTools_8cpp.html">ManualSegmentationTools.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:53 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:22 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

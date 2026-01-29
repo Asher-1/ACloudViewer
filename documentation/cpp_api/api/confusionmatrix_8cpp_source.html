@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -257,10 +248,10 @@ $(document).ready(function(){initNavTree('confusionmatrix_8cpp_source.html','');
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="comment">// fill the confusion matrix</span></div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; actual.size(); i++) {</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        actualClass = actual.at(i);</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        idxActual = std::distance(classes.begin(), classes.find(actualClass));</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        idxActual = <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">std::distance</a>(classes.begin(), classes.find(actualClass));</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        predictedClass = predicted.at(i);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        idxPredicted =</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                std::distance(classes.begin(), classes.find(predictedClass));</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                <a class="code" href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">std::distance</a>(classes.begin(), classes.find(predictedClass));</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        confusionMatrix.at&lt;<span class="keywordtype">int</span>&gt;(idxActual, idxPredicted)++;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    }</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
@@ -425,14 +416,15 @@ $(document).ready(function(){initNavTree('confusionmatrix_8cpp_source.html','');
 <div class="ttc" id="aconfusionmatrix_8cpp_html_a72138e7f67b7e9ab77f4c9a0641ef1e8"><div class="ttname"><a href="confusionmatrix_8cpp.html#a72138e7f67b7e9ab77f4c9a0641ef1e8">GetColor</a></div><div class="ttdeci">static QColor GetColor(double value, double r1, double g1, double b1)</div><div class="ttdef"><b>Definition:</b> <a href="confusionmatrix_8cpp_source.html#l00023">confusionmatrix.cpp:23</a></div></div>
 <div class="ttc" id="aconfusionmatrix_8h_html"><div class="ttname"><a href="confusionmatrix_8h.html">confusionmatrix.h</a></div></div>
 <div class="ttc" id="anamespaceQtCompat_html_a6f586dae226be2e649f2a9eca153f70c"><div class="ttname"><a href="namespaceQtCompat.html#a6f586dae226be2e649f2a9eca153f70c">QtCompat::endl</a></div><div class="ttdeci">QTextStream &amp; endl(QTextStream &amp;stream)</div><div class="ttdef"><b>Definition:</b> <a href="QtCompat_8h_source.html#l00718">QtCompat.h:718</a></div></div>
-<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="ecvFontPropertyWidget_8h_source.html#l00019">ecvFontPropertyWidget.h:19</a></div></div>
+<div class="ttc" id="anamespaceUi_html"><div class="ttname"><a href="namespaceUi.html">Ui</a></div><div class="ttdef"><b>Definition:</b> <a href="sfEditDlg_8h_source.html#l00016">sfEditDlg.h:16</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_ae430a5de18ca81ff5600530347e7d0fa"><div class="ttname"><a href="namespaceUtils.html#ae430a5de18ca81ff5600530347e7d0fa">Utils::distance</a></div><div class="ttdeci">static double distance(T *pot1, T *pot2)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00111">utils.h:111</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html">q3DMASC</a></li><li class="navelem"><a class="el" href="confusionmatrix_8cpp.html">confusionmatrix.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:07 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:47 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

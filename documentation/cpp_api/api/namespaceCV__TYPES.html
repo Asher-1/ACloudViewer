@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -244,7 +235,7 @@ Enumerations</h2></td></tr>
 <tr><td class="fieldname"><a id="ae430e150e7d56f52669cc714b167a434ab7462fcb8a91200386c09018e5afb3de"></a>IMAGE2&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="ae430e150e7d56f52669cc714b167a434ae23e2c765930364e538c3a66543afc2b"></a>POINT_OCTREE2&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="ae430e150e7d56f52669cc714b167a434a9cb018beab8a4392773c13a596c493dc"></a>RGBD_IMAGE&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="ae430e150e7d56f52669cc714b167a434a0f429d4e8f33db77281041cdf5e84f5f"></a>CUSTOM_H_OBJECT&#160;</td><td class="fielddoc"><p>Custom objects are typically defined by plugins. They can be inserted in an object hierarchy or displayed in an OpenGL context like any other <a class="el" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object.">ccHObject</a>. To differentiate custom objects, use the meta-data mechanism (see <a class="el" href="classccObject.html#a8c9caef524f26d93cd44f6f036425dc7" title="Returns a given associated meta data.">ccObject::getMetaData</a> and <a class="el" href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4" title="Sets a meta-data element.">ccObject::setMetaData</a>). You can also define a custom icon (see <a class="el" href="classccHObject.html#ad1be287e3bcb3d57aa037587c4928644" title="Returns the icon associated to this entity.">ccHObject::getIcon</a>). </p><pre class="fragment">    It is highly advised to use the ccCustomHObject and
+<tr><td class="fieldname"><a id="ae430e150e7d56f52669cc714b167a434a0f429d4e8f33db77281041cdf5e84f5f"></a>CUSTOM_H_OBJECT&#160;</td><td class="fielddoc"><p>Custom objects are typically defined by plugins. They can be inserted in an object hierarchy or displayed in an OpenGL context like any other <a class="el" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object.">ccHObject</a>. To differentiate custom objects, use the meta-data mechanism (see <a class="el" href="classccObject.html#a8c9caef524f26d93cd44f6f036425dc7" title="Returns a given associated meta data.">ccObject::getMetaData</a> and <a class="el" href="classccObject.html#a7ac3c1d54b60afd2008ce30680d615b4" title="Sets a meta-data element.">ccObject::setMetaData</a>). You can also define a custom icon (see <a class="el" href="classccHObject.html#afb50846d594ca0307e70d57d7e3b5e73" title="Returns the icon associated to this entity.">ccHObject::getIcon</a>). </p><pre class="fragment">    It is highly advised to use the ccCustomHObject and
 </pre><p> <a class="el" href="classccCustomLeafObject.html" title="Custom leaf object.">ccCustomLeafObject</a> interfaces to define a custom types. Carefully read the ccCustomHObject::isDeserialized method's description and the warning below! </p><pre class="fragment">    Warning: custom objects can't be 'fully' serialized. Don't overload
 </pre><p> the '<a class="el" href="classccSerializableObject.html#add53e549df665c5e130b947125d68ac9" title="Saves data to binary stream.">ccSerializableObject::toFile</a>' method for them as this would break the deserialization mechanism! They can only be serialized as plain <a class="el" href="classccHObject.html" title="Hierarchical CLOUDVIEWER Object.">ccHObject</a> instances (<a class="el" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a0ebdf737fbe4be3770f717335acd9e52">CV_TYPES::HIERARCHY_OBJECT</a>). Hierarchical custom objects (<a class="el" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434a0f429d4e8f33db77281041cdf5e84f5f">CV_TYPES::CUSTOM_H_OBJECT</a>) will be deserialized as <a class="el" href="classccCustomHObject.html" title="Custom hierarchy object.">ccCustomHObject</a> instances. Leaf custom objects (<a class="el" href="namespaceCV__TYPES.html#ae430e150e7d56f52669cc714b167a434ac45d4c235708bbf0329fc3e40ac69994">CV_TYPES::CUSTOM_LEAF_OBJECT</a>) will be deserialized as <a class="el" href="classccCustomLeafObject.html" title="Custom leaf object.">ccCustomLeafObject</a> instances. </p>
 </td></tr>
@@ -261,7 +252,7 @@ Enumerations</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespaceCV__TYPES.html">CV_TYPES</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:17 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:57:02 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

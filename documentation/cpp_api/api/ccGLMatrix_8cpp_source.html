@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -117,7 +108,7 @@ $(document).ready(function(){initNavTree('ccGLMatrix_8cpp_source.html',''); init
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">using namespace </span>pybind11::literals;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> ccGLMatrixType, <span class="keyword">typename</span> Inner&gt;</div>
-<div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="ccGLMatrix_8cpp.html#a8cbe1b492e27b62180bb49b6a7657ad3">   21</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="ccGLMatrix_8cpp.html#a8cbe1b492e27b62180bb49b6a7657ad3">define_ccGLMatrixClass</a>(py::module &amp;m, <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
+<div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="ccGLMatrix_8cpp.html#a8cbe1b492e27b62180bb49b6a7657ad3">   21</a></span>&#160;<span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="ccGLMatrix_8cpp.html#a8cbe1b492e27b62180bb49b6a7657ad3">define_ccGLMatrixClass</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;m, <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;{</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    py::class_&lt;ccGLMatrixType&gt;(m, <a class="code" href="FileIOFactory_8cpp.html#a9b45b3e13bd9167aab02e17e08916231">name</a>)</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        .def(py::init&lt;&gt;())</div>
@@ -141,16 +132,16 @@ $(document).ready(function(){initNavTree('ccGLMatrix_8cpp_source.html',''); init
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="comment">// We also provide this function as a __init__ alias</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        .def_static(</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;            <span class="stringliteral">&quot;FromViewDirAndUpDir&quot;</span>,</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;            [](<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;a, <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;b) -&gt; ccGLMatrixType</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;            { <span class="keywordflow">return</span> ccGLMatrixType::FromViewDirAndUpDir(a, b); },</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;            [](<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;b) -&gt; ccGLMatrixType</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;            { <span class="keywordflow">return</span> ccGLMatrixType::FromViewDirAndUpDir(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, b); },</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;            <span class="stringliteral">&quot;forward&quot;</span>_a,</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;            <span class="stringliteral">&quot;up&quot;</span>_a)</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        .def(py::init(&amp;ccGLMatrixType::FromViewDirAndUpDir), py::kw_only(), <span class="stringliteral">&quot;forward&quot;</span>_a, <span class="stringliteral">&quot;up&quot;</span>_a)</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="comment">// Same problem and solution as above</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        .def_static(</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <span class="stringliteral">&quot;FromToRotation&quot;</span>,</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            [](<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;a, <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;b) -&gt; ccGLMatrixType</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            { <span class="keywordflow">return</span> ccGLMatrixType::FromToRotation(a, b); },</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            [](<span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, <span class="keyword">const</span> <a class="code" href="classVector3Tpl.html">Vector3Tpl&lt;Inner&gt;</a> &amp;b) -&gt; ccGLMatrixType</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            { <span class="keywordflow">return</span> ccGLMatrixType::FromToRotation(<a class="code" href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a>, b); },</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="stringliteral">&quot;from&quot;</span>_a,</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="stringliteral">&quot;to&quot;</span>_a)</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        .def(py::init(&amp;ccGLMatrixType::FromToRotation), py::kw_only(), <span class="stringliteral">&quot;from&quot;</span>_a, <span class="stringliteral">&quot;to&quot;</span>_a)</div>
@@ -214,10 +205,10 @@ $(document).ready(function(){initNavTree('ccGLMatrix_8cpp_source.html',''); init
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        .def(<span class="stringliteral">&quot;scaleRow&quot;</span>, &amp;ccGLMatrixType::scaleRow, <span class="stringliteral">&quot;rowIndex&quot;</span>_a, <span class="stringliteral">&quot;coef&quot;</span>_a)</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        .def(<span class="stringliteral">&quot;scaleColumn&quot;</span>, &amp;ccGLMatrixType::scaleColumn, <span class="stringliteral">&quot;rowIndex&quot;</span>_a, <span class="stringliteral">&quot;coef&quot;</span>_a)</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        .def(<span class="stringliteral">&quot;asArray&quot;</span>,</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;             [](ccGLMatrixType &amp;<span class="keyword">self</span>) { <span class="keywordflow">return</span> <a class="code" href="namespacePyCC.html#aa8529f51ac6731ff42b128293927cba6">PyCC::SpanAsNumpyArray</a>(<span class="keyword">self</span>.data(), {4, 4}); });</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;             [](ccGLMatrixType &amp;<span class="keyword">self</span>) { <span class="keywordflow">return</span> <a class="code" href="namespacePyCC.html#aa8529f51ac6731ff42b128293927cba6">PyCC::SpanAsNumpyArray</a>(<span class="keyword">self</span>.<a class="code" href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a>(), {4, 4}); });</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;}</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
-<div class="line"><a name="l00121"></a><span class="lineno"><a class="line" href="ccGLMatrix_8cpp.html#affb4f93dbd987b34ef45305fffb50bf5">  121</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccGLMatrix_8cpp.html#affb4f93dbd987b34ef45305fffb50bf5">define_ccGLMatrix</a>(py::module &amp;m)</div>
+<div class="line"><a name="l00121"></a><span class="lineno"><a class="line" href="ccGLMatrix_8cpp.html#affb4f93dbd987b34ef45305fffb50bf5">  121</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="ccGLMatrix_8cpp.html#affb4f93dbd987b34ef45305fffb50bf5">define_ccGLMatrix</a>(<a class="code" href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">py::module</a> &amp;m)</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;{</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    define_ccGLMatrixClass&lt;ccGLMatrix, float&gt;(m, <span class="stringliteral">&quot;ccGLMatrix&quot;</span>);</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    define_ccGLMatrixClass&lt;ccGLMatrixd, double&gt;(m, <span class="stringliteral">&quot;ccGLMatrixd&quot;</span>);</div>
@@ -227,8 +218,11 @@ $(document).ready(function(){initNavTree('ccGLMatrix_8cpp_source.html',''); init
 <div class="ttc" id="accGLMatrix_8cpp_html_affb4f93dbd987b34ef45305fffb50bf5"><div class="ttname"><a href="ccGLMatrix_8cpp.html#affb4f93dbd987b34ef45305fffb50bf5">define_ccGLMatrix</a></div><div class="ttdeci">void define_ccGLMatrix(py::module &amp;m)</div><div class="ttdef"><b>Definition:</b> <a href="ccGLMatrix_8cpp_source.html#l00121">ccGLMatrix.cpp:121</a></div></div>
 <div class="ttc" id="aclassVector3Tpl_html"><div class="ttname"><a href="classVector3Tpl.html">Vector3Tpl</a></div><div class="ttdoc">3D Vector (templated version)</div><div class="ttdef"><b>Definition:</b> <a href="CVGeom_8h_source.html#l00223">CVGeom.h:223</a></div></div>
 <div class="ttc" id="aecvGLMatrix_8h_html"><div class="ttname"><a href="ecvGLMatrix_8h.html">ecvGLMatrix.h</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a098e4b5a18df7d9d1a419754c3f64e44"><div class="ttname"><a href="essential__matrix__poly_8h.html#a098e4b5a18df7d9d1a419754c3f64e44">a</a></div><div class="ttdeci">a[190]</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00019">essential_matrix_poly.h:19</a></div></div>
+<div class="ttc" id="agraph__cut_8cc_html_a93608aaf9e7b88ca554f3445a89e2882"><div class="ttname"><a href="graph__cut_8cc.html#a93608aaf9e7b88ca554f3445a89e2882">data</a></div><div class="ttdeci">GraphType data</div><div class="ttdef"><b>Definition:</b> <a href="graph__cut_8cc_source.html#l00138">graph_cut.cc:138</a></div></div>
 <div class="ttc" id="anamespacePyCC_html_aa8529f51ac6731ff42b128293927cba6"><div class="ttname"><a href="namespacePyCC.html#aa8529f51ac6731ff42b128293927cba6">PyCC::SpanAsNumpyArray</a></div><div class="ttdeci">py::array_t&lt; T &gt; SpanAsNumpyArray(T *data, py::array::ShapeContainer shape)</div><div class="ttdef"><b>Definition:</b> <a href="wrappers_8h_source.html#l00074">wrappers.h:74</a></div></div>
-<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="cloudViewer__pybind_8h_source.html#l00095">cloudViewer_pybind.h:95</a></div></div>
+<div class="ttc" id="anamespaceUtils_html_aeae743e84fe331928171854b17029eaf"><div class="ttname"><a href="namespaceUtils.html#aeae743e84fe331928171854b17029eaf">Utils::module</a></div><div class="ttdeci">static double module(T *vector)</div><div class="ttdef"><b>Definition:</b> <a href="PCLEngine_2VtkUtils_2utils_8h_source.html#l00105">utils.h:105</a></div></div>
+<div class="ttc" id="anamespacepybind11_html"><div class="ttname"><a href="namespacepybind11.html">pybind11</a></div><div class="ttdef"><b>Definition:</b> <a href="ccGuiPythonInstance_8h_source.html#l00015">ccGuiPythonInstance.h:16</a></div></div>
 <div class="ttc" id="awrappers_8h_html"><div class="ttname"><a href="wrappers_8h.html">wrappers.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -236,7 +230,7 @@ $(document).ready(function(){initNavTree('ccGLMatrix_8cpp_source.html',''); init
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_38c8d24aef3972a7f87b834274e76e31.html">plugins</a></li><li class="navelem"><a class="el" href="dir_b47d094b940c78ed85f632937004b7bb.html">core</a></li><li class="navelem"><a class="el" href="dir_50f8496c947415eedd96ada30c013367.html">Standard</a></li><li class="navelem"><a class="el" href="dir_701772a774aacc2bc527555af9796a24.html">qPythonRuntime</a></li><li class="navelem"><a class="el" href="dir_4cb5395b4ab2585160e140e8d60f6f88.html">wrapper</a></li><li class="navelem"><a class="el" href="dir_f98061f674671de7c66ccab559b2360e.html">pycc</a></li><li class="navelem"><a class="el" href="dir_2b6134671f718a3865164e4e2d4cc657.html">src</a></li><li class="navelem"><a class="el" href="dir_dbcd8066c330fac67641cc3989022fe2.html">qcc_db</a></li><li class="navelem"><a class="el" href="ccGLMatrix_8cpp.html">ccGLMatrix.cpp</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:01:08 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:49 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>

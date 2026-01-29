@@ -1,4 +1,3 @@
-<!-- HTML header for doxygen 1.8.20-->
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,14 +17,6 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3TQPKGV6Z3');
-</script>
 </head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
@@ -208,7 +199,7 @@ $(document).ready(function(){initNavTree('Matrix_8h_source.html',''); initResiza
 <div class="line"><a name="l00109"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#aeb5366a2cf627cf48661f14b01963620">  109</a></span>&#160;<a class="code" href="CUDAUtils_8h.html#af09d29b35640489ea4ccf1ba464dd4f8">CLOUDVIEWER_DEVICE</a> <a class="code" href="CUDAUtils_8h.html#a77dc592e9f0c0d22d5925ba634c1ecd8">CLOUDVIEWER_FORCE_INLINE</a> <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#aeb5366a2cf627cf48661f14b01963620">inverse2x2</a>(</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        <span class="keyword">const</span> scalar_t* A_2x2, scalar_t* output_2x2) {</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    scalar_t det = <a class="code" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a0dfa8bcee363a5ec2d8871b394928d9a">det3x3</a>(A_2x2);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">if</span> (det &lt; 1e-12) {</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">if</span> (det &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-12) {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        scalar_t invdet = 1.0 / det;</div>
@@ -225,7 +216,7 @@ $(document).ready(function(){initNavTree('Matrix_8h_source.html',''); initResiza
 <div class="line"><a name="l00126"></a><span class="lineno"><a class="line" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a8a7b395b3a68d624e226227c1360c22e">  126</a></span>&#160;<a class="code" href="CUDAUtils_8h.html#af09d29b35640489ea4ccf1ba464dd4f8">CLOUDVIEWER_DEVICE</a> <a class="code" href="CUDAUtils_8h.html#a77dc592e9f0c0d22d5925ba634c1ecd8">CLOUDVIEWER_FORCE_INLINE</a> <span class="keywordtype">bool</span> <a class="code" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a8a7b395b3a68d624e226227c1360c22e">inverse3x3</a>(</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <span class="keyword">const</span> scalar_t* A_3x3, scalar_t* output_3x3) {</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    scalar_t det = <a class="code" href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a0dfa8bcee363a5ec2d8871b394928d9a">det3x3</a>(A_3x3);</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordflow">if</span> (det &lt; 1e-12) {</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordflow">if</span> (det &lt; 1<a class="code" href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a>-12) {</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        scalar_t invdet = 1.0 / det;</div>
@@ -345,6 +336,7 @@ $(document).ready(function(){initNavTree('Matrix_8h_source.html',''); initResiza
 <div class="ttc" id="aCUDAUtils_8h_html_a77dc592e9f0c0d22d5925ba634c1ecd8"><div class="ttname"><a href="CUDAUtils_8h.html#a77dc592e9f0c0d22d5925ba634c1ecd8">CLOUDVIEWER_FORCE_INLINE</a></div><div class="ttdeci">#define CLOUDVIEWER_FORCE_INLINE</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8h_source.html#l00043">CUDAUtils.h:43</a></div></div>
 <div class="ttc" id="aCUDAUtils_8h_html_a98e7224ab0ae53973931604d50dca927"><div class="ttname"><a href="CUDAUtils_8h.html#a98e7224ab0ae53973931604d50dca927">CLOUDVIEWER_HOST_DEVICE</a></div><div class="ttdeci">#define CLOUDVIEWER_HOST_DEVICE</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8h_source.html#l00044">CUDAUtils.h:44</a></div></div>
 <div class="ttc" id="aCUDAUtils_8h_html_af09d29b35640489ea4ccf1ba464dd4f8"><div class="ttname"><a href="CUDAUtils_8h.html#af09d29b35640489ea4ccf1ba464dd4f8">CLOUDVIEWER_DEVICE</a></div><div class="ttdeci">#define CLOUDVIEWER_DEVICE</div><div class="ttdef"><b>Definition:</b> <a href="CUDAUtils_8h_source.html#l00045">CUDAUtils.h:45</a></div></div>
+<div class="ttc" id="aessential__matrix__poly_8h_html_a4cb0ef108fe3eea0fe3fb21d13785a0a"><div class="ttname"><a href="essential__matrix__poly_8h.html#a4cb0ef108fe3eea0fe3fb21d13785a0a">e</a></div><div class="ttdeci">const double * e</div><div class="ttdef"><b>Definition:</b> <a href="essential__matrix__poly_8h_source.html#l00010">essential_matrix_poly.h:10</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_a0dfa8bcee363a5ec2d8871b394928d9a"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a0dfa8bcee363a5ec2d8871b394928d9a">cloudViewer::core::linalg::kernel::det3x3</a></div><div class="ttdeci">CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t det3x3(const scalar_t *A_3x3)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00102">Matrix.h:102</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_a1b051f488fd4ce773a9f236feba216a4"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a1b051f488fd4ce773a9f236feba216a4">cloudViewer::core::linalg::kernel::transpose3x3</a></div><div class="ttdeci">CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3(const scalar_t *A_3x3, scalar_t *output_3x3)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00179">Matrix.h:179</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_a1c68649ca6717579891c1b06c9406beb"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#a1c68649ca6717579891c1b06c9406beb">cloudViewer::core::linalg::kernel::transpose2x2</a></div><div class="ttdeci">CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2(const scalar_t *A_2x2, scalar_t *output_2x2)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00156">Matrix.h:156</a></div></div>
@@ -360,14 +352,14 @@ $(document).ready(function(){initNavTree('Matrix_8h_source.html',''); initResiza
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_abe658a9ee3851f2e78142020c1212fdf"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#abe658a9ee3851f2e78142020c1212fdf">cloudViewer::core::linalg::kernel::dot_3x1</a></div><div class="ttdeci">CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t dot_3x1(const scalar_t *A_3x1_input, const scalar_t *B_3x1_input)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00088">Matrix.h:88</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_aeb5366a2cf627cf48661f14b01963620"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#aeb5366a2cf627cf48661f14b01963620">cloudViewer::core::linalg::kernel::inverse2x2</a></div><div class="ttdeci">CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse2x2(const scalar_t *A_2x2, scalar_t *output_2x2)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00109">Matrix.h:109</a></div></div>
 <div class="ttc" id="anamespacecloudViewer_1_1core_1_1linalg_1_1kernel_html_aeb65cd33728fe7c1d5f2cafd40a81d5a"><div class="ttname"><a href="namespacecloudViewer_1_1core_1_1linalg_1_1kernel.html#aeb65cd33728fe7c1d5f2cafd40a81d5a">cloudViewer::core::linalg::kernel::transpose2x2_</a></div><div class="ttdeci">CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2_(scalar_t *A_2x2)</div><div class="ttdef"><b>Definition:</b> <a href="Matrix_8h_source.html#l00148">Matrix.h:148</a></div></div>
-<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="AutoSegmentationTools_8h_source.html#l00016">AutoSegmentationTools.h:16</a></div></div>
+<div class="ttc" id="anamespacecloudViewer_html"><div class="ttname"><a href="namespacecloudViewer.html">cloudViewer</a></div><div class="ttdoc">Generic file read and write utility for python interface.</div><div class="ttdef"><b>Definition:</b> <a href="CloudViewerConfig_8cpp_source.html#l00012">CloudViewerConfig.cpp:12</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_6719ab1f1f7655efc2fa43f7eb574fd1.html">libs</a></li><li class="navelem"><a class="el" href="dir_989a49d236ff91a30045737f713f323f.html">cloudViewer</a></li><li class="navelem"><a class="el" href="dir_60b85b9a041b2f23bcbd986f2bb18e66.html">core</a></li><li class="navelem"><a class="el" href="dir_34199ad14a26b2602fe4e831eacaf8df.html">linalg</a></li><li class="navelem"><a class="el" href="dir_ffff69aeee54a1e66c21e99c695c4261.html">kernel</a></li><li class="navelem"><a class="el" href="Matrix_8h.html">Matrix.h</a></li>
-    <li class="footer">Generated on Wed Jan 28 2026 09:00:54 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
+    <li class="footer">Generated on Wed Jan 28 2026 20:56:24 for ACloudViewer by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>
 </body>
