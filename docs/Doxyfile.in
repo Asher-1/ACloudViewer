@@ -1,16 +1,15 @@
-# Doxyfile for ACloudViewer (CMake-configured version)
-# This file is processed by CMake to substitute variables
+# Doxyfile for ACloudViewer (Template version)
+# This file is processed by make_docs.py to substitute variables
 
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
 
-HTML_HEADER            = source/_static/google_analytics_header.html
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "ACloudViewer"
 PROJECT_NUMBER         = @PROJECT_VERSION@
 PROJECT_BRIEF          = "A Modern Library for 3D Data Processing"
-PROJECT_LOGO           = @DOCS_SOURCE_DIR@/images/ACloudViewer_logo_horizontal.png
+PROJECT_LOGO           = images/ACloudViewer_logo_horizontal.png
 OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIRECTORY@
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES
@@ -72,21 +71,11 @@ WARN_LOGFILE           =
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
 
-INPUT                  = @DOCS_SOURCE_DIR@/mainpage.dox \
-                         @PROJECT_SOURCE_DIR@/core/include \
-                         @PROJECT_SOURCE_DIR@/core/src \
-                         @PROJECT_SOURCE_DIR@/libs/cloudViewer \
-                         @PROJECT_SOURCE_DIR@/libs/CV_db/include \
-                         @PROJECT_SOURCE_DIR@/libs/CV_io/include \
-                         @PROJECT_SOURCE_DIR@/libs/PCLEngine/include \
-                         @PROJECT_SOURCE_DIR@/libs/Reconstruction/lib \
-                         @PROJECT_SOURCE_DIR@/libs/CVAppCommon/include \
-                         @PROJECT_SOURCE_DIR@/libs/CVPluginAPI \
-                         @PROJECT_SOURCE_DIR@/libs/CVPluginStub \
-                         @PROJECT_SOURCE_DIR@/libs/CVViewer \
-                         @PROJECT_SOURCE_DIR@/libs/Python/pybind \
-                         @PROJECT_SOURCE_DIR@/app \
-                         @PROJECT_SOURCE_DIR@/plugins/core
+INPUT                  = mainpage.dox \
+                         ../core \
+                         ../app \
+                         ../libs \
+                         ../plugins/core
 
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
@@ -100,20 +89,18 @@ FILE_PATTERNS          = *.c \
                          *.hpp \
                          *.h++ \
                          *.cu \
-                         *.cuh \
-                         *.dox \
-                         *.md
+                         *.cuh
 
 RECURSIVE              = YES
 
-EXCLUDE                = @PROJECT_SOURCE_DIR@/libs/cloudViewer/visualization/shader \
-                         @PROJECT_SOURCE_DIR@/libs/cloudViewer/ml/tensorflow \
-                         @PROJECT_SOURCE_DIR@/libs/cloudViewer/ml/pytorch \
-                         @PROJECT_SOURCE_DIR@/3rdparty \
-                         @PROJECT_SOURCE_DIR@/build_app \
-                         @PROJECT_SOURCE_DIR@/app/ui_templates \
-                         @PROJECT_SOURCE_DIR@/app/translations \
-                         @PROJECT_SOURCE_DIR@/app/extern
+EXCLUDE                = ../libs/cloudViewer/visualization/shader \
+                         ../libs/cloudViewer/ml/tensorflow \
+                         ../libs/cloudViewer/ml/pytorch \
+                         ../libs/Reconstruction/lib \
+                         ../libs/Python \
+                         ../3rdparty \
+                         ../build \
+                         ../build_app \
 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = */test/* \
@@ -136,12 +123,19 @@ EXCLUDE_PATTERNS       = */test/* \
 EXCLUDE_SYMBOLS        = *Private* \
                          *Internal*
 
-EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples/Cpp
+EXAMPLE_PATH           = ../examples/Cpp
 EXAMPLE_PATTERNS       = *.cpp \
                          *.h
 EXAMPLE_RECURSIVE      = YES
 
-IMAGE_PATH             = @DOCS_SOURCE_DIR@/images
+IMAGE_PATH             = images
+
+INPUT_FILTER           =
+FILTER_PATTERNS        =
+FILTER_SOURCE_FILES    = NO
+FILTER_SOURCE_PATTERNS =
+
+USE_MDFILE_AS_MAINPAGE =
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
@@ -156,6 +150,16 @@ REFERENCES_LINK_SOURCE = YES
 SOURCE_TOOLTIPS        = YES
 USE_HTAGS              = NO
 VERBATIM_HEADERS       = YES
+CLANG_ASSISTED_PARSING = NO
+CLANG_OPTIONS          =
+
+#---------------------------------------------------------------------------
+# Configuration options related to the alphabetical class index
+#---------------------------------------------------------------------------
+
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 5
+IGNORE_PREFIX          =
 
 #---------------------------------------------------------------------------
 # Configuration options related to the HTML output
@@ -164,15 +168,48 @@ VERBATIM_HEADERS       = YES
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
+HTML_HEADER            =
+HTML_FOOTER            =
+HTML_STYLESHEET        =
+HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_FILES       =
 HTML_COLORSTYLE_HUE    = 220
 HTML_COLORSTYLE_SAT    = 100
 HTML_COLORSTYLE_GAMMA  = 80
 HTML_TIMESTAMP         = YES
 HTML_DYNAMIC_SECTIONS  = NO
 HTML_INDEX_NUM_ENTRIES = 100
+
+GENERATE_DOCSET        = NO
+GENERATE_HTMLHELP      = NO
+GENERATE_QHP           = NO
+GENERATE_ECLIPSEHELP   = NO
 GENERATE_TREEVIEW      = YES
 ENUM_VALUES_PER_LINE   = 4
 TREEVIEW_WIDTH         = 250
+
+EXTERNAL_GROUPS        = YES
+EXTERNAL_PAGES         = YES
+
+EXT_LINKS_IN_WINDOW    = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the LaTeX output
+#---------------------------------------------------------------------------
+
+GENERATE_LATEX         = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the RTF output
+#---------------------------------------------------------------------------
+
+GENERATE_RTF           = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the man page output
+#---------------------------------------------------------------------------
+
+GENERATE_MAN           = NO
 
 #---------------------------------------------------------------------------
 # Configuration options related to the XML output
@@ -183,10 +220,22 @@ XML_OUTPUT             = xml
 XML_PROGRAMLISTING     = YES
 
 #---------------------------------------------------------------------------
-# Configuration options related to the LaTeX output
+# Configuration options related to the DOCBOOK output
 #---------------------------------------------------------------------------
 
-GENERATE_LATEX         = NO
+GENERATE_DOCBOOK       = NO
+
+#---------------------------------------------------------------------------
+# Configuration options for the AutoGen Definitions output
+#---------------------------------------------------------------------------
+
+GENERATE_AUTOGEN_DEF   = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the Perl module output
+#---------------------------------------------------------------------------
+
+GENERATE_PERLMOD       = NO
 
 #---------------------------------------------------------------------------
 # Configuration options related to the preprocessor
@@ -196,27 +245,52 @@ ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
-INCLUDE_PATH           = @PROJECT_SOURCE_DIR@/libs/cloudViewer \
-                         @PROJECT_SOURCE_DIR@/core/include \
-                         @PROJECT_SOURCE_DIR@/libs/CV_db/include
+# The INCLUDE_PATH tag can be used to specify one or more directories that
+# contain include files that are not input files but should be processed by the
+# preprocessor. Note that the INCLUDE_PATH is not recursive, so the setting of
+# RECURSIVE has no effect here.
+# This tag requires that the tag SEARCH_INCLUDES is set to YES.
+
+INCLUDE_PATH           =
+INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_RUNNING \
                          CV_DB_LIB_API= \
                          CV_CORE_LIB_API= \
                          CV_IO_LIB_API= \
                          CLOUDVIEWER_API= \
                          __attribute__(x)=
+EXPAND_AS_DEFINED      =
+SKIP_FUNCTION_MACROS   = YES
+
+#---------------------------------------------------------------------------
+# Configuration options related to external references
+#---------------------------------------------------------------------------
+
+TAGFILES               =
+GENERATE_TAGFILE       =
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = YES
+EXTERNAL_PAGES         = YES
+PERL_PATH              = /usr/bin/perl
 
 #---------------------------------------------------------------------------
 # Configuration options related to the dot tool
 #---------------------------------------------------------------------------
 
 CLASS_DIAGRAMS         = YES
+MSCGEN_PATH            =
+DIA_PATH               =
+HIDE_UNDOC_RELATIONS   = YES
 HAVE_DOT               = YES
 DOT_NUM_THREADS        = 0
+DOT_FONTNAME           = Helvetica
+DOT_FONTSIZE           = 10
+DOT_FONTPATH           =
 CLASS_GRAPH            = YES
 COLLABORATION_GRAPH    = YES
 GROUP_GRAPHS           = YES
 UML_LOOK               = NO
+UML_LIMIT_NUM_FIELDS   = 10
 TEMPLATE_RELATIONS     = YES
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES
@@ -225,10 +299,17 @@ CALLER_GRAPH           = NO
 GRAPHICAL_HIERARCHY    = YES
 DIRECTORY_GRAPH        = YES
 DOT_IMAGE_FORMAT       = png
+INTERACTIVE_SVG        = NO
+DOT_PATH               =
+DOTFILE_DIRS           =
+MSCFILE_DIRS           =
+DIAFILE_DIRS           =
+PLANTUML_JAR_PATH      =
+PLANTUML_CFG_FILE      =
+PLANTUML_INCLUDE_PATH  =
 DOT_GRAPH_MAX_NODES    = 50
 MAX_DOT_GRAPH_DEPTH    = 0
 DOT_TRANSPARENT        = NO
 DOT_MULTI_TARGETS      = YES
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
-
