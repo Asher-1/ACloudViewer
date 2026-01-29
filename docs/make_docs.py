@@ -860,7 +860,13 @@ def get_cloudviewer_version(pwd):
 
 
 def process_doxyfile_template(pwd, version):
-    """Process Doxyfile.in template to generate Doxyfile with version."""
+    """Process Doxyfile.in template to generate Doxyfile with version.
+    
+    Note: Doxyfile.in uses relative paths (like ../libs/cloudViewer) which work
+    because Doxygen is executed from the docs/ directory. We only substitute:
+    - @PROJECT_VERSION@ → actual version (e.g., 3.9.4)
+    - @DOXYGEN_OUTPUT_DIRECTORY@ → output directory (e.g., doxygen)
+    """
     doxyfile_in = os.path.join(pwd, "Doxyfile.in")
     doxyfile_out = os.path.join(pwd, "Doxyfile")
     
@@ -874,23 +880,21 @@ def process_doxyfile_template(pwd, version):
         with open(doxyfile_in, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Get project source directory (parent of docs/)
-        project_source_dir = os.path.abspath(os.path.join(pwd, ".."))
-        docs_source_dir = os.path.abspath(os.path.join(pwd, "source"))
-        doxygen_output_dir = os.path.abspath(os.path.join(pwd, "doxygen"))
+        # Doxygen output directory (relative to docs/ or absolute)
+        # The DoxygenDocsBuilder will override this via temporary Doxyfile
+        # but we provide a default here for direct doxygen command usage
+        doxygen_output_dir = "doxygen"
         
-        # Replace CMake-style variables
+        # Replace template variables
         content = content.replace('@PROJECT_VERSION@', version)
-        content = content.replace('@PROJECT_SOURCE_DIR@', project_source_dir)
-        content = content.replace('@DOCS_SOURCE_DIR@', docs_source_dir)
         content = content.replace('@DOXYGEN_OUTPUT_DIRECTORY@', doxygen_output_dir)
         
         with open(doxyfile_out, 'w', encoding='utf-8') as f:
             f.write(content)
         
-        print(f"[make_docs] Generated Doxyfile with version {version}")
+        print(f"[make_docs] Generated Doxyfile:")
         print(f"[make_docs]   PROJECT_VERSION: {version}")
-        print(f"[make_docs]   PROJECT_SOURCE_DIR: {project_source_dir}")
+        print(f"[make_docs]   OUTPUT_DIRECTORY: {doxygen_output_dir}")
     except Exception as e:
         print(f"[make_docs] Error processing Doxyfile.in: {e}")
 
