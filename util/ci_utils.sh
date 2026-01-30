@@ -79,12 +79,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo DISTRIB_ID="$DISTRIB_ID";
         echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
     )
-    # Fix Ubuntu18.04 issues: You're trying to build PyTorch with a too old version of GCC. 
-    # We need GCC 9 or later.
-    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-        TENSORFLOW_VER="2.13.0"
-        TORCH_VER="2.0.1"
-    fi
 else # do not support windows
     echo "Do not support windows system with this script!"
     if [[ "${_CI_UTILS_SOURCED:-0}" -eq 1 ]]; then
@@ -576,39 +570,24 @@ test_wheel() {
         HAVE_TENSORFLOW_OPS=ON
     fi
 
-    # Fix Ubuntu18.04 issues: You're trying to build PyTorch with a too old version of GCC. 
-    # We need GCC 9 or later.
-    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-        if [ "$HAVE_PYTORCH_OPS" == "ON" ]; then
-            python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements-torch201.txt"
-            python  -W default -c \
-                "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
-        fi
-        if [ "$HAVE_TENSORFLOW_OPS" == "ON" ]; then
-            python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements-tensorflow.txt"
-            python  -W default -c \
-                "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
-        fi
-    else
-        if [ "$HAVE_PYTORCH_OPS" == "ON" ]; then
-            python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
-            # fix issues of invalid pixel size; error code 0x17
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-                MATPLOT_LIB_TARGET_VERSION="3.9.4"
-                if pip install "matplotlib==$MATPLOT_LIB_TARGET_VERSION" &>/dev/null; then
-                    echo "Successfully installed matplotlib version $MATPLOT_LIB_TARGET_VERSION"
-                else
-                    echo "Ignore matplotlib re-installation: $MATPLOT_LIB_TARGET_VERSION"
-                fi
+    if [ "$HAVE_PYTORCH_OPS" == "ON" ]; then
+        python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+        # fix issues of invalid pixel size; error code 0x17
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            MATPLOT_LIB_TARGET_VERSION="3.9.4"
+            if pip install "matplotlib==$MATPLOT_LIB_TARGET_VERSION" &>/dev/null; then
+                echo "Successfully installed matplotlib version $MATPLOT_LIB_TARGET_VERSION"
+            else
+                echo "Ignore matplotlib re-installation: $MATPLOT_LIB_TARGET_VERSION"
             fi
-            python  -W default -c \
-                "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
         fi
-        if [ "$HAVE_TENSORFLOW_OPS" == "ON" ]; then
-            python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
-            python  -W default -c \
-                "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
-        fi
+        python  -W default -c \
+            "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
+    fi
+    if [ "$HAVE_TENSORFLOW_OPS" == "ON" ]; then
+        python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
+        python  -W default -c \
+            "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
     fi
     
     echo

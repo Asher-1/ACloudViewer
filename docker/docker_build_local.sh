@@ -96,12 +96,7 @@ wheel_release_export_env() {
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
-		if [ "$UBUNTU_VERSION" = "18.04" ]; then
-			# PyTorch and CloudViewer ABI mismatch issues on ubuntu18.04
-			export BUILD_PYTORCH_OPS=OFF
-		else
-			export BUILD_PYTORCH_OPS=ON
-		fi
+		export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
 }
 
@@ -223,10 +218,6 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 
 	for version in "${PYTHON_VERSIONS[@]}"; do
     if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudviewer*-cp${version}-*.whl" | grep -q .; then
-		    if [[ "$version" == "312" || "$version" == "313" ]] && [ "$UBUNTU_VERSION" == "18.04" ]; then
-					echo "Ubuntu18.04 does not support python3.12 or python3.13 as default!"
-					continue
-    		fi
 				echo "Start building cloudviewer wheel with python${version}..."
         wheel_release_export_env
         release_build "py${version}" wheel

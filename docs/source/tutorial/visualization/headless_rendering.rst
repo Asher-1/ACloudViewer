@@ -5,7 +5,7 @@ Headless rendering
 
 This tutorial explains how to render and save images from a terminal without any display device.
 
-.. Note:: This feature is experimental; it was only tested with an Ubuntu 18.04 environment.
+.. Note:: This feature is experimental; it has been tested with Ubuntu 20.04+ environments.
 
 .. Note:: Although Ubuntu 16.04 is no longer supported for CloudViewer, additional instructions are under :ref:`headless_ubuntu1604`.
 

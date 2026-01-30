@@ -56,7 +56,6 @@ docker run --rm arm64v8/ubuntu:24.04 uname -p
 For example:
 ```bash
 # build for publish release version
-# Note: select Ubuntu18.04 for building OS due to compatibility
 ./docker/build-release.sh
 
 # build all platforms

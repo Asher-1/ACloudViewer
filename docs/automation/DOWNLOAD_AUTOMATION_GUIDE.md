@@ -237,8 +237,8 @@ cloudviewer[-_]cpu?-{VERSION}-cp{PYMAJOR}{PYMINOR}-{ABI}-{PLATFORM}_{ARCH}.whl
 |---------|----------------|------------------------|-----------|
 | **Beta** (main-devel) | 3.10, 3.11, 3.12, 3.13 | 20.04, 22.04, 24.04 | Win, macOS, Linux |
 | v3.9.3 | 3.8, 3.9, 3.10, 3.11, 3.12 | 18.04, 20.04, 22.04 | Win, macOS, Linux |
-| v3.9.2 | 3.8, 3.9, 3.10, 3.11, 3.12 | (No Ubuntu apps found) | Win, macOS, Linux |
-| v3.9.1 | 3.8, 3.9, 3.10, 3.11, 3.12 | (No Ubuntu apps found) | Win, macOS, Linux |
+| v3.9.2 | 3.8, 3.9, 3.10, 3.11, 3.12 | 18.04, 20.04, 22.04 | Win, macOS, Linux |
+| v3.9.1 | 3.8, 3.9, 3.10, 3.11, 3.12 | 18.04, 20.04,       | Win, macOS, Linux |
 | v3.8.0 | 3.6, 3.7, 3.8 | (Legacy format) | Win, Linux |
 
 **Notes:**
