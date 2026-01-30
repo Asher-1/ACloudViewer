@@ -230,7 +230,7 @@ def _setup_path(lib_path,
 
 def _setup_qt_plugin_path(lib_path):
     """
-    Set up Qt plugin path environment variable.
+    Set up Qt plugin path environment variables for Windows and macOS.
     
     Args:
         lib_path: Path to the library directory
@@ -241,6 +241,136 @@ def _setup_qt_plugin_path(lib_path):
     else:
         os.environ['QT_PLUGIN_PATH'] = lib_path
 
+    # Set platform plugin path - use platforms subdirectory if it exists
+    platform_plugin_path = os.path.join(lib_path, 'platforms')
+    if os.path.exists(platform_plugin_path):
+        os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = platform_plugin_path
+    else:
+        os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = lib_path
+
+
+def _filter_qt_paths(paths, path_separator=':'):
+    """
+    Filter out system Qt paths from a list of paths.
+    
+    Args:
+        paths: List of paths or path string (will be split by path_separator)
+        path_separator: Path separator character (default: ':' for Unix, ';' for Windows)
+    
+    Returns:
+        List of filtered paths (system Qt paths removed)
+    """
+    if isinstance(paths, str):
+        path_list = paths.split(path_separator) if paths else []
+    else:
+        path_list = paths
+
+    # Common Qt-related keywords to filter
+    qt_keywords = [
+        'qt5',
+        'qt-5',
+        'qt6',
+        'qt-6',
+        'qt/',
+        'qt\\',
+        'anaconda',
+        'miniconda',
+        'conda',
+    ]
+
+    # Platform-specific Qt paths
+    if sys.platform == "linux":
+        qt_keywords.extend([
+            '/usr/lib/x86_64-linux-gnu/qt',
+            '/usr/lib/qt',
+            '/usr/local/qt',
+        ])
+    elif sys.platform == "darwin":
+        qt_keywords.extend([
+            '/usr/local/opt/qt',
+            '/opt/homebrew/opt/qt',
+            '/opt/local/lib',
+        ])
+    elif sys.platform == "win32":
+        qt_keywords.extend([
+            'c:\\qt',
+            'c:\\program files\\qt',
+            'c:\\program files (x86)\\qt',
+        ])
+
+    # Qt library/framework identifiers
+    qt_lib_identifiers = [
+        'libQt5', 'libQt6', 'Qt5Core', 'Qt6Core', 'Qt5Core.framework',
+        'Qt6Core.framework', 'QtCore.framework', 'qt5core', 'qt6core', 'qtcore',
+        'qtwidgets', 'qt5gui', 'qt6gui', 'qtgui', 'qt5', 'qt6'
+    ]
+
+    filtered_paths = [
+        p for p in path_list
+        if p and not any(x in p.lower() for x in qt_keywords) and not (any(
+            qt_id in p for qt_id in qt_lib_identifiers))
+    ]
+
+    return filtered_paths
+
+
+def _setup_library_paths_early(lib_path):
+    """
+    Set up library search paths for all platforms BEFORE loading any libraries.
+    This prevents mixing system Qt libraries with package Qt libraries.
+    
+    Args:
+        lib_path: Path to the package library directory
+    """
+    if sys.platform == "linux":
+        # Linux: Set up LD_LIBRARY_PATH
+        old_ld_path = os.environ.get('LD_LIBRARY_PATH', '')
+        filtered_paths = _filter_qt_paths(old_ld_path, ':')
+
+        if filtered_paths:
+            os.environ['LD_LIBRARY_PATH'] = lib_path + ":" + ":".join(
+                filtered_paths)
+        else:
+            os.environ['LD_LIBRARY_PATH'] = lib_path
+
+    elif sys.platform == "darwin":
+        # macOS: Set up DYLD_LIBRARY_PATH and DYLD_FRAMEWORK_PATH
+        old_dyld_lib_path = os.environ.get('DYLD_LIBRARY_PATH', '')
+        old_dyld_fw_path = os.environ.get('DYLD_FRAMEWORK_PATH', '')
+
+        # Filter library paths
+        filtered_lib_paths = _filter_qt_paths(old_dyld_lib_path, ':')
+        if filtered_lib_paths:
+            os.environ['DYLD_LIBRARY_PATH'] = lib_path + ":" + ":".join(
+                filtered_lib_paths)
+        else:
+            os.environ['DYLD_LIBRARY_PATH'] = lib_path
+
+        # Filter framework paths
+        filtered_fw_paths = _filter_qt_paths(old_dyld_fw_path, ':')
+        if filtered_fw_paths:
+            os.environ['DYLD_FRAMEWORK_PATH'] = lib_path + ":" + ":".join(
+                filtered_fw_paths)
+        else:
+            os.environ['DYLD_FRAMEWORK_PATH'] = lib_path
+
+    elif sys.platform == "win32":
+        # Windows: Set up PATH
+        old_path = os.environ.get('path', '') or os.environ.get('PATH', '')
+        filtered_paths = _filter_qt_paths(old_path, ';')
+
+        # Convert lib_path to Windows format if needed
+        lib_path_win = lib_path.replace('/',
+                                        '\\') if '/' in lib_path else lib_path
+
+        if filtered_paths:
+            os.environ['PATH'] = lib_path_win + ";" + ";".join(filtered_paths)
+            os.environ['path'] = os.environ[
+                'PATH']  # Also set lowercase version
+        else:
+            os.environ['PATH'] = lib_path_win
+            os.environ['path'] = lib_path_win
+
 
 # Linux-specific library loading utilities
 def _setup_linux_libraries():
@@ -249,19 +379,11 @@ def _setup_linux_libraries():
     Must be called in the correct order to resolve dependencies.
     """
     # 1. Set up environment variables
-    # Set LD_LIBRARY_PATH to prioritize package libraries
-    old_ld_path = os.environ.get('LD_LIBRARY_PATH', '')
-    # Filter out conda/system Qt paths to avoid mixing Qt versions
-    linux_filtered_paths = [
-        p for p in old_ld_path.split(':') if p and not any(
-            x in p.lower() for x in
-            ['qt5', 'qt-5', 'qt6', 'qt-6', 'anaconda', 'miniconda', 'conda'])
-    ]
-    if linux_filtered_paths:
-        os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" + ":".join(
-            linux_filtered_paths)
-    else:
-        os.environ['LD_LIBRARY_PATH'] = LIB_PATH
+    # NOTE: LD_LIBRARY_PATH should already be set earlier in the module initialization
+    # (around line 403-428) to prevent loading system Qt libraries.
+    # Here we just verify it's set correctly - no need to set it again.
+    # If for some reason it wasn't set (e.g., non-standard import order),
+    # we'll use the current value which should already be filtered.
 
     # Set Qt-specific environment variables to avoid mixing system Qt
     # This ensures all Qt components come from the same version
@@ -369,11 +491,23 @@ if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
         pass
 
 # fix link bugs for qt on Linux platform
+# CRITICAL: Set up environment variables BEFORE loading any libraries
+# to prevent mixing system Qt libraries with package Qt libraries
 if os.path.exists(MAIN_LIB_PATH):
     LIB_PATH = str(MAIN_LIB_PATH)
+
+    # Set up library paths FIRST to prevent loading system Qt libraries
+    # This must be done before loading any libraries to avoid version conflicts
+    _setup_library_paths_early(LIB_PATH)
+
     # the Qt plugin is included currently only in the pre-built wheels
     if _build_config["BUILD_RECONSTRUCTION"]:
-        os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
+        # Set platform plugin path - use platforms subdirectory if it exists
+        platform_plugin_path = os.path.join(LIB_PATH, 'platforms')
+        if os.path.exists(platform_plugin_path):
+            os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = platform_plugin_path
+        else:
+            os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
 
     if sys.platform == "win32":
         # Windows: Set PATH and Qt plugin paths
