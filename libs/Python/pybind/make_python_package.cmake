@@ -74,9 +74,9 @@ file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
 
 
 # 4) Add extra dependencies.
-message(STATUS "QT5_PLUGINS_PATH_LIST: " ${QT5_PLUGINS_PATH_LIST})
-foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
-    file(COPY "${qt5_plugins_folder}"
+message(STATUS "QT_PLUGINS_PATH_LIST: " ${QT_PLUGINS_PATH_LIST})
+foreach( qt_plugins_folder ${QT_PLUGINS_PATH_LIST} )
+    file(COPY "${qt_plugins_folder}"
          DESTINATION "${PYTHON_INSTALL_LIB_DESTINATION}/")
 endforeach()
 

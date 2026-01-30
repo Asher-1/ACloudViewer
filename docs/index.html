@@ -94,11 +94,11 @@
                         Originally designed to compare two 3D point clouds (such as those obtained by laser scanning) or the difference between point clouds and triangular meshes. It relies on an octree structure highly optimized for this specific use case, capable of handling massive point cloud data (typically over 10 million points, up to 120 million points with 2GB memory).
                     </p>
                 </div>
-                <div class="about-badges">
-                    <img src="https://img.shields.io/badge/version-3.9.4--Beta-blue" alt="Version">
+                <div class="about-badges" id="about-badges">
+                    <img id="version-badge" src="https://img.shields.io/badge/version-@VERSION@-blue" alt="Version">
                     <img src="https://img.shields.io/badge/license-GPL--2.0%20%7C%20MIT-green" alt="License">
                     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey" alt="Platform">
-                    <img src="https://img.shields.io/badge/python-3.10--3.12-blue" alt="Python">
+                    <img id="python-badge" src="https://img.shields.io/badge/python-Loading...-blue" alt="Python">
                 </div>
             </div>
         </div>
@@ -3238,17 +3238,17 @@ make -j$(nproc)">
             <div class="gallery-content active" id="gallery-ui">
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="images/MainUI.png" alt="主界面">
+                        <img src="images/MainUI.png" alt="Main Interface" data-i18n-alt="gallery.main_ui.title">
                         <div class="gallery-overlay">
-                            <h3>主界面</h3>
-                            <p>专业的3D数据处理与可视化界面</p>
+                            <h3 data-i18n="gallery.main_ui.title">Main Interface</h3>
+                            <p data-i18n="gallery.main_ui.desc">Professional 3D data processing and visualization interface</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/AbstractionLayers.png" alt="架构层次">
+                        <img src="images/AbstractionLayers.png" alt="System Architecture" data-i18n-alt="gallery.architecture.title">
                         <div class="gallery-overlay">
-                            <h3>系统架构</h3>
-                            <p>模块化设计，从底层到应用层的完整抽象</p>
+                            <h3 data-i18n="gallery.architecture.title">System Architecture</h3>
+                            <p data-i18n="gallery.architecture.desc">Modular design, complete abstraction from bottom layer to application layer</p>
                         </div>
                     </div>
                 </div>
@@ -3258,31 +3258,31 @@ make -j$(nproc)">
             <div class="gallery-content" id="gallery-reconstruction">
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="images/CloudViewerApp.png" alt="CloudViewer应用">
+                        <img src="images/CloudViewerApp.png" alt="CloudViewer App" data-i18n-alt="gallery.cloudviewer_app.title">
                         <div class="gallery-overlay">
-                            <h3>CloudViewer 应用</h3>
-                            <p>轻量级的点云查看器</p>
+                            <h3 data-i18n="gallery.cloudviewer_app.title">CloudViewer App</h3>
+                            <p data-i18n="gallery.cloudviewer_app.desc">Lightweight point cloud viewer</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/Reconstruction.png" alt="三维重建">
+                        <img src="images/Reconstruction.png" alt="Scene Reconstruction" data-i18n-alt="gallery.reconstruction_img.title">
                         <div class="gallery-overlay">
-                            <h3>场景重建</h3>
-                            <p>基于COLMAP的完整3D重建流程</p>
+                            <h3 data-i18n="gallery.reconstruction_img.title">Scene Reconstruction</h3>
+                            <p data-i18n="gallery.reconstruction_img.desc">Complete 3D reconstruction workflow based on COLMAP</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/real-time-3D-Reconstruction.png" alt="实时重建">
+                        <img src="images/real-time-3D-Reconstruction.png" alt="Real-time 3D Reconstruction" data-i18n-alt="gallery.realtime.title">
                         <div class="gallery-overlay">
-                            <h3>实时3D重建</h3>
-                            <p>GPU加速的实时点云重建与融合</p>
+                            <h3 data-i18n="gallery.realtime.title">Real-time 3D Reconstruction</h3>
+                            <p data-i18n="gallery.realtime.desc">GPU-accelerated real-time point cloud reconstruction and fusion</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/ICP-registration.png" alt="ICP配准">
+                        <img src="images/ICP-registration.png" alt="ICP Point Cloud Registration" data-i18n-alt="gallery.icp.title">
                         <div class="gallery-overlay">
-                            <h3>ICP点云配准</h3>
-                            <p>高性能的迭代最近点算法，支持多尺度配准</p>
+                            <h3 data-i18n="gallery.icp.title">ICP Point Cloud Registration</h3>
+                            <p data-i18n="gallery.icp.desc">High-performance iterative closest point algorithm, supporting multi-scale registration</p>
                         </div>
                     </div>
                 </div>
@@ -3292,24 +3292,24 @@ make -j$(nproc)">
             <div class="gallery-content" id="gallery-annotation">
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="images/Annotaion.png" alt="主界面">
+                        <img src="images/Annotaion.png" alt="Main Interface" data-i18n-alt="gallery.main_ui.title">
                         <div class="gallery-overlay">
-                            <h3>主界面</h3>
-                            <p>现代化的用户界面，功能强大且易用</p>
+                            <h3 data-i18n="gallery.main_ui.title">Main Interface</h3>
+                            <p data-i18n="gallery.main_ui.desc_alt">Modern user interface, powerful and easy to use</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/SemanticAnnotation.png" alt="语义标注">
+                        <img src="images/SemanticAnnotation.png" alt="Semantic Annotation Tool" data-i18n-alt="gallery.semantic.title">
                         <div class="gallery-overlay">
-                            <h3>语义标注工具</h3>
-                            <p>智能的3D语义分割和标注功能</p>
+                            <h3 data-i18n="gallery.semantic.title">Semantic Annotation Tool</h3>
+                            <p data-i18n="gallery.semantic.desc">Intelligent 3D semantic segmentation and annotation</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/SenceCloud.png" alt="场景点云">
+                        <img src="images/SenceCloud.png" alt="Large-scale Scene Annotation" data-i18n-alt="gallery.scene_cloud.title">
                         <div class="gallery-overlay">
-                            <h3>大规模场景标注</h3>
-                            <p>处理海量点云数据的语义标注，支持上亿点渲染</p>
+                            <h3 data-i18n="gallery.scene_cloud.title">Large-scale Scene Annotation</h3>
+                            <p data-i18n="gallery.scene_cloud.desc">Semantic annotation for massive point cloud data, supporting rendering of hundreds of millions of points</p>
                         </div>
                     </div>
                 </div>
@@ -3319,24 +3319,24 @@ make -j$(nproc)">
             <div class="gallery-content" id="gallery-tools">
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="images/selection_tools.png" alt="选择工具">
+                        <img src="images/selection_tools.png" alt="Smart Selection Tools" data-i18n-alt="gallery.selection.title">
                         <div class="gallery-overlay">
-                            <h3 data-i18n="gallery.selection.title">智能选择工具</h3>
-                            <p data-i18n="gallery.selection.desc">强大的3D数据选择和过滤工具，支持多种选择模式</p>
+                            <h3 data-i18n="gallery.selection.title">Smart Selection Tools</h3>
+                            <p data-i18n="gallery.selection.desc">Powerful 3D data selection and filtering tools with multiple selection modes</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/ruler_measurement_tools.png" alt="尺子测量">
+                        <img src="images/ruler_measurement_tools.png" alt="Distance Measurement" data-i18n-alt="gallery.ruler.title">
                         <div class="gallery-overlay">
-                            <h3 data-i18n="gallery.ruler.title">距离测量工具</h3>
-                            <p data-i18n="gallery.ruler.desc">精确的点云距离测量，支持实时标注和可视化</p>
+                            <h3 data-i18n="gallery.ruler.title">Distance Measurement</h3>
+                            <p data-i18n="gallery.ruler.desc">Precise point cloud distance measurement with real-time annotation and visualization</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/protractor_measurement_tools.png" alt="量角器测量">
+                        <img src="images/protractor_measurement_tools.png" alt="Angle Measurement" data-i18n-alt="gallery.protractor.title">
                         <div class="gallery-overlay">
-                            <h3 data-i18n="gallery.protractor.title">角度测量工具</h3>
-                            <p data-i18n="gallery.protractor.desc">高精度角度测量，支持多点角度计算和标注</p>
+                            <h3 data-i18n="gallery.protractor.title">Angle Measurement</h3>
+                            <p data-i18n="gallery.protractor.desc">High-precision angle measurement supporting multi-point angle calculation and annotation</p>
                         </div>
                     </div>
                 </div>
@@ -3346,17 +3346,17 @@ make -j$(nproc)">
             <div class="gallery-content" id="gallery-ml">
                 <div class="gallery-grid">
                     <div class="gallery-item gallery-item-wide">
-                        <img src="images/gifs/getting_started_ml_visualizer.gif" alt="ML可视化">
+                        <img src="images/gifs/getting_started_ml_visualizer.gif" alt="Machine Learning Visualization" data-i18n-alt="gallery.ml_vis.title">
                         <div class="gallery-overlay">
-                            <h3 data-i18n="gallery.ml_vis.title">机器学习可视化</h3>
-                            <p data-i18n="gallery.ml_vis.desc">实时可视化3D机器学习模型训练和推理过程</p>
+                            <h3 data-i18n="gallery.ml_vis.title">Machine Learning Visualization</h3>
+                            <p data-i18n="gallery.ml_vis.desc">Real-time visualization of 3D machine learning model training and inference</p>
                         </div>
                     </div>
                     <div class="gallery-item gallery-item-wide">
-                        <img src="images/gifs/visualizer_predictions.gif" alt="ML预测可视化">
+                        <img src="images/gifs/visualizer_predictions.gif" alt="Model Prediction Visualization" data-i18n-alt="gallery.ml_pred.title">
                         <div class="gallery-overlay">
-                            <h3 data-i18n="gallery.ml_pred.title">模型预测可视化</h3>
-                            <p data-i18n="gallery.ml_pred.desc">3D深度学习模型推理结果的实时可视化展示</p>
+                            <h3 data-i18n="gallery.ml_pred.title">Model Prediction Visualization</h3>
+                            <p data-i18n="gallery.ml_pred.desc">Real-time visualization of 3D deep learning model inference results</p>
                         </div>
                     </div>
                 </div>
@@ -3366,17 +3366,17 @@ make -j$(nproc)">
             <div class="gallery-content" id="gallery-visualization">
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="images/jupyter_visualizer.png" alt="Jupyter可视化">
+                        <img src="images/jupyter_visualizer.png" alt="Jupyter Integration" data-i18n-alt="gallery.jupyter.title">
                         <div class="gallery-overlay">
-                            <h3>Jupyter 集成</h3>
-                            <p>在Jupyter Notebook中交互式可视化3D数据</p>
+                            <h3 data-i18n="gallery.jupyter.title">Jupyter Integration</h3>
+                            <p data-i18n="gallery.jupyter.desc">Interactive 3D data visualization in Jupyter Notebook</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/CloudViewerApp.png" alt="高级渲染">
+                        <img src="images/CloudViewerApp.png" alt="PBR Rendering" data-i18n-alt="gallery.pbr.title">
                         <div class="gallery-overlay">
-                            <h3>PBR渲染</h3>
-                            <p>基于物理的渲染，支持材质、光照和阴影</p>
+                            <h3 data-i18n="gallery.pbr.title">PBR Rendering</h3>
+                            <p data-i18n="gallery.pbr.desc">Physics-based rendering, supporting materials, lighting and shadows</p>
                         </div>
                     </div>
                 </div>
@@ -3440,29 +3440,29 @@ make -j$(nproc)">
                     </div>
                 </div>
                 <div class="footer-section">
-                    <h4>快速链接</h4>
+                    <h4 data-i18n="footer.quick_links">Quick Links</h4>
                     <ul>
-                        <li><a href="#features">特性</a></li>
-                        <li><a href="#download">下载</a></li>
-                        <li><a href="#quickstart">快速开始</a></li>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/releases">版本发布</a></li>
+                        <li><a href="#features" data-i18n="nav.features">Features</a></li>
+                        <li><a href="#download" data-i18n="nav.download">Download</a></li>
+                        <li><a href="#quickstart" data-i18n="nav.quickstart">Quick Start</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/releases" data-i18n="footer.releases">Releases</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>文档</h4>
+                    <h4 data-i18n="footer.documentation">Documentation</h4>
                     <ul>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/BUILD.md">编译指南</a></li>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/tree/master/examples">示例代码</a></li>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/CONTRIBUTING.md">贡献指南</a></li>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/CHANGELOG.md">更新日志</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/BUILD.md" data-i18n="footer.build_guide">Build Guide</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/tree/master/examples" data-i18n="footer.example_code">Example Code</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/CONTRIBUTING.md" data-i18n="footer.contribute_guide">Contribution Guide</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/blob/master/CHANGELOG.md" data-i18n="footer.changelog">Changelog</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>社区</h4>
+                    <h4 data-i18n="footer.community">Community</h4>
                     <ul>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/issues">问题反馈</a></li>
-                        <li><a href="https://github.com/Asher-1/ACloudViewer/discussions">讨论区</a></li>
-                        <li><a href="mailto:ludahai19@163.com">联系我们</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/issues" data-i18n="footer.issues">Issues</a></li>
+                        <li><a href="https://github.com/Asher-1/ACloudViewer/discussions" data-i18n="footer.discussions">Discussions</a></li>
+                        <li><a href="mailto:ludahai19@163.com" data-i18n="footer.contact">Contact Us</a></li>
                     </ul>
                 </div>
             </div>
