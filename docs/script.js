@@ -133,6 +133,7 @@ const translations = {
         'gallery.icp.desc': 'High-performance iterative closest point algorithm, supporting multi-scale registration',
         'gallery.main_ui.title': 'Main Interface',
         'gallery.main_ui.desc': 'Professional 3D data processing and visualization interface',
+        'gallery.main_ui.desc_alt': 'Modern user interface, powerful and easy to use',
         'gallery.semantic.title': 'Semantic Annotation Tool',
         'gallery.semantic.desc': 'Intelligent 3D semantic segmentation and annotation',
         'gallery.scene_cloud.title': 'Large-scale Scene Annotation',
@@ -177,6 +178,11 @@ const translations = {
         'footer.social': 'Social Media',
         'footer.license': 'License',
         'footer.copyright': '© 2025 ACloudViewer. All rights reserved. | Licensed under GPL-2.0 and MIT',
+        'footer.build_guide': 'Build Guide',
+        'footer.example_code': 'Example Code',
+        'footer.contribute_guide': 'Contribution Guide',
+        'footer.changelog': 'Changelog',
+        'footer.contact': 'Contact Us',
     },
     zh: {
         // 导航
@@ -311,6 +317,7 @@ const translations = {
         'gallery.icp.desc': '高性能的迭代最近点算法，支持多尺度配准',
         'gallery.main_ui.title': '主界面',
         'gallery.main_ui.desc': '专业的3D数据处理与可视化界面',
+        'gallery.main_ui.desc_alt': '现代化的用户界面，功能强大且易用',
         'gallery.semantic.title': '语义标注工具',
         'gallery.semantic.desc': '智能的3D语义分割和标注功能',
         'gallery.scene_cloud.title': '大规模场景标注',
@@ -355,6 +362,11 @@ const translations = {
         'footer.social': '社交媒体',
         'footer.license': '许可证',
         'footer.copyright': '© 2025 ACloudViewer. 保留所有权利 | 采用 GPL-2.0 和 MIT 双重许可',
+        'footer.build_guide': '编译指南',
+        'footer.example_code': '示例代码',
+        'footer.contribute_guide': '贡献指南',
+        'footer.changelog': '更新日志',
+        'footer.contact': '联系我们',
     }
 };
 
@@ -395,6 +407,14 @@ function translatePage(lang) {
         const key = element.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key]) {
             element.textContent = translations[lang][key];
+        }
+    });
+    
+    // Update all elements with data-i18n-alt attribute (for img alt text)
+    document.querySelectorAll('[data-i18n-alt]').forEach(element => {
+        const key = element.getAttribute('data-i18n-alt');
+        if (translations[lang] && translations[lang][key]) {
+            element.setAttribute('alt', translations[lang][key]);
         }
     });
     
@@ -903,6 +923,72 @@ let archRow = null;
 let archSelector = null;
 let downloadOutput = null;
 
+// Update version and Python version badges
+function updateVersionBadges() {
+    if (!versionMetadata || versionMetadata.length === 0) return;
+    
+    console.log(`ℹ️  Version badge kept as-is (from make_docs.py/version.txt)`);
+    
+    // Get the current version from the version badge  
+    const versionBadge = document.getElementById('version-badge');
+    let currentVersion = null;
+    if (versionBadge && versionBadge.alt) {
+        // Extract version from alt text like "Version 3.9.4"
+        const match = versionBadge.alt.match(/Version\s+(\d+\.\d+\.\d+)/);
+        if (match) {
+            currentVersion = 'v' + match[1];
+        }
+    }
+    
+    // Try to find the matching version in downloads_data.json
+    let versionInfo = null;
+    if (currentVersion) {
+        versionInfo = versionMetadata.find(v => v.value === currentVersion);
+        console.log(`🔍 Looking for version ${currentVersion}: ${versionInfo ? 'Found' : 'Not found'}`);
+    }
+    
+    // If not found (e.g., 3.9.4 not released yet), use main-devel
+    if (!versionInfo) {
+        versionInfo = versionMetadata.find(v => v.value === 'main-devel');
+        console.log(`ℹ️  Using main-devel Python versions (current version ${currentVersion || 'unknown'} not released yet)`);
+    }
+    
+    // Fallback to latest stable version
+    if (!versionInfo) {
+        versionInfo = versionMetadata.find(v => v.value !== 'main-devel' && v.value.startsWith('v'));
+        console.log(`ℹ️  Fallback to latest stable version: ${versionInfo?.value}`);
+    }
+    
+    // Update Python version badge
+    const pythonBadge = document.getElementById('python-badge');
+    if (pythonBadge && versionInfo && versionInfo.python_versions && versionInfo.python_versions.length > 0) {
+        // Sort Python versions
+        const sortedVersions = [...versionInfo.python_versions].sort((a, b) => {
+            const [aMajor, aMinor] = a.split('.').map(Number);
+            const [bMajor, bMinor] = b.split('.').map(Number);
+            if (aMajor !== bMajor) return aMajor - bMajor;
+            return aMinor - bMinor;
+        });
+        
+        // Get min and max Python versions
+        const minVersion = sortedVersions[0];
+        const maxVersion = sortedVersions[sortedVersions.length - 1];
+        
+        let pythonRange;
+        if (minVersion === maxVersion) {
+            pythonRange = minVersion;
+        } else {
+            pythonRange = `${minVersion}--${maxVersion}`;  // Use double dash for shields.io
+        }
+        
+        const pythonUrl = `https://img.shields.io/badge/python-${encodeURIComponent(pythonRange)}-blue`;
+        pythonBadge.src = pythonUrl;
+        pythonBadge.alt = `Python ${minVersion}-${maxVersion}`;
+        
+        console.log(`✅ Python badge: ${minVersion}-${maxVersion} (from ${versionInfo.value})`);
+    }
+}
+
 // Load downloads data from downloads_data.json
 async function loadDownloadsData() {
     console.log('📡 Loading downloads data from downloads_data.json...');
@@ -924,6 +1010,9 @@ async function loadDownloadsData() {
         versionMetadata = data.version_metadata;
         
         console.log('📊 Version metadata:', versionMetadata);
+        
+        // Update version badges
+        updateVersionBadges();
         
         initializeVersionSelector();
         initializeSelectors();
@@ -1290,9 +1379,125 @@ function initializeDownloadSelector() {
 
 // Initialize when DOM is fully loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeDownloadSelector);
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('📄 DOM Content Loaded');
+        const hasDownloadSelector = document.getElementById('version-selector');
+        
+        if (hasDownloadSelector) {
+            console.log('📦 Download selector found, initializing download page');
+            initializeDownloadSelector();
+        } else {
+            console.log('🏠 Homepage detected');
+            // For homepage, keep the version badge set by make_docs.py (from version.txt)
+            // and only load Python version from downloads_data.json
+            console.log('🔖 Loading Python version info for homepage badges...');
+            loadDownloadsDataForBadges();
+        }
+    });
 } else {
     // DOM already loaded
-    initializeDownloadSelector();
+    console.log('📄 DOM already loaded');
+    const hasDownloadSelector = document.getElementById('version-selector');
+    
+    if (hasDownloadSelector) {
+        console.log('📦 Download selector found, initializing download page');
+        initializeDownloadSelector();
+    } else {
+        console.log('🏠 Homepage detected');
+        console.log('🔖 Loading Python version info for homepage badges...');
+        loadDownloadsDataForBadges();
+    }
+}
+
+// Load downloads data just for Python version badge on homepage
+// (Version badge is already set by make_docs.py from version.txt)
+async function loadDownloadsDataForBadges() {
+    console.log('🔖 Loading Python version info for homepage...');
+    try {
+        const response = await fetch('downloads_data.json');
+        console.log(`🔖 Response status: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`Failed to load downloads_data.json (status: ${response.status})`);
+        }
+        const data = await response.json();
+        versionMetadata = data.version_metadata;
+        console.log('🔖 Version metadata loaded:', versionMetadata.length, 'versions');
+        
+        // Only update Python version badge (keep version badge from make_docs.py)
+        updatePythonBadgeOnly();
+        console.log('✅ Python version badge updated');
+    } catch (error) {
+        console.error('❌ Error loading downloads data:', error);
+        console.log('ℹ️  Using fallback Python version badge');
+        // Fallback: Use hardcoded Python version
+        const pythonBadge = document.getElementById('python-badge');
+        if (pythonBadge) {
+            pythonBadge.src = 'https://img.shields.io/badge/python-3.10--3.13-blue';
+            pythonBadge.alt = 'Python 3.10-3.13';
+        }
+    }
+}
+
+// Update only Python version badge (for homepage)
+function updatePythonBadgeOnly() {
+    if (!versionMetadata || versionMetadata.length === 0) return;
+    
+    // Get the current version from the version badge
+    const versionBadge = document.getElementById('version-badge');
+    let currentVersion = null;
+    if (versionBadge && versionBadge.alt) {
+        // Extract version from alt text like "Version 3.9.4"
+        const match = versionBadge.alt.match(/Version\s+(\d+\.\d+\.\d+)/);
+        if (match) {
+            currentVersion = 'v' + match[1];
+        }
+    }
+    
+    // Try to find the matching version in downloads_data.json
+    let versionInfo = null;
+    if (currentVersion) {
+        versionInfo = versionMetadata.find(v => v.value === currentVersion);
+        console.log(`🔍 Looking for version ${currentVersion} in downloads_data.json: ${versionInfo ? 'Found' : 'Not found'}`);
+    }
+    
+    // If not found (e.g., 3.9.4 not released yet), use main-devel
+    if (!versionInfo) {
+        versionInfo = versionMetadata.find(v => v.value === 'main-devel');
+        console.log(`ℹ️  Version ${currentVersion} not released yet, using main-devel Python versions`);
+    }
+    
+    // Fallback to latest stable version if main-devel not found
+    if (!versionInfo) {
+        versionInfo = versionMetadata.find(v => v.value !== 'main-devel' && v.value.startsWith('v'));
+        console.log(`ℹ️  Using latest stable version: ${versionInfo?.value}`);
+    }
+    
+    const pythonBadge = document.getElementById('python-badge');
+    if (pythonBadge && versionInfo && versionInfo.python_versions && versionInfo.python_versions.length > 0) {
+        // Sort Python versions
+        const sortedVersions = [...versionInfo.python_versions].sort((a, b) => {
+            const [aMajor, aMinor] = a.split('.').map(Number);
+            const [bMajor, bMinor] = b.split('.').map(Number);
+            if (aMajor !== bMajor) return aMajor - bMajor;
+            return aMinor - bMinor;
+        });
+        
+        // Get min and max Python versions
+        const minVersion = sortedVersions[0];
+        const maxVersion = sortedVersions[sortedVersions.length - 1];
+        
+        let pythonRange;
+        if (minVersion === maxVersion) {
+            pythonRange = minVersion;
+        } else {
+            pythonRange = `${minVersion}--${maxVersion}`;  // Use double dash for shields.io
+        }
+        
+        const pythonUrl = `https://img.shields.io/badge/python-${encodeURIComponent(pythonRange)}-blue`;
+        pythonBadge.src = pythonUrl;
+        pythonBadge.alt = `Python ${minVersion}-${maxVersion}`;
+        
+        console.log(`✅ Python badge updated: ${minVersion}-${maxVersion} (from ${versionInfo.value})`);
+    }
 }
 

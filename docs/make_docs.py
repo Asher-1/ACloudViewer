@@ -899,6 +899,50 @@ def process_doxyfile_template(pwd, version):
         print(f"[make_docs] Error processing Doxyfile.in: {e}")
 
 
+def update_index_html_version(pwd, version):
+    """Update version badges in index.html to match current version."""
+    index_html = os.path.join(pwd, "index.html")
+    
+    if not os.path.exists(index_html):
+        print("[make_docs] index.html not found, skipping version update")
+        return
+    
+    print("=" * 70)
+    print("Updating version in index.html")
+    print("=" * 70)
+    
+    try:
+        with open(index_html, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Update version badge placeholder
+        # Replace @VERSION@ placeholder with actual version
+        if '@VERSION@' in content:
+            content = content.replace('@VERSION@', version)
+            print(f"[make_docs] Updated version badge placeholder to: {version}")
+        else:
+            # Fallback: try to update hardcoded version badge (for backward compatibility)
+            # Pattern: <img src="https://img.shields.io/badge/version-X.X.X-blue"
+            version_badge_pattern = r'(<img\s+id="version-badge"\s+src="https://img\.shields\.io/badge/version-)[^"]+(-blue")'
+            new_version_badge = rf'\g<1>{version}\g<2>'
+            
+            if re.search(version_badge_pattern, content):
+                content = re.sub(version_badge_pattern, new_version_badge, content)
+                print(f"[make_docs] Updated hardcoded version badge to: {version}")
+            else:
+                print("[make_docs] Version badge placeholder or pattern not found")
+        
+        with open(index_html, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        print(f"[make_docs] index.html version updated successfully")
+    except Exception as e:
+        print(f"[make_docs] Error updating index.html: {e}")
+    
+    print("=" * 70)
+    print()
+
+
 def process_rst_templates(pwd, version):
     """Process .in.rst template files by replacing version placeholders."""
     print("=" * 70)
@@ -1068,6 +1112,9 @@ def main():
     else:
         print("ℹ️  Doxygen build disabled, use --doxygen to enable")
 
+    # Update index.html version badges
+    update_index_html_version(pwd, version)
+    
     # Process RST templates FIRST (before any Sphinx-related tasks)
     # This replaces @cv_version@ placeholders with actual version
     if args.sphinx:

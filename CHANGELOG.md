@@ -1,7 +1,7 @@
 ACloudViewer Version History
 ============================
 
-v3.9.4-Beta (Asher) - 01/16/2026
+v3.9.4 (Asher) - 02/01/2026
 --------------------------------
 
 - New features:
@@ -95,6 +95,16 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   Fix ply.comments metadata not being preserved when saving PLY files
         -   Fix incorrect error code returned when PLY file opening fails
         -   Fix scalar field value saving to use getValue() instead of getGlobalShift() + getValue()
+    -   Fix Qt platform plugin missing issue in Python wheel packages
+        -   Fix CMake variable name mismatch (QT5_PLUGINS_PATH_LIST -> QT_PLUGINS_PATH_LIST) causing Qt plugins not being copied to wheel
+        -   Fix Qt plugin path environment variable setup for Linux, macOS, and Windows platforms
+        -   Ensure QT_QPA_PLATFORM_PLUGIN_PATH is correctly set to platforms subdirectory when available
+    -   Fix Qt library version conflict issues on all platforms
+        -   Add library path isolation to prevent mixing system Qt libraries with package Qt libraries
+        -   Linux: Filter system Qt paths from LD_LIBRARY_PATH before loading any libraries
+        -   macOS: Filter system Qt paths from DYLD_LIBRARY_PATH and DYLD_FRAMEWORK_PATH
+        -   Windows: Filter system Qt paths from PATH environment variable
+        -   Unified library path filtering logic across all platforms to prevent "Cannot mix incompatible Qt library" errors
 
 - Enhancements:
     -   Replace `#ifndef` with `#pragma once`
@@ -146,6 +156,14 @@ v3.9.4-Beta (Asher) - 01/16/2026
         -   Fix error code for ply_open failures (use CC_FERR_THIRD_PARTY_LIB_FAILURE instead of CC_FERR_READING)
         -   Update PLY open dialog UI to use QListWidget for scalar fields selection instead of fixed combo boxes
         -   Improve scalar field type selection based on value ranges (int8, uint8, int16, uint16, float32, float64)
+    -   Refactor Python library path management for better maintainability
+        -   Unified library path filtering and setup logic across Linux, macOS, and Windows platforms
+        -   Extract common Qt path filtering into reusable functions (_filter_qt_paths, _setup_library_paths_early)
+        -   Improve code organization and reduce duplication in platform-specific library loading
+    -   Improve documentation deployment process
+        -   Replace hardcoded version number in index.html with @VERSION@ placeholder
+        -   Update make_docs.py to automatically replace version placeholder during deployment
+        -   Main repository no longer needs manual version number updates in documentation files
 
 - New plugins:
     - G3 Point - Granulometry made simple in ACloudViewer
