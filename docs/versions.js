@@ -11,6 +11,9 @@
         // Additional versions will be dynamically loaded
     ];
 
+    // Cache for documentation existence checks (to avoid repeated requests)
+    const DOC_EXISTENCE_CACHE = new Map();
+
     // Get current version from URL path
     function getCurrentVersion() {
         const path = window.location.pathname;
@@ -48,6 +51,37 @@
         }
     }
 
+    // Check if documentation exists for a version
+    async function checkDocumentationExists(versionPath) {
+        try {
+            const baseUrl = getBaseUrl();
+            const docUrl = `${baseUrl}/${versionPath}/index.html`;
+            const response = await fetch(docUrl, { method: 'HEAD' });
+            return response.ok;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    // Parse version string to compare (e.g., "v3.9.3" -> [3, 9, 3])
+    function parseVersion(versionStr) {
+        const match = versionStr.match(/v?(\d+)\.(\d+)\.(\d+)/);
+        if (match) {
+            return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+        }
+        return [0, 0, 0];
+    }
+
+    // Compare versions (returns true if v1 >= v2)
+    function isVersionGreaterOrEqual(v1, v2) {
+        const [major1, minor1, patch1] = parseVersion(v1);
+        const [major2, minor2, patch2] = parseVersion(v2);
+        
+        if (major1 !== major2) return major1 > major2;
+        if (minor1 !== minor2) return minor1 > minor2;
+        return patch1 >= patch2;
+    }
+
     // Load versions from downloads_data.json
     async function loadVersions() {
         try {
@@ -62,18 +96,72 @@
                 // Clear default versions
                 VERSIONS.length = 1; // Keep 'latest'
                 
-                // Add versions from metadata
+                // Documentation is available from v3.9.3 onwards
+                const MIN_DOC_VERSION = 'v3.9.3';
+                
+                // Collect version candidates
+                const versionCandidates = [];
+                
                 data.version_metadata.forEach(version => {
                     if (version.value && version.value !== 'main-devel') {
                         // Convert version tag to path format (e.g., v3.9.3 -> v3.9.3)
                         const versionPath = version.value.startsWith('v') ? version.value : `v${version.value}`;
-                        VERSIONS.push({
-                            value: versionPath,
-                            display: version.display_name || version.value,
-                            url: `${getBaseUrl()}/${versionPath}/`
-                        });
+                        
+                        // Check if version has documentation
+                        let hasDocumentation = false;
+                        
+                        // Method 1: Use has_documentation field if available (preferred)
+                        if (version.hasOwnProperty('has_documentation')) {
+                            hasDocumentation = version.has_documentation;
+                        } 
+                        // Method 2: Fallback to version comparison
+                        else if (isVersionGreaterOrEqual(versionPath, MIN_DOC_VERSION)) {
+                            hasDocumentation = true;
+                        }
+                        
+                        if (hasDocumentation) {
+                            versionCandidates.push({
+                                value: versionPath,
+                                display: version.display_name || version.value,
+                                url: `${getBaseUrl()}/${versionPath}/`,
+                                needsVerification: !version.hasOwnProperty('has_documentation')
+                            });
+                        }
                     }
                 });
+                
+                // For versions without explicit has_documentation flag, verify existence
+                const versionsNeedingVerification = versionCandidates.filter(v => v.needsVerification);
+                
+                if (versionsNeedingVerification.length > 0) {
+                    console.info(`Verifying documentation existence for ${versionsNeedingVerification.length} version(s)...`);
+                    
+                    const existenceChecks = await Promise.all(
+                        versionsNeedingVerification.map(async (v) => {
+                            const exists = await checkDocumentationExists(v.value);
+                            return { version: v, exists: exists };
+                        })
+                    );
+                    
+                    // Add only verified versions
+                    existenceChecks.forEach(({ version, exists }) => {
+                        if (exists) {
+                            VERSIONS.push(version);
+                        } else {
+                            console.info(`Skipping ${version.value}: documentation not found`);
+                        }
+                    });
+                    
+                    // Add versions that don't need verification
+                    versionCandidates.filter(v => !v.needsVerification).forEach(v => {
+                        VERSIONS.push(v);
+                    });
+                } else {
+                    // All versions have explicit documentation flags, no need to verify
+                    versionCandidates.forEach(v => {
+                        VERSIONS.push(v);
+                    });
+                }
                 
                 // Sort versions (latest first, then by version number descending)
                 VERSIONS.sort((a, b) => {
@@ -82,6 +170,8 @@
                     // Compare version numbers
                     return b.value.localeCompare(a.value, undefined, { numeric: true });
                 });
+                
+                console.info(`Loaded ${VERSIONS.length} documentation versions`);
             }
         } catch (error) {
             console.warn('Error loading versions:', error);

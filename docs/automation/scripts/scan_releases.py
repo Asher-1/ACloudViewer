@@ -183,7 +183,7 @@ def parse_wheel_asset(asset_name: str) -> Optional[Dict]:
         data['cuda'] = 'cpu' if 'cpu' in asset_name.lower() else 'cuda'
         
         # Map manylinux version to Ubuntu version
-        # manylinux_2_27 = Ubuntu 18.04
+        # manylinux_2_27 = CentOS 7 / RHEL 7 (glibc 2.17)
         # manylinux_2_31 = Ubuntu 20.04
         # manylinux_2_35 = Ubuntu 22.04
         # manylinux_2_39 = Ubuntu 24.04
@@ -367,6 +367,16 @@ def generate_version_metadata(version_info: Dict) -> List[Dict]:
     """Generate metadata for version selector buttons"""
     metadata = []
     
+    # Documentation is available from v3.9.3 onwards
+    MIN_DOC_VERSION = (3, 9, 3)
+    
+    def parse_version(tag: str) -> tuple:
+        """Parse version tag to tuple for comparison (e.g., 'v3.9.3' -> (3, 9, 3))"""
+        match = re.match(r'v?(\d+)\.(\d+)\.(\d+)', tag)
+        if match:
+            return tuple(int(x) for x in match.groups())
+        return (0, 0, 0)
+    
     for tag, info in version_info.items():
         # Collect all unique Python versions across all assets
         python_versions = set()
@@ -378,11 +388,22 @@ def generate_version_metadata(version_info: Dict) -> List[Dict]:
             if asset.get('os_version') and 'ubuntu' in asset.get('os_version', ''):
                 ubuntu_versions.add(asset['os_version'])
         
+        # Determine if this version has documentation
+        # Documentation started from v3.9.3
+        has_documentation = False
+        if tag == BETA_RELEASE_TAG:
+            # Beta/main-devel always has documentation
+            has_documentation = True
+        else:
+            version_tuple = parse_version(tag)
+            has_documentation = version_tuple >= MIN_DOC_VERSION
+        
         metadata.append({
             'value': tag,
             'display_name': info['display_name'],
             'python_versions': sorted(list(python_versions)),
             'ubuntu_versions': sorted(list(ubuntu_versions)),
+            'has_documentation': has_documentation,
             'is_default': tag == BETA_RELEASE_TAG
         })
     
