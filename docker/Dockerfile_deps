@@ -124,8 +124,8 @@ RUN apt-get update --fix-missing -y &&apt-get install -y apt-utils software-prop
         libxcb-render-util0
 
 # Install Qt5
-# Uses system default Qt5 packages (Qt 5.9+ on Ubuntu 18.04, Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
-# All versions meet the minimum requirement of Qt 5.5+
+# Uses system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
+# All versions meet the minimum requirement of Qt 5.12+
 RUN apt-get -y update && \
     apt-get install -qy \
       libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \

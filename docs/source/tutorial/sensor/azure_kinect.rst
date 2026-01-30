@@ -3,7 +3,7 @@
 Azure Kinect with CloudViewer
 -------------------------------
 
-Azure Kinect is only officially supported on Windows and Ubuntu 18.04.
+Azure Kinect is officially supported on Windows and Ubuntu 20.04+.
 
 Installation
 ============

@@ -37,7 +37,7 @@ Supported platforms
 
 The package has been tested on:
 
-* Ubuntu 18.04, 20.04 and 22.04
+* Ubuntu 20.04, 22.04 and 24.04
 * Windows 10 64-bit and Windows 11 64-bit
 * macOS High Sierra and above
 
