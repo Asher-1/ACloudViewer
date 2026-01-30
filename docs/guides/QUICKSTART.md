@@ -14,25 +14,13 @@ Complete guide for building ACloudViewer from source code on different platforms
 
 | Platform | Version | Compiler |
 |----------|---------|----------|
-| Ubuntu | 18.04+ | GCC 5+, Clang 7+ |
+| Ubuntu | 20.04+ | GCC 9+, Clang 10+ |
 | macOS | 10.14+ | XCode 8.0+ |
 | Windows | 10 (64-bit) | Visual Studio 2022+ |
 
 ### Build Tools
 
 **CMake 3.19+**
-
-- Ubuntu 18.04+:
-  ```bash
-  # Option 1: Official APT repository
-  # See: https://apt.kitware.com/
-  
-  # Option 2: Snap
-  sudo snap install cmake --classic
-  
-  # Option 3: pip (in virtualenv)
-  pip install cmake
-  ```
 
 - Ubuntu 20.04+:
   ```bash
@@ -291,7 +279,6 @@ The following third-party libraries have been customized:
 
 ### Platform-Specific Issues
 
-- **Ubuntu 18.04**: Limited to TensorFlow 2.13.0 and PyTorch 2.0.1 due to GCC version
 - **macOS**: OpenMP requires custom compiler installation
 - **Windows**: Requires Visual Studio 2022+ for C++17 support
 

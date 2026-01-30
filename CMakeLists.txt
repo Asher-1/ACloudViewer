@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-# If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
+# If you're using Ubuntu 22.04, we suggest you install the latest CMake from the
 # official repository https://apt.kitware.com/.  CMake 3.19+ is required to
 # allow linking with OBJECT libraries, to prevent erroneous -gencode option
 # deduplication with CUDA, and to simplify generator expressions for selecting

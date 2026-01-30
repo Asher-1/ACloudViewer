@@ -354,7 +354,7 @@ jobs:
           keep_files: true  # Keep existing files to preserve version history
           commit_message: ${{ env.COMMIT_MSG }}
           enable_jekyll: false  # Disable Jekyll processing
-          force_orphan: false  # Keep history for version management
+          force_orphan: true  # Use orphan branch to avoid history bloat (reduces git pull size)
       
       - name: Verify deployment structure
         if: github.ref == 'refs/heads/main' || github.event_name == 'release'
