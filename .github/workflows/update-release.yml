@@ -19,7 +19,7 @@ jobs:
         run: |
           # Total assets from each main branch commmit:
           # Macos -> Ubuntu -> Windows
-          # Python wheels (3x3+2x4+2x3) + ACloudViewer (2+6+2) = 33
+          # Python wheels (1x3+2x4+2x3) + ACloudViewer (1+6+2) = 26
           release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
           last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
           echo "Removing release assets except from last 3 commits: ${last_shas[@]}"

@@ -3,13 +3,15 @@ name: Update Downloads Data
 # This workflow independently updates downloads_data.json on GitHub Pages
 # Decoupled from documentation build to avoid timing issues
 on:
-  # Scheduled update - runs every 6 hours
-  schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
+  # Automatically triggered after build workflows complete
+  workflow_run:
+    workflows: ["Windows"]  # Trigger after these workflows finish
+    types: [completed]
+    branches: [main]
   
-  # Trigger when a release is published or edited
+  # Trigger when a release is published (includes Update release button)
   release:
-    types: [published, edited, released]
+    types: [published, deleted]
   
   # Allow manual trigger with options
   workflow_dispatch:
