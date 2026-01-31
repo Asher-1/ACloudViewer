@@ -13,7 +13,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
   release:
-    types: [published, edited]
+    types: [released]  # Trigger when release is published
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -221,7 +221,7 @@ jobs:
           gh release view main-devel
       
       - name: Prepare main website for deployment
-        if: github.ref == 'refs/heads/main' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
         run: |
           echo "📋 Preparing main website with generated downloads_data.json..."
           echo ""

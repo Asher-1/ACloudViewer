@@ -1030,7 +1030,40 @@ async function loadDownloadsData() {
 function initializeVersionSelector() {
     versionSelector.innerHTML = '';
     
-    versionMetadata.forEach((version, index) => {
+    // 1. Sort versions: Beta (main-devel) first, then other versions in order
+    const sortedVersions = [...versionMetadata].sort((a, b) => {
+        // Beta (main-devel) always comes first
+        if (a.value === 'main-devel') return -1;
+        if (b.value === 'main-devel') return 1;
+        return 0; // Keep original order for other versions
+    });
+    
+    // 2. Filter out Beta if it has no download resources
+    const versionsToShow = sortedVersions.filter(version => {
+        if (version.value === 'main-devel') {
+            // Check if Beta has any download resources
+            const betaData = downloadsData && downloadsData['main-devel'];
+            if (!betaData) {
+                console.log('ℹ️ Beta version hidden: no download data available');
+                return false;
+            }
+            
+            // Check if there are any actual downloads
+            const hasDownloads = Object.values(betaData).some(osData => {
+                return Object.keys(osData).length > 0;
+            });
+            
+            if (!hasDownloads) {
+                console.log('ℹ️ Beta version hidden: no downloads available');
+                return false;
+            }
+        }
+        return true;
+    });
+    
+    // 3. Create buttons for filtered versions
+    let hasSetDefault = false;
+    versionsToShow.forEach((version, index) => {
         const btn = document.createElement('button');
         btn.className = 'selector-btn';
         btn.dataset.value = version.value;
@@ -1038,13 +1071,18 @@ function initializeVersionSelector() {
         btn.dataset.ubuntuVersions = version.ubuntu_versions.join(',');
         btn.textContent = version.display_name;
         
-        if (version.is_default || index === 0) {
+        // Only set active for the first version (or the one marked as default)
+        // Ensure only ONE version is selected
+        if (!hasSetDefault && (version.is_default || index === 0)) {
             btn.classList.add('active');
             currentSelection.version = version.value;
+            hasSetDefault = true;
         }
         
         btn.addEventListener('click', () => {
+            // Remove active from all buttons
             versionSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+            // Set active only on clicked button
             btn.classList.add('active');
             currentSelection.version = btn.dataset.value;
             updatePythonVersions(btn);
@@ -1055,7 +1093,7 @@ function initializeVersionSelector() {
         versionSelector.appendChild(btn);
     });
     
-    // Initialize with first version
+    // Initialize with first active version
     const firstBtn = versionSelector.querySelector('.selector-btn.active');
     if (firstBtn) {
         updatePythonVersions(firstBtn);
