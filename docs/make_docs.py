@@ -74,6 +74,18 @@ def _update_file(src, dst):
     shutil.copy2(src, dst)
 
 
+def get_git_short_hash():
+    """Get the short git hash for version information."""
+    try:
+        result = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL
+        )
+        return result.decode("utf-8").strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unknown"
+
+
 class DoxygenDocsBuilder:
     """
     Build C++ API documentation using Doxygen.
@@ -815,11 +827,19 @@ class SphinxDocsBuilder:
                 build_dir,
             ]
         else:
+            # For development builds, use "main-<short_commit_hash>" to distinguish from releases
+            # This indicates it's built from main branch at a specific commit
+            git_hash = get_git_short_hash()
+            main_version = f"main-{git_hash}"
+            print(f"Building docs for development (main branch): {main_version}")
+
             cmd = sphinx_build + [
                 "-j",
                 str(nproc),
                 "-b",
                 "html",
+                "-D", "version=" + main_version,
+                "-D", "release=" + main_version,
             ] + cmd_args_today + [
                 source_dir,
                 build_dir,

@@ -62,9 +62,13 @@
                 // Clear default versions
                 VERSIONS.length = 1; // Keep 'latest'
                 
-                // Add versions from metadata
+                // Add versions from metadata - ONLY show versions that have documentation
                 data.version_metadata.forEach(version => {
-                    if (version.value && version.value !== 'main-devel') {
+                    // Skip main-devel (it's shown as "latest")
+                    // Skip versions without documentation (has_documentation: false)
+                    if (version.value && 
+                        version.value !== 'main-devel' && 
+                        version.has_documentation === true) {
                         // Convert version tag to path format (e.g., v3.9.3 -> v3.9.3)
                         const versionPath = version.value.startsWith('v') ? version.value : `v${version.value}`;
                         VERSIONS.push({
@@ -88,66 +92,6 @@
         }
     }
 
-    // Create version selector HTML
-    function createVersionSelector() {
-        const currentVersion = getCurrentVersion();
-        const baseUrl = getBaseUrl();
-        
-        const selector = document.createElement('div');
-        selector.id = 'version-selector';
-        selector.className = 'version-selector';
-        selector.innerHTML = `
-            <style>
-                .version-selector {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 10000;
-                    background: #fff;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    padding: 10px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    font-size: 14px;
-                }
-                .version-selector label {
-                    display: block;
-                    margin-bottom: 5px;
-                    font-weight: 600;
-                    color: #333;
-                }
-                .version-selector select {
-                    width: 100%;
-                    padding: 6px 8px;
-                    border: 1px solid #ccc;
-                    border-radius: 3px;
-                    background: #fff;
-                    font-size: 14px;
-                    cursor: pointer;
-                }
-                .version-selector select:hover {
-                    border-color: #999;
-                }
-                .version-selector select:focus {
-                    outline: none;
-                    border-color: #0066cc;
-                    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-                }
-            </style>
-            <label for="version-select">Documentation Version:</label>
-            <select id="version-select" onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
-                ${VERSIONS.map(v => 
-                    `<option value="${v.value}" ${v.value === currentVersion || (currentVersion === 'latest' && v.value === 'latest') ? 'selected' : ''}>
-                        ${v.display}
-                    </option>`
-                ).join('')}
-            </select>
-        `;
-        
-        return selector;
-    }
-
     // Initialize version switcher
     function init() {
         // Wait for DOM to be ready
@@ -158,9 +102,8 @@
 
         // Load versions asynchronously
         loadVersions().then(() => {
-            // Create and insert version selector (for fixed position)
-            const selector = createVersionSelector();
-            document.body.appendChild(selector);
+            // Don't create fixed position selector - only use sidebar selector
+            // The sidebar version selector is already present in brand.html template
             
             // Dispatch event to notify sidebar version selector
             const event = new CustomEvent('versionsLoaded', { 

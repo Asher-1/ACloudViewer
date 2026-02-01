@@ -1,332 +1,377 @@
-# Automated Download Links Update System
+# Release Scanner Script Documentation
 
 ## Overview
 
-> This automated system uses GitHub Actions and Python scripts to automatically fetch the latest version information from GitHub Releases and update download links on the website. **Completely maintenance-free**.
+`scan_releases.py` is an automated script that scans GitHub Releases and generates `downloads_data.json` for the ACloudViewer website and documentation.
 
-## Workflow
+## Purpose
 
-```
-GitHub Release Published
-        ↓
-Trigger GitHub Action
-        ↓
-Fetch Releases API Data
-        ↓
-Parse Version and Download Links
-        ↓
-Update docs/index.html
-        ↓
-Auto-commit and Push
-        ↓
-GitHub Pages Auto-deploy
-```
+This script serves two main purposes:
 
-## Trigger Conditions
+1. **Website Download Selector**: Provides data for the download page dropdown selectors
+2. **Documentation Version Selector**: Determines which versions appear in the documentation version switcher
 
-> The automation workflow is triggered in the following scenarios:
-
-1. **New Version Release**: Automatically triggered when a new Release is published or edited
-2. **Scheduled Task**: Daily automatic check at UTC 0:00
-3. **Manual Trigger**: Can be manually run from GitHub Actions page
-
-## Version Identification Rules
-
-### Beta Version (Development)
-- **Tag Name**: `main-devel`
-- **Characteristic**: Marked as pre-release
-- **Purpose**: Contains latest features and experimental functionality
-- **Auto-fetch**: First 7 characters of Commit SHA, release date
-
-### Stable Version
-- **Tag Format**: `v3.9.3`, `v3.4.0`, etc.
-- **Characteristic**: Not pre-release
-- **Fetch Count**: Latest 3 stable versions
-- **Exclude**: `main-devel` tag
-
-## Platform Recognition Rules
-
-> The script automatically identifies installation packages for the following platforms:
-
-| Platform | File Extensions/Patterns | Example |
-|----------|-------------------------|---------|
-| Windows | `.exe` | `ACloudViewer-windows-x64.exe` |
-| macOS | `.dmg`, `.pkg` | `ACloudViewer-macos.dmg` |
-| Linux | `.run`, `.deb`, `.rpm`, `.appimage` | `ACloudViewer-linux.run` |
-| Ubuntu/Debian | `.deb` | `ACloudViewer-ubuntu-20.04.deb` |
-
-## File Structure
+## How It Works
 
 ```
-.github/workflows/
-└── update-website-downloads.yml    # GitHub Actions workflow configuration
-
-docs/automation/scripts/
-├── README.md                       # This document
-├── update_download_links.py        # Update script
-└── requirements.txt                # Python dependencies
-
-docs/
-└── index.html                      # Website homepage (auto-updated)
+GitHub Releases API
+        ↓
+Fetch all releases
+        ↓
+Parse asset filenames
+        ↓
+Detect platforms, Python versions, architectures
+        ↓
+Determine documentation availability
+        ↓
+Generate downloads_data.json
 ```
+
+## Asset Naming Patterns
+
+### Application Packages
+
+```
+ACloudViewer-{version}-{platform}-{cuda}-{arch}.{ext}
+
+Examples:
+- ACloudViewer-3.9.4-win-cpu-amd64.exe
+- ACloudViewer-3.9.4-mac-cpu-ARM64.dmg
+- ACloudViewer-3.9.4-ubuntu20.04-cpu-amd64.run
+```
+
+### Python Wheels
+
+```
+cloudviewer-{version}-cp{py_ver}-{abi}-{platform_arch}.whl
+
+Examples:
+- cloudviewer-3.9.4-cp310-cp310-win_amd64.whl
+- cloudviewer-3.9.4-cp311-cp311-macosx_14_0_arm64.whl
+- cloudviewer-3.9.4-cp312-cp312-manylinux_2_35_x86_64.whl
+```
+
+## Platform Detection
+
+| Platform | Extensions | Example |
+|----------|-----------|---------|
+| **Windows** | `.exe` | `ACloudViewer-3.9.4-win-cpu-amd64.exe` |
+| **macOS** | `.dmg`, `.pkg` | `ACloudViewer-3.9.4-mac-cpu-ARM64.dmg` |
+| **Linux** | `.run`, `.deb`, `.AppImage` | `ACloudViewer-3.9.4-ubuntu20.04-cpu-amd64.run` |
+
+## Python Wheel Mapping
+
+### manylinux to Ubuntu Version
+
+```python
+manylinux_2_27 → ubuntu18.04  # CentOS 7 / RHEL 7
+manylinux_2_31 → ubuntu20.04  # Ubuntu 20.04
+manylinux_2_35 → ubuntu22.04  # Ubuntu 22.04
+manylinux_2_39 → ubuntu24.04  # Ubuntu 24.04
+```
+
+## Documentation Version Filtering
+
+### Version Availability Logic
+
+```python
+MIN_DOC_VERSION = (3, 9, 4)  # Documentation versioning started from v3.9.4
+
+# Versions with documentation:
+- main-devel (Beta)           → has_documentation: true (always)
+- v3.9.4 and newer            → has_documentation: true
+- v3.9.3 and older            → has_documentation: false (filtered out)
+```
+
+**Why v3.9.4?**
+- Documentation versioning was implemented starting from v3.9.4
+- Earlier versions don't have archived documentation on GitHub Pages
+- Showing them would result in 404 errors
 
 ## Usage
 
-### 1. Automatic Execution (Recommended)
-
-> No action required, the system will automatically:
-- Monitor Release publish events
-- Daily scheduled check for updates
-- Auto-commit changes to repository
-
-### 2. Local Testing
+### Run Locally
 
 ```bash
-# Install dependencies
-pip install requests jinja2
-
-# Set GitHub Token (optional, to avoid API limits)
-export GITHUB_TOKEN=your_github_token
-
-# Run script
+# Basic usage
 cd /Users/asher/develop/code/github/ACloudViewer
-python3 docs/automation/scripts/update_download_links.py
+python3 docs/automation/scripts/scan_releases.py
+
+# With GitHub token (to avoid rate limits)
+export GITHUB_TOKEN=your_token_here
+python3 docs/automation/scripts/scan_releases.py
 ```
 
-### 3. Manual Trigger GitHub Action
+### Output
 
-> Steps to manually trigger:
+```bash
+docs/downloads_data.json
+```
 
-1. Visit GitHub repository
-2. Click **Actions** tab
-3. Select **Update Website Download Links**
-4. Click **Run workflow**
-5. Select branch and click **Run workflow**
+### Expected Output
 
-## Script Function Details
+```
+================================================================================
+🚀 GitHub Releases Scanner
+================================================================================
+📡 Fetching releases from https://api.github.com/repos/Asher-1/ACloudViewer/releases...
+✅ Found 17 releases
 
-### `update_download_links.py`
+🔍 Analyzing releases...
 
-#### Main Functions
+📦 Processing v3.9.4 (41 assets)
+  ✓ Platforms: linux, macos, windows
+  ✓ Python: 3.10, 3.11, 3.12, 3.13
+  ✓ Ubuntu: ubuntu20.04, ubuntu22.04, ubuntu24.04
+  ✓ Parsed 41 / 41 assets
 
-1. **Fetch Releases Data**
-   ```python
-   def fetch_releases() -> List[Dict]:
-       """Fetch all releases from GitHub API"""
-   ```
+📦 Processing Beta (1 assets)
+  ✓ Platforms: 
+  ✓ Python: N/A
+  ✓ Parsed 0 / 1 assets
 
-2. **Identify Beta Version**
-   ```python
-   def get_beta_release(releases: List[Dict]) -> Optional[Dict]:
-       """Get Beta version (main-devel tag)"""
-   ```
-
-3. **Identify Stable Versions**
-   ```python
-   def get_stable_releases(releases: List[Dict], limit: int = 3) -> List[Dict]:
-       """Get stable versions (non-pre-release, exclude main-devel)"""
-   ```
-
-4. **Platform Matching**
-   ```python
-   def find_asset_for_platform(assets: List[Dict], platform: str) -> Optional[Dict]:
-       """Find matching asset for specified platform"""
-   ```
-
-5. **Generate HTML**
-   ```python
-   def generate_download_section(beta_release, stable_releases) -> str:
-       """Generate download section HTML"""
-   ```
-
-6. **Update File**
-   ```python
-   def update_html_file(beta_release, stable_releases):
-       """Update HTML file"""
-   ```
+================================================================================
+✅ Successfully generated docs/downloads_data.json
+📊 Summary:
+   • Versions: 5
+   • Total configurations: 215
+================================================================================
+```
 
 ## Configuration
 
-### GitHub Actions Configuration
-
-> File: `.github/workflows/update-website-downloads.yml`
-
-```yaml
-# Trigger conditions
-on:
-  release:
-    types: [published, edited]  # On release publish
-  workflow_dispatch:             # Manual trigger
-  schedule:
-    - cron: '0 0 * * *'          # Daily scheduled
-
-# Permissions
-permissions:
-  contents: write  # Write permission needed for commits
-```
-
-### Environment Variables
-
-- `GITHUB_TOKEN`: Automatically provided, used for GitHub API access and code commits
-
-## HTML Update Mechanism
-
-### Updated HTML Sections
-
-1. **Version Tabs**
-   ```html
-   <div class="version-tabs">
-       <button class="version-tab active" data-version="beta">Beta Development</button>
-       <button class="version-tab" data-version="3.9.3">v3.9.3</button>
-       ...
-   </div>
-   ```
-
-2. **Download Content Section**
-   ```html
-   <div class="version-sections">
-       <!-- Beta Version -->
-       <div class="version-content active" id="version-beta">
-           ...
-       </div>
-       <!-- Stable Versions -->
-       <div class="version-content" id="version-3.9.3">
-           ...
-       </div>
-   </div>
-   ```
-
-### Regular Expression Matching
-
-> The script uses regex to precisely locate HTML sections to update:
+### Change Minimum Documentation Version
 
 ```python
-# Version tabs section
-version_tabs_pattern = r'(<div class="version-tabs">\s*)(.*?)(\s*</div>)'
+# In scan_releases.py, line ~372
+MIN_DOC_VERSION = (3, 9, 5)  # Change to your desired version
+```
 
-# Download content section
-version_sections_pattern = r'(<div class="version-sections">\s*)(.*?)(\s*</div>\s*</div>\s*</section>)'
+### Change Number of Releases to Scan
+
+```python
+# In main(), line ~420
+releases = fetch_releases(limit=10)  # Default: 5
+```
+
+### Add New Platform Pattern
+
+```python
+# In parse_app_asset(), add to APP_NAME_PATTERN
+APP_NAME_PATTERN = re.compile(
+    r"ACloudViewer-(?P<version>[\d.]+(?:[+-][\w.]+)?)-"
+    r"(?P<platform>win|mac|ubuntu[\d.]+|linux|android)-"  # Add 'android'
+    r"(?P<cuda>cpu|cuda[\d.]*)-"
+    r"(?P<arch>amd64|ARM64|x64|x86)\.(?P<ext>exe|dmg|pkg|run|deb|AppImage|apk)",  # Add 'apk'
+    re.IGNORECASE
+)
+```
+
+## Generated Data Structure
+
+### Version Metadata
+
+Used by documentation version selector:
+
+```json
+{
+  "value": "v3.9.4",
+  "display_name": "v3.9.4",
+  "python_versions": ["3.10", "3.11", "3.12", "3.13"],
+  "ubuntu_versions": ["ubuntu20.04", "ubuntu22.04", "ubuntu24.04"],
+  "has_documentation": true,
+  "is_default": false
+}
+```
+
+### Download Data
+
+Used by website download page:
+
+```json
+{
+  "v3.9.4": {
+    "windows": {
+      "app": {
+        "cpu": {
+          "amd64": {
+            "url": "https://github.com/.../ACloudViewer-3.9.4-win-cpu-amd64.exe",
+            "size": "223.2 MB"
+          }
+        }
+      },
+      "wheel": {
+        "cpu": {
+          "amd64": {
+            "3.10": { "url": "...", "size": "..." },
+            "3.11": { "url": "...", "size": "..." }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## Integration with CI/CD
+
+### Automatic Execution
+
+The script is automatically run by:
+
+1. **`.github/workflows/update-downloads.yml`**
+   - Triggered after build workflows complete
+   - Triggered when releases are published/deleted
+   - Runs daily at 00:00 UTC
+   - Can be manually triggered
+
+2. **`.github/workflows/documentation.yml`**
+   - Fetches `downloads_data.json` from `gh-pages` branch
+   - Falls back to running `scan_releases.py` if not available
+
+### Workflow Integration
+
+```yaml
+# In .github/workflows/update-downloads.yml
+- name: Generate downloads data
+  run: |
+    python3 docs/automation/scripts/scan_releases.py
+    
+- name: Commit to gh-pages
+  run: |
+    git add docs/downloads_data.json
+    git commit -m "chore: update downloads data"
+    git push origin gh-pages
 ```
 
 ## Troubleshooting
 
-### 1. Script Execution Failed
+### Issue: API Rate Limit Exceeded
 
-> **Issue**: Python script error
+**Error**: `API rate limit exceeded`
+
+**Solution**:
+```bash
+# Set GitHub token
+export GITHUB_TOKEN=your_personal_access_token
+python3 docs/automation/scripts/scan_releases.py
+```
+
+**Note**: GitHub Actions automatically use `GITHUB_TOKEN`, so this only affects local testing.
+
+### Issue: Asset Not Parsed
+
+**Symptom**: Warning message `⚠️  Could not parse: filename.ext`
+
+**Cause**: Filename doesn't match expected patterns
+
+**Solution**:
+1. Check the filename format
+2. Update `APP_NAME_PATTERN` or `WHEEL_NAME_PATTERN` in the script
+3. Re-run the script
+
+### Issue: Version Not Showing in Selector
 
 **Check**:
 ```bash
-# View GitHub Actions logs
-# GitHub repo -> Actions -> select failed workflow run
-
-# Local testing
-python3 docs/automation/scripts/update_download_links.py
+# Verify has_documentation flag
+jq '.version_metadata[] | select(.value == "v3.9.3")' docs/downloads_data.json
 ```
 
-### 2. Platform File Not Found
-
-> **Issue**: Download link missing for a platform
-
-**Cause**: Release doesn't have file uploaded for that platform, or filename doesn't match recognition rules
-
-**Solution**: 
-- Check file names in Release assets
-- Update `PLATFORM_PATTERNS` dictionary to add new matching patterns
-
-### 3. API Rate Limit
-
-> **Issue**: GitHub API returns 403 error
-
-**Cause**: Unauthenticated API requests have rate limits (60/hour)
-
-**Solution**: GitHub Actions automatically use `GITHUB_TOKEN`, usually won't encounter this issue
-
-### 4. Commit Failed
-
-> **Issue**: Git push failed
-
-**Cause**: Insufficient permissions or branch protection rules
-
-**Solution**: 
-- Check workflow has `contents: write` permission
-- Check branch protection rules allow GitHub Actions to push
-
-## Custom Configuration
-
-### Modify Number of Stable Versions Fetched
-
-> Edit `docs/automation/scripts/update_download_links.py`:
-
-```python
-# Change 3 to your desired number
-stable_releases = get_stable_releases(releases, limit=5)
-```
-
-### Add New Platform Recognition
-
-> Edit `PLATFORM_PATTERNS`:
-
-```python
-PLATFORM_PATTERNS = {
-    'windows': {...},
-    'macos': {...},
-    'linux': {...},
-    'new_platform': {
-        'patterns': [r'pattern1', r'pattern2'],
-        'display_name': 'Display Name'
-    }
+**Expected**:
+```json
+{
+  "value": "v3.9.3",
+  "has_documentation": false  // Will be filtered out
 }
 ```
 
-### Modify Scheduled Task Frequency
+**Solution**: Versions < v3.9.4 are intentionally filtered. Update `MIN_DOC_VERSION` if needed.
 
-> Edit `.github/workflows/update-website-downloads.yml`:
+### Issue: SSL Certificate Error
 
-```yaml
-schedule:
-  - cron: '0 */6 * * *'  # Run every 6 hours
-  - cron: '0 0 * * 1'    # Run every Monday
+**Error**: `SSL: CERTIFICATE_VERIFY_FAILED`
+
+**Solution**:
+```bash
+# macOS
+/Applications/Python\ 3.x/Install\ Certificates.command
+
+# The script has built-in fallback using ssl._create_unverified_context()
 ```
+
+## Testing
+
+### Verify Output
+
+```bash
+# Check JSON is valid
+python3 -m json.tool docs/downloads_data.json > /dev/null && echo "✅ Valid JSON"
+
+# Count versions with documentation
+jq '[.version_metadata[] | select(.has_documentation == true)] | length' docs/downloads_data.json
+
+# List all platforms for a version
+jq '.download_data["v3.9.4"] | keys' docs/downloads_data.json
+
+# Check Python versions
+jq '.version_metadata[] | select(.value == "v3.9.4") | .python_versions' docs/downloads_data.json
+```
+
+### Local Preview
+
+```bash
+# Start local server
+cd docs
+python3 -m http.server 8080
+
+# Visit http://localhost:8080
+# Check version selector and download links
+```
+
+## Best Practices
+
+1. **Always test locally** before pushing changes
+2. **Verify JSON validity** after modifications
+3. **Check CI logs** after releases to ensure automation works
+4. **Keep patterns up-to-date** with new release naming conventions
+5. **Document any custom patterns** you add
+
+## Dependencies
+
+- **Python**: 3.7+
+- **Standard Library Only**: No external dependencies required
+  - `json` - JSON parsing
+  - `re` - Regular expressions
+  - `urllib` - HTTP requests
+  - `ssl` - SSL context
+  - `datetime` - Timestamps
 
 ## Security
 
-1. **Token Security**: Uses GitHub-provided `GITHUB_TOKEN`, auto-expires
-2. **Minimal Permissions**: Only requests necessary `contents: write` permission
-3. **Code Review**: All changes create Git commits, can be reviewed and rolled back
-4. **Skip CI**: Commit message includes `[skip ci]` to avoid infinite loop triggers
+- ✅ Uses GitHub-provided `GITHUB_TOKEN` in CI/CD
+- ✅ Tokens auto-expire, no manual management needed
+- ✅ Read-only API access (no write operations)
+- ✅ SSL certificate verification (with fallback)
 
-## Maintenance Guide
+## Maintenance
 
-### Monthly Checks
-- [ ] Review GitHub Actions run logs
-- [ ] Verify website download links are valid
-- [ ] Check if new platforms need support
+### Regular Tasks
 
-### On Version Release
-- [ ] Confirm Release assets are uploaded
-- [ ] Verify file names match recognition rules
-- [ ] Check if website auto-updated
-- [ ] Test download links are valid
+- [ ] Review asset naming patterns quarterly
+- [ ] Update `MIN_DOC_VERSION` when documentation versioning changes
+- [ ] Test after major releases
+- [ ] Monitor CI/CD logs for parsing warnings
 
-### System Updates
-- [ ] Regularly update Python dependencies
-- [ ] Upgrade GitHub Actions versions
-- [ ] Check GitHub API changes
+### When to Update
 
-## Contributing
-
-> If you find bugs or have improvement suggestions:
-
-1. Submit Issue: https://github.com/Asher-1/ACloudViewer/issues
-2. Submit Pull Request
-3. Describe problem and solution in Issue
-
-## License
-
-> This script follows the ACloudViewer project license.
+- ✅ **New platform added** → Update `APP_NAME_PATTERN`
+- ✅ **New wheel format** → Update `WHEEL_NAME_PATTERN`
+- ✅ **Documentation policy changes** → Update `MIN_DOC_VERSION`
+- ✅ **Release naming changes** → Update regex patterns
 
 ---
 
-**Last Updated**: 2026-01-10  
-**Author**: ACloudViewer Team  
-**Maintenance**: Automated by GitHub Actions
+**Last Updated**: February 2026  
+**Maintainer**: ACloudViewer Team  
+**Status**: ✅ Active and Production-Ready

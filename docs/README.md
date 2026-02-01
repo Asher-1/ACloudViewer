@@ -260,9 +260,10 @@ Documentation is automatically built and deployed via GitHub Actions:
 
 ### For Developers
 
-- [CI Documentation Guide](guides/CI_DOCUMENTATION_GUIDE.md)
 - [Automation System](automation/README.md)
-- [Script Documentation](scripts/README.md)
+- [Building Documentation](automation/BUILDING_DOCS.md)
+- [Deployment Guide](automation/DEPLOYMENT.md)
+- [Version Management](guides/VERSION_MANAGEMENT.md)
 - **Build Functions** → `util/ci_utils.sh`
 
 ### For Maintainers
