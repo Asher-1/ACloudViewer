@@ -13,7 +13,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
   release:
-    types: [released]  # Trigger when release is published
+    types: [released, edited]  # Trigger when release is published
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
