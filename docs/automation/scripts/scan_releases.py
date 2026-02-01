@@ -367,8 +367,11 @@ def generate_version_metadata(version_info: Dict) -> List[Dict]:
     """Generate metadata for version selector buttons"""
     metadata = []
     
-    # Documentation is available from v3.9.3 onwards
-    MIN_DOC_VERSION = (3, 9, 3)
+    # Documentation versioning was implemented starting from v3.9.4
+    # Releases before this version do not have archived documentation on GitHub Pages
+    # Only versions >= MIN_DOC_VERSION will have has_documentation=true
+    # and appear in the documentation version selector
+    MIN_DOC_VERSION = (3, 9, 4)
     
     def parse_version(tag: str) -> tuple:
         """Parse version tag to tuple for comparison (e.g., 'v3.9.3' -> (3, 9, 3))"""
@@ -388,11 +391,14 @@ def generate_version_metadata(version_info: Dict) -> List[Dict]:
             if asset.get('os_version') and 'ubuntu' in asset.get('os_version', ''):
                 ubuntu_versions.add(asset['os_version'])
         
-        # Determine if this version has documentation
-        # Documentation started from v3.9.3
+        # Determine if this version has documentation archived on GitHub Pages
+        # Documentation versioning was implemented in v3.9.4, so:
+        # - main-devel (Beta) always has latest documentation
+        # - Releases >= v3.9.4 have version-specific archived documentation
+        # - Releases < v3.9.4 do NOT have archived documentation (404 errors)
         has_documentation = False
         if tag == BETA_RELEASE_TAG:
-            # Beta/main-devel always has documentation
+            # Beta/main-devel always has documentation (as "latest")
             has_documentation = True
         else:
             version_tuple = parse_version(tag)
