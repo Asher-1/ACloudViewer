@@ -266,8 +266,8 @@ twine upload dist/*
 - [Linux Build Guide](compiling_doc/compiling-cloudviewer-linux.md)
 - [macOS Build Guide](compiling_doc/compiling-cloudviewer-macos.md)
 - [Windows Build Guide](compiling_doc/compiling-cloudviewer-windows.md)
-- [Documentation Build Guide](../automation/BUILD_DOCUMENTATION.md)
-- [CI/CD Guide](CI_DOCUMENTATION_GUIDE.md)
+- [Documentation Build Guide](../automation/BUILDING_DOCS.md)
+- [Deployment Guide](../automation/DEPLOYMENT.md)
 
 ## ⚠️ Notes
 
