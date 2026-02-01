@@ -2,28 +2,41 @@
 
 ## Overview
 
-ACloudViewer now supports multi-version documentation management, similar to Open3D's implementation. This allows users to access documentation for any released version of ACloudViewer.
+ACloudViewer supports multi-version documentation management, allowing users to access documentation for any released version of ACloudViewer. This system automatically archives documentation when releases are published and provides a version switcher for easy navigation.
 
 ## Features
 
-- ✅ **Automatic Version Archiving**: When a release is published, documentation is automatically archived to a version-specific directory
-- ✅ **Version Switcher UI**: Users can switch between different documentation versions using a dropdown selector
-- ✅ **Preserved History**: All historical documentation versions are preserved on GitHub Pages
-- ✅ **Latest Documentation**: The latest (main branch) documentation is always available at `/documentation/`
+- ✅ **Automatic Version Archiving**: Documentation is automatically archived to version-specific directories when releases are published
+- ✅ **Version Switcher UI**: Users can switch between documentation versions using a sidebar dropdown selector
+- ✅ **Preserved History**: All historical documentation versions (≥ v3.9.4) are preserved on GitHub Pages
+- ✅ **Latest Documentation**: The latest (main branch) documentation is always available with `main-{commit}` format
+- ✅ **Filtered Versions**: Only versions with documentation are shown in the version selector
 
 ## URL Structure
 
 ### Latest Documentation (Development)
-- **Main**: `https://asher-1.github.io/ACloudViewer/documentation/`
-- **Python API**: `https://asher-1.github.io/ACloudViewer/documentation/python_api/`
-- **C++ API**: `https://asher-1.github.io/ACloudViewer/documentation/cpp_api/`
-- **Tutorials**: `https://asher-1.github.io/ACloudViewer/documentation/tutorial/`
+
+Built from the `main` branch with commit-specific titles:
+
+- **Main**: `https://asher-1.github.io/ACloudViewer/documentation/latest/`
+- **Python API**: `https://asher-1.github.io/ACloudViewer/documentation/latest/python_api/`
+- **C++ API**: `https://asher-1.github.io/ACloudViewer/documentation/latest/cpp_api/`
+- **Tutorials**: `https://asher-1.github.io/ACloudViewer/documentation/latest/tutorial/`
+
+**Title Format**: "ACloudViewer main-{commit_hash} documentation"  
+Example: "ACloudViewer main-a1b2c3d documentation"
 
 ### Version-Specific Documentation
-- **Main**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.3/`
-- **Python API**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.3/python_api/`
-- **C++ API**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.3/cpp_api/`
-- **Tutorials**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.3/tutorial/`
+
+Built from release tags with version numbers:
+
+- **Main**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.4/`
+- **Python API**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.4/python_api/`
+- **C++ API**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.4/cpp_api/`
+- **Tutorials**: `https://asher-1.github.io/ACloudViewer/documentation/v3.9.4/tutorial/`
+
+**Title Format**: "ACloudViewer {version} documentation"  
+Example: "ACloudViewer 3.9.4 documentation"
 
 ## How It Works
 
@@ -31,40 +44,91 @@ ACloudViewer now supports multi-version documentation management, similar to Ope
 
 When a GitHub release is published or edited, the `documentation.yml` workflow automatically:
 
-1. **Detects Release**: Identifies the release tag (e.g., `v3.9.3`)
+1. **Detects Release**: Identifies the release tag (e.g., `v3.9.4`)
 2. **Builds Documentation**: Builds documentation with `DEVELOPER_BUILD=OFF` for production
-3. **Archives to Version Directory**: Deploys documentation to `/documentation/v3.9.3/`
+3. **Archives to Version Directory**: Deploys documentation to `/documentation/v3.9.4/`
 4. **Preserves History**: Uses `keep_files: true` to preserve existing versions
 
-### 2. Version Switcher
+### 2. Main Branch Push
+
+When code is pushed to the `main` branch:
+
+1. **Builds Development Documentation**: Uses `DEVELOPER_BUILD=ON`
+2. **Generates Dynamic Title**: Uses `main-{git_commit_hash}` format
+3. **Updates Latest**: Deploys to `/documentation/latest/`
+4. **Preserves Versions**: Keeps all version-specific archives
+
+### 3. Version Switcher
 
 The version switcher (`docs/source/_static/version_switch.js`) provides:
 
 - **Dynamic Version Loading**: Automatically loads available versions from `downloads_data.json`
-- **Visual Selector**: Fixed dropdown in the top-right corner of documentation pages
+- **Sidebar Selector**: Integrated dropdown in the documentation sidebar (using Furo theme)
 - **URL Navigation**: Automatically updates URLs when switching versions
 - **Current Version Detection**: Highlights the currently viewed version
+- **Filtered Display**: Only shows versions with `has_documentation: true`
 
-### 3. Deployment Structure
+**Key Features**:
+- Shows "Latest (main)" for development documentation
+- Shows "v{X.Y.Z}" for stable releases
+- Hides versions older than v3.9.4 (when documentation versioning started)
+- Hides versions that don't have archived documentation
+
+### 4. Version Data Source
+
+Version information is stored in `downloads_data.json`, generated by `docs/automation/scripts/scan_releases.py`:
+
+```json
+{
+  "version_metadata": [
+    {
+      "value": "v3.9.4",
+      "display_name": "v3.9.4",
+      "has_documentation": true,
+      "is_default": false
+    },
+    {
+      "value": "main-devel",
+      "display_name": "Latest (main)",
+      "has_documentation": true,
+      "is_default": true
+    },
+    {
+      "value": "v3.9.3",
+      "display_name": "v3.9.3",
+      "has_documentation": false,
+      "is_default": false
+    }
+  ]
+}
+```
+
+**Filtering Logic**:
+- `MIN_DOC_VERSION = (3, 9, 4)` in `scan_releases.py`
+- Only versions ≥ v3.9.4 have `has_documentation: true`
+- Version switcher filters out versions where `has_documentation: false`
+
+## Deployment Architecture
 
 ```
 gh-pages branch:
-├── index.html (main website)
-├── downloads_data.json
-├── documentation/ (latest)
-│   ├── index.html
-│   ├── python_api/
-│   ├── cpp_api/
-│   └── tutorial/
+├── index.html                  # Main website homepage
+├── downloads_data.json         # Version metadata and download links
+├── images/, scripts/, styles/  # Main website assets
 └── documentation/
-    ├── v3.9.3/ (version archive)
+    ├── latest/                 # Latest (main branch) documentation
     │   ├── index.html
     │   ├── python_api/
     │   ├── cpp_api/
     │   └── tutorial/
-    ├── v3.9.2/ (version archive)
+    ├── v3.9.4/                 # Version 3.9.4 archive
+    │   ├── index.html
+    │   ├── python_api/
+    │   ├── cpp_api/
+    │   └── tutorial/
+    ├── v3.9.5/                 # Version 3.9.5 archive (future)
     │   └── ...
-    └── v3.8.0/ (version archive)
+    └── v4.0.0/                 # Version 4.0.0 archive (future)
         └── ...
 ```
 
@@ -72,9 +136,18 @@ gh-pages branch:
 
 ### For Users
 
-1. **Access Latest Documentation**: Visit `/documentation/` for the most recent documentation
-2. **Switch Versions**: Use the version selector dropdown in the top-right corner
-3. **Direct Links**: Use version-specific URLs for permanent links to specific versions
+1. **Access Latest Documentation**: 
+   - Visit https://asher-1.github.io/ACloudViewer/documentation/latest/
+   - Shows development features and latest API changes
+   - Title indicates the specific commit (e.g., "main-a1b2c3d")
+
+2. **Switch Versions**: 
+   - Use the version selector dropdown in the left sidebar
+   - Only shows versions that have documentation available
+
+3. **Direct Version Links**: 
+   - Use version-specific URLs for permanent links
+   - Example: `/documentation/v3.9.4/` will always show v3.9.4 docs
 
 ### For Maintainers
 
@@ -82,60 +155,127 @@ gh-pages branch:
 
 1. **Create Release Tag**:
    ```bash
-   git tag -a v3.9.4 -m "Release v3.9.4"
-   git push origin v3.9.4
+   git tag -a v3.9.5 -m "Release v3.9.5"
+   git push origin v3.9.5
    ```
 
 2. **Create GitHub Release**:
    - Go to https://github.com/Asher-1/ACloudViewer/releases/new
-   - Select tag: `v3.9.4`
+   - Select tag: `v3.9.5`
    - Fill in release notes
    - Click "Publish release"
 
 3. **Automatic Documentation Archive**:
-   - The `documentation.yml` workflow will automatically trigger
-   - Documentation will be built and archived to `/documentation/v3.9.4/`
-   - The version switcher will automatically include the new version
+   - The `documentation.yml` workflow triggers automatically
+   - Documentation is built with `DEVELOPER_BUILD=OFF`
+   - Deployed to `/documentation/v3.9.5/`
+   - Version switcher automatically includes the new version
+
+4. **Update downloads_data.json**:
+   - `update-downloads.yml` workflow runs automatically
+   - `scan_releases.py` generates updated `downloads_data.json`
+   - Version appears in selector with `has_documentation: true`
 
 #### Manual Documentation Build
 
 To manually trigger documentation build for a release:
 
-1. Go to Actions → Documentation workflow
-2. Click "Run workflow"
+1. Go to **Actions** → **Documentation** workflow
+2. Click **"Run workflow"**
 3. Set `developer_build` to `OFF` for release documentation
-4. Click "Run workflow"
+4. Select the release branch/tag
+5. Click **"Run workflow"**
+
+#### Updating Version Filter
+
+To change which versions appear in the selector:
+
+1. Edit `docs/automation/scripts/scan_releases.py`
+2. Update `MIN_DOC_VERSION`:
+   ```python
+   # Only versions >= MIN_DOC_VERSION will have has_documentation=true
+   MIN_DOC_VERSION = (3, 9, 4)  # Change to (4, 0, 0) to hide older versions
+   ```
+3. Run the script to regenerate `downloads_data.json`
+4. Commit and push changes
 
 ## Implementation Details
 
 ### Workflow Configuration
 
-The `documentation.yml` workflow has been updated to:
+The `documentation.yml` workflow:
 
-- **Support Release Events**: Triggers on `release: types: [published, edited]`
-- **Version Detection**: Extracts version from `github.event.release.tag_name`
-- **Conditional Deployment**: 
-  - Main branch → Deploy to `/documentation/` (latest)
-  - Release event → Archive to `/documentation/v{version}/`
-- **Preserve History**: Uses `keep_files: true` instead of `force_orphan: true`
+- **Triggers**: 
+  - `push` to `main` branch
+  - `release: types: [published]`
+  - `workflow_dispatch` (manual)
 
-### Version Switcher JavaScript
+- **Environment Variables**:
+  ```yaml
+  DEVELOPER_BUILD: ${{ github.event_name == 'release' && 'OFF' || 'ON' }}
+  IS_RELEASE: ${{ github.event_name == 'release' && 'true' || 'false' }}
+  RELEASE_VERSION: ${{ github.event.release.tag_name }}
+  DOC_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || 'latest' }}
+  ```
 
-The version switcher (`docs/source/_static/version_switch.js`):
+- **Conditional Deployment**:
+  - Main branch → `/documentation/latest/`
+  - Release → `/documentation/v{version}/`
+  - Uses `destination_dir: documentation/${{ env.DOC_VERSION }}`
 
-- Loads versions from `downloads_data.json`
-- Creates a fixed dropdown selector
-- Handles URL navigation between versions
-- Automatically detects current version from URL
+- **Preserve History**: 
+  - `keep_files: true` prevents deletion of existing versions
+
+### Version Switcher Implementation
+
+**File**: `docs/source/_static/version_switch.js`
+
+**Key Functions**:
+- `loadVersions()`: Fetches and parses `downloads_data.json`
+- `initializeVersionSelector()`: Creates sidebar dropdown
+- `getCurrentVersion()`: Detects current version from URL
+- `switchVersion()`: Navigates to selected version
+
+**Version Filtering**:
+```javascript
+// Only show versions with documentation
+data.version_metadata.forEach(version => {
+    if (version.value !== 'main-devel' && 
+        version.has_documentation === true) {
+        VERSIONS.push(version);
+    }
+});
+```
 
 ### Sphinx Integration
 
-The version switcher is automatically included in all documentation pages via:
+**File**: `docs/source/conf.py`
 
 ```python
-# docs/source/conf.py
+# Dynamic title based on version/release
+html_title = f"ACloudViewer {release} documentation"
+
+# Include version switcher JavaScript
 html_js_files = [
     'version_switch.js',
+]
+```
+
+**Version Setting** (in `docs/make_docs.py`):
+
+```python
+# Development build (main branch)
+git_hash = get_git_short_hash()
+main_version = f"main-{git_hash}"
+cmd = sphinx_build + [
+    "-D", f"version={main_version}",
+    "-D", f"release={main_version}"
+]
+
+# Release build
+cmd = sphinx_build + [
+    "-D", f"version={CLOUDVIEWER_VERSION}",
+    "-D", f"release={CLOUDVIEWER_VERSION}"
 ]
 ```
 
@@ -143,33 +283,90 @@ html_js_files = [
 
 ### Version Not Appearing in Selector
 
-1. **Check Release**: Ensure the release was published (not draft)
-2. **Check Workflow**: Verify the documentation workflow completed successfully
-3. **Check downloads_data.json**: The version should appear in `version_metadata`
-4. **Clear Cache**: Browser cache may need to be cleared
+**Symptoms**: New release version doesn't show in dropdown
+
+**Check**:
+```bash
+# 1. Verify release was published (not draft)
+gh release view v3.9.5
+
+# 2. Check workflow completed successfully
+gh run list --workflow=documentation.yml
+
+# 3. Check downloads_data.json
+curl https://asher-1.github.io/ACloudViewer/downloads_data.json | \
+  jq '.version_metadata[] | select(.value == "v3.9.5")'
+
+# 4. Verify has_documentation flag
+# Should be true for versions >= MIN_DOC_VERSION
+```
+
+**Solution**:
+- Ensure version is ≥ v3.9.4
+- Run `update-downloads.yml` workflow manually
+- Clear browser cache
 
 ### Documentation Not Archived
 
-1. **Check Workflow Logs**: Review the `documentation.yml` workflow run
-2. **Verify Release Event**: Ensure the release event triggered the workflow
-3. **Check Permissions**: Verify GitHub Pages write permissions
+**Symptoms**: Version URL shows 404
+
+**Check**:
+```bash
+# Verify documentation exists in gh-pages
+git fetch origin gh-pages
+git ls-tree -r --name-only origin/gh-pages | grep "documentation/v3.9.5"
+```
+
+**Solution**:
+1. Check workflow logs for errors
+2. Verify GitHub Pages write permissions
+3. Manually trigger documentation workflow
+
+### Wrong Title Displayed
+
+**Symptoms**: Title shows wrong version or "main-devel"
+
+**Cause**: Version/release variables not set correctly in Sphinx build
+
+**Solution**:
+1. Check `make_docs.py` version logic
+2. Verify `DEVELOPER_BUILD` and `IS_RELEASE` environment variables
+3. Rebuild documentation with correct flags
 
 ### Version Switcher Not Showing
 
-1. **Check JavaScript**: Ensure `version_switch.js` is in `_static/` directory
-2. **Check Sphinx Config**: Verify `html_js_files` includes `version_switch.js`
-3. **Check Browser Console**: Look for JavaScript errors
+**Symptoms**: No dropdown appears in documentation
 
-## Future Enhancements
+**Check**:
+```bash
+# 1. Verify JavaScript file exists
+curl -I https://asher-1.github.io/ACloudViewer/documentation/latest/_static/version_switch.js
 
-- [ ] Version comparison view
-- [ ] Automatic redirect from old URLs
-- [ ] Version-specific search
-- [ ] Download links for archived documentation
+# 2. Check browser console for errors
+# Open DevTools → Console tab
+```
+
+**Solution**:
+- Ensure `version_switch.js` is in `source/_static/`
+- Verify `html_js_files` in `conf.py`
+- Check for JavaScript errors in browser console
+
+## Related Documentation
+
+- **[Building Documentation](../automation/BUILDING_DOCS.md)** - How to build documentation locally
+- **[Deployment Guide](../automation/DEPLOYMENT.md)** - Detailed deployment process and version management
+- **[Automation Scripts](../automation/scripts/README.md)** - How `scan_releases.py` works
+- **[Automation README](../automation/README.md)** - Overview of automation system
 
 ## References
 
-- Open3D Documentation: https://www.open3d.org/docs/
-- GitHub Actions Documentation: https://docs.github.com/en/actions
-- Sphinx Documentation: https://www.sphinx-doc.org/
+- [Sphinx Documentation](https://www.sphinx-doc.org/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [GitHub Pages Documentation](https://docs.github.com/en/pages)
+- [Furo Theme](https://pradyunsg.me/furo/) - Documentation theme used
 
+---
+
+**Last Updated**: February 2026  
+**Maintainer**: ACloudViewer Team  
+**Status**: ✅ Production Ready
