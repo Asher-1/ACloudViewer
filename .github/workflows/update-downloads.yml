@@ -290,24 +290,29 @@ jobs:
           # Create deployment directory with all current gh-pages content
           mkdir -p deploy-dir
           
-          # Copy all existing files from gh-pages checkout (except .git)
+          # Copy all existing files from gh-pages checkout (except .git and temp files)
           # This preserves documentation, versions, etc.
+          # Note: downloads_data.json was already updated in previous step (renamed from .new)
           rsync -av --exclude='.git' --exclude='main-branch' --exclude='*.new' --exclude='*.backup' ./ deploy-dir/
           
-          # Update downloads_data.json with new version
-          cp downloads_data.json.new deploy-dir/downloads_data.json
+          # Verify downloads_data.json is in deploy-dir
+          if [ ! -f "deploy-dir/downloads_data.json" ]; then
+            echo "⚠️  downloads_data.json not found in deploy-dir, copying..."
+            cp downloads_data.json deploy-dir/downloads_data.json
+          fi
           
           # Create/update the update log
           cat > deploy-dir/DOWNLOADS_UPDATE.txt << EOF
           Last Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           Trigger: ${{ github.event_name }}
           Commit: ${{ github.sha }}
-          Versions: $(jq '.version_metadata | length' downloads_data.json.new)
+          Versions: $(jq '.version_metadata | length' deploy-dir/downloads_data.json)
           EOF
           
           echo "✅ Deployment directory prepared"
           echo "  - Files: $(find deploy-dir -type f | wc -l)"
           echo "  - Size: $(du -sh deploy-dir | cut -f1)"
+          echo "  - downloads_data.json: $(du -h deploy-dir/downloads_data.json | cut -f1)"
       
       - name: Set commit message
         if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
