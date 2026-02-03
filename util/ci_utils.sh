@@ -137,8 +137,43 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" $SPEED_CMD
-            python -m pip install tensorboard $SPEED_CMD
+            echo "Installing PyTorch: ${TORCH_GLNX}"
+            # Install with retry mechanism for network issues
+            MAX_RETRIES=3
+            RETRY_DELAY=30
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+                echo "PyTorch installation attempt $i of $MAX_RETRIES..."
+                if python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" $SPEED_CMD; then
+                    echo "PyTorch installation succeeded on attempt $i"
+                    break
+                else
+                    if [ $i -lt $MAX_RETRIES ]; then
+                        echo "WARNING: PyTorch installation failed on attempt $i, retrying in ${RETRY_DELAY}s..."
+                        sleep $RETRY_DELAY
+                        # Clear pip cache before retry to avoid corrupted downloads
+                        python -m pip cache purge 2>/dev/null || true
+                    else
+                        echo "ERROR: Failed to install PyTorch (${TORCH_GLNX}) after $MAX_RETRIES attempts"
+                        echo "This is likely a network issue. Please check connectivity and retry."
+                        exit 1
+                    fi
+                fi
+            done
+            # Verify PyTorch installation matches expected variant (CPU vs CUDA)
+            if [[ "${TORCH_GLNX}" == *"+cu"* ]]; then
+                echo "Verifying CUDA PyTorch installation..."
+                TORCH_CUDA_VER=$(python -c "import torch; print(torch.version.cuda or 'None')" 2>/dev/null || echo "error")
+                if [ "$TORCH_CUDA_VER" == "None" ] || [ "$TORCH_CUDA_VER" == "error" ]; then
+                    echo "ERROR: Expected CUDA PyTorch but got CPU version or installation failed"
+                    echo "Installed torch: $(python -c 'import torch; print(torch.__version__)' 2>/dev/null || echo 'unknown')"
+                    echo "This will cause 'undefined symbol' errors when loading cloudViewer_torch_ops.so"
+                    exit 1
+                fi
+                echo "CUDA PyTorch verified: torch $(python -c 'import torch; print(torch.__version__)') with CUDA $TORCH_CUDA_VER"
+            fi
+            if ! python -m pip install tensorboard $SPEED_CMD; then
+                echo "WARNING: tensorboard installation failed, continuing..."
+            fi
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
         else
@@ -507,10 +542,20 @@ build_pip_package() {
     echo "Finish make pip-package for cpu"
     mv lib/python_package/pip_package/cloudviewer*.whl . # save CPU wheel
 
-    if [ "$BUILD_CUDA_MODULE" == ON ]; then
+    if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
         echo
         echo Installing CUDA versions of TensorFlow and PyTorch...
         install_python_dependencies with-cuda purge-cache
+        
+        # Double-check CUDA PyTorch is ready before proceeding with CUDA build
+        if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+            echo "Final verification of CUDA PyTorch before CUDA build..."
+            if ! python -c "import torch; assert torch.version.cuda, 'No CUDA support'" 2>/dev/null; then
+                echo "ERROR: CUDA PyTorch verification failed. Cannot proceed with CUDA build."
+                exit 1
+            fi
+        fi
+        
         echo
         echo Building with CUDA...
         rebuild_list=(bin lib/Release/*.a lib/_build_config.py* lib/ml)

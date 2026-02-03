@@ -122,6 +122,7 @@ signals:
     void selectionAdded(const cvSelectionData& selection);
     void selectionRemoved(int index);
     void allSelectionsRemoved();
+    void selectionCleared();  // Emitted when Clear button is clicked
 
     // Find Data actions
     void freezeSelectionRequested();
@@ -191,6 +192,18 @@ private slots:
                          const QString& op,
                          const QString& value,
                          bool isCell);
+    cvSelectionData executeFindDataQuery(const QString& attribute,
+                                         const QString& op,
+                                         const QString& value,
+                                         bool isCell);
+    // Overload for location-based queries (nearest to, containing)
+    cvSelectionData executeFindDataQuery(const QString& attribute,
+                                         const QString& op,
+                                         double x,
+                                         double y,
+                                         double z,
+                                         double tolerance,
+                                         bool isCell);
     void onSpreadsheetItemClicked(QTableWidgetItem* item);
 
     // Legacy slots (existing functionality)
@@ -354,11 +367,26 @@ private:
     QPushButton* m_clearButton;
     QVBoxLayout* m_queriesLayout;
 
+    // Attribute term type (matching ParaView's cvQueryConditionWidget)
+    enum AttributeTermType {
+        ATTR_ARRAY,                  // Regular array field (ID, NormalX, etc.)
+        ATTR_POINT_NEAREST_TO,       // Point nearest to location
+        ATTR_CELL_CONTAINING_POINT,  // Cell containing a point
+    };
+
     // Query row structure to manage multiple conditions
     struct QueryRow {
         QComboBox* attributeCombo;
         QComboBox* operatorCombo;
-        QLineEdit* valueEdit;
+        // Value widgets - dynamically shown/hidden based on operator
+        QWidget* valueContainer;   // Container for value widgets
+        QLineEdit* valueEdit;      // Single value input
+        QLineEdit* valueMinEdit;   // Range min input
+        QLineEdit* valueMaxEdit;   // Range max input
+        QLineEdit* valueXEdit;     // X coordinate input
+        QLineEdit* valueYEdit;     // Y coordinate input
+        QLineEdit* valueZEdit;     // Z coordinate input
+        QLineEdit* toleranceEdit;  // Tolerance (epsilon) input
         QPushButton* plusButton;
         QPushButton* minusButton;
         QWidget* container;
@@ -369,6 +397,10 @@ private:
         }
     };
     QList<QueryRow> m_queryRows;
+
+    // Helper methods for dynamic UI updates
+    void updateOperatorsForAttribute(QueryRow& row);
+    void updateValueWidgetsForOperator(QueryRow& row);
 
     // === Selected Data Spreadsheet ===
     cvExpanderButton* m_selectedDataSpreadsheetExpander;
