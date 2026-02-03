@@ -17,48 +17,89 @@ on:
 
 concurrency:
   # For PR builds: use separate group, can cancel previous
-  # For main/release: use shared group with update-downloads.yml to prevent concurrent gh-pages deployments
-  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.pull_request.number) || format('gh-pages-deployment-{0}', github.ref) }}
+  # For main/release: use shared group to prevent concurrent deployments
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.pull_request.number) || 'pages-deployment' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # ===========================================================================
+  # Job 1: Build Documentation (runs for all events including PRs)
+  # ===========================================================================
   build-docs:
     runs-on: ubuntu-latest
     permissions:
       contents: write        # For uploading artifacts and releases
-      pages: write           # For deploying to GitHub Pages
-      id-token: write        # For GitHub Pages deployment
       pull-requests: write   # For commenting on pull requests
       issues: write          # For creating issue comments
+    
+    # Output variables for the deploy job
+    outputs:
+      is_release: ${{ steps.config.outputs.is_release }}
+      release_version: ${{ steps.config.outputs.release_version }}
+      doc_version: ${{ steps.config.outputs.doc_version }}
+      artifact_name: ${{ steps.config.outputs.artifact_name }}
+      should_deploy: ${{ steps.config.outputs.should_deploy }}
+    
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || (github.event_name == 'release' && 'OFF' || 'ON') }}
-      IS_RELEASE: ${{ github.event_name == 'release' }}
-      RELEASE_VERSION: ${{ github.event.release.tag_name || '' }}
-      DOC_VERSION: ${{ github.event.release.tag_name != '' && github.event.release.tag_name || 'latest' }}
     
     steps:
       - name: Determine version and build mode
+        id: config
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📋 Build Configuration"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Event: ${{ github.event_name }}"
-          echo "Is Release: ${{ env.IS_RELEASE }}"
-          echo "Release Version: ${{ env.RELEASE_VERSION }}"
-          echo "Documentation Version: ${{ env.DOC_VERSION }}"
-          echo "Developer Build: ${{ env.DEVELOPER_BUILD }}"
-          echo ""
-          if [ "${{ github.event_name }}" == "release" ]; then
-            echo "🎯 Release build detected - will archive documentation to version directory"
-            echo "   Version: ${{ env.DOC_VERSION }}"
-            echo "   Archive path: documentation/${{ env.DOC_VERSION }}/"
+          
+          # Determine if this is a release build
+          IS_RELEASE="${{ github.event_name == 'release' && 'true' || 'false' }}"
+          RELEASE_VERSION="${{ github.event.release.tag_name || '' }}"
+          DOC_VERSION="${{ github.event.release.tag_name != '' && github.event.release.tag_name || 'latest' }}"
+          
+          # Determine artifact name
+          if [ "$IS_RELEASE" == "true" ] && [ -n "$RELEASE_VERSION" ]; then
+            ARTIFACT_NAME="acloudviewer-${RELEASE_VERSION}-docs"
           else
+            ARTIFACT_NAME="acloudviewer-${{ github.sha }}-docs"
+          fi
+          
+          # Determine if we should deploy (main branch or release, not PR)
+          if [ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.event_name }}" == "release" ]; then
+            SHOULD_DEPLOY="true"
+          else
+            SHOULD_DEPLOY="false"
+          fi
+          
+          # Set outputs for deploy job
+          echo "is_release=${IS_RELEASE}" >> $GITHUB_OUTPUT
+          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+          echo "doc_version=${DOC_VERSION}" >> $GITHUB_OUTPUT
+          echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+          echo "should_deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+          
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Is Release: ${IS_RELEASE}"
+          echo "Release Version: ${RELEASE_VERSION}"
+          echo "Documentation Version: ${DOC_VERSION}"
+          echo "Developer Build: ${{ env.DEVELOPER_BUILD }}"
+          echo "Should Deploy: ${SHOULD_DEPLOY}"
+          echo ""
+          
+          if [ "$IS_RELEASE" == "true" ]; then
+            echo "🎯 Release build detected - will archive documentation to version directory"
+            echo "   Version: ${DOC_VERSION}"
+            echo "   Archive path: documentation/${DOC_VERSION}/"
+          elif [ "$SHOULD_DEPLOY" == "true" ]; then
             echo "📝 Development build - will deploy to latest documentation"
             echo "   Path: documentation/"
+          else
+            echo "🔍 PR build - documentation will be built but not deployed"
           fi
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Checkout ACloudViewer source code
         uses: actions/checkout@v4
         with:
@@ -71,29 +112,28 @@ jobs:
       
       - name: Fetch or generate downloads_data.json
         env:
+          GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📦 Obtaining downloads_data.json"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Strategy: Fetch from gh-pages branch (auto-updated by update-downloads workflow)"
+          echo "Strategy: Fetch from main-devel release or generate from API"
           echo ""
           
-          # Try to fetch from gh-pages branch (most up-to-date)
-          echo "🔍 Attempting to fetch from gh-pages branch..."
-          if git fetch origin gh-pages:gh-pages 2>/dev/null && \
-             git show gh-pages:downloads_data.json > docs/downloads_data.json 2>/dev/null; then
-            echo "✅ Successfully fetched from gh-pages branch"
+          # Try to fetch from main-devel release (managed by update-downloads workflow)
+          echo "🔍 Attempting to fetch from main-devel release..."
+          if gh release download main-devel --pattern "downloads_data.json" --dir docs 2>/dev/null; then
+            echo "✅ Successfully fetched from main-devel release"
             echo "  - Size: $(du -h docs/downloads_data.json | cut -f1)"
             echo "  - Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
             echo "  - Last update: $(jq -r '.generated_at' docs/downloads_data.json)"
             echo ""
-            echo "ℹ️  This data is automatically updated by the 'update-downloads' workflow"
-            echo "ℹ️  No need to regenerate during documentation build"
+            echo "ℹ️  This data is managed by the 'update-downloads' workflow"
           else
-            # Fallback: Generate from GitHub API (for first-time builds or if gh-pages doesn't exist)
-            echo "⚠️  Could not fetch from gh-pages, generating from GitHub API..."
+            # Fallback: Generate from GitHub API
+            echo "⚠️  Could not fetch from release, generating from GitHub API..."
             echo ""
             
             python3 docs/automation/scripts/scan_releases.py
@@ -102,9 +142,6 @@ jobs:
               echo "✅ Generated downloads_data.json from GitHub API"
               echo "  - Size: $(du -h docs/downloads_data.json | cut -f1)"
               echo "  - Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
-              echo ""
-              echo "📝 Note: This is a temporary snapshot"
-              echo "📝 The 'update-downloads' workflow will keep it updated automatically"
             else
               echo "❌ Failed to obtain downloads_data.json!"
               echo "Creating minimal placeholder..."
@@ -166,14 +203,17 @@ jobs:
           fi
           
           # Determine archive name based on event type
-          if [ "${{ github.event_name }}" == "release" ] && [ -n "${{ env.RELEASE_VERSION }}" ]; then
+          IS_RELEASE="${{ steps.config.outputs.is_release }}"
+          RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
+          
+          if [ "$IS_RELEASE" == "true" ] && [ -n "$RELEASE_VERSION" ]; then
             # For releases, use version tag
-            ARCHIVE_NAME="acloudviewer-${{ env.RELEASE_VERSION }}-docs.tar.gz"
+            ARCHIVE_NAME="acloudviewer-${RELEASE_VERSION}-docs.tar.gz"
             mv acloudviewer-*-docs.tar.gz "${ARCHIVE_NAME}"
             echo "📋 Release archive: ${ARCHIVE_NAME}"
           else
             # For development builds, use SHA
-            ARCHIVE_NAME="acloudviewer-${GITHUB_SHA}-docs.tar.gz"
+            ARCHIVE_NAME="acloudviewer-${{ github.sha }}-docs.tar.gz"
             mv acloudviewer-*-docs.tar.gz "${ARCHIVE_NAME}"
             echo "📋 Development archive: ${ARCHIVE_NAME}"
           fi
@@ -206,24 +246,22 @@ jobs:
       - name: Upload documentation artifact
         uses: actions/upload-artifact@v4
         with:
-          name: acloudviewer-${{ env.IS_RELEASE == 'true' && env.RELEASE_VERSION || github.sha }}-docs
+          name: ${{ steps.config.outputs.artifact_name }}
           path: acloudviewer-*-docs.tar.gz
           if-no-files-found: error
           compression-level: 0  # Already compressed
       
-      - name: Update main-devel release
-        if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "📤 Uploading to main-devel release..."
-          gh release upload main-devel \
-            acloudviewer-${{ github.sha }}-docs.tar.gz \
-            --clobber
-          gh release view main-devel
+      - name: Upload docs-output for deploy job
+        if: steps.config.outputs.should_deploy == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-output
+          path: docs-output/
+          if-no-files-found: error
+          retention-days: 1  # Short retention, only needed for deploy job
       
-      - name: Prepare main website for deployment
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+      - name: Upload website-deploy for deploy job
+        if: steps.config.outputs.should_deploy == 'true'
         run: |
           echo "📋 Preparing main website with generated downloads_data.json..."
           echo ""
@@ -272,50 +310,172 @@ jobs:
           echo "📊 Website deployment statistics:"
           echo "  - Total files: $(find website-deploy -type f | wc -l)"
           echo "  - Total size: $(du -sh website-deploy | cut -f1)"
-          echo ""
-          echo "📁 Top-level structure:"
-          ls -la website-deploy/ | head -20
       
-      - name: Preserve existing version archives from gh-pages
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+      - name: Upload website-deploy artifact
+        if: steps.config.outputs.should_deploy == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-deploy
+          path: website-deploy/
+          if-no-files-found: error
+          retention-days: 1
+      
+      - name: Update main-devel release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "📤 Uploading to main-devel release..."
+          gh release upload main-devel \
+            acloudviewer-${{ github.sha }}-docs.tar.gz \
+            --clobber
+          gh release view main-devel
+      
+      - name: Upload documentation archive to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
+          echo "📤 Uploading documentation archive to release ${RELEASE_VERSION}..."
+          
+          # Rename archive to include version tag for easy identification
+          VERSIONED_ARCHIVE="acloudviewer-${RELEASE_VERSION}-docs.tar.gz"
+          cp acloudviewer-*-docs.tar.gz "${VERSIONED_ARCHIVE}"
+          
+          gh release upload "${RELEASE_VERSION}" \
+            "${VERSIONED_ARCHIVE}" \
+            --clobber
+          
+          echo "✅ Documentation archive uploaded to release"
+          echo "   This archive will be used to preserve version history in future deployments"
+      
+      - name: Comment on PR with documentation preview
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const artifactName = '${{ steps.config.outputs.artifact_name }}';
+            
+            // Find the archive file
+            const files = fs.readdirSync('.').filter(f => f.endsWith('-docs.tar.gz'));
+            const archiveFile = files[0] || 'acloudviewer-docs.tar.gz';
+            let fileSize = 'unknown';
+            try {
+              const stats = fs.statSync(archiveFile);
+              fileSize = (stats.size / 1024 / 1024).toFixed(2);
+            } catch (e) {
+              console.log('Could not get file size:', e.message);
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📚 **Documentation Preview**\n\n` +
+                    `Documentation has been built successfully!\n\n` +
+                    `- **Artifact**: \`${artifactName}\`\n` +
+                    `- **Download**: Available in workflow run artifacts\n` +
+                    `- **Size**: ~${fileSize} MB\n\n` +
+                    `After merge, documentation will be automatically deployed to:\n` +
+                    `https://asher-1.github.io/ACloudViewer/documentation/`
+            });
+
+  # ===========================================================================
+  # Job 2: Deploy Documentation (only runs for main branch or releases)
+  # ===========================================================================
+  deploy-docs:
+    runs-on: ubuntu-latest
+    needs: build-docs
+    # Only deploy for main branch or releases, NOT for PRs
+    if: needs.build-docs.outputs.should_deploy == 'true'
+    
+    permissions:
+      contents: read         # For downloading artifacts
+      pages: write           # For deploying to GitHub Pages
+      id-token: write        # For GitHub Pages deployment (OIDC token)
+    
+    # Configure GitHub Pages environment for artifact-based deployment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    env:
+      IS_RELEASE: ${{ needs.build-docs.outputs.is_release }}
+      RELEASE_VERSION: ${{ needs.build-docs.outputs.release_version }}
+      DOC_VERSION: ${{ needs.build-docs.outputs.doc_version }}
+    
+    steps:
+      - name: Checkout (for gh CLI)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+          sparse-checkout-cone-mode: false
+      
+      - name: Download docs-output artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-output
+          path: docs-output/
+      
+      - name: Download website-deploy artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: website-deploy
+          path: website-deploy/
+      
+      - name: Preserve existing version archives from GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Preserving existing version archives from gh-pages"
+          echo "📦 Preserving existing version archives from GitHub Releases"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Strategy: Download documentation archives from GitHub Releases"
+          echo "         (Version archives are stored as release assets, not in git)"
           echo ""
           
           # Create directory for preserved archives
-          mkdir -p preserved-versions
+          mkdir -p preserved-versions/documentation
           
-          # Try to fetch existing version archives from gh-pages
-          echo "🔍 Fetching existing version archives from gh-pages..."
-          if git fetch origin gh-pages:gh-pages 2>/dev/null; then
-            # Get list of version directories (v3.9.3, v3.9.4, etc.)
-            VERSION_DIRS=$(git ls-tree -d --name-only gh-pages:documentation/ 2>/dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || true)
-            
-            if [ -n "$VERSION_DIRS" ]; then
-              echo "✅ Found version archives:"
-              for VERSION in $VERSION_DIRS; do
-                echo "  - documentation/$VERSION/"
-                # Extract each version directory
+          # Get list of releases with documentation archives
+          echo "🔍 Scanning GitHub Releases for documentation archives..."
+          RELEASES=$(gh release list --limit 20 --json tagName -q '.[].tagName' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || true)
+          
+          if [ -n "$RELEASES" ]; then
+            echo "✅ Found releases with potential documentation:"
+            for VERSION in $RELEASES; do
+              echo "  - Checking $VERSION..."
+              
+              # Try to download documentation archive from release
+              DOCS_ARCHIVE="acloudviewer-${VERSION}-docs.tar.gz"
+              if gh release download "$VERSION" --pattern "$DOCS_ARCHIVE" --dir /tmp 2>/dev/null; then
+                echo "    ✅ Found and downloaded $DOCS_ARCHIVE"
                 mkdir -p "preserved-versions/documentation/$VERSION"
-                git archive gh-pages:documentation/$VERSION | tar -x -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || true
-              done
-              echo ""
-              echo "📊 Preserved archives:"
-              du -sh preserved-versions/documentation/* 2>/dev/null || echo "  (none)"
-            else
-              echo "ℹ️  No version archives found on gh-pages"
+                tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || true
+                rm -f "/tmp/$DOCS_ARCHIVE"
+              else
+                echo "    ⏭️  No documentation archive found for $VERSION"
+              fi
+            done
+            
+            echo ""
+            echo "📊 Preserved version archives:"
+            ls -la preserved-versions/documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "  (none found)"
+            if [ -d "preserved-versions/documentation" ]; then
+              du -sh preserved-versions/documentation/*/ 2>/dev/null || true
             fi
           else
-            echo "⚠️  Could not fetch gh-pages branch (may be first deployment)"
+            echo "ℹ️  No versioned releases found"
           fi
           
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Merge website and documentation for unified deployment
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔄 Merging website and documentation for unified deployment"
@@ -332,7 +492,7 @@ jobs:
           echo ""
           
           # Determine documentation deployment path
-          if [ "${{ github.event_name }}" == "release" ] && [ -n "${{ env.RELEASE_VERSION }}" ]; then
+          if [ "${{ env.IS_RELEASE }}" == "true" ] && [ -n "${{ env.RELEASE_VERSION }}" ]; then
             # For releases: Archive to version directory + update latest
             DOC_VERSION_PATH="documentation/${{ env.DOC_VERSION }}"
             
@@ -406,53 +566,57 @@ jobs:
           echo "  - Total size: $(du -sh unified-deploy | cut -f1)"
           echo "  - Root files: $(ls unified-deploy/ | wc -l)"
           echo "  - Documentation files: $(find unified-deploy/documentation -type f | wc -l)"
-          if [ "${{ github.event_name }}" == "release" ]; then
+          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
             echo "  - Version archive files: $(find unified-deploy/documentation/${{ env.DOC_VERSION }} -type f 2>/dev/null | wc -l)"
           fi
           echo ""
           echo "📁 Top-level structure:"
           ls -la unified-deploy/ | head -20
-          if [ "${{ github.event_name }}" == "release" ]; then
+          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
             echo ""
             echo "📁 Documentation version structure:"
             ls -la unified-deploy/documentation/ | head -20
           fi
           echo ""
       
-      - name: Set commit message
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-        run: |
-          if [ "${{ github.event_name }}" == "release" ]; then
-            echo "COMMIT_MSG=docs: archive complete release documentation for ${{ env.RELEASE_VERSION }}" >> $GITHUB_ENV
-          else
-            echo "COMMIT_MSG=docs: deploy website + documentation from ${{ github.sha }}" >> $GITHUB_ENV
-          fi
+      # ============================================================================
+      # GitHub Pages Artifact Deployment (No git objects pollution!)
+      # This method uses GitHub's artifact storage instead of git branches,
+      # so it won't affect git pull/fetch for other developers.
+      # ============================================================================
       
-      - name: Deploy to GitHub Pages (unified deployment)
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./unified-deploy
-          keep_files: false  # We already included ALL files in unified-deploy (including preserved archives)
-          commit_message: ${{ env.COMMIT_MSG }}
-          enable_jekyll: false  # Disable Jekyll processing
-          force_orphan: true  # Use orphan branch to avoid history bloat (reduces git pull size)
+          path: ./unified-deploy
+          # Note: This uploads the entire unified-deploy directory as a single artifact
+          # No git objects are created - deployment uses GitHub's artifact storage
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        # This deploys directly from the artifact, NOT through git
+        # Benefits:
+        # - No gh-pages branch needed
+        # - No git objects pollution
+        # - git pull/fetch won't download documentation files
+        # - Other developers won't be affected by documentation updates
       
       - name: Verify deployment structure
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Deployment Verification"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "📋 Deployment Summary:"
-          echo "  ✅ Docker image built successfully"
-          echo "  ✅ Documentation extracted ($(du -sh docs-output | cut -f1))"
+          echo "  ✅ Documentation built successfully"
           echo "  ✅ Main website prepared ($(du -sh website-deploy | cut -f1))"
           echo "  ✅ Unified deployment merged ($(du -sh unified-deploy | cut -f1))"
           
-          if [ "${{ github.event_name }}" == "release" ]; then
+          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
             echo "  ✅ Release documentation archived to version directory"
             echo "  ✅ Latest documentation updated to release version"
             echo "  ✅ Deployed to GitHub Pages with version history"
@@ -468,7 +632,7 @@ jobs:
           echo "  ├── downloads_data.json"
           echo "  ├── DOCUMENTATION.md"
           
-          if [ "${{ github.event_name }}" == "release" ]; then
+          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
             echo "  └── documentation/"
             echo "      ├── index.html (latest stable - ${{ env.RELEASE_VERSION }})"
             echo "      ├── python_api/"
@@ -491,7 +655,7 @@ jobs:
           echo "📚 Documentation URLs:"
           echo "  - Main Website: https://asher-1.github.io/ACloudViewer/"
           
-          if [ "${{ github.event_name }}" == "release" ]; then
+          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
             echo "  - Latest Stable Documentation: https://asher-1.github.io/ACloudViewer/documentation/"
             echo "  - Latest Stable Python API: https://asher-1.github.io/ACloudViewer/documentation/python_api/"
             echo "  - Latest Stable C++ API: https://asher-1.github.io/ACloudViewer/documentation/cpp_api/"
@@ -513,25 +677,3 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Deployment Complete!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      
-      - name: Comment on PR with documentation preview
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const artifactName = 'acloudviewer-${{ github.sha }}-docs';
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `📚 **Documentation Preview**\n\n` +
-                    `Documentation has been built successfully!\n\n` +
-                    `- **Artifact**: \`${artifactName}\`\n` +
-                    `- **Download**: Available in workflow run artifacts\n` +
-                    `- **Size**: ${fs.statSync('acloudviewer-${{ github.sha }}-docs.tar.gz').size / 1024 / 1024} MB\n\n` +
-                    `After merge, documentation will be automatically deployed to:\n` +
-                    `https://asher-1.github.io/ACloudViewer/documentation/`
-            });
-
