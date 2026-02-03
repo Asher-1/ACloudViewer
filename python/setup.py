@@ -23,6 +23,7 @@ data_files_spec = [
 ]
 
 if "@BUILD_JUPYTER_EXTENSION@" == "ON":
+    _jupyter_packaging_available = False
     try:
         from jupyter_packaging import (
             create_cmdclass,
@@ -35,23 +36,30 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         # are not used in setup.py.
         import ipywidgets
         import jupyterlab
+        _jupyter_packaging_available = True
     except ImportError as error:
         print(f"{error.__class__.__name__}: {str(error)}")
         print("Run `pip install -r requirements-jupyter-build.txt`.")
+        print(
+            "Warning: Jupyter extension will be disabled due to missing dependencies."
+        )
 
-    here = os.path.dirname(os.path.abspath(__file__))
-    js_dir = os.path.join(here, 'js')
+    if _jupyter_packaging_available:
+        here = os.path.dirname(os.path.abspath(__file__))
+        js_dir = os.path.join(here, 'js')
 
-    # Representative files that should exist after a successful build.
-    js_targets = [
-        os.path.join(js_dir, 'dist', 'index.js'),
-    ]
+        # Representative files that should exist after a successful build.
+        js_targets = [
+            os.path.join(js_dir, 'dist', 'index.js'),
+        ]
 
-    cmdclass = create_cmdclass('jsdeps', data_files_spec=data_files_spec)
-    cmdclass['jsdeps'] = combine_commands(
-        install_npm(js_dir, npm=['yarn'], build_cmd='build:prod'),
-        ensure_targets(js_targets),
-    )
+        cmdclass = create_cmdclass('jsdeps', data_files_spec=data_files_spec)
+        cmdclass['jsdeps'] = combine_commands(
+            install_npm(js_dir, npm=['yarn'], build_cmd='build:prod'),
+            ensure_targets(js_targets),
+        )
+    else:
+        cmdclass = dict()
 else:
     cmdclass = dict()
 
@@ -143,8 +151,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -179,7 +185,7 @@ print(f'PYPI Package name: {name}')
 setup_args = dict(
     name=name,
     version='@PROJECT_VERSION@',
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),

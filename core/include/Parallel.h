@@ -15,6 +15,9 @@ namespace utility {
 /// Estimate the maximum number of threads to be used in a parallel region.
 int CV_CORE_LIB_API EstimateMaxThreads();
 
+/// Returns the thread ID in the current parallel region.
+int CV_CORE_LIB_API GetThreadNum();
+
 /// Returns true if in an parallel section.
 bool CV_CORE_LIB_API InParallel();
 
