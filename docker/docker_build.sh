@@ -79,10 +79,6 @@ cuda_wheel_build() {
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
-        if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
-            # Disable PyTorch ops for Python 3.11 with CUDA due to pytorch issue
-            export BUILD_PYTORCH_OPS=OFF
-        fi
     elif [[ "py312" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.12
     elif [[ "py313" =~ ^($options)$ ]]; then
