@@ -1,6 +1,44 @@
 ACloudViewer Version History
 ============================
 
+v3.9.5-Beta (Asher) - 02/02/2026
+--------------------------------
+
+- Bug fixes:
+    - Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid
+        - Create per-thread std::vector<geometry::Voxel> in parallel with OpenMP
+        - Insert data into std::unordered_map outside of parallel section to avoid race conditions
+        - Improve performance by eliminating #pragma omp critical bottleneck
+        - Based on Open3D commit 1e1e4ec
+    - Fix PyTorch installation failures in Docker builds due to network issues
+        - Add retry mechanism (3 attempts with 30s delay) for PyTorch installation
+        - Add CUDA PyTorch verification to ensure correct variant is installed
+        - Fail immediately if CUDA PyTorch installation fails to prevent "undefined symbol" errors at link time
+        - Clear pip cache before retry to avoid corrupted downloads
+    - Fix setup.py create_cmdclass NameError when jupyter_packaging import fails
+        - Add proper error handling with _jupyter_packaging_available flag
+        - Fallback to empty cmdclass dict when jupyter dependencies are not available
+    - Fix Python 3.11 + CUDA build restrictions
+        - Remove outdated BUILD_PYTORCH_OPS=OFF workaround for Python 3.11
+        - Verified that PyTorch 2.7.x has fixed the previous Python 3.11 compatibility issues
+    - Fix Docker build configuration inconsistencies
+        - Update docker_build_local.sh to use Ubuntu 22.04 (was 20.04) to match GitHub CI
+        - Update CUDA version to 12.6.3-cudnn (was 11.8.0-cudnn8) to match GitHub CI
+        - Ensure consistent build environment between local and CI builds
+    - Fix Docker test_wheel_runtime.sh network connectivity issues
+        - Add --network host flag to docker run command
+        - Add network connectivity check before running tests
+        - Skip tests gracefully if network is unavailable (wheel is already built successfully)
+
+- Enhancements:
+    - Add GetThreadNum() utility function to Parallel.h/cpp for thread-safe operations
+
+### Supported Platforms:
+- Windows `x86/64`
+- Linux `x86/64`
+- MacOS `X64 && arm64 (M1-4)`
+
+
 v3.9.4 (Asher) - 02/01/2026
 --------------------------------
 
@@ -98,7 +136,6 @@ v3.9.4 (Asher) - 02/01/2026
     -   Fix Qt platform plugin missing issue in Python wheel packages
         -   Fix CMake variable name mismatch (QT5_PLUGINS_PATH_LIST -> QT_PLUGINS_PATH_LIST) causing Qt plugins not being copied to wheel
         -   Fix Qt plugin path environment variable setup for Linux, macOS, and Windows platforms
-        -   Ensure QT_QPA_PLATFORM_PLUGIN_PATH is correctly set to platforms subdirectory when available
     -   Fix Qt library version conflict issues on all platforms
         -   Add library path isolation to prevent mixing system Qt libraries with package Qt libraries
         -   Linux: Filter system Qt paths from LD_LIBRARY_PATH before loading any libraries

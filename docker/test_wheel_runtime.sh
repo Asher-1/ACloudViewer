@@ -61,6 +61,7 @@ if [ -n "$DOCKER_IMAGE" ] && [ ! -f "/.dockerenv" ]; then
     echo "=========================================="
     
     docker run $GPU_FLAG \
+        --network host \
         -v "${CLOUDVIEWER_SOURCE_ROOT}:/root/ACloudViewer" \
         -v "${WHEEL_DIR}:/opt/wheels" \
         --rm "$DOCKER_IMAGE" \

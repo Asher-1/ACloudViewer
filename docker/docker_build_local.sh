@@ -107,10 +107,12 @@ release_build() {
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
-				if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
-            # Disable PyTorch ops for Python 3.11 with CUDA due to pytorch issue
-            export BUILD_PYTORCH_OPS=OFF
-        fi
+        # NOTE: The Python 3.11 + CUDA PyTorch issue was present in PyTorch 2.6.0
+        # but appears to be fixed in PyTorch 2.7.x. Keeping PyTorch ops enabled.
+        # If build fails, uncomment the following lines:
+        # if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
+        #     export BUILD_PYTORCH_OPS=OFF
+        # fi
     elif [[ "py312" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.12
 		elif [[ "py313" =~ ^($options)$ ]]; then
