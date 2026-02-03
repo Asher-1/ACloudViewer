@@ -18,6 +18,7 @@
 
 #include "cvRenderViewSelectionReaction.h"
 
+#include "cvInteractorStyleDrawPolygon.h"  // Custom polygon style (fixes flickering)
 #include "cvSelectionHighlighter.h"
 #include "cvSelectionPipeline.h"
 // cvSelectionToolHelper merged into cvSelectionPipeline
@@ -660,28 +661,42 @@ void cvRenderViewSelectionReaction::selectionChanged(vtkObject* caller,
              m_mode == SelectionMode::SELECT_CUSTOM_POLYGON);
 
     if (isPolygonMode) {
-        vtkInteractorStyleDrawPolygon* polygonStyle =
+        // Try custom style first, then fall back to VTK style
+        cvInteractorStyleDrawPolygon* customPolygonStyle =
+                cvInteractorStyleDrawPolygon::SafeDownCast(m_selectionStyle);
+        vtkInteractorStyleDrawPolygon* vtkPolygonStyle =
                 vtkInteractorStyleDrawPolygon::SafeDownCast(m_selectionStyle);
-        if (!polygonStyle) {
+
+        if (!customPolygonStyle && !vtkPolygonStyle) {
             CVLog::Warning(
                     "[cvRenderViewSelectionReaction] Polygon mode but style is "
-                    "not vtkInteractorStyleDrawPolygon");
+                    "not a polygon style");
 
             // Try to get style from interactor directly
             if (m_interactor) {
                 vtkInteractorObserver* currentStyle =
                         m_interactor->GetInteractorStyle();
-                polygonStyle = vtkInteractorStyleDrawPolygon::SafeDownCast(
-                        currentStyle);
+                customPolygonStyle =
+                        cvInteractorStyleDrawPolygon::SafeDownCast(currentStyle);
+                if (!customPolygonStyle) {
+                    vtkPolygonStyle =
+                            vtkInteractorStyleDrawPolygon::SafeDownCast(
+                                    currentStyle);
+                }
             }
 
-            if (!polygonStyle) {
+            if (!customPolygonStyle && !vtkPolygonStyle) {
                 return;
             }
         }
 
         // Get polygon points from the style (ParaView approach)
-        std::vector<vtkVector2i> points = polygonStyle->GetPolygonPoints();
+        std::vector<vtkVector2i> points;
+        if (customPolygonStyle) {
+            points = customPolygonStyle->GetPolygonPoints();
+        } else if (vtkPolygonStyle) {
+            points = vtkPolygonStyle->GetPolygonPoints();
+        }
 
         if (points.size() < 3) {
             CVLog::Warning(QString("[cvRenderViewSelectionReaction] Polygon "
@@ -1767,6 +1782,8 @@ void cvRenderViewSelectionReaction::storeCurrentStyle() {
                     (vtkInteractorStyleRubberBandZoom::SafeDownCast(style) !=
                      nullptr) ||
                     (vtkInteractorStyleDrawPolygon::SafeDownCast(style) !=
+                     nullptr) ||
+                    (cvInteractorStyleDrawPolygon::SafeDownCast(style) !=
                      nullptr);
 
             if (!isSelectionStyle) {
@@ -1867,13 +1884,15 @@ void cvRenderViewSelectionReaction::setupInteractorStyle() {
         case SelectionMode::SELECT_SURFACE_CELLS_POLYGON:
         case SelectionMode::SELECT_SURFACE_POINTS_POLYGON:
         case SelectionMode::SELECT_CUSTOM_POLYGON: {
-            // Polygon selection
+            // Polygon selection - use custom style that fixes flickering
             setCursor(Qt::PointingHandCursor);
-            vtkSmartPointer<vtkInteractorStyleDrawPolygon> polygonStyle =
-                    vtkSmartPointer<vtkInteractorStyleDrawPolygon>::New();
+            vtkSmartPointer<cvInteractorStyleDrawPolygon> polygonStyle =
+                    vtkSmartPointer<cvInteractorStyleDrawPolygon>::New();
             if (m_renderer) {
                 polygonStyle->SetDefaultRenderer(m_renderer);
             }
+            // Enable pixel drawing for visual feedback (default is on)
+            polygonStyle->SetDrawPolygonPixels(true);
             m_selectionStyle = polygonStyle;
             m_interactor->SetInteractorStyle(polygonStyle);
             break;
