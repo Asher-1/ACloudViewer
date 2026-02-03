@@ -1,7 +1,8 @@
 name: Update Downloads Data
 
-# This workflow independently updates downloads_data.json on GitHub Pages
-# Decoupled from documentation build to avoid timing issues
+# This workflow updates downloads_data.json and stores it in a release asset
+# It does NOT deploy to GitHub Pages directly to avoid overwriting documentation
+# The documentation.yml workflow will pick up the updated file during deployment
 on:
   # Automatically triggered after build workflows complete
   workflow_run:
@@ -9,7 +10,7 @@ on:
     types: [completed]
     branches: [main]
   
-  # Trigger when a release is published (includes Update release button)
+  # Trigger when a release is published
   release:
     types: [published, deleted]
   
@@ -22,17 +23,17 @@ on:
         type: boolean
         default: false
       
+      trigger_docs_deploy:
+        description: 'Trigger documentation workflow after update'
+        required: false
+        type: boolean
+        default: false
+      
       cleanup_old_versions:
         description: 'Remove versions older than specified days (0 = keep all)'
         required: false
         type: number
         default: 0
-      
-      include_prereleases:
-        description: 'Include pre-release versions'
-        required: false
-        type: boolean
-        default: true
       
       max_versions:
         description: 'Maximum number of versions to keep (0 = unlimited)'
@@ -41,47 +42,73 @@ on:
         default: 0
       
       dry_run:
-        description: 'Dry run - show what would be updated without committing'
+        description: 'Dry run - show what would be updated without saving'
         required: false
         type: boolean
         default: false
   
-  # Trigger from other workflows (e.g., after wheel upload)
+  # Trigger from other workflows
   workflow_call:
 
 concurrency:
-  # CRITICAL: Use same group as documentation.yml to prevent concurrent deployments
-  # Both workflows deploy to gh-pages with force_orphan, concurrent runs would overwrite each other
-  group: gh-pages-deployment-${{ github.ref }}
-  cancel-in-progress: false  # Don't cancel, wait for previous to complete
+  group: update-downloads
+  cancel-in-progress: false
 
 jobs:
   update-downloads-data:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pages: write
-      id-token: write
+      contents: write  # For uploading release assets
+    
+    outputs:
+      has_changes: ${{ steps.check_changes.outputs.has_changes }}
     
     steps:
-      - name: Checkout repository
+      - name: Checkout main branch for scripts
         uses: actions/checkout@v4
         with:
-          ref: gh-pages  # Checkout GitHub Pages branch
-          fetch-depth: 1
+          ref: main
+          sparse-checkout: |
+            docs/automation/scripts/
       
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
-      - name: Checkout main branch for scripts
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: main-branch
-          sparse-checkout: |
-            docs/automation/scripts/
+      - name: Download existing downloads_data.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📥 Fetching existing downloads_data.json"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          
+          mkdir -p existing
+          
+          # Try to fetch from main-devel release (where we store it)
+          echo "🔍 Checking main-devel release..."
+          if gh release download main-devel --pattern "downloads_data.json" --dir existing 2>/dev/null; then
+            echo "✅ Found existing downloads_data.json in main-devel release"
+            echo "  - Size: $(du -h existing/downloads_data.json | cut -f1)"
+            echo "  - Versions: $(jq '.version_metadata | length' existing/downloads_data.json)"
+          else
+            # Fallback: try to fetch from GitHub Pages
+            echo "⚠️  Not found in release, trying GitHub Pages..."
+            PAGES_URL="https://asher-1.github.io/ACloudViewer/downloads_data.json"
+            if curl -fsSL "$PAGES_URL" -o existing/downloads_data.json 2>/dev/null; then
+              echo "✅ Found existing downloads_data.json on GitHub Pages"
+              echo "  - Size: $(du -h existing/downloads_data.json | cut -f1)"
+              echo "  - Versions: $(jq '.version_metadata | length' existing/downloads_data.json)"
+            else
+              echo "⚠️  No existing downloads_data.json found (first time?)"
+              echo '{"generated_at":"","version_metadata":{},"download_links":{}}' > existing/downloads_data.json
+            fi
+          fi
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       
       - name: Generate latest downloads_data.json
         env:
@@ -99,21 +126,19 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "🔧 Manual Trigger Options:"
             echo "  - Force update: ${{ github.event.inputs.force_update }}"
+            echo "  - Trigger docs deploy: ${{ github.event.inputs.trigger_docs_deploy }}"
             echo "  - Cleanup old (days): ${{ github.event.inputs.cleanup_old_versions }}"
-            echo "  - Include prereleases: ${{ github.event.inputs.include_prereleases }}"
             echo "  - Max versions: ${{ github.event.inputs.max_versions }}"
             echo "  - Dry run: ${{ github.event.inputs.dry_run }}"
             echo ""
           fi
           
-          # Run scan script from main branch
-          cd main-branch
+          # Run scan script
           python3 docs/automation/scripts/scan_releases.py
           
-          # Move generated file to gh-pages root
+          # Check if generation succeeded
           if [ -f "docs/downloads_data.json" ]; then
-            mv docs/downloads_data.json ../downloads_data.json.new
-            cd ..
+            mv docs/downloads_data.json downloads_data.json.new
             
             echo ""
             echo "✅ New downloads_data.json generated"
@@ -138,7 +163,6 @@ jobs:
               echo "  🗑️  Removing versions older than $CLEANUP_DAYS days..."
               CUTOFF_DATE=$(date -u -d "$CLEANUP_DAYS days ago" +%Y-%m-%d)
               
-              # Filter out old versions
               jq --arg cutoff "$CUTOFF_DATE" '
                 .version_metadata = (.version_metadata | to_entries | 
                   map(select(.value.release_date >= $cutoff)) | 
@@ -158,7 +182,6 @@ jobs:
             if [ "$MAX_VERSIONS" != "0" ] && [ -n "$MAX_VERSIONS" ]; then
               echo "  📊 Limiting to $MAX_VERSIONS most recent versions..."
               
-              # Keep only the most recent versions
               jq --argjson max "$MAX_VERSIONS" '
                 (.version_metadata | to_entries | 
                   sort_by(.value.release_date) | reverse | 
@@ -185,47 +208,27 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          if [ -f "downloads_data.json" ]; then
-            # Compare checksums
-            OLD_HASH=$(md5sum downloads_data.json | cut -d' ' -f1)
-            NEW_HASH=$(md5sum downloads_data.json.new | cut -d' ' -f1)
+          if [ -f "existing/downloads_data.json" ]; then
+            # Compare checksums (ignoring generated_at timestamp)
+            OLD_CONTENT=$(jq 'del(.generated_at)' existing/downloads_data.json | md5sum | cut -d' ' -f1)
+            NEW_CONTENT=$(jq 'del(.generated_at)' downloads_data.json.new | md5sum | cut -d' ' -f1)
             
-            if [ "$OLD_HASH" == "$NEW_HASH" ]; then
+            if [ "$OLD_CONTENT" == "$NEW_CONTENT" ]; then
               echo "has_changes=false" >> $GITHUB_OUTPUT
               echo ""
               echo "ℹ️  No changes detected in downloads_data.json"
-              
-              # Show comparison
               echo ""
               echo "📊 Comparison:"
-              echo "  Old: $(jq '.version_metadata | length' downloads_data.json) versions, $(jq '.download_links | length' downloads_data.json) links"
-              echo "  New: $(jq '.version_metadata | length' downloads_data.json.new) versions, $(jq '.download_links | length' downloads_data.json.new) links"
+              echo "  Old: $(jq '.version_metadata | length' existing/downloads_data.json) versions"
+              echo "  New: $(jq '.version_metadata | length' downloads_data.json.new) versions"
             else
               echo "has_changes=true" >> $GITHUB_OUTPUT
               echo ""
               echo "🔄 Changes detected!"
               echo ""
               echo "📊 Comparison:"
-              echo "  Old: $(jq '.version_metadata | length' downloads_data.json) versions (hash: ${OLD_HASH:0:8}...)"
-              echo "  New: $(jq '.version_metadata | length' downloads_data.json.new) versions (hash: ${NEW_HASH:0:8}...)"
-              echo ""
-              
-              # Show added/removed versions
-              OLD_VERSIONS=$(jq -r '.version_metadata | keys[]' downloads_data.json | sort)
-              NEW_VERSIONS=$(jq -r '.version_metadata | keys[]' downloads_data.json.new | sort)
-              
-              ADDED=$(comm -13 <(echo "$OLD_VERSIONS") <(echo "$NEW_VERSIONS"))
-              REMOVED=$(comm -23 <(echo "$OLD_VERSIONS") <(echo "$NEW_VERSIONS"))
-              
-              if [ -n "$ADDED" ]; then
-                echo "➕ Added versions:"
-                echo "$ADDED" | sed 's/^/  - /'
-              fi
-              
-              if [ -n "$REMOVED" ]; then
-                echo "➖ Removed versions:"
-                echo "$REMOVED" | sed 's/^/  - /'
-              fi
+              echo "  Old: $(jq '.version_metadata | length' existing/downloads_data.json) versions"
+              echo "  New: $(jq '.version_metadata | length' downloads_data.json.new) versions"
             fi
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
@@ -233,40 +236,12 @@ jobs:
             echo "🆕 First time generation - no existing file"
           fi
       
-      - name: Update downloads_data.json
-        if: steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true'
-        run: |
-          echo ""
-          echo "💾 Updating downloads_data.json on GitHub Pages..."
-          
-          # Backup old file if exists
-          if [ -f "downloads_data.json" ]; then
-            cp downloads_data.json downloads_data.json.backup
-            echo "  ✓ Backed up old version"
-          fi
-          
-          # Replace with new file
-          mv downloads_data.json.new downloads_data.json
-          echo "  ✓ Replaced with new version"
-          
-          # Create update log
-          cat > DOWNLOADS_UPDATE.txt << EOF
-          Last Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          Trigger: ${{ github.event_name }}
-          Commit: ${{ github.sha }}
-          Versions: $(jq '.version_metadata | length' downloads_data.json)
-          Total Links: $(jq '.download_links | length' downloads_data.json)
-          EOF
-          
-          echo ""
-          echo "✅ Update complete"
-      
       - name: Dry run summary
         if: github.event.inputs.dry_run == 'true' && (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true')
         run: |
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 DRY RUN - Preview Only (No Changes Committed)"
+          echo "🔍 DRY RUN - Preview Only (No Changes Saved)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "📊 Changes that would be made:"
@@ -274,7 +249,6 @@ jobs:
           echo "New downloads_data.json content:"
           echo "  - Size: $(du -h downloads_data.json.new | cut -f1)"
           echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json.new)"
-          echo "  - Total links: $(jq '.download_links | length' downloads_data.json.new)"
           echo ""
           echo "📋 Versions that would be published:"
           jq -r '.version_metadata | to_entries[] | "  - \(.key) (\(.value.release_date))"' downloads_data.json.new | sort -V
@@ -282,113 +256,33 @@ jobs:
           echo "ℹ️  To actually apply these changes, run without dry_run option"
           echo ""
       
-      - name: Fetch latest gh-pages content
+      - name: Upload to main-devel release
         if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Fetching latest gh-pages content (may have been updated by other workflows)"
+          echo "📤 Uploading downloads_data.json to main-devel release"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
           
-          # CRITICAL: Re-fetch gh-pages to get latest content
-          # Another workflow (e.g., documentation.yml) may have deployed new content
-          # since we checked out at the start of this workflow
+          # Rename to final name
+          mv downloads_data.json.new downloads_data.json
           
-          # Save our updated downloads_data.json before git reset
-          echo "💾 Saving updated downloads_data.json..."
-          cp downloads_data.json /tmp/downloads_data.json.updated
-          
-          echo "📥 Pulling latest changes from gh-pages..."
-          git fetch origin gh-pages --force
-          git reset --hard origin/gh-pages
-          
-          # Restore our updated downloads_data.json
-          echo "📄 Restoring updated downloads_data.json..."
-          cp /tmp/downloads_data.json.updated downloads_data.json
+          # Upload to main-devel release
+          # This is where documentation.yml will fetch it from
+          gh release upload main-devel downloads_data.json --clobber
           
           echo ""
-          echo "📊 Current gh-pages content:"
-          echo "  - Total files: $(find . -type f -not -path './.git/*' | wc -l)"
-          echo "  - Documentation versions:"
-          ls -la documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "    (no version archives)"
+          echo "✅ downloads_data.json uploaded to main-devel release"
+          echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json)"
           echo ""
+          echo "📝 Note: This file will be picked up by documentation.yml during deployment"
+          echo "   The actual GitHub Pages site is deployed by documentation.yml workflow"
+          echo ""
+          echo "🔗 Direct download: https://github.com/${{ github.repository }}/releases/download/main-devel/downloads_data.json"
 
-      - name: Prepare deployment directory
-        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
-        run: |
-          echo "📦 Preparing deployment directory..."
-          
-          # Create deployment directory with LATEST gh-pages content
-          mkdir -p deploy-dir
-          
-          # Copy all existing files from gh-pages checkout (except .git and temp files)
-          # This preserves documentation, versions, etc.
-          rsync -av --exclude='.git' --exclude='main-branch' --exclude='*.new' --exclude='*.backup' ./ deploy-dir/
-          
-          # Copy the updated downloads_data.json (may have been reset by git fetch)
-          echo "📄 Updating downloads_data.json..."
-          cp downloads_data.json deploy-dir/downloads_data.json
-          
-          # Create/update the update log
-          cat > deploy-dir/DOWNLOADS_UPDATE.txt << EOF
-          Last Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          Trigger: ${{ github.event_name }}
-          Commit: ${{ github.sha }}
-          Versions: $(jq '.version_metadata | length' deploy-dir/downloads_data.json)
-          EOF
-          
-          echo ""
-          echo "✅ Deployment directory prepared"
-          echo "  - Files: $(find deploy-dir -type f | wc -l)"
-          echo "  - Size: $(du -sh deploy-dir | cut -f1)"
-          echo "  - downloads_data.json: $(du -h deploy-dir/downloads_data.json | cut -f1)"
-          echo ""
-          echo "📁 Documentation versions in deploy-dir:"
-          ls -la deploy-dir/documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "  (no version archives)"
-      
-      - name: Set commit message
-        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
-        run: |
-          COMMIT_MSG="chore: auto-update downloads_data.json"
-          
-          if [ "${{ github.event_name }}" == "release" ]; then
-            COMMIT_MSG="chore: update downloads for release ${{ github.event.release.tag_name }}"
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
-            COMMIT_MSG="chore: scheduled update of downloads_data.json"
-          fi
-          
-          echo "COMMIT_MSG=${COMMIT_MSG}" >> $GITHUB_ENV
-
-      - name: Deploy to GitHub Pages
-        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./deploy-dir
-          keep_files: false  # We already copied all files, no need to keep
-          commit_message: ${{ env.COMMIT_MSG }}
-          enable_jekyll: false
-          force_orphan: true  # CRITICAL: Prevent history bloat (same as documentation.yml)
-
-      - name: Deployment summary
-        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ Downloads data updated on GitHub Pages"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "📊 Summary:"
-          echo "  - File: downloads_data.json"
-          echo "  - Size: $(du -h deploy-dir/downloads_data.json | cut -f1)"
-          echo "  - Versions: $(jq '.version_metadata | length' deploy-dir/downloads_data.json)"
-          echo ""
-          echo "🔄 Using force_orphan: true to prevent git history bloat"
-          echo "   (This keeps gh-pages branch small and git pull fast)"
-          echo ""
-          echo "🌐 Available at: https://asher-1.github.io/ACloudViewer/downloads_data.json"
-          echo ""
-      
-      - name: Summary
+      - name: Summary (No changes)
         if: steps.check_changes.outputs.has_changes == 'false' && github.event.inputs.force_update != 'true' && github.event.inputs.dry_run != 'true'
         run: |
           echo ""
@@ -397,15 +291,37 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "Downloads data is already up-to-date."
-          echo "  - Current versions: $(jq '.version_metadata | length' downloads_data.json)"
-          echo "  - Last update: $(cat DOWNLOADS_UPDATE.txt 2>/dev/null | head -1 || echo 'Unknown')"
+          echo "  - Current versions: $(jq '.version_metadata | length' existing/downloads_data.json)"
           echo ""
           
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "💡 Manual Trigger Tips:"
-            echo "  - Use 'force_update: true' to commit even without changes"
+            echo "  - Use 'force_update: true' to save even without changes"
+            echo "  - Use 'trigger_docs_deploy: true' to also trigger documentation deployment"
             echo "  - Use 'cleanup_old_versions' to remove old releases"
             echo "  - Use 'max_versions' to limit version count"
-            echo "  - Use 'dry_run: true' to preview changes without committing"
+            echo "  - Use 'dry_run: true' to preview changes without saving"
             echo ""
           fi
+
+  # Optional: Trigger documentation workflow to deploy with updated downloads_data.json
+  trigger-docs-deploy:
+    needs: update-downloads-data
+    if: |
+      (needs.update-downloads-data.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') &&
+      github.event.inputs.dry_run != 'true' &&
+      github.event.inputs.trigger_docs_deploy == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Trigger documentation workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "🚀 Triggering documentation workflow..."
+          gh workflow run documentation.yml \
+            --repo ${{ github.repository }} \
+            --ref main
+          echo "✅ Documentation workflow triggered"
+          echo "   The updated downloads_data.json will be included in the deployment"
