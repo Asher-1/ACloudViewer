@@ -676,8 +676,8 @@ void cvRenderViewSelectionReaction::selectionChanged(vtkObject* caller,
             if (m_interactor) {
                 vtkInteractorObserver* currentStyle =
                         m_interactor->GetInteractorStyle();
-                customPolygonStyle =
-                        cvInteractorStyleDrawPolygon::SafeDownCast(currentStyle);
+                customPolygonStyle = cvInteractorStyleDrawPolygon::SafeDownCast(
+                        currentStyle);
                 if (!customPolygonStyle) {
                     vtkPolygonStyle =
                             vtkInteractorStyleDrawPolygon::SafeDownCast(

@@ -23,8 +23,6 @@
 #ifndef CV_INTERACTOR_STYLE_DRAW_POLYGON_H
 #define CV_INTERACTOR_STYLE_DRAW_POLYGON_H
 
-#include "qPCL.h"
-
 #include <vtkInteractorStyle.h>
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
@@ -32,6 +30,8 @@
 #include <vtkVector.h>
 
 #include <vector>
+
+#include "qPCL.h"
 
 class vtkRenderWindowInteractor;
 class vtkRenderer;
@@ -47,7 +47,8 @@ class vtkRenderer;
  *
  * When the mouse button is released, a SelectionChangedEvent is fired.
  */
-class QPCL_ENGINE_LIB_API cvInteractorStyleDrawPolygon : public vtkInteractorStyle {
+class QPCL_ENGINE_LIB_API cvInteractorStyleDrawPolygon
+    : public vtkInteractorStyle {
 public:
     static cvInteractorStyleDrawPolygon* New();
     vtkTypeMacro(cvInteractorStyleDrawPolygon, vtkInteractorStyle);
@@ -136,4 +137,3 @@ private:
 };
 
 #endif  // CV_INTERACTOR_STYLE_DRAW_POLYGON_H
-

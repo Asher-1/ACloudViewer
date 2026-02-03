@@ -4299,9 +4299,13 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     bool isCell = (elementType == tr("Cell"));
 
     // Special operators that don't need a value (ParaView-style)
-    QStringList noValueOps = {tr("is min"), tr("is max"),
-                              tr("is min per block"), tr("is max per block"),
-                              tr("is <= mean"), tr("is >= mean"), tr("is NaN")};
+    QStringList noValueOps = {tr("is min"),
+                              tr("is max"),
+                              tr("is min per block"),
+                              tr("is max per block"),
+                              tr("is <= mean"),
+                              tr("is >= mean"),
+                              tr("is NaN")};
     // Location operators need X, Y, Z coordinates
     QStringList locationOps = {tr("nearest to"), tr("containing")};
 
@@ -4309,11 +4313,11 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     struct QueryCondition {
         QString attribute;
         QString op;
-        QString value;       // For single value ops
-        QString valueMin;    // For "is in range"
-        QString valueMax;    // For "is in range"
-        double x, y, z;      // For location ops
-        double tolerance;    // For "nearest to"
+        QString value;     // For single value ops
+        QString valueMin;  // For "is in range"
+        QString valueMax;  // For "is in range"
+        double x, y, z;    // For location ops
+        double tolerance;  // For "nearest to"
     };
     QVector<QueryCondition> conditions;
     QStringList queryDescriptions;
@@ -4345,15 +4349,16 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
             cond.valueMin = row.valueMinEdit ? row.valueMinEdit->text() : "";
             cond.valueMax = row.valueMaxEdit ? row.valueMaxEdit->text() : "";
             if (cond.valueMin.isEmpty() || cond.valueMax.isEmpty()) {
-                QMessageBox::warning(
-                        this, tr("Find Data"),
-                        tr("Please enter min and max values for range in query row %1.")
-                                .arg(i + 1));
+                QMessageBox::warning(this, tr("Find Data"),
+                                     tr("Please enter min and max values for "
+                                        "range in query row %1.")
+                                             .arg(i + 1));
                 return;
             }
             // Store as comma-separated for backward compatibility
             cond.value = QString("%1,%2").arg(cond.valueMin).arg(cond.valueMax);
-            valueDesc = QString("[%1, %2]").arg(cond.valueMin).arg(cond.valueMax);
+            valueDesc =
+                    QString("[%1, %2]").arg(cond.valueMin).arg(cond.valueMax);
         } else if (locationOps.contains(op)) {
             // Location coordinates
             QString xStr = row.valueXEdit ? row.valueXEdit->text() : "";
@@ -4382,12 +4387,13 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
             }
 
             if (op == tr("nearest to")) {
-                QString tolStr = row.toleranceEdit ? row.toleranceEdit->text() : "";
+                QString tolStr =
+                        row.toleranceEdit ? row.toleranceEdit->text() : "";
                 if (tolStr.isEmpty()) {
-                    QMessageBox::warning(
-                            this, tr("Find Data"),
-                            tr("Please enter tolerance (epsilon) in query row %1.")
-                                    .arg(i + 1));
+                    QMessageBox::warning(this, tr("Find Data"),
+                                         tr("Please enter tolerance (epsilon) "
+                                            "in query row %1.")
+                                                 .arg(i + 1));
                     return;
                 }
                 bool okTol;
@@ -4400,14 +4406,22 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
                     return;
                 }
                 valueDesc = QString("(%1, %2, %3) epsilon=%4")
-                        .arg(cond.x).arg(cond.y).arg(cond.z).arg(cond.tolerance);
+                                    .arg(cond.x)
+                                    .arg(cond.y)
+                                    .arg(cond.z)
+                                    .arg(cond.tolerance);
             } else {
                 valueDesc = QString("(%1, %2, %3)")
-                        .arg(cond.x).arg(cond.y).arg(cond.z);
+                                    .arg(cond.x)
+                                    .arg(cond.y)
+                                    .arg(cond.z);
             }
             // Store coordinates as formatted string for backward compatibility
             cond.value = QString("%1,%2,%3,%4")
-                    .arg(cond.x).arg(cond.y).arg(cond.z).arg(cond.tolerance);
+                                 .arg(cond.x)
+                                 .arg(cond.y)
+                                 .arg(cond.z)
+                                 .arg(cond.tolerance);
         } else {
             // Single value
             cond.value = row.valueEdit ? row.valueEdit->text() : "";
@@ -4445,16 +4459,17 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     }
 
     // Helper lambda to execute a single query condition
-    auto executeCondition = [this, &locationOps, isCell](const QueryCondition& cond) -> cvSelectionData {
+    auto executeCondition =
+            [this, &locationOps,
+             isCell](const QueryCondition& cond) -> cvSelectionData {
         if (locationOps.contains(cond.op)) {
             // Location-based query
-            return executeFindDataQuery(cond.attribute, cond.op,
-                                        cond.x, cond.y, cond.z,
-                                        cond.tolerance, isCell);
+            return executeFindDataQuery(cond.attribute, cond.op, cond.x, cond.y,
+                                        cond.z, cond.tolerance, isCell);
         } else {
             // Regular value-based query
-            return executeFindDataQuery(cond.attribute, cond.op,
-                                        cond.value, isCell);
+            return executeFindDataQuery(cond.attribute, cond.op, cond.value,
+                                        isCell);
         }
     };
 
@@ -4465,8 +4480,8 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     for (int i = 1; i < conditions.size() && !combinedResult.isEmpty(); ++i) {
         cvSelectionData nextResult = executeCondition(conditions[i]);
         // AND logic: intersection of both selections
-        combinedResult = cvSelectionAlgebra::intersectionOf(combinedResult,
-                                                            nextResult);
+        combinedResult =
+                cvSelectionAlgebra::intersectionOf(combinedResult, nextResult);
     }
 
     CVLog::Print(QString("[cvSelectionPropertiesWidget] Find Data: Found %1 "
@@ -4483,7 +4498,8 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     // Save current query row selections before updateSelection resets them
     QVector<QPair<QString, QString>> savedSelections;
     for (const auto& row : m_queryRows) {
-        QString attr = row.attributeCombo ? row.attributeCombo->currentText() : "";
+        QString attr =
+                row.attributeCombo ? row.attributeCombo->currentText() : "";
         QString op = row.operatorCombo ? row.operatorCombo->currentText() : "";
         savedSelections.append({attr, op});
     }
@@ -4493,7 +4509,8 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     m_selectionData = combinedResult;
     updateSelection(m_selectionData, polyData);
 
-    // Restore query row selections (they may have been reset by updateAttributeCombo)
+    // Restore query row selections (they may have been reset by
+    // updateAttributeCombo)
     for (int i = 0; i < m_queryRows.size() && i < savedSelections.size(); ++i) {
         auto& row = m_queryRows[i];
         const auto& saved = savedSelections[i];
@@ -4505,7 +4522,8 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
                 row.attributeCombo->blockSignals(false);
             }
         }
-        // Restore operator (after attribute is set, operators should be repopulated)
+        // Restore operator (after attribute is set, operators should be
+        // repopulated)
         updateOperatorsForAttribute(row);
         if (row.operatorCombo && !saved.second.isEmpty()) {
             int opIdx = row.operatorCombo->findText(saved.second);
@@ -4535,18 +4553,18 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
         updateSpreadsheetData(polyData);
     }
 
-    QMessageBox::information(
-            this, tr("Find Data"),
-            tr("Selected %1 %2(s) matching %3 condition(s)")
-                    .arg(combinedResult.count())
-                    .arg(isCell ? tr("cell") : tr("point"))
-                    .arg(conditions.size()));
+    QMessageBox::information(this, tr("Find Data"),
+                             tr("Selected %1 %2(s) matching %3 condition(s)")
+                                     .arg(combinedResult.count())
+                                     .arg(isCell ? tr("cell") : tr("point"))
+                                     .arg(conditions.size()));
 }
 
 //-----------------------------------------------------------------------------
 void cvSelectionPropertiesWidget::onResetClicked() {
     // ParaView behavior: Reset any unaccepted changes
-    // Reset all query rows to default state (first attribute, first operator, empty value)
+    // Reset all query rows to default state (first attribute, first operator,
+    // empty value)
     for (auto& row : m_queryRows) {
         if (row.attributeCombo && row.attributeCombo->count() > 0) {
             row.attributeCombo->blockSignals(true);
@@ -4837,19 +4855,19 @@ void cvSelectionPropertiesWidget::updateOperatorsForAttribute(QueryRow& row) {
         default:
             // Regular array - full ParaView operator list
             row.operatorCombo->addItems({
-                    tr("is"),               // exact match
-                    tr("is in range"),      // between min and max
-                    tr("is one of"),        // match any in list
-                    tr("is >="),            // greater or equal
-                    tr("is <="),            // less or equal
-                    tr("is min"),           // minimum value
-                    tr("is max"),           // maximum value
-                    tr("is min per block"), // minimum per block
-                    tr("is max per block"), // maximum per block
-                    tr("is NaN"),           // NaN values
-                    tr("is <= mean"),       // less or equal to mean
-                    tr("is >= mean"),       // greater or equal to mean
-                    tr("is mean")           // within tolerance of mean
+                    tr("is"),                // exact match
+                    tr("is in range"),       // between min and max
+                    tr("is one of"),         // match any in list
+                    tr("is >="),             // greater or equal
+                    tr("is <="),             // less or equal
+                    tr("is min"),            // minimum value
+                    tr("is max"),            // maximum value
+                    tr("is min per block"),  // minimum per block
+                    tr("is max per block"),  // maximum per block
+                    tr("is NaN"),            // NaN values
+                    tr("is <= mean"),        // less or equal to mean
+                    tr("is >= mean"),        // greater or equal to mean
+                    tr("is mean")            // within tolerance of mean
             });
             break;
     }
@@ -4874,9 +4892,13 @@ void cvSelectionPropertiesWidget::updateValueWidgetsForOperator(QueryRow& row) {
     row.toleranceEdit->hide();
 
     // No-value operators - show nothing
-    QStringList noValueOps = {tr("is min"), tr("is max"),
-                              tr("is min per block"), tr("is max per block"),
-                              tr("is <= mean"), tr("is >= mean"), tr("is NaN")};
+    QStringList noValueOps = {tr("is min"),
+                              tr("is max"),
+                              tr("is min per block"),
+                              tr("is max per block"),
+                              tr("is <= mean"),
+                              tr("is >= mean"),
+                              tr("is NaN")};
     if (noValueOps.contains(op)) {
         return;
     }
@@ -5070,8 +5092,8 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
         }
     }
 
-    // Clear the first row's attribute combo (m_attributeCombo is an alias to it)
-    // Other rows will be cleared and repopulated later
+    // Clear the first row's attribute combo (m_attributeCombo is an alias to
+    // it) Other rows will be cleared and repopulated later
     if (m_attributeCombo) {
         m_attributeCombo->clear();
     }
@@ -5153,8 +5175,9 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
     // Add ID first (like ParaView - just "ID", not "PointID")
     m_attributeCombo->addItem(tr("ID"));
 
-    // Note: ParaView's Create Selection doesn't show Points (X/Y/Z) as separate attributes
-    // The "Point" option at the end is used for location-based "nearest to" queries
+    // Note: ParaView's Create Selection doesn't show Points (X/Y/Z) as separate
+    // attributes The "Point" option at the end is used for location-based
+    // "nearest to" queries
 
     // Helper lambda to add multi-component arrays in ParaView format
     // For color arrays (RGB/RGBA), we add the name without "(magnitude)"
@@ -5426,7 +5449,8 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
     }
 
     // Add Point/Cell at the end (like ParaView)
-    // These are special entries with different term types for location-based queries
+    // These are special entries with different term types for location-based
+    // queries
     if (!isCell && polyData->GetPoints()) {
         m_attributeCombo->addItem(tr("Point"));
     } else if (isCell) {
@@ -5438,18 +5462,20 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
     if (m_attributeCombo) {
         for (int i = 0; i < m_attributeCombo->count(); ++i) {
             QString itemText = m_attributeCombo->itemText(i);
-            AttributeTermType termType = ATTR_ARRAY; // Default
+            AttributeTermType termType = ATTR_ARRAY;  // Default
             if (itemText == tr("Point")) {
                 termType = ATTR_POINT_NEAREST_TO;
             } else if (itemText == tr("Cell")) {
                 termType = ATTR_CELL_CONTAINING_POINT;
             }
-            m_attributeCombo->setItemData(i, static_cast<int>(termType), Qt::UserRole);
+            m_attributeCombo->setItemData(i, static_cast<int>(termType),
+                                          Qt::UserRole);
         }
     }
 
-    // Copy items from first row (m_attributeCombo) to all other query row combos
-    // Note: m_attributeCombo == m_queryRows[0].attributeCombo, so we skip row 0
+    // Copy items from first row (m_attributeCombo) to all other query row
+    // combos Note: m_attributeCombo == m_queryRows[0].attributeCombo, so we
+    // skip row 0
     for (int rowIdx = 1; rowIdx < m_queryRows.size(); ++rowIdx) {
         if (!m_queryRows[rowIdx].attributeCombo || !m_attributeCombo) continue;
 
@@ -5463,7 +5489,8 @@ void cvSelectionPropertiesWidget::updateAttributeCombo() {
 
             // Copy the term type data
             QVariant termTypeData = m_attributeCombo->itemData(i, Qt::UserRole);
-            m_queryRows[rowIdx].attributeCombo->setItemData(i, termTypeData, Qt::UserRole);
+            m_queryRows[rowIdx].attributeCombo->setItemData(i, termTypeData,
+                                                            Qt::UserRole);
         }
 
         // Try to restore previous selection
@@ -5492,8 +5519,9 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         const QString& op,
         const QString& value,
         bool isCell) {
-    // ParaView-style query execution - returns selection without modifying state
-    // Reference: ParaView/Wrapping/Python/paraview/detail/python_selector.py
+    // ParaView-style query execution - returns selection without modifying
+    // state Reference:
+    // ParaView/Wrapping/Python/paraview/detail/python_selector.py
     //
     // This method supports all ParaView query operators:
     // - is (==): exact match
@@ -5579,7 +5607,8 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
                             tcoords->GetName() && strlen(tcoords->GetName())
                                     ? QString::fromUtf8(tcoords->GetName())
                                     : tr("TCoords");
-                    if (arrayName == tcoordsName || arrayName == tr("TCoords")) {
+                    if (arrayName == tcoordsName ||
+                        arrayName == tr("TCoords")) {
                         dataArray = tcoords;
                     }
                 }
@@ -5676,9 +5705,9 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
     // Calculate statistics if needed
     double minVal = 0.0, maxVal = 0.0, meanVal = 0.0;
     bool needStats = (op == tr("is min") || op == tr("is max") ||
-                      op == tr("is min per block") || op == tr("is max per block") ||
-                      op == tr("is <= mean") || op == tr("is >= mean") ||
-                      op == tr("is mean"));
+                      op == tr("is min per block") ||
+                      op == tr("is max per block") || op == tr("is <= mean") ||
+                      op == tr("is >= mean") || op == tr("is mean"));
 
     if (needStats) {
         double sum = 0.0;
@@ -5758,7 +5787,9 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
 cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         const QString& attribute,
         const QString& op,
-        double x, double y, double z,
+        double x,
+        double y,
+        double z,
         double tolerance,
         bool isCell) {
     // ParaView-style location-based query execution
@@ -5766,15 +5797,17 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
 
     vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
     if (!polyData) {
-        CVLog::Warning("[executeFindDataQuery] No polyData available for "
-                       "location query");
+        CVLog::Warning(
+                "[executeFindDataQuery] No polyData available for "
+                "location query");
         return cvSelectionData();
     }
 
     vtkPoints* points = polyData->GetPoints();
     if (!points) {
-        CVLog::Warning("[executeFindDataQuery] No points in polyData for "
-                       "location query");
+        CVLog::Warning(
+                "[executeFindDataQuery] No points in polyData for "
+                "location query");
         return cvSelectionData();
     }
 
@@ -5816,7 +5849,9 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
                              "points within tolerance %2 of (%3, %4, %5)")
                              .arg(matchingIds.size())
                              .arg(tolerance)
-                             .arg(x).arg(y).arg(z));
+                             .arg(x)
+                             .arg(y)
+                             .arg(z));
 
     } else if (op == tr("containing")) {
         // Find cells that contain the target point
@@ -5841,7 +5876,9 @@ cvSelectionData cvSelectionPropertiesWidget::executeFindDataQuery(
         CVLog::Print(QString("[executeFindDataQuery] 'containing' found %1 "
                              "cells containing point (%2, %3, %4)")
                              .arg(matchingIds.size())
-                             .arg(x).arg(y).arg(z));
+                             .arg(x)
+                             .arg(y)
+                             .arg(z));
     }
 
     cvSelectionData::FieldAssociation assoc =
