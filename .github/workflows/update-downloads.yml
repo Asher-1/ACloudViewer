@@ -50,8 +50,10 @@ on:
   workflow_call:
 
 concurrency:
-  group: update-downloads-${{ github.ref }}
-  cancel-in-progress: true
+  # CRITICAL: Use same group as documentation.yml to prevent concurrent deployments
+  # Both workflows deploy to gh-pages with force_orphan, concurrent runs would overwrite each other
+  group: gh-pages-deployment-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel, wait for previous to complete
 
 jobs:
   update-downloads-data:
@@ -280,19 +282,72 @@ jobs:
           echo "ℹ️  To actually apply these changes, run without dry_run option"
           echo ""
       
-      - name: Commit and push changes
+      - name: Fetch latest gh-pages content
         if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔄 Fetching latest gh-pages content (may have been updated by other workflows)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
-          git add downloads_data.json DOWNLOADS_UPDATE.txt
+          # CRITICAL: Re-fetch gh-pages to get latest content
+          # Another workflow (e.g., documentation.yml) may have deployed new content
+          # since we checked out at the start of this workflow
           
-          # Remove backup if exists
-          if [ -f "downloads_data.json.backup" ]; then
-            rm downloads_data.json.backup
-          fi
+          # Save our updated downloads_data.json before git reset
+          echo "💾 Saving updated downloads_data.json..."
+          cp downloads_data.json /tmp/downloads_data.json.updated
           
+          echo "📥 Pulling latest changes from gh-pages..."
+          git fetch origin gh-pages --force
+          git reset --hard origin/gh-pages
+          
+          # Restore our updated downloads_data.json
+          echo "📄 Restoring updated downloads_data.json..."
+          cp /tmp/downloads_data.json.updated downloads_data.json
+          
+          echo ""
+          echo "📊 Current gh-pages content:"
+          echo "  - Total files: $(find . -type f -not -path './.git/*' | wc -l)"
+          echo "  - Documentation versions:"
+          ls -la documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "    (no version archives)"
+          echo ""
+
+      - name: Prepare deployment directory
+        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
+        run: |
+          echo "📦 Preparing deployment directory..."
+          
+          # Create deployment directory with LATEST gh-pages content
+          mkdir -p deploy-dir
+          
+          # Copy all existing files from gh-pages checkout (except .git and temp files)
+          # This preserves documentation, versions, etc.
+          rsync -av --exclude='.git' --exclude='main-branch' --exclude='*.new' --exclude='*.backup' ./ deploy-dir/
+          
+          # Copy the updated downloads_data.json (may have been reset by git fetch)
+          echo "📄 Updating downloads_data.json..."
+          cp downloads_data.json deploy-dir/downloads_data.json
+          
+          # Create/update the update log
+          cat > deploy-dir/DOWNLOADS_UPDATE.txt << EOF
+          Last Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Trigger: ${{ github.event_name }}
+          Commit: ${{ github.sha }}
+          Versions: $(jq '.version_metadata | length' deploy-dir/downloads_data.json)
+          EOF
+          
+          echo ""
+          echo "✅ Deployment directory prepared"
+          echo "  - Files: $(find deploy-dir -type f | wc -l)"
+          echo "  - Size: $(du -sh deploy-dir | cut -f1)"
+          echo "  - downloads_data.json: $(du -h deploy-dir/downloads_data.json | cut -f1)"
+          echo ""
+          echo "📁 Documentation versions in deploy-dir:"
+          ls -la deploy-dir/documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "  (no version archives)"
+      
+      - name: Set commit message
+        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
+        run: |
           COMMIT_MSG="chore: auto-update downloads_data.json"
           
           if [ "${{ github.event_name }}" == "release" ]; then
@@ -301,11 +356,22 @@ jobs:
             COMMIT_MSG="chore: scheduled update of downloads_data.json"
           fi
           
-          git commit -m "$COMMIT_MSG" -m "Versions: $(jq '.version_metadata | length' downloads_data.json)" \
-                     -m "Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-          
-          git push origin gh-pages
-          
+          echo "COMMIT_MSG=${COMMIT_MSG}" >> $GITHUB_ENV
+
+      - name: Deploy to GitHub Pages
+        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy-dir
+          keep_files: false  # We already copied all files, no need to keep
+          commit_message: ${{ env.COMMIT_MSG }}
+          enable_jekyll: false
+          force_orphan: true  # CRITICAL: Prevent history bloat (same as documentation.yml)
+
+      - name: Deployment summary
+        if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
+        run: |
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Downloads data updated on GitHub Pages"
@@ -313,9 +379,11 @@ jobs:
           echo ""
           echo "📊 Summary:"
           echo "  - File: downloads_data.json"
-          echo "  - Size: $(du -h downloads_data.json | cut -f1)"
-          echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json)"
-          echo "  - Links: $(jq '.download_links | length' downloads_data.json)"
+          echo "  - Size: $(du -h deploy-dir/downloads_data.json | cut -f1)"
+          echo "  - Versions: $(jq '.version_metadata | length' deploy-dir/downloads_data.json)"
+          echo ""
+          echo "🔄 Using force_orphan: true to prevent git history bloat"
+          echo "   (This keeps gh-pages branch small and git pull fast)"
           echo ""
           echo "🌐 Available at: https://asher-1.github.io/ACloudViewer/downloads_data.json"
           echo ""

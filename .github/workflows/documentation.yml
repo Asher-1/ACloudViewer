@@ -16,8 +16,10 @@ on:
     types: [released, edited]  # Trigger when release is published
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # For PR builds: use separate group, can cancel previous
+  # For main/release: use shared group with update-downloads.yml to prevent concurrent gh-pages deployments
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.pull_request.number) || format('gh-pages-deployment-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-docs:
@@ -274,6 +276,44 @@ jobs:
           echo "📁 Top-level structure:"
           ls -la website-deploy/ | head -20
       
+      - name: Preserve existing version archives from gh-pages
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Preserving existing version archives from gh-pages"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          
+          # Create directory for preserved archives
+          mkdir -p preserved-versions
+          
+          # Try to fetch existing version archives from gh-pages
+          echo "🔍 Fetching existing version archives from gh-pages..."
+          if git fetch origin gh-pages:gh-pages 2>/dev/null; then
+            # Get list of version directories (v3.9.3, v3.9.4, etc.)
+            VERSION_DIRS=$(git ls-tree -d --name-only gh-pages:documentation/ 2>/dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || true)
+            
+            if [ -n "$VERSION_DIRS" ]; then
+              echo "✅ Found version archives:"
+              for VERSION in $VERSION_DIRS; do
+                echo "  - documentation/$VERSION/"
+                # Extract each version directory
+                mkdir -p "preserved-versions/documentation/$VERSION"
+                git archive gh-pages:documentation/$VERSION | tar -x -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || true
+              done
+              echo ""
+              echo "📊 Preserved archives:"
+              du -sh preserved-versions/documentation/* 2>/dev/null || echo "  (none)"
+            else
+              echo "ℹ️  No version archives found on gh-pages"
+            fi
+          else
+            echo "⚠️  Could not fetch gh-pages branch (may be first deployment)"
+          fi
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Merge website and documentation for unified deployment
         if: github.ref == 'refs/heads/main' || github.event_name == 'release'
         run: |
@@ -329,6 +369,35 @@ jobs:
             echo "✅ Latest documentation updated from main branch"
           fi
           
+          # Restore preserved version archives (critical for keeping version history)
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Restoring preserved version archives"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ -d "preserved-versions/documentation" ]; then
+            # Copy preserved version archives (won't overwrite current deployment)
+            for VERSION_DIR in preserved-versions/documentation/v*/; do
+              if [ -d "$VERSION_DIR" ]; then
+                VERSION_NAME=$(basename "$VERSION_DIR")
+                TARGET_DIR="unified-deploy/documentation/$VERSION_NAME"
+                
+                # Don't overwrite if this version was just deployed (for release builds)
+                if [ ! -d "$TARGET_DIR" ]; then
+                  echo "  ✅ Restoring: documentation/$VERSION_NAME/"
+                  mkdir -p "$TARGET_DIR"
+                  cp -r "$VERSION_DIR"* "$TARGET_DIR/"
+                else
+                  echo "  ⏭️  Skipping: documentation/$VERSION_NAME/ (already exists in current deployment)"
+                fi
+              fi
+            done
+            echo ""
+            echo "📊 All version archives in deployment:"
+            ls -la unified-deploy/documentation/ | grep -E '^d.*v[0-9]+' || echo "  (none)"
+          else
+            echo "  ℹ️  No preserved version archives to restore"
+          fi
+          
           echo ""
           echo "✅ Unified deployment prepared"
           echo ""
@@ -365,7 +434,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./unified-deploy
-          keep_files: true  # Keep existing files to preserve version history
+          keep_files: false  # We already included ALL files in unified-deploy (including preserved archives)
           commit_message: ${{ env.COMMIT_MSG }}
           enable_jekyll: false  # Disable Jekyll processing
           force_orphan: true  # Use orphan branch to avoid history bloat (reduces git pull size)
