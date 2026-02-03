@@ -199,7 +199,9 @@ private slots:
     // Overload for location-based queries (nearest to, containing)
     cvSelectionData executeFindDataQuery(const QString& attribute,
                                          const QString& op,
-                                         double x, double y, double z,
+                                         double x,
+                                         double y,
+                                         double z,
                                          double tolerance,
                                          bool isCell);
     void onSpreadsheetItemClicked(QTableWidgetItem* item);
@@ -377,14 +379,14 @@ private:
         QComboBox* attributeCombo;
         QComboBox* operatorCombo;
         // Value widgets - dynamically shown/hidden based on operator
-        QWidget* valueContainer;     // Container for value widgets
-        QLineEdit* valueEdit;        // Single value input
-        QLineEdit* valueMinEdit;     // Range min input
-        QLineEdit* valueMaxEdit;     // Range max input
-        QLineEdit* valueXEdit;       // X coordinate input
-        QLineEdit* valueYEdit;       // Y coordinate input
-        QLineEdit* valueZEdit;       // Z coordinate input
-        QLineEdit* toleranceEdit;    // Tolerance (epsilon) input
+        QWidget* valueContainer;   // Container for value widgets
+        QLineEdit* valueEdit;      // Single value input
+        QLineEdit* valueMinEdit;   // Range min input
+        QLineEdit* valueMaxEdit;   // Range max input
+        QLineEdit* valueXEdit;     // X coordinate input
+        QLineEdit* valueYEdit;     // Y coordinate input
+        QLineEdit* valueZEdit;     // Z coordinate input
+        QLineEdit* toleranceEdit;  // Tolerance (epsilon) input
         QPushButton* plusButton;
         QPushButton* minusButton;
         QWidget* container;

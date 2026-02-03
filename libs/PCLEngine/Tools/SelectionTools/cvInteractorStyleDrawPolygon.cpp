@@ -121,11 +121,11 @@ void cvInteractorStyleDrawPolygon::OnMouseMove() {
 
     // Check if we have any points yet
     if (this->Internal->GetNumberOfPoints() > 0) {
-        vtkVector2i lastPoint =
-                this->Internal->GetPoint(this->Internal->GetNumberOfPoints() -
-                                         1);
+        vtkVector2i lastPoint = this->Internal->GetPoint(
+                this->Internal->GetNumberOfPoints() - 1);
 
-        // Calculate squared distance manually (vtkVector2i doesn't have operator-)
+        // Calculate squared distance manually (vtkVector2i doesn't have
+        // operator-)
         int dx = newPoint.GetX() - lastPoint.GetX();
         int dy = newPoint.GetY() - lastPoint.GetY();
         int squaredDist = dx * dx + dy * dy;
@@ -195,7 +195,8 @@ void cvInteractorStyleDrawPolygon::OnLeftButtonUp() {
     this->Moving = 0;
 
     // Fire the SelectionChangedEvent - this signals that polygon selection
-    // is complete and the polygon points can be retrieved via GetPolygonPoints()
+    // is complete and the polygon points can be retrieved via
+    // GetPolygonPoints()
     this->InvokeEvent(vtkCommand::SelectionChangedEvent);
     this->InvokeEvent(vtkCommand::EndInteractionEvent);
 }
@@ -233,8 +234,7 @@ void cvInteractorStyleDrawPolygon::DrawPolygon() {
     // Draw a line from the last point to the current mouse position
     // This creates a "rubber band" effect showing where the polygon would close
     if (numPoints >= 1) {
-        const vtkVector2i& lastPoint =
-                this->Internal->GetPoint(numPoints - 1);
+        const vtkVector2i& lastPoint = this->Internal->GetPoint(numPoints - 1);
         vtkVector2i currentPos(this->EndPosition[0], this->EndPosition[1]);
         this->Internal->DrawPixels(lastPoint, currentPos, pixels, size);
     }
@@ -284,13 +284,14 @@ void cvInteractorStyleDrawPolygon::PrintSelf(ostream& os, vtkIndent indent) {
     this->Superclass::PrintSelf(os, indent);
     os << indent << "Moving: " << this->Moving << endl;
     os << indent << "DrawPolygonPixels: " << this->DrawPolygonPixels << endl;
-    os << indent << "MinimumPointDistanceSquared: "
-       << this->MinimumPointDistanceSquared << endl;
+    os << indent
+       << "MinimumPointDistanceSquared: " << this->MinimumPointDistanceSquared
+       << endl;
     os << indent << "StartPosition: " << this->StartPosition[0] << ","
        << this->StartPosition[1] << endl;
     os << indent << "EndPosition: " << this->EndPosition[0] << ","
        << this->EndPosition[1] << endl;
-    os << indent << "NumberOfPolygonPoints: "
-       << this->Internal->GetNumberOfPoints() << endl;
+    os << indent
+       << "NumberOfPolygonPoints: " << this->Internal->GetNumberOfPoints()
+       << endl;
 }
-
