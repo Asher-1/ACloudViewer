@@ -277,9 +277,11 @@ jobs:
           
           # ============================================================
           # Replace @VERSION@ placeholder in index.html
+          # Mode B: Website version should match the stable documentation
           # ============================================================
           echo ""
           echo "🔄 Replacing @VERSION@ placeholder in website files..."
+          echo "   (Mode B: Website version = Latest stable release)"
           
           # Determine version to use
           IS_RELEASE="${{ steps.config.outputs.is_release }}"
@@ -288,19 +290,35 @@ jobs:
           if [ "$IS_RELEASE" == "true" ] && [ -n "$RELEASE_VERSION" ]; then
             # For releases, use the release tag (e.g., v3.9.4)
             WEBSITE_VERSION="$RELEASE_VERSION"
+            echo "  Release build: using $WEBSITE_VERSION"
           else
-            # For main branch, extract version from CMakeLists.txt
-            if [ -f "CMakeLists.txt" ]; then
-              MAJOR=$(grep "set(PROJECT_VERSION_MAJOR" CMakeLists.txt | grep -oE '[0-9]+' | head -1)
-              MINOR=$(grep "set(PROJECT_VERSION_MINOR" CMakeLists.txt | grep -oE '[0-9]+' | head -1)
-              PATCH=$(grep "set(PROJECT_VERSION_PATCH" CMakeLists.txt | grep -oE '[0-9]+' | head -1)
-              if [ -n "$MAJOR" ] && [ -n "$MINOR" ] && [ -n "$PATCH" ]; then
-                WEBSITE_VERSION="${MAJOR}.${MINOR}.${PATCH}-dev"
+            # For main branch (Mode B): Use the latest stable release version
+            # This keeps website version consistent with /documentation/ (stable)
+            echo "  Development build: looking for latest stable release..."
+            
+            # Try to get latest release tag from GitHub
+            LATEST_RELEASE=$(gh release list --limit 10 --json tagName -q '.[].tagName' 2>/dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
+            
+            if [ -n "$LATEST_RELEASE" ]; then
+              WEBSITE_VERSION="$LATEST_RELEASE"
+              echo "  Found latest stable release: $WEBSITE_VERSION"
+            else
+              # Fallback: extract version from version.txt
+              echo "  No stable release found, falling back to version.txt..."
+              VERSION_FILE="libs/cloudViewer/version.txt"
+              if [ -f "$VERSION_FILE" ]; then
+                MAJOR=$(grep "CLOUDVIEWER_VERSION_MAJOR" "$VERSION_FILE" | awk '{print $2}')
+                MINOR=$(grep "CLOUDVIEWER_VERSION_MINOR" "$VERSION_FILE" | awk '{print $2}')
+                PATCH=$(grep "CLOUDVIEWER_VERSION_PATCH" "$VERSION_FILE" | awk '{print $2}')
+                if [ -n "$MAJOR" ] && [ -n "$MINOR" ] && [ -n "$PATCH" ]; then
+                  WEBSITE_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+                else
+                  WEBSITE_VERSION="dev"
+                fi
               else
                 WEBSITE_VERSION="dev"
               fi
-            else
-              WEBSITE_VERSION="dev"
+              echo "  Using fallback version: $WEBSITE_VERSION"
             fi
           fi
           
@@ -560,6 +578,11 @@ jobs:
           echo "🔄 Merging website and documentation for unified deployment"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
+          echo "📋 Deployment Mode B:"
+          echo "   /documentation/       → Latest stable release"
+          echo "   /documentation/dev/   → Development version (main branch)"
+          echo "   /documentation/vX.X.X → Permanent version archives"
+          echo ""
           
           # Create unified deployment directory
           mkdir -p unified-deploy
@@ -570,51 +593,81 @@ jobs:
           echo "✅ Main website copied successfully"
           echo ""
           
-          # Determine documentation deployment path
+          # ============================================================
+          # Mode B: Different paths for release vs development builds
+          # ============================================================
+          
           if [ "${{ env.IS_RELEASE }}" == "true" ] && [ -n "${{ env.RELEASE_VERSION }}" ]; then
-            # For releases: Archive to version directory + update latest
+            # ============================================================
+            # RELEASE BUILD: Update /documentation/ and /documentation/vX.X.X/
+            # ============================================================
             DOC_VERSION_PATH="documentation/${{ env.DOC_VERSION }}"
             
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🎯 Release build detected - Creating permanent archive"
+            echo "🎯 Release build detected - Updating stable documentation"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             
-            # 1. Archive complete documentation to version-specific directory (永久存档)
-            echo "📦 Archiving complete documentation to: ${DOC_VERSION_PATH}/"
+            # 1. Update /documentation/ (latest stable release)
+            echo "📦 Updating latest stable documentation: /documentation/"
+            mkdir -p unified-deploy/documentation
+            cp -r docs-output/* unified-deploy/documentation/
+            echo "✅ Latest stable documentation updated to ${{ env.RELEASE_VERSION }}"
+            echo ""
+            
+            # 2. Archive to version-specific directory (永久存档)
+            echo "📦 Creating permanent archive: /${DOC_VERSION_PATH}/"
             mkdir -p "unified-deploy/${DOC_VERSION_PATH}"
             cp -r docs-output/* "unified-deploy/${DOC_VERSION_PATH}/"
             echo "✅ Version archive created: ${DOC_VERSION_PATH}/"
             echo ""
             
-            # 2. Also update latest (release becomes the new latest stable version)
-            echo "🔄 Updating latest documentation (latest stable release)"
-            mkdir -p unified-deploy/documentation
-            cp -r docs-output/* unified-deploy/documentation/
-            echo "✅ Latest documentation updated to release version ${{ env.RELEASE_VERSION }}"
+            echo "📚 Release Documentation URLs:"
+            echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/"
+            echo "   - ${{ env.RELEASE_VERSION }}: https://asher-1.github.io/ACloudViewer/${DOC_VERSION_PATH}/"
+            
+          else
+            # ============================================================
+            # MAIN BRANCH BUILD: Only update /documentation/dev/
+            # Keep /documentation/ as the latest stable release
+            # ============================================================
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔧 Development build - Updating /documentation/dev/"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             
-            echo "📚 Version History: Documentation archived at:"
-            echo "   - Latest: https://asher-1.github.io/ACloudViewer/documentation/"
-            echo "   - ${{ env.RELEASE_VERSION }}: https://asher-1.github.io/ACloudViewer/${DOC_VERSION_PATH}/"
-          else
-            # For main branch (beta/development): Only update latest
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🔧 Development build - Updating latest documentation"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            # Deploy to /documentation/dev/ (development version)
+            echo "📦 Deploying development documentation to: /documentation/dev/"
+            mkdir -p unified-deploy/documentation/dev
+            cp -r docs-output/* unified-deploy/documentation/dev/
+            echo "✅ Development documentation updated"
             echo ""
-            echo "📚 Updating latest documentation from main branch (beta/dev)..."
-            mkdir -p unified-deploy/documentation
-            cp -r docs-output/* unified-deploy/documentation/
-            echo "✅ Latest documentation updated from main branch"
+            
+            echo "📚 Development Documentation URL:"
+            echo "   - Dev: https://asher-1.github.io/ACloudViewer/documentation/dev/"
           fi
           
+          # ============================================================
           # Restore preserved version archives (critical for keeping version history)
+          # ============================================================
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📦 Restoring preserved version archives"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          LATEST_STABLE_VERSION=""
+          
           if [ -d "preserved-versions/documentation" ]; then
-            # Copy preserved version archives (won't overwrite current deployment)
+            # Find all version directories and sort them to find the latest
+            VERSIONS=$(ls -d preserved-versions/documentation/v*/ 2>/dev/null | xargs -n1 basename | sort -V || true)
+            
+            if [ -n "$VERSIONS" ]; then
+              # Get the latest version (last in sorted list)
+              LATEST_STABLE_VERSION=$(echo "$VERSIONS" | tail -1)
+              echo "📋 Latest stable version from archives: $LATEST_STABLE_VERSION"
+              echo ""
+            fi
+            
+            # Copy preserved version archives
             for VERSION_DIR in preserved-versions/documentation/v*/; do
               if [ -d "$VERSION_DIR" ]; then
                 VERSION_NAME=$(basename "$VERSION_DIR")
@@ -630,11 +683,71 @@ jobs:
                 fi
               fi
             done
+            
+            # For main branch builds: restore /documentation/ from latest stable version
+            if [ "${{ env.IS_RELEASE }}" != "true" ] && [ -n "$LATEST_STABLE_VERSION" ]; then
+              if [ -d "preserved-versions/documentation/$LATEST_STABLE_VERSION" ]; then
+                echo ""
+                echo "📦 Restoring latest stable documentation from $LATEST_STABLE_VERSION"
+                mkdir -p unified-deploy/documentation
+                # Copy files but don't overwrite /documentation/dev/
+                for item in preserved-versions/documentation/$LATEST_STABLE_VERSION/*; do
+                  if [ -e "$item" ]; then
+                    ITEM_NAME=$(basename "$item")
+                    if [ "$ITEM_NAME" != "dev" ]; then
+                      cp -r "$item" "unified-deploy/documentation/"
+                    fi
+                  fi
+                done
+                echo "✅ Latest stable documentation restored from $LATEST_STABLE_VERSION"
+                echo ""
+                echo "📚 Stable Documentation URL:"
+                echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/"
+              fi
+            fi
+            
             echo ""
             echo "📊 All version archives in deployment:"
-            ls -la unified-deploy/documentation/ | grep -E '^d.*v[0-9]+' || echo "  (none)"
+            ls -la unified-deploy/documentation/ 2>/dev/null | grep -E '^d' || echo "  (none)"
           else
             echo "  ℹ️  No preserved version archives to restore"
+          fi
+          
+          # ============================================================
+          # Fallback: If no stable release exists, use dev as default
+          # This ensures /documentation/ is always functional
+          # ============================================================
+          if [ "${{ env.IS_RELEASE }}" != "true" ]; then
+            # Check if /documentation/ has real content (not just dev folder)
+            if [ ! -f "unified-deploy/documentation/index.html" ]; then
+              echo ""
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "⚠️  No stable release found - Using dev as default /documentation/"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo ""
+              echo "Since no release has been published yet, the development version"
+              echo "will be used as the default documentation at /documentation/"
+              echo ""
+              
+              # Copy dev content to root documentation (excluding dev folder itself)
+              for item in unified-deploy/documentation/dev/*; do
+                if [ -e "$item" ]; then
+                  ITEM_NAME=$(basename "$item")
+                  # Copy to /documentation/ root, don't overwrite version folders
+                  if [[ ! "$ITEM_NAME" =~ ^v[0-9] ]]; then
+                    cp -r "$item" "unified-deploy/documentation/"
+                  fi
+                fi
+              done
+              
+              echo "✅ Development documentation copied to /documentation/ as default"
+              echo ""
+              echo "📚 Documentation URLs (dev as default):"
+              echo "   - Default (dev): https://asher-1.github.io/ACloudViewer/documentation/"
+              echo "   - Dev:          https://asher-1.github.io/ACloudViewer/documentation/dev/"
+              echo ""
+              echo "ℹ️  Once a release is published, /documentation/ will show the stable version"
+            fi
           fi
           
           echo ""
@@ -644,19 +757,31 @@ jobs:
           echo "  - Total files: $(find unified-deploy -type f | wc -l)"
           echo "  - Total size: $(du -sh unified-deploy | cut -f1)"
           echo "  - Root files: $(ls unified-deploy/ | wc -l)"
-          echo "  - Documentation files: $(find unified-deploy/documentation -type f | wc -l)"
-          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
-            echo "  - Version archive files: $(find unified-deploy/documentation/${{ env.DOC_VERSION }} -type f 2>/dev/null | wc -l)"
-          fi
+          echo "  - Documentation files: $(find unified-deploy/documentation -type f 2>/dev/null | wc -l)"
           echo ""
           echo "📁 Top-level structure:"
           ls -la unified-deploy/ | head -20
-          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
-            echo ""
-            echo "📁 Documentation version structure:"
-            ls -la unified-deploy/documentation/ | head -20
-          fi
           echo ""
+          echo "📁 Documentation structure:"
+          ls -la unified-deploy/documentation/ 2>/dev/null | head -20 || echo "  (empty)"
+          echo ""
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📚 Final Documentation URLs:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  - Latest Stable:  https://asher-1.github.io/ACloudViewer/documentation/"
+          echo "  - Development:    https://asher-1.github.io/ACloudViewer/documentation/dev/"
+          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
+            echo "  - ${{ env.RELEASE_VERSION }}:      https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/"
+          fi
+          # List all version archives
+          for VERSION_DIR in unified-deploy/documentation/v*/; do
+            if [ -d "$VERSION_DIR" ]; then
+              VERSION_NAME=$(basename "$VERSION_DIR")
+              echo "  - $VERSION_NAME:      https://asher-1.github.io/ACloudViewer/documentation/$VERSION_NAME/"
+            fi
+          done
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       
       # ============================================================================
       # GitHub Pages Artifact Deployment (No git objects pollution!)
@@ -687,8 +812,13 @@ jobs:
       - name: Verify deployment structure
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 Deployment Verification"
+          echo "🔍 Deployment Verification (Mode B)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📋 Mode B Documentation Structure:"
+          echo "   /documentation/       → Latest stable release"
+          echo "   /documentation/dev/   → Development version"
+          echo "   /documentation/vX.X.X → Permanent version archives"
           echo ""
           echo "📋 Deployment Summary:"
           echo "  ✅ Documentation built successfully"
@@ -696,60 +826,43 @@ jobs:
           echo "  ✅ Unified deployment merged ($(du -sh unified-deploy | cut -f1))"
           
           if [ "${{ env.IS_RELEASE }}" == "true" ]; then
-            echo "  ✅ Release documentation archived to version directory"
-            echo "  ✅ Latest documentation updated to release version"
-            echo "  ✅ Deployed to GitHub Pages with version history"
+            echo "  ✅ Release ${{ env.RELEASE_VERSION }} deployed:"
+            echo "     - /documentation/ updated (latest stable)"
+            echo "     - /documentation/${{ env.DOC_VERSION }}/ created (permanent archive)"
           else
-            echo "  ✅ Beta/dev documentation updated to latest"
-            echo "  ✅ Deployed to GitHub Pages (main branch)"
+            echo "  ✅ Development build deployed:"
+            echo "     - /documentation/dev/ updated"
+            echo "     - /documentation/ preserved (latest stable release)"
           fi
           
           echo ""
-          echo "🌐 Expected GitHub Pages structure:"
+          echo "🌐 GitHub Pages Structure:"
           echo "  https://asher-1.github.io/ACloudViewer/"
           echo "  ├── index.html (main website)"
           echo "  ├── downloads_data.json"
-          echo "  ├── DOCUMENTATION.md"
-          
-          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
-            echo "  └── documentation/"
-            echo "      ├── index.html (latest stable - ${{ env.RELEASE_VERSION }})"
-            echo "      ├── python_api/"
-            echo "      ├── cpp_api/"
-            echo "      ├── tutorial/"
-            echo "      └── ${{ env.DOC_VERSION }}/ (permanent version archive)"
-            echo "          ├── index.html"
-            echo "          ├── python_api/"
-            echo "          ├── cpp_api/"
-            echo "          └── tutorial/"
-          else
-            echo "  └── documentation/ (latest beta/dev)"
-            echo "      ├── index.html"
-            echo "      ├── python_api/"
-            echo "      ├── cpp_api/"
-            echo "      └── tutorial/"
-          fi
+          echo "  └── documentation/"
+          echo "      ├── index.html      (latest stable release)"
+          echo "      ├── python_api/"
+          echo "      ├── cpp_api/"
+          echo "      ├── tutorial/"
+          echo "      ├── dev/            (development version)"
+          echo "      │   ├── index.html"
+          echo "      │   ├── python_api/"
+          echo "      │   └── ..."
+          echo "      ├── v3.9.4/         (version archive)"
+          echo "      ├── v3.9.3/         (version archive)"
+          echo "      └── ..."
           
           echo ""
-          echo "📚 Documentation URLs:"
-          echo "  - Main Website: https://asher-1.github.io/ACloudViewer/"
+          echo "📚 Documentation URLs (Mode B):"
+          echo "  - Main Website:      https://asher-1.github.io/ACloudViewer/"
+          echo "  - Latest Stable:     https://asher-1.github.io/ACloudViewer/documentation/"
+          echo "  - Development:       https://asher-1.github.io/ACloudViewer/documentation/dev/"
           
           if [ "${{ env.IS_RELEASE }}" == "true" ]; then
-            echo "  - Latest Stable Documentation: https://asher-1.github.io/ACloudViewer/documentation/"
-            echo "  - Latest Stable Python API: https://asher-1.github.io/ACloudViewer/documentation/python_api/"
-            echo "  - Latest Stable C++ API: https://asher-1.github.io/ACloudViewer/documentation/cpp_api/"
-            echo "  - Latest Stable Tutorials: https://asher-1.github.io/ACloudViewer/documentation/tutorial/"
             echo ""
-            echo "📦 Permanent Version Archive:"
-            echo "  - Version ${{ env.RELEASE_VERSION }}: https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/"
-            echo "  - Python API: https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/python_api/"
-            echo "  - C++ API: https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/cpp_api/"
-            echo "  - Tutorials: https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/tutorial/"
-          else
-            echo "  - Latest Beta/Dev Documentation: https://asher-1.github.io/ACloudViewer/documentation/"
-            echo "  - Latest Beta/Dev Python API: https://asher-1.github.io/ACloudViewer/documentation/python_api/"
-            echo "  - Latest Beta/Dev C++ API: https://asher-1.github.io/ACloudViewer/documentation/cpp_api/"
-            echo "  - Latest Beta/Dev Tutorials: https://asher-1.github.io/ACloudViewer/documentation/tutorial/"
+            echo "📦 This Release (${{ env.RELEASE_VERSION }}):"
+            echo "  - Version Archive:   https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/"
           fi
           
           echo ""
