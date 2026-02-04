@@ -275,7 +275,50 @@ jobs:
                 --exclude='__pycache__' --exclude='.pytest_cache' \
                 docs/ website-deploy/
           
+          # ============================================================
+          # Replace @VERSION@ placeholder in index.html
+          # ============================================================
+          echo ""
+          echo "🔄 Replacing @VERSION@ placeholder in website files..."
+          
+          # Determine version to use
+          IS_RELEASE="${{ steps.config.outputs.is_release }}"
+          RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
+          
+          if [ "$IS_RELEASE" == "true" ] && [ -n "$RELEASE_VERSION" ]; then
+            # For releases, use the release tag (e.g., v3.9.4)
+            WEBSITE_VERSION="$RELEASE_VERSION"
+          else
+            # For main branch, extract version from CMakeLists.txt
+            if [ -f "CMakeLists.txt" ]; then
+              MAJOR=$(grep "set(PROJECT_VERSION_MAJOR" CMakeLists.txt | grep -oE '[0-9]+' | head -1)
+              MINOR=$(grep "set(PROJECT_VERSION_MINOR" CMakeLists.txt | grep -oE '[0-9]+' | head -1)
+              PATCH=$(grep "set(PROJECT_VERSION_PATCH" CMakeLists.txt | grep -oE '[0-9]+' | head -1)
+              if [ -n "$MAJOR" ] && [ -n "$MINOR" ] && [ -n "$PATCH" ]; then
+                WEBSITE_VERSION="${MAJOR}.${MINOR}.${PATCH}-dev"
+              else
+                WEBSITE_VERSION="dev"
+              fi
+            else
+              WEBSITE_VERSION="dev"
+            fi
+          fi
+          
+          echo "  Version to use: $WEBSITE_VERSION"
+          
+          # Replace @VERSION@ in index.html
+          if [ -f "website-deploy/index.html" ]; then
+            if grep -q '@VERSION@' website-deploy/index.html; then
+              sed -i "s/@VERSION@/$WEBSITE_VERSION/g" website-deploy/index.html
+              echo "  ✅ Replaced @VERSION@ with $WEBSITE_VERSION in index.html"
+            else
+              echo "  ℹ️  No @VERSION@ placeholder found in index.html"
+            fi
+          fi
+          
+          # ============================================================
           # Ensure downloads_data.json is included
+          # ============================================================
           if [ -f "docs/downloads_data.json" ]; then
             echo "✅ downloads_data.json ready for deployment"
             cp docs/downloads_data.json website-deploy/
@@ -437,36 +480,72 @@ jobs:
           echo "Strategy: Download documentation archives from GitHub Releases"
           echo "         (Version archives are stored as release assets, not in git)"
           echo ""
+          echo "Current build info:"
+          echo "  IS_RELEASE: ${{ env.IS_RELEASE }}"
+          echo "  RELEASE_VERSION: ${{ env.RELEASE_VERSION }}"
+          echo "  DOC_VERSION: ${{ env.DOC_VERSION }}"
+          echo ""
           
           # Create directory for preserved archives
           mkdir -p preserved-versions/documentation
           
           # Get list of releases with documentation archives
           echo "🔍 Scanning GitHub Releases for documentation archives..."
+          echo ""
+          
+          # First, list all releases to debug
+          echo "📋 All releases:"
+          gh release list --limit 20 || echo "  (failed to list releases)"
+          echo ""
+          
           RELEASES=$(gh release list --limit 20 --json tagName -q '.[].tagName' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || true)
           
+          FOUND_COUNT=0
+          NOT_FOUND_COUNT=0
+          
           if [ -n "$RELEASES" ]; then
-            echo "✅ Found releases with potential documentation:"
+            echo "✅ Found versioned releases:"
+            echo "$RELEASES"
+            echo ""
+            
             for VERSION in $RELEASES; do
               echo "  - Checking $VERSION..."
+              
+              # List assets for this release to debug
+              echo "    Assets in $VERSION:"
+              gh release view "$VERSION" --json assets --jq '.assets[].name' 2>/dev/null | head -10 || echo "    (failed to list assets)"
               
               # Try to download documentation archive from release
               DOCS_ARCHIVE="acloudviewer-${VERSION}-docs.tar.gz"
               if gh release download "$VERSION" --pattern "$DOCS_ARCHIVE" --dir /tmp 2>/dev/null; then
                 echo "    ✅ Found and downloaded $DOCS_ARCHIVE"
                 mkdir -p "preserved-versions/documentation/$VERSION"
-                tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || true
+                tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || {
+                  echo "    ⚠️  Failed to extract $DOCS_ARCHIVE"
+                }
                 rm -f "/tmp/$DOCS_ARCHIVE"
+                FOUND_COUNT=$((FOUND_COUNT + 1))
               else
                 echo "    ⏭️  No documentation archive found for $VERSION"
+                echo "       Expected: $DOCS_ARCHIVE"
+                echo "       💡 To add: manually upload acloudviewer-${VERSION}-docs.tar.gz to this release"
+                NOT_FOUND_COUNT=$((NOT_FOUND_COUNT + 1))
               fi
+              echo ""
             done
             
+            echo "📊 Summary:"
+            echo "  - Found archives: $FOUND_COUNT"
+            echo "  - Missing archives: $NOT_FOUND_COUNT"
             echo ""
             echo "📊 Preserved version archives:"
             ls -la preserved-versions/documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "  (none found)"
             if [ -d "preserved-versions/documentation" ]; then
-              du -sh preserved-versions/documentation/*/ 2>/dev/null || true
+              for dir in preserved-versions/documentation/*/; do
+                if [ -d "$dir" ]; then
+                  echo "  - $(basename $dir): $(find "$dir" -type f | wc -l) files, $(du -sh "$dir" | cut -f1)"
+                fi
+              done
             fi
           else
             echo "ℹ️  No versioned releases found"
