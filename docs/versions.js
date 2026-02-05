@@ -1,14 +1,18 @@
 // ACloudViewer Documentation Version Switcher
 // This file provides version selection functionality for documentation pages
-// Similar to Open3D's version management system
+// Mode B: /documentation/ = stable, /documentation/dev/ = development, /documentation/vX.X.X/ = version archives
 
 (function() {
     'use strict';
 
-    // Version data - will be populated from downloads_data.json or GitHub API
+    // Version data - Mode B structure
+    // - stable: /documentation/ (latest stable release)
+    // - dev: /documentation/dev/ (development from main branch)
+    // - vX.X.X: /documentation/vX.X.X/ (version archives)
     const VERSIONS = [
-        { value: 'latest', display: 'Latest (main)', url: '/ACloudViewer/documentation/' },
-        // Additional versions will be dynamically loaded
+        { value: 'stable', display: 'Latest Stable', url: '/ACloudViewer/documentation/' },
+        { value: 'dev', display: 'Development (main)', url: '/ACloudViewer/documentation/dev/' },
+        // Additional versioned releases will be dynamically loaded
     ];
 
     // Cache for documentation existence checks (to avoid repeated requests)
@@ -17,11 +21,20 @@
     // Get current version from URL path
     function getCurrentVersion() {
         const path = window.location.pathname;
-        const match = path.match(/\/documentation\/(v[\d.]+(?:-[\w]+)?)\//);
-        if (match) {
-            return match[1];
+        
+        // Check for /documentation/dev/
+        if (path.includes('/documentation/dev/') || path.endsWith('/documentation/dev')) {
+            return 'dev';
         }
-        return 'latest';
+        
+        // Check for /documentation/vX.X.X/
+        const versionMatch = path.match(/\/documentation\/(v[\d.]+(?:-[\w]+)?)\//);
+        if (versionMatch) {
+            return versionMatch[1];
+        }
+        
+        // Default to stable (/documentation/)
+        return 'stable';
     }
 
     // Get base URL for documentation
@@ -34,20 +47,28 @@
         return '/ACloudViewer/documentation';
     }
 
+    // Get relative path within documentation
+    function getRelativePath() {
+        const path = window.location.pathname;
+        let relativePath = path.replace(/^.*\/documentation\/(?:dev\/|v[\d.]+(?:-[\w]+)?\/)?/, '');
+        if (!relativePath || relativePath === '') {
+            relativePath = 'index.html';
+        }
+        return relativePath;
+    }
+
     // Switch to a different version
     function switchVersion(version) {
-        const currentPath = window.location.pathname;
         const baseUrl = getBaseUrl();
+        const relativePath = getRelativePath();
+        let newUrl;
         
-        if (version === 'latest') {
-            // Remove version from path
-            const newPath = currentPath.replace(/\/documentation\/v[\d.]+(?:-[\w]+)?\//, '/documentation/');
-            window.location.href = newPath;
+        if (version === 'stable') {
+            newUrl = `${baseUrl}/${relativePath}`;
+        } else if (version === 'dev') {
+            newUrl = `${baseUrl}/dev/${relativePath}`;
         } else {
-            // Add or replace version in path
-            const versionPath = `${baseUrl}/${version}/`;
-            const relativePath = currentPath.replace(/^.*\/documentation\/(?:v[\d.]+(?:-[\w]+)?\/)?/, '');
-            window.location.href = versionPath + relativePath;
+            newUrl = `${baseUrl}/${version}/${relativePath}`;
         }
     }
 

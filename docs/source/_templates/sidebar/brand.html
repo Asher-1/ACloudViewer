@@ -11,11 +11,13 @@
 </div>
 
 {# Version selector similar to Open3D #}
+{# Mode B: /documentation/ = stable, /documentation/dev/ = development #}
 <div class="sidebar-version-selector">
   <label for="docs-version-select-sidebar" class="version-label">Docs Version</label>
   <select id="docs-version-select-sidebar" class="version-select-sidebar" onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
-    <option value="latest">Latest (main)</option>
-    <!-- Versions will be dynamically loaded by version_switch.js -->
+    <option value="stable">Latest Stable</option>
+    <option value="dev">Development (main)</option>
+    <!-- Versioned releases will be dynamically loaded by version_switch.js -->
   </select>
 </div>
 
