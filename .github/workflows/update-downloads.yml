@@ -5,14 +5,15 @@ name: Update Downloads Data
 # The documentation.yml workflow will pick up the updated file during deployment
 on:
   # Automatically triggered after build workflows complete
+  # Listen to all platform builds to capture new assets
   workflow_run:
-    workflows: ["Windows"]  # Trigger after these workflows finish
+    workflows: ["Windows", "macOS", "Ubuntu"]  # Trigger after any build workflow finishes
     types: [completed]
     branches: [main]
   
-  # Trigger when a release is published
+  # Trigger when a release is published or edited
   release:
-    types: [published, deleted]
+    types: [published, edited, deleted]
   
   # Allow manual trigger with options
   workflow_dispatch:
@@ -304,13 +305,19 @@ jobs:
             echo ""
           fi
 
-  # Optional: Trigger documentation workflow to deploy with updated downloads_data.json
+  # Trigger documentation workflow to deploy with updated downloads_data.json
+  # This ensures changes are reflected on GitHub Pages
   trigger-docs-deploy:
     needs: update-downloads-data
+    # Trigger if:
+    # 1. There are changes (or force_update is set) AND not a dry run
+    # 2. AND either:
+    #    - Manual trigger with trigger_docs_deploy=true
+    #    - OR automatic trigger (workflow_run/release events always deploy changes)
     if: |
       (needs.update-downloads-data.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') &&
       github.event.inputs.dry_run != 'true' &&
-      github.event.inputs.trigger_docs_deploy == 'true'
+      (github.event.inputs.trigger_docs_deploy == 'true' || github.event_name != 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -319,9 +326,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "🚀 Triggering documentation workflow..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚀 Triggering documentation workflow to deploy updated downloads_data.json"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Trigger reason: ${{ github.event_name }}"
+          echo "Has changes: ${{ needs.update-downloads-data.outputs.has_changes }}"
+          echo ""
+          
           gh workflow run documentation.yml \
             --repo ${{ github.repository }} \
             --ref main
+          
+          echo ""
           echo "✅ Documentation workflow triggered"
           echo "   The updated downloads_data.json will be included in the deployment"
+          echo ""
+          echo "📝 Note: Full documentation rebuild will run to ensure all pages"
+          echo "         include the latest download links and version information."

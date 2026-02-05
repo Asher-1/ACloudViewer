@@ -1,24 +1,37 @@
 /* Version switcher for ACloudViewer documentation */
 // This file provides version selection functionality for documentation pages
-// Similar to Open3D's version management system
+// Mode B: /documentation/ = stable, /documentation/dev/ = development, /documentation/vX.X.X/ = version archives
 
 (function() {
     'use strict';
 
-    // Version data - will be populated from downloads_data.json or GitHub API
+    // Version data - Mode B structure
+    // - stable: /documentation/ (latest stable release)
+    // - dev: /documentation/dev/ (development from main branch)
+    // - vX.X.X: /documentation/vX.X.X/ (version archives)
     const VERSIONS = [
-        { value: 'latest', display: 'Latest (main)', url: '/ACloudViewer/documentation/' },
-        // Additional versions will be dynamically loaded
+        { value: 'stable', display: 'Latest Stable', url: '/ACloudViewer/documentation/' },
+        { value: 'dev', display: 'Development (main)', url: '/ACloudViewer/documentation/dev/' },
+        // Additional versioned releases will be dynamically loaded
     ];
 
     // Get current version from URL path
     function getCurrentVersion() {
         const path = window.location.pathname;
-        const match = path.match(/\/documentation\/(v[\d.]+(?:-[\w]+)?)\//);
-        if (match) {
-            return match[1];
+        
+        // Check for /documentation/dev/
+        if (path.includes('/documentation/dev/') || path.endsWith('/documentation/dev')) {
+            return 'dev';
         }
-        return 'latest';
+        
+        // Check for /documentation/vX.X.X/
+        const versionMatch = path.match(/\/documentation\/(v[\d.]+(?:-[\w]+)?)\//);
+        if (versionMatch) {
+            return versionMatch[1];
+        }
+        
+        // Default to stable (/documentation/)
+        return 'stable';
     }
 
     // Get base URL for documentation
@@ -31,21 +44,36 @@
         return '/ACloudViewer/documentation';
     }
 
+    // Get relative path within documentation (e.g., python_api/index.html)
+    function getRelativePath() {
+        const path = window.location.pathname;
+        // Remove base documentation path and version prefix
+        let relativePath = path.replace(/^.*\/documentation\/(?:dev\/|v[\d.]+(?:-[\w]+)?\/)?/, '');
+        // Ensure we have a path
+        if (!relativePath || relativePath === '') {
+            relativePath = 'index.html';
+        }
+        return relativePath;
+    }
+
     // Switch to a different version
     function switchVersion(version) {
-        const currentPath = window.location.pathname;
         const baseUrl = getBaseUrl();
+        const relativePath = getRelativePath();
+        let newUrl;
         
-        if (version === 'latest') {
-            // Remove version from path
-            const newPath = currentPath.replace(/\/documentation\/v[\d.]+(?:-[\w]+)?\//, '/documentation/');
-            window.location.href = newPath;
+        if (version === 'stable') {
+            // /documentation/ (root = stable)
+            newUrl = `${baseUrl}/${relativePath}`;
+        } else if (version === 'dev') {
+            // /documentation/dev/
+            newUrl = `${baseUrl}/dev/${relativePath}`;
         } else {
-            // Add or replace version in path
-            const versionPath = `${baseUrl}/${version}/`;
-            const relativePath = currentPath.replace(/^.*\/documentation\/(?:v[\d.]+(?:-[\w]+)?\/)?/, '');
-            window.location.href = versionPath + relativePath;
+            // /documentation/vX.X.X/
+            newUrl = `${baseUrl}/${version}/${relativePath}`;
         }
+        
+        window.location.href = newUrl;
     }
 
     // Load versions from downloads_data.json
@@ -59,12 +87,14 @@
             
             const data = await response.json();
             if (data.version_metadata && Array.isArray(data.version_metadata)) {
-                // Clear default versions
-                VERSIONS.length = 1; // Keep 'latest'
+                // Keep stable and dev, add versioned releases
+                const baseVersions = VERSIONS.slice(0, 2);
+                VERSIONS.length = 0;
+                VERSIONS.push(...baseVersions);
                 
                 // Add versions from metadata - ONLY show versions that have documentation
                 data.version_metadata.forEach(version => {
-                    // Skip main-devel (it's shown as "latest")
+                    // Skip main-devel (shown as "dev")
                     // Skip versions without documentation (has_documentation: false)
                     if (version.value && 
                         version.value !== 'main-devel' && 
@@ -79,10 +109,12 @@
                     }
                 });
                 
-                // Sort versions (latest first, then by version number descending)
+                // Sort versions (stable first, dev second, then by version number descending)
                 VERSIONS.sort((a, b) => {
-                    if (a.value === 'latest') return -1;
-                    if (b.value === 'latest') return 1;
+                    if (a.value === 'stable') return -1;
+                    if (b.value === 'stable') return 1;
+                    if (a.value === 'dev') return -1;
+                    if (b.value === 'dev') return 1;
                     // Compare version numbers
                     return b.value.localeCompare(a.value, undefined, { numeric: true });
                 });
@@ -117,12 +149,13 @@
     function updateSidebarSelector() {
         const select = document.getElementById('docs-version-select-sidebar');
         if (select) {
+            const currentVersion = getCurrentVersion();
             select.innerHTML = '';
             VERSIONS.forEach(v => {
                 const option = document.createElement('option');
                 option.value = v.value;
                 option.textContent = v.display;
-                if (v.value === getCurrentVersion() || (getCurrentVersion() === 'latest' && v.value === 'latest')) {
+                if (v.value === currentVersion) {
                     option.selected = true;
                 }
                 select.appendChild(option);
@@ -145,4 +178,3 @@
     // Listen for versions loaded event to update sidebar
     document.addEventListener('versionsLoaded', updateSidebarSelector);
 })();
-

@@ -24,10 +24,11 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
        <select id="docs-version-select-main" 
                style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: white; cursor: pointer;"
                onchange="if(window.ACloudViewerVersionSwitcher) { window.ACloudViewerVersionSwitcher.switchVersion(this.value); }">
-           <option value="latest">Latest (main)</option>
+           <option value="stable">Latest Stable</option>
+           <option value="dev">Development (main)</option>
        </select>
        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
-           Switch between different documentation versions. Use the version selector in the sidebar for quick access.
+           Switch between stable release and development documentation. Use the version selector in the sidebar for quick access.
        </p>
    </div>
    <script>
