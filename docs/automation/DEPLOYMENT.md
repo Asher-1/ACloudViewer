@@ -102,11 +102,12 @@ ACloudViewer maintains multiple documentation versions:
   - Created when a release is published
   - Example: `v3.9.4/`, `v3.9.5/`
 
-### Version Selector
+### Version Selector (Mode B)
 
 The documentation includes a version selector that:
-- Shows "Latest (main)" for development docs
-- Shows "v{X.Y.Z}" for release versions
+- Shows "Latest Stable" for the current stable release at `/documentation/`
+- Shows "Development (main)" for development docs at `/documentation/dev/`
+- Shows "v{X.Y.Z}" for historical release versions at `/documentation/vX.Y.Z/`
 - Only displays versions with `has_documentation: true`
 - Filters out versions older than v3.9.4
 

@@ -70,6 +70,8 @@
         } else {
             newUrl = `${baseUrl}/${version}/${relativePath}`;
         }
+        
+        window.location.href = newUrl;
     }
 
     // Check if documentation exists for a version
@@ -114,8 +116,8 @@
             
             const data = await response.json();
             if (data.version_metadata && Array.isArray(data.version_metadata)) {
-                // Clear default versions
-                VERSIONS.length = 1; // Keep 'latest'
+                // Keep stable and dev, clear the rest
+                VERSIONS.length = 2; // Keep 'stable' and 'dev'
                 
                 // Documentation is available from v3.9.3 onwards
                 const MIN_DOC_VERSION = 'v3.9.3';
@@ -184,10 +186,12 @@
                     });
                 }
                 
-                // Sort versions (latest first, then by version number descending)
+                // Sort versions (stable first, dev second, then by version number descending)
                 VERSIONS.sort((a, b) => {
-                    if (a.value === 'latest') return -1;
-                    if (b.value === 'latest') return 1;
+                    if (a.value === 'stable') return -1;
+                    if (b.value === 'stable') return 1;
+                    if (a.value === 'dev') return -1;
+                    if (b.value === 'dev') return 1;
                     // Compare version numbers
                     return b.value.localeCompare(a.value, undefined, { numeric: true });
                 });
@@ -269,7 +273,7 @@
             <label for="version-select">Documentation Version:</label>
             <select id="version-select" onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
                 ${VERSIONS.map(v => 
-                    `<option value="${v.value}" ${v.value === currentVersion || (currentVersion === 'latest' && v.value === 'latest') ? 'selected' : ''}>
+                    `<option value="${v.value}" ${v.value === currentVersion ? 'selected' : ''}>
                         ${v.display}
                     </option>`
                 ).join('')}
