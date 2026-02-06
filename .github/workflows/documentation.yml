@@ -599,31 +599,67 @@ jobs:
           
           if [ "${{ env.IS_RELEASE }}" == "true" ] && [ -n "${{ env.RELEASE_VERSION }}" ]; then
             # ============================================================
-            # RELEASE BUILD: Update /documentation/ and /documentation/vX.X.X/
+            # RELEASE BUILD: Deploy to /documentation/vX.X.X/ + redirect
+            # Only ONE copy of documentation, /documentation/ redirects to it
             # ============================================================
             DOC_VERSION_PATH="documentation/${{ env.DOC_VERSION }}"
             
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🎯 Release build detected - Updating stable documentation"
+            echo "🎯 Release build detected - Deploying stable documentation"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             
-            # 1. Update /documentation/ (latest stable release)
-            echo "📦 Updating latest stable documentation: /documentation/"
-            mkdir -p unified-deploy/documentation
-            cp -r docs-output/* unified-deploy/documentation/
-            echo "✅ Latest stable documentation updated to ${{ env.RELEASE_VERSION }}"
-            echo ""
-            
-            # 2. Archive to version-specific directory (永久存档)
-            echo "📦 Creating permanent archive: /${DOC_VERSION_PATH}/"
+            # 1. Deploy documentation to version-specific directory (只保留一份)
+            echo "📦 Deploying documentation to: /${DOC_VERSION_PATH}/"
             mkdir -p "unified-deploy/${DOC_VERSION_PATH}"
             cp -r docs-output/* "unified-deploy/${DOC_VERSION_PATH}/"
-            echo "✅ Version archive created: ${DOC_VERSION_PATH}/"
+            echo "✅ Documentation deployed to ${DOC_VERSION_PATH}/"
             echo ""
             
+            # 2. Create redirect from /documentation/ to latest release (避免重复)
+            echo "📦 Creating redirect: /documentation/ → /${DOC_VERSION_PATH}/"
+            mkdir -p unified-deploy/documentation
+            cat > unified-deploy/documentation/index.html << 'REDIRECT_EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting to Latest Stable Documentation</title>
+REDIRECT_EOF
+            echo "    <meta http-equiv=\"refresh\" content=\"0; url=./${{ env.DOC_VERSION }}/index.html\">" >> unified-deploy/documentation/index.html
+            echo "    <link rel=\"canonical\" href=\"./${{ env.DOC_VERSION }}/index.html\">" >> unified-deploy/documentation/index.html
+            cat >> unified-deploy/documentation/index.html << 'REDIRECT_EOF'
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { text-align: center; padding: 2rem; }
+        a { color: #fff; text-decoration: underline; }
+    </style>
+REDIRECT_EOF
+            echo "    <script>window.location.replace('./${{ env.DOC_VERSION }}/index.html');</script>" >> unified-deploy/documentation/index.html
+            cat >> unified-deploy/documentation/index.html << 'REDIRECT_EOF'
+</head>
+<body>
+    <div class="container">
+        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>
+REDIRECT_EOF
+            echo "        <p>If not redirected automatically, <a href=\"./${{ env.DOC_VERSION }}/index.html\">click here</a>.</p>" >> unified-deploy/documentation/index.html
+            cat >> unified-deploy/documentation/index.html << 'REDIRECT_EOF'
+    </div>
+</body>
+</html>
+REDIRECT_EOF
+            echo "✅ Redirect created: /documentation/ → /${{ env.DOC_VERSION }}/"
+            echo ""
+            
+            # Store latest stable version for reference
+            echo "${{ env.DOC_VERSION }}" > unified-deploy/documentation/.latest_stable_version
+            
             echo "📚 Release Documentation URLs:"
-            echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/"
+            echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/ (redirects to ${{ env.DOC_VERSION }})"
             echo "   - ${{ env.RELEASE_VERSION }}: https://asher-1.github.io/ACloudViewer/${DOC_VERSION_PATH}/"
+            echo ""
+            echo "💡 Optimization: Using redirect instead of copy saves ~500MB+ of artifact size"
             
           else
             # ============================================================
@@ -684,26 +720,48 @@ jobs:
               fi
             done
             
-            # For main branch builds: restore /documentation/ from latest stable version
+            # For main branch builds: create redirect to latest stable version
+            # Using redirect instead of copy saves significant artifact size
             if [ "${{ env.IS_RELEASE }}" != "true" ] && [ -n "$LATEST_STABLE_VERSION" ]; then
-              if [ -d "preserved-versions/documentation/$LATEST_STABLE_VERSION" ]; then
-                echo ""
-                echo "📦 Restoring latest stable documentation from $LATEST_STABLE_VERSION"
-                mkdir -p unified-deploy/documentation
-                # Copy files but don't overwrite /documentation/dev/
-                for item in preserved-versions/documentation/$LATEST_STABLE_VERSION/*; do
-                  if [ -e "$item" ]; then
-                    ITEM_NAME=$(basename "$item")
-                    if [ "$ITEM_NAME" != "dev" ]; then
-                      cp -r "$item" "unified-deploy/documentation/"
-                    fi
-                  fi
-                done
-                echo "✅ Latest stable documentation restored from $LATEST_STABLE_VERSION"
-                echo ""
-                echo "📚 Stable Documentation URL:"
-                echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/"
+              echo ""
+              echo "📦 Creating redirect: /documentation/ → /documentation/$LATEST_STABLE_VERSION/"
+              mkdir -p unified-deploy/documentation
+              
+              # Create redirect HTML (only if index.html doesn't exist yet)
+              if [ ! -f "unified-deploy/documentation/index.html" ]; then
+                cat > unified-deploy/documentation/index.html << REDIRECT_EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting to Latest Stable Documentation</title>
+    <meta http-equiv="refresh" content="0; url=./${LATEST_STABLE_VERSION}/index.html">
+    <link rel="canonical" href="./${LATEST_STABLE_VERSION}/index.html">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { text-align: center; padding: 2rem; }
+        a { color: #fff; text-decoration: underline; }
+    </style>
+    <script>window.location.replace('./${LATEST_STABLE_VERSION}/index.html');</script>
+</head>
+<body>
+    <div class="container">
+        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>
+        <p>If not redirected automatically, <a href="./${LATEST_STABLE_VERSION}/index.html">click here</a>.</p>
+    </div>
+</body>
+</html>
+REDIRECT_EOF
+                echo "✅ Redirect created: /documentation/ → /documentation/$LATEST_STABLE_VERSION/"
+                echo "$LATEST_STABLE_VERSION" > unified-deploy/documentation/.latest_stable_version
               fi
+              echo ""
+              echo "📚 Stable Documentation URL:"
+              echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/ (redirects to $LATEST_STABLE_VERSION)"
+              echo ""
+              echo "💡 Optimization: Using redirect instead of copy saves ~500MB+ of artifact size"
             fi
             
             echo ""
@@ -788,37 +846,56 @@ jobs:
           echo "✅ Version selector updated in all documentation versions"
           
           # ============================================================
-          # Fallback: If no stable release exists, use dev as default
+          # Fallback: If no stable release exists, redirect to dev
           # This ensures /documentation/ is always functional
           # ============================================================
           if [ "${{ env.IS_RELEASE }}" != "true" ]; then
-            # Check if /documentation/ has real content (not just dev folder)
+            # Check if /documentation/ has an index.html (redirect or actual content)
             if [ ! -f "unified-deploy/documentation/index.html" ]; then
               echo ""
               echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-              echo "⚠️  No stable release found - Using dev as default /documentation/"
+              echo "⚠️  No stable release found - Redirecting /documentation/ to dev"
               echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
               echo ""
-              echo "Since no release has been published yet, the development version"
-              echo "will be used as the default documentation at /documentation/"
+              echo "Since no release has been published yet, /documentation/ will"
+              echo "redirect to the development version at /documentation/dev/"
               echo ""
               
-              # Copy dev content to root documentation (excluding dev folder itself)
-              for item in unified-deploy/documentation/dev/*; do
-                if [ -e "$item" ]; then
-                  ITEM_NAME=$(basename "$item")
-                  # Copy to /documentation/ root, don't overwrite version folders
-                  if [[ ! "$ITEM_NAME" =~ ^v[0-9] ]]; then
-                    cp -r "$item" "unified-deploy/documentation/"
-                  fi
-                fi
-              done
+              # Create redirect to dev (using redirect saves artifact space)
+              mkdir -p unified-deploy/documentation
+              cat > unified-deploy/documentation/index.html << 'REDIRECT_EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting to Development Documentation</title>
+    <meta http-equiv="refresh" content="0; url=./dev/index.html">
+    <link rel="canonical" href="./dev/index.html">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { text-align: center; padding: 2rem; }
+        a { color: #fff; text-decoration: underline; }
+    </style>
+    <script>window.location.replace('./dev/index.html');</script>
+</head>
+<body>
+    <div class="container">
+        <h2>🔄 Redirecting to Development Documentation...</h2>
+        <p>No stable release published yet.</p>
+        <p>If not redirected automatically, <a href="./dev/index.html">click here</a>.</p>
+    </div>
+</body>
+</html>
+REDIRECT_EOF
+              echo "dev" > unified-deploy/documentation/.latest_stable_version
               
-              echo "✅ Development documentation copied to /documentation/ as default"
+              echo "✅ Redirect created: /documentation/ → /documentation/dev/"
               echo ""
               echo "📚 Documentation URLs (dev as default):"
-              echo "   - Default (dev): https://asher-1.github.io/ACloudViewer/documentation/"
-              echo "   - Dev:          https://asher-1.github.io/ACloudViewer/documentation/dev/"
+              echo "   - Default: https://asher-1.github.io/ACloudViewer/documentation/ (redirects to dev)"
+              echo "   - Dev:     https://asher-1.github.io/ACloudViewer/documentation/dev/"
               echo ""
               echo "ℹ️  Once a release is published, /documentation/ will show the stable version"
             fi
