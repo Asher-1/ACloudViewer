@@ -618,37 +618,34 @@ jobs:
             # 2. Create redirect from /documentation/ to latest release (避免重复)
             echo "📦 Creating redirect: /documentation/ → /${DOC_VERSION_PATH}/"
             mkdir -p unified-deploy/documentation
-            cat > unified-deploy/documentation/index.html << 'REDIRECT_EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Redirecting to Latest Stable Documentation</title>
-REDIRECT_EOF
-            echo "    <meta http-equiv=\"refresh\" content=\"0; url=./${{ env.DOC_VERSION }}/index.html\">" >> unified-deploy/documentation/index.html
-            echo "    <link rel=\"canonical\" href=\"./${{ env.DOC_VERSION }}/index.html\">" >> unified-deploy/documentation/index.html
-            cat >> unified-deploy/documentation/index.html << 'REDIRECT_EOF'
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
-               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .container { text-align: center; padding: 2rem; }
-        a { color: #fff; text-decoration: underline; }
-    </style>
-REDIRECT_EOF
-            echo "    <script>window.location.replace('./${{ env.DOC_VERSION }}/index.html');</script>" >> unified-deploy/documentation/index.html
-            cat >> unified-deploy/documentation/index.html << 'REDIRECT_EOF'
-</head>
-<body>
-    <div class="container">
-        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>
-REDIRECT_EOF
-            echo "        <p>If not redirected automatically, <a href=\"./${{ env.DOC_VERSION }}/index.html\">click here</a>.</p>" >> unified-deploy/documentation/index.html
-            cat >> unified-deploy/documentation/index.html << 'REDIRECT_EOF'
-    </div>
-</body>
-</html>
-REDIRECT_EOF
+            
+            # Create redirect HTML using echo commands (heredoc causes YAML parsing issues)
+            {
+              echo '<!DOCTYPE html>'
+              echo '<html lang="en">'
+              echo '<head>'
+              echo '    <meta charset="utf-8">'
+              echo '    <title>Redirecting to Latest Stable Documentation</title>'
+              echo "    <meta http-equiv=\"refresh\" content=\"0; url=./${{ env.DOC_VERSION }}/index.html\">"
+              echo "    <link rel=\"canonical\" href=\"./${{ env.DOC_VERSION }}/index.html\">"
+              echo '    <style>'
+              echo '        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'
+              echo '               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'
+              echo '               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }'
+              echo '        .container { text-align: center; padding: 2rem; }'
+              echo '        a { color: #fff; text-decoration: underline; }'
+              echo '    </style>'
+              echo "    <script>window.location.replace('./${{ env.DOC_VERSION }}/index.html');</script>"
+              echo '</head>'
+              echo '<body>'
+              echo '    <div class="container">'
+              echo '        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>'
+              echo "        <p>If not redirected automatically, <a href=\"./${{ env.DOC_VERSION }}/index.html\">click here</a>.</p>"
+              echo '    </div>'
+              echo '</body>'
+              echo '</html>'
+            } > unified-deploy/documentation/index.html
+            
             echo "✅ Redirect created: /documentation/ → /${{ env.DOC_VERSION }}/"
             echo ""
             
@@ -729,31 +726,31 @@ REDIRECT_EOF
               
               # Create redirect HTML (only if index.html doesn't exist yet)
               if [ ! -f "unified-deploy/documentation/index.html" ]; then
-                cat > unified-deploy/documentation/index.html << REDIRECT_EOF
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Redirecting to Latest Stable Documentation</title>
-    <meta http-equiv="refresh" content="0; url=./${LATEST_STABLE_VERSION}/index.html">
-    <link rel="canonical" href="./${LATEST_STABLE_VERSION}/index.html">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
-               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .container { text-align: center; padding: 2rem; }
-        a { color: #fff; text-decoration: underline; }
-    </style>
-    <script>window.location.replace('./${LATEST_STABLE_VERSION}/index.html');</script>
-</head>
-<body>
-    <div class="container">
-        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>
-        <p>If not redirected automatically, <a href="./${LATEST_STABLE_VERSION}/index.html">click here</a>.</p>
-    </div>
-</body>
-</html>
-REDIRECT_EOF
+                {
+                  echo '<!DOCTYPE html>'
+                  echo '<html lang="en">'
+                  echo '<head>'
+                  echo '    <meta charset="utf-8">'
+                  echo '    <title>Redirecting to Latest Stable Documentation</title>'
+                  echo "    <meta http-equiv=\"refresh\" content=\"0; url=./${LATEST_STABLE_VERSION}/index.html\">"
+                  echo "    <link rel=\"canonical\" href=\"./${LATEST_STABLE_VERSION}/index.html\">"
+                  echo '    <style>'
+                  echo '        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'
+                  echo '               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'
+                  echo '               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }'
+                  echo '        .container { text-align: center; padding: 2rem; }'
+                  echo '        a { color: #fff; text-decoration: underline; }'
+                  echo '    </style>'
+                  echo "    <script>window.location.replace('./${LATEST_STABLE_VERSION}/index.html');</script>"
+                  echo '</head>'
+                  echo '<body>'
+                  echo '    <div class="container">'
+                  echo '        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>'
+                  echo "        <p>If not redirected automatically, <a href=\"./${LATEST_STABLE_VERSION}/index.html\">click here</a>.</p>"
+                  echo '    </div>'
+                  echo '</body>'
+                  echo '</html>'
+                } > unified-deploy/documentation/index.html
                 echo "✅ Redirect created: /documentation/ → /documentation/$LATEST_STABLE_VERSION/"
                 echo "$LATEST_STABLE_VERSION" > unified-deploy/documentation/.latest_stable_version
               fi
@@ -863,32 +860,32 @@ REDIRECT_EOF
               
               # Create redirect to dev (using redirect saves artifact space)
               mkdir -p unified-deploy/documentation
-              cat > unified-deploy/documentation/index.html << 'REDIRECT_EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Redirecting to Development Documentation</title>
-    <meta http-equiv="refresh" content="0; url=./dev/index.html">
-    <link rel="canonical" href="./dev/index.html">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
-               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .container { text-align: center; padding: 2rem; }
-        a { color: #fff; text-decoration: underline; }
-    </style>
-    <script>window.location.replace('./dev/index.html');</script>
-</head>
-<body>
-    <div class="container">
-        <h2>🔄 Redirecting to Development Documentation...</h2>
-        <p>No stable release published yet.</p>
-        <p>If not redirected automatically, <a href="./dev/index.html">click here</a>.</p>
-    </div>
-</body>
-</html>
-REDIRECT_EOF
+              {
+                echo '<!DOCTYPE html>'
+                echo '<html lang="en">'
+                echo '<head>'
+                echo '    <meta charset="utf-8">'
+                echo '    <title>Redirecting to Development Documentation</title>'
+                echo '    <meta http-equiv="refresh" content="0; url=./dev/index.html">'
+                echo '    <link rel="canonical" href="./dev/index.html">'
+                echo '    <style>'
+                echo '        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'
+                echo '               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'
+                echo '               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }'
+                echo '        .container { text-align: center; padding: 2rem; }'
+                echo '        a { color: #fff; text-decoration: underline; }'
+                echo '    </style>'
+                echo '    <script>window.location.replace("./dev/index.html");</script>'
+                echo '</head>'
+                echo '<body>'
+                echo '    <div class="container">'
+                echo '        <h2>🔄 Redirecting to Development Documentation...</h2>'
+                echo '        <p>No stable release published yet.</p>'
+                echo '        <p>If not redirected automatically, <a href="./dev/index.html">click here</a>.</p>'
+                echo '    </div>'
+                echo '</body>'
+                echo '</html>'
+              } > unified-deploy/documentation/index.html
               echo "dev" > unified-deploy/documentation/.latest_stable_version
               
               echo "✅ Redirect created: /documentation/ → /documentation/dev/"
