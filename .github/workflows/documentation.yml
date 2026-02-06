@@ -714,6 +714,80 @@ jobs:
           fi
           
           # ============================================================
+          # Update version selector in ALL documentation versions
+          # Historical archives were built with old templates, so we need
+          # to update them to use the latest version selector
+          # ============================================================
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔄 Updating version selector in all documentation versions"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          # Find the source of the latest version_switch.js
+          if [ -f "unified-deploy/documentation/dev/_static/version_switch.js" ]; then
+            LATEST_VERSION_SWITCH="unified-deploy/documentation/dev/_static/version_switch.js"
+            echo "📁 Using version_switch.js from /documentation/dev/"
+          elif [ -f "unified-deploy/documentation/_static/version_switch.js" ]; then
+            LATEST_VERSION_SWITCH="unified-deploy/documentation/_static/version_switch.js"
+            echo "📁 Using version_switch.js from /documentation/"
+          else
+            echo "⚠️  No version_switch.js found in dev documentation"
+            LATEST_VERSION_SWITCH=""
+          fi
+          
+          # Update version_switch.js in all documentation directories
+          if [ -n "$LATEST_VERSION_SWITCH" ]; then
+            echo ""
+            echo "📦 Copying latest version_switch.js to all documentation versions..."
+            
+            for DOC_DIR in unified-deploy/documentation/*/; do
+              if [ -d "$DOC_DIR/_static" ]; then
+                DOC_NAME=$(basename "$DOC_DIR")
+                if [ "$DOC_NAME" != "dev" ]; then
+                  cp "$LATEST_VERSION_SWITCH" "$DOC_DIR/_static/version_switch.js"
+                  echo "  ✅ Updated: $DOC_NAME/_static/version_switch.js"
+                fi
+              fi
+            done
+            
+            # Also update root documentation if it has _static
+            if [ -d "unified-deploy/documentation/_static" ] && [ "$LATEST_VERSION_SWITCH" != "unified-deploy/documentation/_static/version_switch.js" ]; then
+              cp "$LATEST_VERSION_SWITCH" "unified-deploy/documentation/_static/version_switch.js"
+              echo "  ✅ Updated: documentation/_static/version_switch.js"
+            fi
+          fi
+          
+          # Fix hardcoded version selector HTML in all documentation versions
+          # Historical archives have "Latest (main)" which should be "Latest Stable" and "Development (main)"
+          echo ""
+          echo "📝 Fixing hardcoded version selector HTML in historical archives..."
+          
+          # Count files to be fixed
+          FILES_FIXED=0
+          
+          # Find all HTML files with the old version selector
+          while IFS= read -r HTML_FILE; do
+            # Check if this file has the old version selector
+            if grep -q 'Latest (main)' "$HTML_FILE" 2>/dev/null; then
+              # Fix the version selector options using multiple sed commands for reliability
+              # 1. Replace option with value="latest" 
+              sed -i 's|<option value="latest">Latest (main)</option>|<option value="stable">Latest Stable</option><option value="dev">Development (main)</option>|g' "$HTML_FILE"
+              
+              # 2. Replace option with empty value
+              sed -i 's|<option value="">Latest (main)</option>|<option value="stable">Latest Stable</option><option value="dev">Development (main)</option>|g' "$HTML_FILE"
+              
+              # 3. Handle cases where just the text needs updating (display text only)
+              sed -i 's|>Latest (main)<|>Latest Stable<|g' "$HTML_FILE"
+              
+              FILES_FIXED=$((FILES_FIXED + 1))
+            fi
+          done < <(find unified-deploy/documentation -name "*.html" -type f 2>/dev/null)
+          
+          echo "  ✅ Fixed $FILES_FIXED HTML files with old version selector"
+          echo ""
+          echo "✅ Version selector updated in all documentation versions"
+          
+          # ============================================================
           # Fallback: If no stable release exists, use dev as default
           # This ensures /documentation/ is always functional
           # ============================================================

@@ -55,7 +55,7 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
                    const option = document.createElement('option');
                    option.value = v.value;
                    option.textContent = v.display;
-                   if (v.value === currentVersion || (currentVersion === 'latest' && v.value === 'latest')) {
+                   if (v.value === currentVersion) {
                        option.selected = true;
                    }
                    select.appendChild(option);
