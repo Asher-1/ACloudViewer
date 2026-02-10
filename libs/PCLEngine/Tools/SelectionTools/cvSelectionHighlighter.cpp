@@ -1497,6 +1497,7 @@ QString cvTooltipFormatter::formatPointTooltip(vtkPolyData* polyData,
                 arrayName == "DatasetName" ||
                 arrayName == "MaterialNames" ||
                 arrayName.compare("RGB", Qt::CaseInsensitive) == 0 ||
+                arrayName.compare("SourceRGB", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Colors", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Normals", Qt::CaseInsensitive) == 0) {
                 continue;
@@ -1764,6 +1765,7 @@ QString cvTooltipFormatter::formatCellTooltip(vtkPolyData* polyData,
                 arrayName == "DatasetName" ||
                 arrayName == "MaterialNames" ||
                 arrayName.compare("RGB", Qt::CaseInsensitive) == 0 ||
+                arrayName.compare("SourceRGB", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Colors", Qt::CaseInsensitive) == 0 ||
                 arrayName.compare("Normals", Qt::CaseInsensitive) == 0) {
                 continue;

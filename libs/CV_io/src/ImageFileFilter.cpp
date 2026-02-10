@@ -171,8 +171,12 @@ CC_FILE_ERROR ImageFileFilter::saveToFile(ccHObject* entity,
 CC_FILE_ERROR ImageFileFilter::loadFile(const QString& filename,
                                         ccHObject& container,
                                         LoadParameters& parameters) {
-    QImage qImage;
-    if (!qImage.load(filename)) {
+    // Use QImageReader with auto-transform so that the EXIF orientation
+    // metadata is applied and the image is displayed in its correct rotation.
+    QImageReader reader(filename);
+    reader.setAutoTransform(true);
+    QImage qImage = reader.read();
+    if (qImage.isNull()) {
         CVLog::Warning(
                 QString("[IMAGE] Failed to load image '%1").arg(filename));
         return CC_FERR_CONSOLE_ERROR;

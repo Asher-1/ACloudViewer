@@ -17,6 +17,9 @@
 #include "PclUtils/PCLVis.h"
 #include "VtkUtils/vtkutils.h"
 
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+
 // CV_CORE_LIB
 #include <CVLog.h>
 

@@ -261,7 +261,7 @@ void PclFiltersTool::areaPickingEventProcess(
 
 void PclFiltersTool::setPointSize(const std::string& viewID, int viewport) {
     m_viewer->setPointCloudRenderingProperties(
-            pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
+            PclUtils::CV_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
 }
 
 void PclFiltersTool::reset() {

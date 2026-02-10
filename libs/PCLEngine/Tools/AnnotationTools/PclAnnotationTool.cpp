@@ -611,7 +611,7 @@ void PclAnnotationTool::updateCloud() {
 void PclAnnotationTool::setPointSize(const std::string& viewID, int viewport) {
     if (!m_viewer) return;
     m_viewer->setPointCloudRenderingProperties(
-            pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
+            PclUtils::CV_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
 }
 
 void PclAnnotationTool::showAnnotation() {

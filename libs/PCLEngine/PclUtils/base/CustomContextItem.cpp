@@ -4,10 +4,7 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+// CustomContextItem.cpp - All implementations have been moved to
+// CVContextItem.cpp. This file is kept for CMake build system compatibility.
 
-#pragma once
-
-#include <pcl/PCLPointCloud2.h>
-#include <pcl/conversions.h>
-#define FROM_PCL_CLOUD pcl::fromPCLPointCloud2
-#define TO_PCL_CLOUD pcl::toPCLPointCloud2
+#include "base/CustomContextItem.h"

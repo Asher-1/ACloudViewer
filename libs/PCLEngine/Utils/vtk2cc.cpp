@@ -96,7 +96,10 @@ ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent) {
         // being mistakenly treated as actual RGB color data
         if (hasSourceRGBFlag) {
             // Look for explicitly named RGB arrays WITH 3 or 4 components
-            const char* colorArrayNames[] = {"RGB", "Colors", "rgba", "rgb"};
+            // "SourceRGB" is used by updateShadingModeDirect (direct path)
+            // "RGB" is used by addTextureMesh and legacy PCL paths
+            const char* colorArrayNames[] = {"SourceRGB", "RGB", "Colors",
+                                             "rgba", "rgb"};
             for (const char* name : colorArrayNames) {
                 vtkDataArray* arr = pointData->GetArray(name);
                 if (arr) {

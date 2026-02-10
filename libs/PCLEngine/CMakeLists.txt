@@ -99,13 +99,7 @@ if (USE_PCL_BACKEND)
             ${TransformTools_list}
             ${SelectionTools_list})
 
-    # PCL VISUALIZATION MODULE
-    if (WIN32 OR UNIX)
-        add_subdirectory(visualization)
-        SET(QPCL_VIS ${CMAKE_CURRENT_SOURCE_DIR}/visualization)
-        file(GLOB_RECURSE PclVis_list ${QPCL_VIS}/*)
-        source_group("visualization" FILES ${PclVis_list})
-    endif ()
+    # PCL VISUALIZATION MODULE - removed; replaced by PclUtils types in PclUtils/
 
     # UTILS MODULE (Core conversion utilities)
     SET(QPCL_CORE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
@@ -114,8 +108,16 @@ if (USE_PCL_BACKEND)
 
     # PCL UTILS MODULE (Legacy utilities)
     SET(QPCL_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/PclUtils)
-    file(GLOB_RECURSE PclUtils_list ${QPCL_UTILS}/*)
-    source_group("PclUtils" FILES ${PclUtils_list})
+    # Base types (context items, image viewer, visualizer types, etc.)
+    file(GLOB_RECURSE PclUtils_base_list ${QPCL_UTILS}/base/*)
+    source_group("PclUtils\\base" FILES ${PclUtils_base_list})
+    # Renders sub-module
+    file(GLOB_RECURSE PclUtils_renders_list ${QPCL_UTILS}/renders/*)
+    source_group("PclUtils\\renders" FILES ${PclUtils_renders_list})
+    # Top-level PclUtils files
+    file(GLOB PclUtils_top_list ${QPCL_UTILS}/*.h ${QPCL_UTILS}/*.cpp ${QPCL_UTILS}/*.hpp)
+    source_group("PclUtils" FILES ${PclUtils_top_list})
+    set(PclUtils_list ${PclUtils_base_list} ${PclUtils_renders_list} ${PclUtils_top_list})
 
     add_library(${PROJECT_NAME} SHARED
             ${header_list}
@@ -123,7 +125,6 @@ if (USE_PCL_BACKEND)
             ${VtkUtils_list}
             ${VtkExtensions_list}
             ${Tools_list}
-            ${PclVis_list}
             ${Utils_list}
             ${PclUtils_list})
 

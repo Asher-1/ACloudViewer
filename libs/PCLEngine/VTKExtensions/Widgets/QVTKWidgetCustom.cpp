@@ -17,6 +17,10 @@
 #include <CVTools.h>
 
 // VTK
+#include <vtkVersionMacros.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+#include <vtkOpenGLRenderWindow.h>
+#endif
 #include <vtkAbstractPicker.h>
 #include <vtkAngleRepresentation2D.h>
 #include <vtkAxesActor.h>
@@ -50,6 +54,9 @@
 #include <ecvPolyline.h>
 
 // QT
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+#include <QOpenGLContext>
+#endif
 #include <QApplication>
 #include <QCoreApplication>
 #include <QHBoxLayout>
@@ -216,6 +223,35 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
     vtkObject::GlobalWarningDisplayOff();
     d_ptr = new VtkWidgetPrivate(this);
 }
+
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+void QVTKWidgetCustom::initializeGL() {
+    // FIX: VTK 9.4+ glad loading race condition (Qt5/Qt6).
+    //
+    // QVTKOpenGLNativeWidget::initializeGL() only loads OpenGL function
+    // pointers (via glad) when RenderWindow->GetInitialized() is false.
+    // If already initialized, glad loading is skipped but ostate->Reset()
+    // still runs with null GL function pointers → SIGSEGV.
+    //
+    // vtkGenericOpenGLRenderWindow::OpenGLInit() also calls Reset() BEFORE
+    // the base class OpenGLInit() that loads glad.
+    //
+    // Fix: Call OpenGLInitContext() directly (loads glad without Reset())
+    // before the parent initializeGL() proceeds.
+    if (auto* rw = vtkOpenGLRenderWindow::SafeDownCast(this->renderWindow())) {
+        auto loadFunc = [](void* userData, const char* name)
+                -> vtkOpenGLRenderWindow::VTKOpenGLAPIProc {
+            if (auto* ctx = reinterpret_cast<QOpenGLContext*>(userData))
+                if (auto* sym = ctx->getProcAddress(name))
+                    return sym;
+            return nullptr;
+        };
+        rw->SetOpenGLSymbolLoader(loadFunc, QOpenGLContext::currentContext());
+        rw->OpenGLInitContext();
+    }
+    QVTKOpenGLNativeWidget::initializeGL();
+}
+#endif
 
 QVTKWidgetCustom::~QVTKWidgetCustom() {
     if (d_ptr) {

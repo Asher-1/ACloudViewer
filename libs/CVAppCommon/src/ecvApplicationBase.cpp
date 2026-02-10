@@ -46,25 +46,54 @@ void ecvApplicationBase::InitOpenGL() {
     resource sharing between contexts stays functional as all internal contexts
     are created using the correct version and profile.
     **/
+    //
+    // CRITICAL (Qt6 + VTK 9.x):
+    // VTK documentation requires that the application-wide default format is
+    // compatible with QVTKOpenGLNativeWidget::defaultFormat().  In Qt6, the
+    // global shared OpenGL context is created from the application-wide default
+    // format.  All QOpenGLWidget instances (including QVTKOpenGLNativeWidget)
+    // share resources with this global context.  If the global context lacks
+    // depth/stencil/alpha buffers, VTK falls back to slow rendering paths,
+    // causes visual artifacts and stuttering.
+    //
+    // We replicate VTK's recommended format values here rather than including
+    // VTK headers, so that CVAppCommon stays independent of VTK.
     {
-        QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+        QSurfaceFormat format;
 
+        // Rendering type & swap
+        format.setRenderableType(QSurfaceFormat::OpenGL);
         format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-        format.setStencilBufferSize(0);
+        format.setSwapInterval(1);  // VSync: prevents tearing & reduces idle
+                                    // GPU spinning
+
+        // Buffer sizes matching VTK's QVTKRenderWindowAdapter::defaultFormat()
+        format.setDepthBufferSize(24);   // VTK default is 8; 24 gives better
+                                         // depth precision for 3D scenes
+        format.setStencilBufferSize(8);  // VTK needs stencil for depth peeling,
+                                         // selection highlights, etc.
+        format.setRedBufferSize(8);
+        format.setGreenBufferSize(8);
+        format.setBlueBufferSize(8);
+        format.setAlphaBufferSize(8);    // needed for VTK compositing / OIT
+
+        // No MSAA at the surface level — VTK handles anti-aliasing internally
+        format.setSamples(0);
 
 #ifdef CV_GL_WINDOW_USE_QWINDOW
         format.setStereo(true);
 #endif
 
 #ifdef Q_OS_MAC
-        format.setVersion(3, 3);  // must be 3.3
+        // macOS requires explicit Core Profile to get OpenGL 3.3+
+        format.setVersion(3, 3);
+        format.setProfile(QSurfaceFormat::CoreProfile);
+#else
+        // Other platforms: request GL 3.2 Core (VTK minimum)
+        format.setVersion(3, 2);
         format.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 
-// #ifdef Q_OS_UNIX
-//         ////enables automatic scaling based on the monitor's pixel density
-//         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-// #endif
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)) && \
         (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
         // These attributes are deprecated in Qt6 (high DPI is enabled by

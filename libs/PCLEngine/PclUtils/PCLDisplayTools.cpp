@@ -10,7 +10,6 @@
 // PCLModules
 #include <Utils/PCLConv.h>
 #include <Utils/cc2sm.h>
-#include <Utils/sm2cc.h>
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -32,11 +31,6 @@
 
 // LOCAL
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
-
-// PCL
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
 
 // VTK
 #include <vtkFieldData.h>
@@ -108,8 +102,8 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
     bool hasRedrawn = false;
 
     // Create local context to pass entity's redraw state
-    // This ensures updateShadingMode() in PCLVis updates normals/colors when
-    // needed
+    // This ensures updateShadingModeDirect() in PCLVis updates
+    // normals/colors when needed
     CC_DRAW_CONTEXT localContext = context;
     if (ecvCloud->isRedraw()) {
         localContext.forceRedraw = true;
@@ -117,35 +111,20 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
 
     if (ecvCloud->isRedraw() || firstShow) {
         if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
-            PCLCloud::Ptr pclCloud =
-                    cc2smReader(ecvCloud, true)
-                            .getAsSM(!context.drawParam.showSF);
-            if (!pclCloud) {
-                return;
-            }
-            m_visualizer3D->draw(localContext, pclCloud);
-            m_visualizer3D->updateNormals(localContext, pclCloud);
+            // Direct CV_db → VTK path (bypasses PCL data conversion)
+            m_visualizer3D->drawDirect(localContext, ecvCloud);
+            m_visualizer3D->updateNormalsDirect(localContext, ecvCloud);
             hasRedrawn = true;
         } else {
             m_visualizer3D->resetScalarColor(viewID, true, viewport);
             if (!updateEntityColor(localContext, ecvCloud)) {
-                PCLCloud::Ptr pclCloud =
-                        cc2smReader(ecvCloud, true)
-                                .getAsSM(!localContext.drawParam.showSF);
-                if (!pclCloud) {
-                    return;
-                }
-                m_visualizer3D->draw(localContext, pclCloud);
-                m_visualizer3D->updateNormals(localContext, pclCloud);
+                // Full rebuild needed - use direct path
+                m_visualizer3D->drawDirect(localContext, ecvCloud);
+                m_visualizer3D->updateNormalsDirect(localContext, ecvCloud);
                 hasRedrawn = true;
             } else {
-                if (localContext.drawParam.showNorms) {
-                    PCLCloud::Ptr pointNormals =
-                            cc2smReader(ecvCloud).getPointNormals();
-                    m_visualizer3D->updateNormals(localContext, pointNormals);
-                } else {
-                    m_visualizer3D->updateNormals(localContext, nullptr);
-                }
+                // Only normals update needed
+                m_visualizer3D->updateNormalsDirect(localContext, ecvCloud);
             }
         }
     }
@@ -304,58 +283,22 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
 
         if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
             if (applyMaterials || showTextures) {
-                // Use new direct method to avoid pcl::TexMaterial encoding
+                // Use direct method to avoid pcl::TexMaterial encoding
                 if (!m_visualizer3D->addTextureMeshFromCCMesh(mesh, viewID,
                                                               viewport)) {
                     CVLog::Warning(
                             "[PCLDisplayTools::drawMesh] Failed to add texture "
-                            "mesh directly, falling back to PCLTextureMesh");
-                    // Fallback to old method for backward compatibility
-                    PCLTextureMesh::Ptr textureMesh =
-                            cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
-                    if (textureMesh) {
-                        m_visualizer3D->draw(context, textureMesh);
-                    } else {
-                        CVLog::Warning(
-                                "[PCLDisplayTools::drawMesh] Failed to create "
-                                "PCLTextureMesh, falling back to regular mesh");
-                        PCLMesh::Ptr pclMesh =
-                                cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                        if (!pclMesh) return;
-                        m_visualizer3D->draw(context, pclMesh);
-                    }
+                            "mesh directly, falling back to non-textured "
+                            "direct mesh");
+                    // Fallback to direct non-textured mesh rendering
+                    m_visualizer3D->drawMeshDirect(context, mesh);
                 }
 
             } else {
-                PCLMesh::Ptr pclMesh =
-                        cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                if (!pclMesh) return;
-                m_visualizer3D->draw(context, pclMesh);
-
-                // Add mesh name to VTK FieldData after PCL creates the actor
-                // (for tooltip display, ParaView style)
-                std::string viewID = CVTools::FromQString(context.viewID);
-                vtkActor* actor = m_visualizer3D->getActorById(viewID);
-                if (actor && actor->GetMapper() &&
-                    mesh->getName().length() > 0) {
-                    vtkPolyData* polyData = vtkPolyData::SafeDownCast(
-                            actor->GetMapper()->GetInput());
-                    if (polyData) {
-                        QString meshName = mesh->getName();
-                        CVLog::PrintVerbose(
-                                QString("[PCLDisplayTools::drawMesh] "
-                                        "Adding DatasetName to "
-                                        "non-textured mesh: '%1'")
-                                        .arg(meshName));
-
-                        vtkSmartPointer<vtkStringArray> datasetNameArray =
-                                vtkSmartPointer<vtkStringArray>::New();
-                        datasetNameArray->SetName("DatasetName");
-                        datasetNameArray->SetNumberOfTuples(1);
-                        datasetNameArray->SetValue(0, meshName.toStdString());
-                        polyData->GetFieldData()->AddArray(datasetNameArray);
-                    }
-                }
+                // Direct CV_db → VTK path (bypasses PCL data conversion)
+                // DatasetName is already added by
+                // getVtkPolyDataFromMeshCloud
+                m_visualizer3D->drawMeshDirect(context, mesh);
             }
         } else {
             // Non-first display and no need for complete rebuild: only update
@@ -380,11 +323,8 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                                     "texture failed!");
                         }
                     }
-                } else {
-                    PCLMesh::Ptr pclMesh =
-                            cc2smReader(ecvCloud, true).getPclMesh(mesh);
-                    if (!pclMesh) return;
-                    m_visualizer3D->draw(context, pclMesh);
+                } else {                    // Direct rebuild for non-textured mesh
+                    m_visualizer3D->drawMeshDirect(context, mesh);
                 }
             }
         }
@@ -421,9 +361,9 @@ void PCLDisplayTools::drawPolygon(const CC_DRAW_CONTEXT& context,
     int viewport = context.defaultViewPort;
 
     if (polyline->isRedraw() || firstShow) {
-        PCLPolygon::Ptr pclPolygon = cc2smReader(true).getPclPolygon(polyline);
-        if (!pclPolygon) return;
-        m_visualizer3D->draw(context, pclPolygon, polyline->isClosed());
+        // Direct CV_db → VTK path (bypasses PCL data conversion)
+        m_visualizer3D->drawPolylineDirect(context, polyline,
+                                           polyline->isClosed());
     }
 
     if (m_visualizer3D->contains(viewID)) {
@@ -716,8 +656,8 @@ void PCLDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
             // m_visualizer3D->setMeshRenderingMode(context.meshRenderingMode,
             // bboxID, viewport);
             m_visualizer3D->setShapeRenderingProperties(
-                    pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-                    pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME,
+                    PclUtils::CV_VISUALIZER_REPRESENTATION,
+                    PclUtils::CV_VISUALIZER_REPRESENTATION_WIREFRAME,
                     bboxID, viewport);
             m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID,
                                          viewport);
@@ -734,7 +674,7 @@ void PCLDisplayTools::drawBBox(const CC_DRAW_CONTEXT& context,
         // Apply opacity if specified in context
         if (context.opacity >= 0.0 && context.opacity <= 1.0) {
             m_visualizer3D->setShapeRenderingProperties(
-                    pcl::visualization::PCL_VISUALIZER_OPACITY, context.opacity,
+                    PclUtils::CV_VISUALIZER_OPACITY, context.opacity,
                     bboxID, viewport);
         }
     }
@@ -1035,8 +975,8 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             break;
         case WIDGETS_TYPE::WIDGET_POINTS_2D:
             if (m_visualizer2D) {
-                pcl::visualization::Vector3ub color =
-                        pcl::visualization::Vector3ub(
+                PclUtils::Vector3ub color =
+                        PclUtils::Vector3ub(
                                 param.color.r, param.color.g, param.color.b);
                 m_visualizer2D->markPoint(param.rect.x(), param.rect.y(), color,
                                           color, param.radius, viewID,

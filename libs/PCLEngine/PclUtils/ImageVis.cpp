@@ -14,7 +14,7 @@
 
 #include <Utils/PCLConv.h>
 
-#include "PclUtils/CustomContextItem.h"
+#include "base/CustomContextItem.h"
 #include "Tools/Common/PclTools.h"
 #include "Tools/Common/ecvTools.h"
 
@@ -43,6 +43,8 @@
 #include <vtkCaptionActor2D.h>
 #include <vtkCommand.h>
 #include <vtkContext2D.h>
+#include <vtkContextActor.h>
+#include <vtkContextScene.h>
 #include <vtkInteractorObserver.h>
 #include <vtkInteractorStyleImage.h>
 #include <vtkJPEGReader.h>
@@ -73,9 +75,6 @@
 
 // PCL
 #include <pcl/common/transforms.h>
-#include <pcl/visualization/common/float_image_utils.h>
-#include <pcl/visualization/vtk/pcl_context_item.h>
-#include <pcl/visualization/vtk/vtkRenderWindowInteractorFix.h>
 
 // Support for VTK 7.1 upwards
 #ifdef vtkGenericDataArray_h
@@ -93,7 +92,7 @@ using namespace std;
 
 namespace PclUtils {
 ImageVis::ImageVis(const string& viewerName, bool initIterator)
-    : pcl::visualization::ImageViewer(viewerName), m_cameraParamsSaved(false) {
+    : PclUtils::ImageViewer(viewerName), m_cameraParamsSaved(false) {
     // Initialize camera params
     m_originalCameraParams.parallelProjection = false;
     m_originalCameraParams.focalPoint[0] =
@@ -136,7 +135,7 @@ void ImageVis::enable2Dviewer(bool state) {
         m_mainInteractor = getRenderWindowInteractor();
         setRenderWindowInteractor(
                 vtkSmartPointer<vtkRenderWindowInteractor>::Take(
-                        vtkRenderWindowInteractorFixNew()));
+                        vtkRenderWindowInteractor::New()));
         getRenderWindow()->SetInteractor(getRenderWindowInteractor());
         getRenderWindowInteractor()->SetRenderWindow(getRenderWindow());
         m_mouseConnection =
@@ -149,10 +148,9 @@ void ImageVis::enable2Dviewer(bool state) {
     }
 }
 
-void ImageVis::mouseEventProcess(const pcl::visualization::MouseEvent& event,
-                                 void* args) {
-    if (event.getButton() == pcl::visualization::MouseEvent::RightButton &&
-        event.getType() == pcl::visualization::MouseEvent::MouseMove) {
+void ImageVis::mouseEventProcess(const PclUtils::MouseEvent& event, void* args) {
+    if (event.getButton() == PclUtils::MouseEvent::RightButton &&
+        event.getType() == PclUtils::MouseEvent::MouseMove) {
         std::string id = pickItem(event);
         if (id != "") {
             CVLog::Print(QString("Picked item id : %1").arg(id.c_str()));
@@ -160,7 +158,7 @@ void ImageVis::mouseEventProcess(const pcl::visualization::MouseEvent& event,
     }
 }
 
-std::string ImageVis::pickItem(const pcl::visualization::MouseEvent& event) {
+std::string ImageVis::pickItem(const PclUtils::MouseEvent& event) {
     int x = event.getX();
     int y = event.getY();
 
@@ -172,9 +170,8 @@ std::string ImageVis::pickItem(int x, int y) {
         Layer* layer = &layer_map_[i];
         int index = 0;
         while (layer->actor->GetScene()->GetItem(index)) {
-            pcl::visualization::context_items::Rectangle* context =
-                    reinterpret_cast<
-                            pcl::visualization::context_items::Rectangle*>(
+            PclUtils::context_items::Rectangle* context =
+                    reinterpret_cast<PclUtils::context_items::Rectangle*>(
                             layer->actor->GetScene()->GetItem(index));
             if (context && context->params.size() == 4) {
                 bool containFlag =
@@ -262,8 +259,7 @@ bool ImageVis::contains(const std::string& id) const {
     return false;
 }
 
-pcl::visualization::ImageViewer::Layer* ImageVis::getLayer(
-        const std::string& id) {
+PclUtils::ImageViewer::Layer* ImageVis::getLayer(const std::string& id) {
     for (auto& l : layer_map_) {
         if (l.layer_name == id) {
             return &l;
@@ -374,11 +370,11 @@ void ImageVis::removeLayer(const std::string& layer_id) {
 #endif
 
     // Call base class implementation
-    pcl::visualization::ImageViewer::removeLayer(layer_id);
+    PclUtils::ImageViewer::removeLayer(layer_id);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-pcl::visualization::ImageViewer::LayerMap::iterator ImageVis::createLayer(
+PclUtils::ImageViewer::LayerMap::iterator ImageVis::createLayer(
         const std::string& layer_id,
         int x,
         int y,
@@ -393,19 +389,14 @@ pcl::visualization::ImageViewer::LayerMap::iterator ImageVis::createLayer(
     l.actor->PickableOff();
     l.actor->DragableOff();
     if (fill_box) {
-        vtkSmartPointer<pcl::visualization::context_items::FilledRectangle>
-                rect = vtkSmartPointer<pcl::visualization::context_items::
-                                               FilledRectangle>::New();
+        vtkSmartPointer<PclUtils::context_items::FilledRectangle> rect =
+                vtkSmartPointer<PclUtils::context_items::FilledRectangle>::New();
         rect->setColors(0, 0, 0);
         rect->setOpacity(opacity);
         rect->set(x, y, static_cast<float>(width), static_cast<float>(height));
         l.actor->GetScene()->AddItem(rect);
     }
-#if VTK_MAJOR_VERSION < 6
-    image_viewer_->GetRenderer()->AddActor(l.actor);
-#else
     ren_->AddActor(l.actor);
-#endif
     // Add another element
     layer_map_.push_back(l);
 
@@ -535,16 +526,13 @@ bool ImageVis::addText(unsigned int x,
                        double opacity,
                        int fontSize,
                        bool bold) {
-    // bool sucess = pcl::visualization::ImageViewer::addText(x, y, text_string,
-    // r, g, b, layer_id, opacity);
-
     // Check to see if this ID entry already exists (has it been already added
     // to the visualizer?)
     LayerMap::iterator am_it = std::find_if(
             layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
     if (am_it == layer_map_.end()) {
         PCL_DEBUG(
-                "[pcl::visualization::ImageViewer::addText] No layer with "
+                "[ImageVis::addText] No layer with "
                 "ID='%s' found. Creating new one...\n",
                 layer_id.c_str());
         am_it = createLayer(layer_id, getSize()[0] - 1, getSize()[1] - 1,
@@ -614,13 +602,6 @@ void ImageVis::updateImageScales() {
                                       pair.second.originalHeight);
         }
     }
-#else
-    // Fallback for older VTK versions
-    for (auto& pair : m_imageInfoMap) {
-        if (pair.second.imageItem) {
-            pair.second.imageItem->updateScale(winSize[0], winSize[1]);
-        }
-    }
 #endif
 }
 
@@ -666,14 +647,18 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         double yc = pos[1] + (height - 1) * 0.5;
         double zd = 3.346065;  // Default distance used in base class
 
+        // Reset ViewUp to default (0,1,0) so the image is always displayed
+        // upright, regardless of any prior 3D scene rotation.
+        camera->SetViewUp(0.0, 1.0, 0.0);
         camera->SetFocalPoint(xc, yc, 0.0);
         camera->SetPosition(xc, yc, zd);
         // Use parallel scale based on image height (similar to base class)
         camera->SetParallelScale(0.5 * height);
         camera->ParallelProjectionOn();
 
-        // Reset camera to ensure proper view
-        ren_->ResetCamera();
+        // Only reset clipping range (not the full camera) to preserve
+        // the focal point, position, and ViewUp we just configured.
+        ren_->ResetCameraClippingRange();
     }
 
     // Mark image slice as modified to trigger rendering update

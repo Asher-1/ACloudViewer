@@ -265,7 +265,7 @@ public:
     }
 
     inline virtual void getCameraPos(double* pos, int viewport = 0) override {
-        const pcl::visualization::Camera& cam =
+        const PclUtils::Camera& cam =
                 m_visualizer3D->getCamera(viewport);
         pos[0] = cam.pos[0];
         pos[1] = cam.pos[1];
@@ -273,14 +273,14 @@ public:
     }
     inline virtual void getCameraFocal(double* focal,
                                        int viewport = 0) override {
-        const pcl::visualization::Camera& cam =
+        const PclUtils::Camera& cam =
                 m_visualizer3D->getCamera(viewport);
         focal[0] = cam.focal[0];
         focal[1] = cam.focal[1];
         focal[2] = cam.focal[2];
     }
     inline virtual void getCameraUp(double* up, int viewport = 0) override {
-        const pcl::visualization::Camera& cam =
+        const PclUtils::Camera& cam =
                 m_visualizer3D->getCamera(viewport);
         up[0] = cam.view[0];
         up[1] = cam.view[1];
@@ -347,7 +347,7 @@ public:
     // set and get clip distances (near and far)
     inline virtual void getCameraClip(double* clipPlanes,
                                       int viewport = 0) override {
-        const pcl::visualization::Camera& cam =
+        const PclUtils::Camera& cam =
                 m_visualizer3D->getCamera(viewport);
         clipPlanes[0] = cam.clip[0];
         clipPlanes[1] = cam.clip[1];

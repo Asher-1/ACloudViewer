@@ -10,7 +10,7 @@
 // LOCAL
 #include <Utils/PCLCloud.h>
 
-#include "PclUtils/CustomContextItem.h"
+#include "base/CustomContextItem.h"
 #include "qPCL.h"
 
 // CV_DB_LIB
@@ -18,9 +18,8 @@
 #include <ecvDrawContext.h>
 #include <ecvGenericVisualizer2D.h>
 
-// PCL
-#include <visualization/include/pcl/visualization/image_viewer.h>
-// #include <pcl/visualization/image_viewer.h>
+// PclUtils ImageViewer (replaces pcl::visualization::ImageViewer)
+#include "base/CVImageViewer.h"
 
 // VTK
 #include <vtkSmartPointer.h>
@@ -36,7 +35,7 @@ class vtkImageSliceMapper;
 
 namespace PclUtils {
 class QPCL_ENGINE_LIB_API ImageVis : public ecvGenericVisualizer2D,
-                                     public pcl::visualization::ImageViewer {
+                                     public PclUtils::ImageViewer {
     // Q_OBJECT
 public:
     //! Default constructor
@@ -124,10 +123,9 @@ public:
     std::string pickItem(int x, int y);
 
 private:
-    void mouseEventProcess(const pcl::visualization::MouseEvent& event,
-                           void* args);
+    void mouseEventProcess(const PclUtils::MouseEvent& event, void* args);
     boost::signals2::connection m_mouseConnection;
-    std::string pickItem(const pcl::visualization::MouseEvent& event);
+    std::string pickItem(const PclUtils::MouseEvent& event);
 
     // Window resize callback
     static void WindowResizeCallback(vtkObject* caller,

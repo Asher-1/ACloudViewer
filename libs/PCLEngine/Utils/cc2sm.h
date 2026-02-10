@@ -95,6 +95,20 @@ public:
     bool getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const;
 
     /**
+     * @brief Convert ccPointCloud directly to vtkPolyData for visualization
+     * Bypasses PCL data format completely for maximum efficiency.
+     * Creates vtkPolyData with points, vertex cells, colors, and normals.
+     * @param polydata Output VTK polydata (will be created)
+     * @param showColors Whether to include RGB vertex colors
+     * @param showSF Whether to use scalar field colors instead of RGB
+     * @return true on success
+     * @note This method handles visibility filtering automatically
+     */
+    bool getVtkPolyDataFromPointCloud(vtkSmartPointer<vtkPolyData>& polydata,
+                                      bool showColors,
+                                      bool showSF) const;
+
+    /**
      * @brief Convert ccGenericMesh to vtkPolyData using same logic as
      * getPclCloud2 Direct conversion without PCL intermediate format for
      * efficiency

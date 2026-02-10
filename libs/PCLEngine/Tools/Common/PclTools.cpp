@@ -53,9 +53,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
-#if VTK_RENDERING_BACKEND_OPENGL_VERSION < 2
-#include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
-#endif
+// vtkVertexBufferObjectMapper removed - not needed with modern VTK OpenGL2 backend
 
 #include <VTKExtensions/Utility/vtkDiscretizableColorTransferFunctionCustom.h>
 #include <VTKExtensions/Views/vtkContext2DScalarBarActor.h>
@@ -63,11 +61,11 @@
 #include <VTKExtensions/Views/vtkScalarBarRepresentationCustom.h>
 #include <VTKExtensions/Widgets/vtkScalarBarWidgetCustom.h>
 
-// PCL
+// PCL (data types only, no visualization)
+#include <pcl/common/io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/io/vtk_lib_io.h>
-#include <pcl/visualization/pcl_visualizer.h>
 
 #if defined(_WIN32)
 // Remove macros defined in Windows.h
@@ -1143,112 +1141,10 @@ vtkSmartPointer<vtkPolyData> PclTools::CreatePolyDataFromLineSet(
 namespace {
 using namespace pcl;
 
-/** \brief Display a 3D representation showing the a cloud and a list of camera
- * with their 6DOf poses */
-void showCameras(pcl::texture_mapping::CameraVector cams,
-                 pcl::PointCloud<PointT>::Ptr& cloud) {
-    // visualization object
-    pcl::visualization::PCLVisualizer visu("cameras");
-
-    // add a visual for each camera at the correct pose
-    for (std::size_t i = 0; i < cams.size(); ++i) {
-        // read current camera
-        pcl::TextureMapping<PointT>::Camera cam = cams[i];
-        double focal = cam.focal_length;
-        double height = cam.height;
-        double width = cam.width;
-
-        // create a 5-point visual for each camera
-        PointT p1, p2, p3, p4, p5;
-        p1.x = 0;
-        p1.y = 0;
-        p1.z = 0;
-        double dist = 0.75;
-        double minX, minY, maxX, maxY;
-        maxX = dist * tan(std::atan(width / (2.0 * focal)));
-        minX = -maxX;
-        maxY = dist * tan(std::atan(height / (2.0 * focal)));
-        minY = -maxY;
-        p2.x = minX;
-        p2.y = minY;
-        p2.z = dist;
-        p3.x = maxX;
-        p3.y = minY;
-        p3.z = dist;
-        p4.x = maxX;
-        p4.y = maxY;
-        p4.z = dist;
-        p5.x = minX;
-        p5.y = maxY;
-        p5.z = dist;
-        p1 = pcl::transformPoint(p1, cam.pose);
-        p2 = pcl::transformPoint(p2, cam.pose);
-        p3 = pcl::transformPoint(p3, cam.pose);
-        p4 = pcl::transformPoint(p4, cam.pose);
-        p5 = pcl::transformPoint(p5, cam.pose);
-        std::stringstream ss;
-        ss << "Cam #" << i + 1;
-        visu.addText3D(ss.str(), p1, 0.1, 1.0, 1.0, 1.0, ss.str());
-
-        ss.str("");
-        ss << "camera_" << i << "line1";
-        visu.addLine(p1, p2, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line2";
-        visu.addLine(p1, p3, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line3";
-        visu.addLine(p1, p4, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line4";
-        visu.addLine(p1, p5, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line5";
-        visu.addLine(p2, p5, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line6";
-        visu.addLine(p5, p4, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line7";
-        visu.addLine(p4, p3, ss.str());
-        ss.str("");
-        ss << "camera_" << i << "line8";
-        visu.addLine(p3, p2, ss.str());
-    }
-
-    // add a coordinate system
-    visu.addCoordinateSystem(1.0, "global");
-
-    // add the mesh's cloud (colored on Z axis)
-    pcl::visualization::PointCloudColorHandlerGenericField<PointT>
-            color_handler(cloud, "z");
-    visu.addPointCloud(cloud, color_handler, "cloud");
-
-    // reset camera
-    visu.resetCamera();
-
-    // wait for user input
-    visu.spin();
-}
-
-/** \brief Display a 3D representation showing the a cloud and a list of camera
- * with their 6DOf poses */
-void showTextureMesh(const PCLTextureMesh::ConstPtr textureMesh) {
-    // visualization object
-    pcl::visualization::PCLVisualizer visu("TextureMesh");
-
-    // add a coordinate system
-    visu.addCoordinateSystem(1.0, "global");
-
-    // add the mesh's cloud (colored on Z axis)
-    visu.addTextureMesh(*textureMesh, "texture");
-
-    // reset camera
-    visu.resetCamera();
-
-    // wait for user input
-    visu.spin();
-}
+// NOTE: showCameras() and showTextureMesh() removed.
+// They were standalone debug visualization functions that depended on
+// pcl::visualization::PCLVisualizer.  If needed, they can be rewritten
+// using the application's own PCLVis class.
 
 /** \brief Helper function that jump to a specific line of a text file */
 std::ifstream& GotoLine(std::ifstream& file, unsigned int num) {
@@ -1443,11 +1339,13 @@ PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(
     }
 
     // Display cameras to user
-    if (show_cameras) {
-        CVLog::Print(
-                "Displaying cameras. Press \'q\' to continue texture mapping");
-        showCameras(cameras, cloud);
-    }
+    // NOTE: showCameras was removed along with pcl::visualization::PCLVisualizer dependency.
+    // if (show_cameras) {
+    //     CVLog::Print(
+    //             "Displaying cameras. Press \'q\' to continue texture
+    //             mapping");
+    //     showCameras(cameras, cloud);
+    // }
 
     // Create materials for each texture (and one extra for occluded faces)
     mesh->tex_materials.resize(cameras.size() + 1);

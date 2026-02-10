@@ -2001,7 +2001,20 @@ void MainWindow::ChangeStyle(const QString& qssFile) {
     } else {
         // default
         ecvApp->setPalette(QPalette(QColor(240, 240, 240, 255)));
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        // Qt6 fix: when widgets carry inline stylesheets (e.g. dbTreeView
+        // branch images set in the .ui file), Qt6 switches to stylesheet-based
+        // rendering and no longer falls back to QPalette for unset properties.
+        // Provide a minimal default stylesheet so that view backgrounds remain
+        // visible.  This mirrors the behaviour of CloudCompare's
+        // QDarkStyleSheet, which always provides an explicit QTreeView
+        // background-color in the loaded theme.
+        ecvApp->setStyleSheet(QStringLiteral(
+                "QTreeView, QListView, QTableView"
+                "{ background-color: palette(base); }"));
+#else
         ecvApp->setStyleSheet(QString());
+#endif
     }
 }
 
