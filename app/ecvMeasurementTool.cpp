@@ -31,7 +31,10 @@
 #include <QApplication>
 #include <QColorDialog>
 #include <QMessageBox>
+#include <QScreen>
+#include <QScrollArea>
 #include <QSizePolicy>
+#include <QVBoxLayout>
 
 #ifdef USE_PCL_BACKEND
 #include <Tools/MeasurementTools/PclMeasurementTools.h>
@@ -47,6 +50,54 @@ ecvMeasurementTool::ecvMeasurementTool(QWidget* parent)
       m_currentColor(QColor(0, 255, 0))  // Default green color
 {
     setupUi(this);
+
+    // --- Wrap parametersLayout in a QScrollArea for DPI-adaptive sizing ---
+    // Remove the empty parametersLayout created by setupUi from the main layout
+    verticalLayout->removeItem(parametersLayout);
+
+    // Create scroll area for tool parameter widgets
+    m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setFrameShape(QFrame::NoFrame);
+    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_scrollArea->setSizePolicy(QSizePolicy::Preferred,
+                                QSizePolicy::Expanding);
+    // Small minimum so the scroll area doesn't force blank space for
+    // lightweight tools (Contour). Heavy tools (Distance/Protractor) will
+    // naturally expand via adjustSize().
+    m_scrollArea->setMinimumHeight(50);
+
+    // Create container widget inside scroll area
+    QWidget* scrollContent = new QWidget();
+    m_parametersLayout = new QVBoxLayout(scrollContent);
+    m_parametersLayout->setSpacing(2);
+    m_parametersLayout->setContentsMargins(0, 0, 0, 0);
+    m_parametersLayout->setAlignment(Qt::AlignTop);
+    m_scrollArea->setWidget(scrollContent);
+
+    // Add scroll area to the main layout (replaces parametersLayout)
+    verticalLayout->addWidget(m_scrollArea, /*stretch=*/1);
+
+    // Compute DPI-adaptive max height for the WHOLE dialog (not just scroll
+    // area). The scroll area expands to fill remaining space; capping the
+    // dialog prevents it from covering the entire render window.
+    QScreen* screen = this->screen();
+    if (!screen) screen = QApplication::primaryScreen();
+    if (screen) {
+        int screenHeight = screen->availableGeometry().height();
+        qreal dpr = screen->devicePixelRatio();
+        // On HiDPI (macOS Retina), allow up to 55%; on standard, 65%
+        double fraction = (dpr > 1.5) ? 0.55 : 0.65;
+        int maxDialogH = static_cast<int>(screenHeight * fraction);
+        this->setMaximumHeight(maxDialogH);
+    }
+
+    // Make header sections as compact as possible so the scroll area gets
+    // more space
+    if (fontGroupBox)
+        fontGroupBox->setSizePolicy(QSizePolicy::Preferred,
+                                    QSizePolicy::Maximum);
 
     // Get picking hub from MainWindow
     if (MainWindow::TheInstance()) {
@@ -207,7 +258,7 @@ void ecvMeasurementTool::setMeasurementTool(ecvGenericMeasurementTools* tool) {
         // Remove widget from layout
         QWidget* widget = toolToRemove->getMeasurementWidget();
         if (widget) {
-            parametersLayout->removeWidget(widget);
+            m_parametersLayout->removeWidget(widget);
             widget->setVisible(false);
         }
 
@@ -298,10 +349,7 @@ void ecvMeasurementTool::switchToToolUI(ecvGenericMeasurementTools* tool) {
         if (t && t->getMeasurementWidget()) {
             QWidget* widget = t->getMeasurementWidget();
             // Remove from layout if present
-            if (widget->parent() == nullptr ||
-                parametersLayout->indexOf(widget) >= 0) {
-                parametersLayout->removeWidget(widget);
-            }
+            m_parametersLayout->removeWidget(widget);
             widget->setVisible(false);
 
             // Lock non-active tools (disable interaction, shortcuts, and UI
@@ -315,32 +363,66 @@ void ecvMeasurementTool::switchToToolUI(ecvGenericMeasurementTools* tool) {
     // Show current tool's widget and unlock it
     QWidget* currentWidget = tool->getMeasurementWidget();
     if (currentWidget) {
-        parametersLayout->addWidget(currentWidget);
+        m_parametersLayout->addWidget(currentWidget);
         currentWidget->setVisible(true);
-
-        // CRITICAL: Reset size constraints and let Qt's layout system handle
-        // sizing This ensures each tool adapts to its own content without
-        // interference ParaView-style: use Minimum (horizontal) to prevent
-        // unnecessary expansion
-        currentWidget->setMinimumSize(0, 0);
-        currentWidget->setMaximumSize(16777215,
-                                      16777215);  // QWIDGETSIZE_MAX equivalent
-        currentWidget->setSizePolicy(QSizePolicy::Minimum,
+        currentWidget->setSizePolicy(QSizePolicy::Preferred,
                                      QSizePolicy::Preferred);
-        // Force Qt to recalculate size based on content
-        currentWidget->adjustSize();
-        currentWidget->updateGeometry();
-        // CRITICAL: Process events to ensure layout is fully updated
-        QApplication::processEvents();
 
         // Unlock the active tool (enable interaction, shortcuts, and UI
         // controls)
         tool->unlockInteraction();
     }
 
-    // CRITICAL: Update UI controls (color button and font widget) from the
-    // current tool This prevents UI interference between different tool
-    // instances Each tool instance should have its own independent settings
+    // CRITICAL: Invalidate layout chain and resize dialog to fit new content.
+    // This prevents layout interference: the dialog adapts to the NEW tool's
+    // content instead of retaining the OLD tool's size.
+    if (m_scrollArea && m_scrollArea->widget()) {
+        m_scrollArea->widget()->adjustSize();
+    }
+    if (layout()) {
+        layout()->invalidate();
+        layout()->activate();
+    }
+    adjustSize();
+    updateGeometry();
+
+    // After adjustSize, ensure the dialog has proper height for content visibility
+    // Strategy: Fixed target heights based on actual tool type (reliable & stable)
+    if (layout()) layout()->activate();
+    
+    if (m_scrollArea && m_scrollArea->widget() && tool) {
+        // Determine target height based on actual tool type
+        int targetH;
+        ecvGenericMeasurementTools::MeasurementType toolType = tool->getMeasurementType();
+        
+        switch (toolType) {
+            case ecvGenericMeasurementTools::CONTOUR_WIDGET:
+                // Contour: ultra-compact (minimal components)
+                targetH = 240;
+                break;
+                
+            case ecvGenericMeasurementTools::DISTANCE_WIDGET:
+            case ecvGenericMeasurementTools::PROTRACTOR_WIDGET:
+                // Distance/Protractor: spacious (many parameters + Tips)
+                targetH = 400;
+                break;
+                
+            default:
+                // Fallback: moderate height
+                targetH = 400;
+                break;
+        }
+        
+        // Apply maximum height constraint
+        targetH = qMin(targetH, maximumHeight());
+        
+        // Only resize if significantly different (avoid jitter)
+        if (qAbs(height() - targetH) > 30) {
+            resize(width(), targetH);
+        }
+    }
+
+    // Update UI controls (color button and font widget) from the current tool
     updateUIFromTool();
 }
 
@@ -439,7 +521,7 @@ void ecvMeasurementTool::removeInstance() {
     // switchToToolUI, but ensure it's clean)
     QWidget* widget = toolToRemove->getMeasurementWidget();
     if (widget) {
-        parametersLayout->removeWidget(widget);
+        m_parametersLayout->removeWidget(widget);
         widget->setVisible(false);
     }
 
@@ -585,7 +667,7 @@ void ecvMeasurementTool::stop(bool state) {
             // is closed
             tool->disableShortcuts();
 
-            parametersLayout->removeWidget(tool->getMeasurementWidget());
+            m_parametersLayout->removeWidget(tool->getMeasurementWidget());
             tool->clear();
             delete tool;
         }

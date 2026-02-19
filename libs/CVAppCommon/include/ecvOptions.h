@@ -15,45 +15,88 @@
 // Qt
 #include <QString>
 
-//! Main application options
+/**
+ * @class ecvOptions
+ * @brief Main application options manager (singleton)
+ * 
+ * Manages global application options and preferences including:
+ * - Display settings (normals visibility, etc.)
+ * - Dialog behavior (native vs custom dialogs)
+ * - Logging verbosity levels
+ * - User interaction preferences
+ * 
+ * Options are automatically persisted to disk and restored on
+ * application restart. Uses singleton pattern for global access.
+ * 
+ * @see ecvSettingManager
+ */
 class CVAPPCOMMON_LIB_API ecvOptions {
 public:  // parameters
-    //! Whether to display the normals by default or not
+    /// Whether to display normals by default for loaded point clouds
     bool normalsDisplayedByDefault;
 
-    //! Use native load/save dialogs
+    /// Use native OS file dialogs instead of Qt dialogs
     bool useNativeDialogs;
 
-    //! Log/console verbosity level (reuses CVLog::MessageLevelFlags)
+    /// Console/log verbosity level (see CVLog::MessageLevelFlags)
     CVLog::MessageLevelFlags logVerbosityLevel;
 
-    //! Ask for confirmation before quitting
+    /// Show confirmation dialog before quitting application
     bool askForConfirmationBeforeQuitting;
 
 public:  // methods
-    //! Default constructor
+    /**
+     * @brief Default constructor
+     * 
+     * Initializes options with default values.
+     */
     ecvOptions();
 
-    //! Resets parameters to default values
+    /**
+     * @brief Reset all parameters to default values
+     */
     void reset();
 
-    //! Loads from persistent DB
+    /**
+     * @brief Load options from persistent storage
+     * 
+     * Reads saved options from application settings file.
+     */
     void fromPersistentSettings();
 
-    //! Saves to persistent DB
+    /**
+     * @brief Save options to persistent storage
+     * 
+     * Writes current options to application settings file.
+     */
     void toPersistentSettings() const;
 
 public:  // static methods
-    //! Returns the stored values of each parameter.
+    /**
+     * @brief Get singleton instance (const version)
+     * @return Const reference to global options instance
+     */
     static const ecvOptions& Instance() { return InstanceNonConst(); }
 
-    //! Release unique instance (if any)
+    /**
+     * @brief Release singleton instance
+     * 
+     * Clears the singleton instance. Typically called at shutdown.
+     */
     static void ReleaseInstance();
 
-    //! Sets parameters
+    /**
+     * @brief Set options from another instance
+     * 
+     * Copies settings from provided options object to singleton.
+     * @param options Options to copy
+     */
     static void Set(const ecvOptions& options);
 
 protected:  // methods
-    //! Returns the stored values of each parameter.
+    /**
+     * @brief Get singleton instance (non-const version)
+     * @return Reference to global options instance
+     */
     static ecvOptions& InstanceNonConst();
 };

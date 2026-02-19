@@ -16,40 +16,61 @@
 class QWidget;
 class ccHObject;
 
-//! Typical I/O filter errors
+/**
+ * @brief File I/O error codes
+ * 
+ * Enumeration of possible errors that can occur during file I/O operations.
+ */
 enum CC_FILE_ERROR {
-    CC_FERR_NO_ERROR,
-    CC_FERR_BAD_ARGUMENT,
-    CC_FERR_UNKNOWN_FILE,
-    CC_FERR_WRONG_FILE_TYPE,
-    CC_FERR_WRITING,
-    CC_FERR_READING,
-    CC_FERR_NO_SAVE,
-    CC_FERR_NO_LOAD,
-    CC_FERR_BAD_ENTITY_TYPE,
-    CC_FERR_CANCELED_BY_USER,
-    CC_FERR_NOT_ENOUGH_MEMORY,
-    CC_FERR_MALFORMED_FILE,
-    CC_FERR_CONSOLE_ERROR,
-    CC_FERR_BROKEN_DEPENDENCY_ERROR,
-    CC_FERR_FILE_WAS_WRITTEN_BY_UNKNOWN_PLUGIN,
-    CC_FERR_THIRD_PARTY_LIB_FAILURE,
-    CC_FERR_THIRD_PARTY_LIB_EXCEPTION,
-    CC_FERR_NOT_IMPLEMENTED,
-    CC_FERR_INTERNAL,
+    CC_FERR_NO_ERROR,                           ///< No error
+    CC_FERR_BAD_ARGUMENT,                       ///< Invalid argument
+    CC_FERR_UNKNOWN_FILE,                       ///< Unknown file format
+    CC_FERR_WRONG_FILE_TYPE,                    ///< Wrong file type
+    CC_FERR_WRITING,                            ///< Error writing file
+    CC_FERR_READING,                            ///< Error reading file
+    CC_FERR_NO_SAVE,                            ///< Save not supported
+    CC_FERR_NO_LOAD,                            ///< Load not supported
+    CC_FERR_BAD_ENTITY_TYPE,                    ///< Unsupported entity type
+    CC_FERR_CANCELED_BY_USER,                   ///< Operation canceled by user
+    CC_FERR_NOT_ENOUGH_MEMORY,                  ///< Insufficient memory
+    CC_FERR_MALFORMED_FILE,                     ///< Malformed file structure
+    CC_FERR_CONSOLE_ERROR,                      ///< Console error
+    CC_FERR_BROKEN_DEPENDENCY_ERROR,            ///< Broken dependency
+    CC_FERR_FILE_WAS_WRITTEN_BY_UNKNOWN_PLUGIN, ///< Unknown plugin file
+    CC_FERR_THIRD_PARTY_LIB_FAILURE,            ///< Third-party library failure
+    CC_FERR_THIRD_PARTY_LIB_EXCEPTION,          ///< Third-party library exception
+    CC_FERR_NOT_IMPLEMENTED,                    ///< Feature not implemented
+    CC_FERR_INTERNAL,                           ///< Internal error
 };
 
-//! Generic file I/O filter
-/** Gives static access to file loader.
-        Must be implemented by any specific I/O filter.
-**/
+/**
+ * @class FileIOFilter
+ * @brief Generic file I/O filter base class
+ * 
+ * Abstract base class providing a common interface for file import/export filters.
+ * Specific file format handlers must inherit from this class and implement
+ * the virtual methods for loading and saving.
+ */
 class FileIOFilter {
 public:
+    /**
+     * @brief Virtual destructor
+     */
     virtual ~FileIOFilter() = default;
 
-    //! Generic loading parameters
+    /**
+     * @struct LoadParameters
+     * @brief Parameters for loading files
+     * 
+     * Contains settings for coordinate shift handling, normal computation,
+     * and dialog display during file loading.
+     */
     struct LoadParameters {
-        //! Default constructor
+        /**
+         * @brief Default constructor
+         * 
+         * Initializes all parameters to their default values.
+         */
         LoadParameters()
             : shiftHandlingMode(ecvGlobalShiftManager::DIALOG_IF_NECESSARY),
               alwaysDisplayLoadDialog(true),
@@ -60,67 +81,76 @@ public:
               parentWidget(nullptr),
               sessionStart(true) {}
 
-        //! How to handle big coordinates
-        ecvGlobalShiftManager::Mode shiftHandlingMode;
-        //! Wether to always display a dialog (if any), even if automatic guess
-        //! is possible
-        bool alwaysDisplayLoadDialog;
-        //! Whether shift on load has been applied after loading (optional)
-        bool* coordinatesShiftEnabled;
-        //! If applicable, applied shift on load (optional)
-        CCVector3d* coordinatesShift;
-        //! If applicable, whether shift should be preserved or not (optional)
-        bool preserveShiftOnSave;
-        //! Whether normals should be computed at loading time (if possible -
-        //! e.g. for gridded clouds) or not
-        bool autoComputeNormals;
-        //! Parent widget (if any)
-        QWidget* parentWidget;
-        //! Session start (whether the load action is the first of a session)
-        bool sessionStart;
+        ecvGlobalShiftManager::Mode shiftHandlingMode;  ///< How to handle large coordinates
+        bool alwaysDisplayLoadDialog;                   ///< Always display load dialog
+        bool* coordinatesShiftEnabled;                  ///< Output: whether shift was applied
+        CCVector3d* coordinatesShift;                   ///< Output: applied coordinate shift
+        bool preserveShiftOnSave;                       ///< Preserve shift when saving
+        bool autoComputeNormals;                        ///< Auto-compute normals if possible
+        QWidget* parentWidget;                          ///< Parent widget for dialogs
+        bool sessionStart;                              ///< Whether this is the first load of a session
     };
 
-    //! Generic saving parameters
+    /**
+     * @struct SaveParameters
+     * @brief Parameters for saving files
+     * 
+     * Contains settings for dialog display during file saving.
+     */
     struct SaveParameters {
-        //! Default constructor
+        /**
+         * @brief Default constructor
+         */
         SaveParameters()
             : alwaysDisplaySaveDialog(true), parentWidget(nullptr) {}
 
-        //! Wether to always display a dialog (if any), even if automatic guess
-        //! is possible
-        bool alwaysDisplaySaveDialog;
-        //! Parent widget (if any)
-        QWidget* parentWidget;
+        bool alwaysDisplaySaveDialog;  ///< Always display save dialog
+        QWidget* parentWidget;         ///< Parent widget for dialogs
     };
 
-    //! Shared type
+    /**
+     * @brief Shared pointer type
+     */
     using Shared = QSharedPointer<FileIOFilter>;
 
 public:  // public interface
-    //! Returns whether this I/O filter can import files
+    /**
+     * @brief Check if import is supported
+     * @return true if this filter can import files
+     */
     CV_IO_LIB_API bool importSupported() const;
 
-    //! Returns whether this I/O filter can export files
+    /**
+     * @brief Check if export is supported
+     * @return true if this filter can export files
+     */
     CV_IO_LIB_API bool exportSupported() const;
 
-    //! Returns the file filter(s) for this I/O filter
-    /** E.g. 'ASCII file (*.asc)'
-            \param onImport whether the requested filters are for import or
-    export \return list of filters
-    **/
+    /**
+     * @brief Get file filter strings
+     * 
+     * Returns filter strings for file dialogs, e.g., "ASCII file (*.asc)".
+     * @param onImport true for import filters, false for export filters
+     * @return List of filter strings
+     */
     CV_IO_LIB_API const QStringList& getFileFilters(bool onImport) const;
 
-    //! Returns the default file extension
+    /**
+     * @brief Get default file extension
+     * @return Default file extension (without dot)
+     */
     CV_IO_LIB_API QString getDefaultExtension() const;
 
 public:  // public interface (to be reimplemented by each I/O filter)
-    //! Loads one or more entities from a file
-    /** This method must be implemented by children classes.
-            \param filename file to load
-            \param container container to store loaded entities
-            \param parameters generic loading parameters
-            \return error
-    **/
+    /**
+     * @brief Load entities from a file
+     * 
+     * This method must be implemented by derived classes.
+     * @param filename File path to load from
+     * @param container Container to store loaded entities
+     * @param parameters Loading parameters
+     * @return Error code (CC_FERR_NO_ERROR on success)
+     */
     virtual CC_FILE_ERROR loadFile(const QString& filename,
                                    ccHObject& container,
                                    LoadParameters& parameters) {
@@ -131,13 +161,15 @@ public:  // public interface (to be reimplemented by each I/O filter)
         return CC_FERR_NOT_IMPLEMENTED;
     }
 
-    //! Saves an entity (or a group of) to a file
-    /** This method must be implemented by children classes.
-            \param entity entity (or group of) to save
-            \param filename filename
-            \param parameters generic saving parameters
-            \return error
-    **/
+    /**
+     * @brief Save entities to a file
+     * 
+     * This method must be implemented by derived classes.
+     * @param entity Entity or group of entities to save
+     * @param filename Output file path
+     * @param parameters Saving parameters
+     * @return Error code (CC_FERR_NO_ERROR on success)
+     */
     virtual CC_FILE_ERROR saveToFile(ccHObject* entity,
                                      const QString& filename,
                                      const SaveParameters& parameters) {
@@ -148,13 +180,13 @@ public:  // public interface (to be reimplemented by each I/O filter)
         return CC_FERR_NOT_IMPLEMENTED;
     }
 
-    //! Returns whether this I/O filter can save the specified type of entity
-    /** \param type entity type
-            \param multiple whether the filter can save multiple instances of
-    this entity at once \param exclusive whether the filter can only save this
-    type of entity if selected or if it can be mixed with other types \return
-    whether the entity type can be saved
-    **/
+    /**
+     * @brief Check if entity type can be saved
+     * @param type Entity type
+     * @param[out] multiple Whether multiple instances can be saved at once
+     * @param[out] exclusive Whether only this type can be saved (no mixing)
+     * @return true if the entity type can be saved
+     */
     virtual bool canSave(CV_CLASS_ENUM type,
                          bool& multiple,
                          bool& exclusive) const {
@@ -166,32 +198,41 @@ public:  // public interface (to be reimplemented by each I/O filter)
     }
 
 public:  // static methods
-    //! Get a list of all the available importer filter strings for use in a
-    //! drop down menu. Includes "All (*.)" as the first item in the list.
+    /**
+     * @brief Get list of all available import filters
+     * 
+     * Returns a list of filter strings for use in file dialogs.
+     * Includes "All (*)" as the first item.
+     * @return List of import filter strings
+     */
     CV_IO_LIB_API static QStringList ImportFilterList();
 
-    //! Loads one or more entities from a file with a known filter
-    /** Shortcut to FileIOFilter::loadFile
-            \param filename filename
-            \param parameters generic loading parameters
-            \param filter input filter
-            \param[out] result file error code
-            \return loaded entities (or 0 if an error occurred)
-    **/
+    /**
+     * @brief Load file using a specific filter
+     * 
+     * Convenience method to load entities from a file using a known filter.
+     * @param filename File path to load
+     * @param parameters Loading parameters
+     * @param filter I/O filter to use
+     * @param[out] result Error code
+     * @return Loaded entities (nullptr on error)
+     */
     CV_IO_LIB_API static ccHObject* LoadFromFile(const QString& filename,
                                                  LoadParameters& parameters,
                                                  Shared filter,
                                                  CC_FILE_ERROR& result);
 
-    //! Loads one or more entities from a file with known type
-    /** Shortcut to the other version of FileIOFilter::LoadFromFile
-            \param filename filename
-            \param parameters generic loading parameters
-            \param[out] result file error code
-            \param fileFilter input filter 'file filter' (if empty, the best I/O
-    filter will be guessed from the file extension) \return loaded entities (or
-    0 if an error occurred)
-    **/
+    /**
+     * @brief Load file with automatic filter selection
+     * 
+     * Convenience method to load entities from a file. If fileFilter is empty,
+     * the best filter is automatically determined from the file extension.
+     * @param filename File path to load
+     * @param parameters Loading parameters
+     * @param[out] result Error code
+     * @param fileFilter Filter string (empty for auto-detection)
+     * @return Loaded entities (nullptr on error)
+     */
     CV_IO_LIB_API static ccHObject* LoadFromFile(
             const QString& filename,
             LoadParameters& parameters,

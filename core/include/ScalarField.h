@@ -16,64 +16,108 @@
 
 namespace cloudViewer {
 
-//! A simple scalar field (to be associated to a point cloud)
-/** A mono-dimensionnal array of scalar values. It has also specific
-        parameters for display purposes.
-
-        Invalid values can be represented by NAN_VALUE.
-**/
+/**
+ * @class ScalarField
+ * @brief Mono-dimensional array of scalar values
+ * 
+ * A scalar field is a one-dimensional array of scalar values that can be
+ * associated with a point cloud for storing per-point attributes such as
+ * intensity, distance, elevation, etc. Invalid values are represented by NaN.
+ * 
+ * This class extends std::vector<ScalarType> and is shareable (reference counted).
+ */
 class ScalarField : public std::vector<ScalarType>, public CCShareable {
 public:
-    //! Default constructor
-    /** [SHAREABLE] Call 'link' when associating this structure to an object.
-            \param name scalar field name
-    **/
+    /**
+     * @brief Default constructor
+     * 
+     * Creates a new scalar field with an optional name.
+     * @param name Scalar field name (optional)
+     * @note [SHAREABLE] Call 'link' when associating to an object
+     */
     CV_CORE_LIB_API explicit ScalarField(const char* name = nullptr);
 
-    //! Copy constructor
-    /** \param sf scalar field to copy
-            \warning May throw a std::bad_alloc exception
-    **/
+    /**
+     * @brief Copy constructor
+     * @param sf Scalar field to copy
+     * @warning May throw std::bad_alloc exception
+     */
     CV_CORE_LIB_API ScalarField(const ScalarField& sf);
 
-    //! Sets scalar field name
+    /**
+     * @brief Set the scalar field name
+     * @param name New name for the scalar field
+     */
     CV_CORE_LIB_API void setName(const char* name);
 
-    //! Returns scalar field name
+    /**
+     * @brief Get the scalar field name
+     * @return Scalar field name
+     */
     inline const char* getName() const { return m_name; }
 
-    //! Returns the specific NaN value
+    /**
+     * @brief Get the NaN value constant
+     * @return NaN value used for invalid entries
+     */
     static inline ScalarType NaN() { return NAN_VALUE; }
 
-    //! Computes the mean value (and optionally the variance value) of the
-    //! scalar field
-    /** \param mean a field to store the mean value
-            \param variance if not void, the variance will be computed and
-    stored here
-    **/
+    /**
+     * @brief Compute mean and variance
+     * 
+     * Calculates the mean value and optionally the variance of the scalar field.
+     * @param mean Output: mean value
+     * @param variance Output: variance (optional, nullptr to skip)
+     */
     CV_CORE_LIB_API void computeMeanAndVariance(
             ScalarType& mean, ScalarType* variance = nullptr) const;
 
-    //! Determines the min and max values
+    /**
+     * @brief Compute min and max values
+     * 
+     * Determines and caches the minimum and maximum values in the field.
+     */
     CV_CORE_LIB_API virtual void computeMinAndMax();
 
-    //! Returns whether a scalar value is valid or not
+    /**
+     * @brief Check if a scalar value is valid
+     * @param value Value to check
+     * @return true if value is finite (not NaN or infinite)
+     */
     static inline bool ValidValue(ScalarType value) {
         return std::isfinite(value);
     }
 
-    //! Sets the value as 'invalid' (i.e. NAN_VALUE)
+    /**
+     * @brief Mark value as invalid
+     * 
+     * Sets the value at the specified index to NaN.
+     * @param index Index of value to invalidate
+     */
     inline void flagValueAsInvalid(std::size_t index) { at(index) = NaN(); }
 
-    //! Returns the number of valid values in this scalar field
+    /**
+     * @brief Count valid values
+     * @return Number of valid (non-NaN) values
+     */
     CV_CORE_LIB_API std::size_t countValidValues() const;
 
-    //! Returns the minimum value
+    /**
+     * @brief Get minimum value
+     * @return Cached minimum value
+     */
     inline ScalarType getMin() const { return m_minVal; }
-    //! Returns the maximum value
+    
+    /**
+     * @brief Get maximum value
+     * @return Cached maximum value
+     */
     inline ScalarType getMax() const { return m_maxVal; }
 
-    //! Fills the array with a particular value
+    /**
+     * @brief Fill array with a value
+     * @param fillValue Value to fill with (default: 0)
+     */
     inline void fill(ScalarType fillValue = 0) {
         if (empty())
             resize(capacity(), fillValue);
@@ -81,9 +125,20 @@ public:
             std::fill(begin(), end(), fillValue);
     }
 
-    //! Reserves memory (no exception thrown)
+    /**
+     * @brief Reserve memory (exception-safe)
+     * @param count Number of elements to reserve space for
+     * @return true if successful
+     */
     CV_CORE_LIB_API bool reserveSafe(std::size_t count);
-    //! Resizes memory (no exception thrown)
+    
+    /**
+     * @brief Resize memory (exception-safe)
+     * @param count New size
+     * @param initNewElements Whether to initialize new elements (default: false)
+     * @param valueForNewElements Value for initialization (default: 0)
+     * @return true if successful
+     */
     CV_CORE_LIB_API bool resizeSafe(std::size_t count,
                                     bool initNewElements = false,
                                     ScalarType valueForNewElements = 0);

@@ -17,57 +17,131 @@
 #include <QByteArray>
 #include <QTextStream>
 
-//! ASCII point cloud I/O filter
+/**
+ * @class AsciiFilter
+ * @brief ASCII point cloud I/O filter
+ * 
+ * Handles import/export of point clouds in various ASCII text formats
+ * including TXT, ASC, NEU, XYZ, XYZRGB, XYZN, PTS, and CSV.
+ * 
+ * Supports:
+ * - Multiple column formats
+ * - Custom separators (space, comma, semicolon, tab)
+ * - Optional headers
+ * - Color and scalar field data
+ * - Normal vectors
+ * 
+ * @see FileIOFilter
+ */
 class CV_IO_LIB_API AsciiFilter : public FileIOFilter {
 public:
+    /**
+     * @brief Constructor
+     */
     AsciiFilter();
 
-    // static accessors
+    /**
+     * @brief Get file filter string
+     * @return Filter string for file dialogs
+     */
     static inline QString GetFileFilter() {
         return "ASCII cloud (*.txt *.asc *.neu *.xyz *.xyzrgb *.xyzn *.pts "
                "*.csv)";
     }
 
-    // inherited from FileIOFilter
+    /**
+     * @brief Load point cloud from file
+     * @param filename Input file path
+     * @param container Container for loaded entities
+     * @param parameters Loading parameters
+     * @return Error code (CC_FERR_NO_ERROR on success)
+     */
     CC_FILE_ERROR loadFile(const QString& filename,
                            ccHObject& container,
                            LoadParameters& parameters) override;
+    
+    /**
+     * @brief Check if entity type can be saved
+     * @param type Entity type
+     * @param multiple Output: whether multiple entities can be saved
+     * @param exclusive Output: whether only this type can be saved
+     * @return true if type can be saved
+     */
     bool canSave(CV_CLASS_ENUM type,
                  bool& multiple,
                  bool& exclusive) const override;
+    
+    /**
+     * @brief Save entity to file
+     * @param entity Entity to save
+     * @param filename Output file path
+     * @param parameters Saving parameters
+     * @return Error code (CC_FERR_NO_ERROR on success)
+     */
     CC_FILE_ERROR saveToFile(ccHObject* entity,
                              const QString& filename,
                              const SaveParameters& parameters) override;
 
-    //! Loads a cloud from a QByteArray
+    /**
+     * @brief Load point cloud from byte array
+     * 
+     * Loads ASCII point cloud data directly from memory.
+     * @param data ASCII data as byte array
+     * @param sourceName Name for the loaded cloud
+     * @param container Container for loaded entities
+     * @param parameters Loading parameters
+     * @return Error code (CC_FERR_NO_ERROR on success)
+     */
     CC_FILE_ERROR loadAsciiData(const QByteArray& data,
                                 QString sourceName,
                                 ccHObject& container,
                                 LoadParameters& parameters);
 
 public:  // Default / persistent settings
-    //! Sets the default number of skipped lines (at loading time)
+    /**
+     * @brief Set default number of lines to skip when loading
+     * @param count Number of lines to skip (e.g., for headers)
+     */
     static void SetDefaultSkippedLineCount(int count);
 
-    //! Sets the default output coords precision (as saving time)
+    /**
+     * @brief Set coordinate precision for output
+     * @param prec Decimal precision for coordinates
+     */
     static void SetOutputCoordsPrecision(int prec);
-    //! Sets the default output scalar values precision (as saving time)
+    
+    /**
+     * @brief Set scalar field precision for output
+     * @param prec Decimal precision for scalar values
+     */
     static void SetOutputSFPrecision(int prec);
-    //! Sets the default output separator (as saving time)
-    /** index can be:
-        - 0: space
-        - 1: comma
-        - 2: semicolon
-        - 3: tab
-    **/
+    
+    /**
+     * @brief Set output separator type
+     * @param separatorIndex Separator index:
+     *        - 0: space
+     *        - 1: comma
+     *        - 2: semicolon
+     *        - 3: tab
+     */
     static void SetOutputSeparatorIndex(int separatorIndex);
-    //! Sets whether color and SF should be swapped (default is color then SF)
+    
+    /**
+     * @brief Set scalar field output order
+     * @param state true to save SF before color (default: color then SF)
+     */
     static void SaveSFBeforeColor(bool state);
-    //! Sets whether fields names should be saved in a header line (default is
-    //! false)
+    
+    /**
+     * @brief Set whether to save column names header
+     * @param state true to save column names (default: false)
+     */
     static void SaveColumnsNamesHeader(bool state);
-    //! Sets whether the number of points should be saved on the first line
-    //! (default is false)
+    
+    /**
+     * @brief Set whether to save point count header
+     * @param state true to save point count on first line (default: false)
+     */
     static void SavePointCountHeader(bool state);
 
 protected:

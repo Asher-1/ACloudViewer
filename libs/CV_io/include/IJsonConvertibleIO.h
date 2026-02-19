@@ -16,61 +16,130 @@
 // SYSTEM
 #include <string>
 
+/**
+ * @file IJsonConvertibleIO.h
+ * @brief JSON serialization I/O utilities
+ * 
+ * Provides functions for reading and writing objects that implement the
+ * IJsonConvertible interface, enabling JSON-based serialization and
+ * deserialization. Also includes utility macros for enum-string conversion.
+ */
+
 namespace cloudViewer {
 namespace io {
 
-/// The general entrance for reading an IJsonConvertible from a file
-/// The function calls read functions based on the extension name of filename.
-/// \return return true if the read function is successful, false otherwise.
+/**
+ * @brief Read JSON-convertible object from file (general entrance)
+ * 
+ * Automatically selects appropriate reader based on file extension.
+ * @param filename Input file path
+ * @param object Output object implementing IJsonConvertible
+ * @return true if successful, false otherwise
+ */
 bool CV_IO_LIB_API
 ReadIJsonConvertible(const std::string &filename,
                      cloudViewer::utility::IJsonConvertible &object);
 
-/// The general entrance for writing an IJsonConvertible to a file
-/// The function calls write functions based on the extension name of filename.
-/// \return return true if the write function is successful, false otherwise.
+/**
+ * @brief Write JSON-convertible object to file (general entrance)
+ * 
+ * Automatically selects appropriate writer based on file extension.
+ * @param filename Output file path
+ * @param object Object to write
+ * @return true if successful, false otherwise
+ */
 bool CV_IO_LIB_API
 WriteIJsonConvertible(const std::string &filename,
                       const cloudViewer::utility::IJsonConvertible &object);
 
+/**
+ * @brief Read JSON-convertible object from JSON file
+ * @param filename Input JSON file path
+ * @param object Output object implementing IJsonConvertible
+ * @return true if successful, false otherwise
+ */
 bool CV_IO_LIB_API
 ReadIJsonConvertibleFromJSON(const std::string &filename,
                              cloudViewer::utility::IJsonConvertible &object);
 
+/**
+ * @brief Write JSON-convertible object to JSON file
+ * @param filename Output JSON file path
+ * @param object Object to write
+ * @return true if successful, false otherwise
+ */
 bool CV_IO_LIB_API WriteIJsonConvertibleToJSON(
         const std::string &filename,
         const cloudViewer::utility::IJsonConvertible &object);
 
+/**
+ * @brief Read JSON-convertible object from JSON string
+ * @param json_string Input JSON string
+ * @param object Output object implementing IJsonConvertible
+ * @return true if successful, false otherwise
+ */
 bool CV_IO_LIB_API ReadIJsonConvertibleFromJSONString(
         const std::string &json_string,
         cloudViewer::utility::IJsonConvertible &object);
 
+/**
+ * @brief Write JSON-convertible object to JSON string
+ * @param json_string Output JSON string
+ * @param object Object to write
+ * @return true if successful, false otherwise
+ */
 bool CV_IO_LIB_API WriteIJsonConvertibleToJSONString(
         std::string &json_string,
         const cloudViewer::utility::IJsonConvertible &object);
 
-/// String to and from enum mapping, based on
-/// https://github.com/nlohmann/json/blob/master/include/nlohmann/detail/macro_scope.hpp
-/// (MIT license)
-/// If you have an enum:
-/// enum IMAGE_FORMAT {FORMAT_PNG,  FORMAT_JPG};
-/// Use as STRINGIFY_ENUM(IMAGE_FORMAT, {
-///      {FORMAT_INVALID, nullptr},
-///      {FORMAT_PNG, "png"},
-///      {FORMAT_JPG, "jpg"}
-///      })
-/// in the cpp file and
-/// DECLARE_STRINGIFY_ENUM(IMAGE_FORMAT)
-/// in the header file. This creates the functions
-/// - enum_to_string(const ENUM_TYPE &e) -> std::string
-/// - enum_from_string(const std::string &str, ENUM_TYPE &e) -> void
-/// for conversion between the enum and string. Invalid string values are mapped
-/// to the first specified option in the macro.
+/**
+ * @defgroup EnumStringConversion Enum-String Conversion Macros
+ * @brief Macros for bidirectional enum-string conversion
+ * 
+ * Based on nlohmann/json macro implementation (MIT license).
+ * @see https://github.com/nlohmann/json/blob/master/include/nlohmann/detail/macro_scope.hpp
+ * 
+ * Usage example:
+ * @code
+ * // In header file:
+ * enum IMAGE_FORMAT { FORMAT_INVALID, FORMAT_PNG, FORMAT_JPG };
+ * DECLARE_STRINGIFY_ENUM(IMAGE_FORMAT)
+ * 
+ * // In cpp file:
+ * STRINGIFY_ENUM(IMAGE_FORMAT, {
+ *     {FORMAT_INVALID, nullptr},
+ *     {FORMAT_PNG, "png"},
+ *     {FORMAT_JPG, "jpg"}
+ * })
+ * @endcode
+ * 
+ * This creates two functions:
+ * - `enum_to_string(const ENUM_TYPE &e) -> std::string`
+ * - `enum_from_string(const std::string &str, ENUM_TYPE &e) -> void`
+ * 
+ * Invalid string values are mapped to the first specified enum value.
+ * @{
+ */
+/**
+ * @brief Declare enum-to-string conversion functions in header
+ * 
+ * Use this macro in header files to declare conversion functions.
+ * Must be paired with STRINGIFY_ENUM in the implementation file.
+ * @param ENUM_TYPE The enum type to declare conversions for
+ */
 #define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)                        \
     std::string enum_to_string(ENUM_TYPE e);                     \
     void enum_from_string(const std::string &str, ENUM_TYPE &e); \
     inline auto format_as(ENUM_TYPE e) { return enum_to_string(e); }
 
+/**
+ * @brief Define enum-to-string conversion functions in implementation
+ * 
+ * Use this macro in cpp files to implement conversion functions.
+ * Must be paired with DECLARE_STRINGIFY_ENUM in the header file.
+ * @param ENUM_TYPE The enum type to define conversions for
+ * @param ... Initializer list of {enum_value, "string"} pairs
+ */
 #define STRINGIFY_ENUM(ENUM_TYPE, ...)                                      \
     std::string enum_to_string(ENUM_TYPE e) {                               \
         static_assert(std::is_enum<ENUM_TYPE>::value,                       \
@@ -93,6 +162,8 @@ bool CV_IO_LIB_API WriteIJsonConvertibleToJSONString(
         e = ((it != std::end(m)) ? it : std::begin(m))->first;              \
         cloudViewer::utility::LogDebug("{} -> {}", str, enum_to_string(e)); \
     }
+
+/** @} */ // end of EnumStringConversion group
 
 }  // namespace io
 }  // namespace cloudViewer

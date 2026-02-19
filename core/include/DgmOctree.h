@@ -31,122 +31,176 @@ class GenericIndexedCloudPersist;
 class GenericProgressCallback;
 class NormalizedProgress;
 
-//! The octree structure used throughout the library
-/** Implements the GenericOctree interface.
-        Corresponds to the octree structure developed during Daniel
-        Girardeau-Montaut's PhD (see PhD manuscript, Chapter 4).
-**/
+/**
+ * @class DgmOctree
+ * @brief Octree structure for spatial indexing
+ * 
+ * Implements a hierarchical octree structure for efficient spatial queries
+ * on 3D point clouds. Based on the octree structure developed during
+ * Daniel Girardeau-Montaut's PhD thesis (Chapter 4).
+ * 
+ * The octree subdivides 3D space recursively, with each level doubling
+ * the resolution. Supports up to MAX_OCTREE_LEVEL levels of subdivision.
+ * 
+ * Key features:
+ * - Efficient nearest neighbor search
+ * - Radius search
+ * - Frustum culling
+ * - Multi-threaded operations
+ * 
+ * @see GenericOctree
+ */
 class CV_CORE_LIB_API DgmOctree : public GenericOctree {
 public:
-    //! Returns the binary shift for a given level of subdivision
-    /** This binary shift is used to truncate a full cell code in order
-            to deduce the cell code for a given level of subdivision.
-            \param level the level of subdivision
-            \return the binary shift
-    **/
+    /**
+     * @brief Get binary shift for a subdivision level
+     * 
+     * Returns the bit shift used to truncate a full cell code to obtain
+     * the cell code at a specific subdivision level.
+     * @param level Subdivision level
+     * @return Binary shift value
+     */
     static unsigned char GET_BIT_SHIFT(unsigned char level);
 
-    //! Returns the octree length (in term of cells) for a given level of
-    //! subdivision
-    /** \param level the level of subdivision
-            \return 2^level
-    **/
+    /**
+     * @brief Get octree length at a subdivision level
+     * 
+     * Returns the number of cells along one axis at the specified level.
+     * @param level Subdivision level
+     * @return Octree length (2^level)
+     */
     static int OCTREE_LENGTH(int level);
 
     /*******************************/
     /**         STRUCTURES        **/
     /*******************************/
 
-    //! Max octree subdivision level
-    /** Number of bits used to code the cells position: 3*MAX_OCTREE_LEVEL
-            \warning Never pass a 'constant initializer' by reference
-    **/
+    /**
+     * @brief Maximum octree subdivision level
+     * 
+     * Number of bits used to encode cell position: 3 * MAX_OCTREE_LEVEL.
+     * Value depends on 32-bit vs 64-bit architecture.
+     * @warning Never pass as reference (constant initializer)
+     */
 #ifdef OCTREE_CODES_64_BITS
-    static const int MAX_OCTREE_LEVEL = 21;
+    static const int MAX_OCTREE_LEVEL = 21;  ///< 64-bit: max 21 levels
 #else
-    static const int MAX_OCTREE_LEVEL = 10;
+    static const int MAX_OCTREE_LEVEL = 10;  ///< 32-bit: max 10 levels
 #endif
 
-    //! Type of the code of an octree cell
-    /** \warning 3 bits per level are required.
-            \warning Never pass a 'constant initializer' by reference
-    **/
+    /**
+     * @brief Type for octree cell codes
+     * 
+     * Requires 3 bits per level for encoding cell position.
+     * @warning Never pass as reference (constant initializer)
+     */
 #ifdef OCTREE_CODES_64_BITS
-    using CellCode =
-            unsigned long long;  // max 21 levels (but twice more memory!)
+    using CellCode = unsigned long long;  ///< 64-bit codes (max 21 levels, uses more memory)
 #else
-    using CellCode = unsigned;  // max 10 levels
+    using CellCode = unsigned;            ///< 32-bit codes (max 10 levels)
 #endif
 
-    //! Max octree length at last level of subdivision (number of cells)
-    /** \warning Never pass a 'constant initializer' by reference
-     **/
+    /**
+     * @brief Maximum octree length at deepest level
+     * 
+     * Number of cells along one axis at maximum subdivision.
+     * @warning Never pass as reference (constant initializer)
+     */
     static const int MAX_OCTREE_LENGTH = (1 << MAX_OCTREE_LEVEL);
 
-    //! Invalid cell code
-    /** \warning Never pass a 'constant initializer' by reference
-     **/
+    /**
+     * @brief Invalid cell code sentinel value
+     * @warning Never pass as reference (constant initializer)
+     */
     static const CellCode INVALID_CELL_CODE = (~static_cast<CellCode>(0));
 
-    //! Octree cell codes container
+    /**
+     * @brief Container for cell codes
+     */
     using cellCodesContainer = std::vector<CellCode>;
 
-    //! Octree cell indexes container
+    /**
+     * @brief Container for cell indexes
+     */
     using cellIndexesContainer = std::vector<unsigned int>;
 
-    //! Structure used during nearest neighbour search
-    /** Association between a point, its index and its square distance to the
-    query point. It has a comparison operator for fast sorting (stdlib).
-    **/
+    /**
+     * @struct PointDescriptor
+     * @brief Point descriptor for nearest neighbor search
+     * 
+     * Associates a point with its index and squared distance to query point.
+     * Includes comparison operator for efficient sorting.
+     */
     struct PointDescriptor {
-        //! Point
-        const CCVector3* point;
-        //! Point index
-        unsigned pointIndex;
-        //! Point associated distance value
-        double squareDistd;
+        const CCVector3* point;  ///< Point coordinates
+        unsigned pointIndex;     ///< Point index in cloud
+        double squareDistd;      ///< Squared distance to query point
 
-        //! Default constructor
+        /**
+         * @brief Default constructor
+         */
         PointDescriptor() : point(nullptr), pointIndex(0), squareDistd(-1.0) {}
 
-        //! Constructor with point and its index
+        /**
+         * @brief Constructor with point and index
+         * @param P Point coordinates
+         * @param index Point index
+         */
         PointDescriptor(const CCVector3* P, unsigned index)
             : point(P), pointIndex(index), squareDistd(-1.0) {}
 
-        //! Constructor with point, its index and square distance
+        /**
+         * @brief Constructor with full parameters
+         * @param P Point coordinates
+         * @param index Point index
+         * @param d2 Squared distance
+         */
         PointDescriptor(const CCVector3* P, unsigned index, double d2)
             : point(P), pointIndex(index), squareDistd(d2) {}
 
-        //! Comparison operator
-        /** \param a point A
-                \param b point B
-                \return whether the square distance associated to A is smaller
-        than the square distance associated to B
-        **/
+        /**
+         * @brief Distance comparison function
+         * @param a First point descriptor
+         * @param b Second point descriptor
+         * @return true if a's distance < b's distance
+         */
         static bool distComp(const PointDescriptor& a,
                              const PointDescriptor& b) {
             return a.squareDistd < b.squareDistd;
         }
     };
 
-    //! A set of neighbours
+    /**
+     * @brief Set of neighboring points
+     */
     using NeighboursSet = std::vector<PointDescriptor>;
 
-    //! Structure used during nearest neighbour search
+    /**
+     * @struct CellDescriptor
+     * @brief Cell descriptor for neighbor search
+     * 
+     * Associates a cell center with its first point index in the neighbors set.
+     */
     struct CellDescriptor {
-        //! Cell center
-        CCVector3 center;
-        //! First point index in associated NeighboursSet
-        unsigned index;
+        CCVector3 center;   ///< Cell center coordinates
+        unsigned index;     ///< First point index in NeighboursSet
 
-        //! Default empty constructor
+        /**
+         * @brief Default constructor
+         */
         CellDescriptor() = default;
 
-        //! Constructor from a point and an index
+        /**
+         * @brief Constructor with parameters
+         * @param C Cell center
+         * @param i Point index
+         */
         CellDescriptor(const CCVector3& C, unsigned i) : center(C), index(i) {}
     };
 
-    //! A set of neighbour cells descriptors
+    /**
+     * @brief Set of neighboring cell descriptors
+     */
     using NeighbourCellsSet = std::vector<CellDescriptor>;
 
     //! Container of in/out parameters for nearest neighbour(s) search
